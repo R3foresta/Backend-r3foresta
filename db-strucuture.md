@@ -141,3 +141,21 @@ erDiagram
 
     LOTE_PLANTACION ||--o{ LOTE_PLANTACION_HISTORIAL : versiona
 :::
+
+Aclaraciónes sobre algunas tablas:
+En PLANTA:
+    string tipo_planta      // Árbol, Arbusto, etc.
+    string tipo_planta_otro // texto libre si es "Otro"
+    string fuente           // SEMILLA / ESQUEJE
+
+En RECOLECCIÓN:
+    string unidad           // UNIDAD / KG / G
+    string tipo_material    // SEMILLA / ESQUEJE
+    string estado           // USADO / ALMACENADO / DESECHADO
+
+En LOTE_PLANTACION:
+    string estado           // INICIO / EMBOLSADO / SOMBRA / LISTA_PLANTAR / SALIDA_VIVERO
+
+En LOTE_PLANTACION_HISTORIAL:
+    string accion           // INICIO, EMBOLSADO, SOMBRA, LISTA_PLANTAR, SALIDA, AJUSTE...
+        
