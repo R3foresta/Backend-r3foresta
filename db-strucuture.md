@@ -1,20 +1,12 @@
 ::: mermaid
 erDiagram
     USUARIO {
-        int uuid
+        int id
         string nombre
-        string correo
         string doc_identidad
         string wallet_address
         string organizacion
         string contacto
-    }
-
-    VIVERO {
-        int id
-        string codigo
-        string nombre
-        int ubicacion_id
     }
 
     UBICACION {
@@ -26,6 +18,13 @@ erDiagram
         string zona
         decimal latitud
         decimal longitud
+    }
+
+    VIVERO {
+        int id
+        string codigo
+        string nombre
+        int ubicacion_id
     }
 
     PLANTA {
@@ -88,32 +87,57 @@ erDiagram
         string estado
     }
 
-    LOTEPLANTACION_RECOLECCION {
+    LOTE_PLANTACION_RECOLECCION {
         int lote_id
         int recoleccion_id
     }
 
-    HISTORIAL_LOTE {
+    LOTE_PLANTACION_HISTORIAL {
         int id
         int lote_id
-        int usuario_id
-        datetime fecha_hora
-        string datos_anteriores
-        string datos_nuevos
+        int nro_cambio
+        datetime fecha_cambio
+        int responsable_id
+        string accion
+        string estado
+
+        int cantidad_inicio
+        int cantidad_embolsadas
+        int cantidad_sombra
+        int cantidad_lista_plantar
+
+        date fecha_inicio
+        date fecha_embolsado
+        date fecha_sombra
+        date fecha_salida
+
+        decimal altura_prom_sombra
+        decimal altura_prom_salida
+
+        string notas
     }
+
+    %% Relaciones
 
     UBICACION ||--o{ VIVERO : tiene
     UBICACION ||--o{ RECOLECCION : ocurre_en
-    USUARIO ||--o{ RECOLECCION : realiza
+
+    USUARIO ||--o{ RECOLECCION : recolecta
     USUARIO ||--o{ LOTE_PLANTACION : crea
-    USUARIO ||--o{ HISTORIAL_LOTE : modifica
+    USUARIO ||--o{ LOTE_PLANTACION_HISTORIAL : registra
+
     VIVERO ||--o{ RECOLECCION : almacena
     VIVERO ||--o{ LOTE_PLANTACION : se_realiza_en
+
     PLANTA ||--o{ RECOLECCION : corresponde_a
     PLANTA ||--o{ LOTE_PLANTACION : se_siembra
+
     METODO_RECOLECCION ||--o{ RECOLECCION : se_usa_en
+
     RECOLECCION ||--o{ RECOLECCION_FOTO : tiene
-    LOTE_PLANTACION ||--o{ LOTEPLANTACION_RECOLECCION : usa_semillas
-    RECOLECCION ||--o{ LOTEPLANTACION_RECOLECCION : proviene_de
-    LOTE_PLANTACION ||--o{ HISTORIAL_LOTE : tiene_cambios
+
+    LOTE_PLANTACION ||--o{ LOTE_PLANTACION_RECOLECCION : usa
+    RECOLECCION ||--o{ LOTE_PLANTACION_RECOLECCION : proviene_de
+
+    LOTE_PLANTACION ||--o{ LOTE_PLANTACION_HISTORIAL : versiona
 :::
