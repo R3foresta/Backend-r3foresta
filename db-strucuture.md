@@ -2,6 +2,7 @@
 erDiagram
     USUARIO {
         int id
+        string username "UNIQUE"
         string nombre
         string doc_identidad
         string wallet_address
@@ -141,6 +142,7 @@ erDiagram
 
     LOTE_PLANTACION ||--o{ LOTE_PLANTACION_HISTORIAL : versiona
 :::
+
 
 Aclaraciónes sobre algunas tablas:
 En PLANTA:
