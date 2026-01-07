@@ -36,4 +36,13 @@ export class AuthController {
     const origin = req.headers.origin || 'http://localhost:5173';
     return this.authService.login(loginDto, origin);
   }
+
+  /**
+   * GET /auth/test-supabase
+   * Endpoint de prueba para verificar conexión con Supabase
+   */
+  @Get('test-supabase')
+  async testSupabase() {
+    return this.authService.testSupabaseConnection();
+  }
 }

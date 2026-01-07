@@ -6,14 +6,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Habilitar CORS
-  const allowedOrigins = [
-    process.env.FRONTEND_URL || 'http://localhost:5173',
-    'https://dull-tigers-shout.loca.lt',
-  ];
-
   app.enableCors({
-    origin: allowedOrigins,
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://pwa-r3foresta.vercel.app',
+    ],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-id'],
   });
 
   // Validación global
@@ -32,4 +33,5 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`🚀 Backend NestJS corriendo en http://localhost:${port}`);
 }
-bootstrap();
+
+void bootstrap();
