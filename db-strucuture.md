@@ -141,19 +141,6 @@ erDiagram
         %% Se llena automáticamente en INSERT/UPDATE del LOTE_FASE_VIVERO (triggers)
     }
 
-    LOTE_FASE_VIVERO_FOTO {
-        bigint id PK
-        bigint lote_historial_id FK
-        string url
-        int peso_bytes "max 5MB (regla de negocio)"
-        string formato "JPG/JPEG/PNG"
-        boolean es_portada "TRUE si es la foto principal de ese cambio"
-        string descripcion "ej: detalle de raíces, vista general"
-        datetime created_at
-    }
-
-    LOTE_FASE_VIVERO_HISTORIAL ||--o{ LOTE_FASE_VIVERO_FOTO : tiene_fotos
-
     %% =========================================
     %% MÓDULO PLANTACIÓN (campo)
     %% =========================================
