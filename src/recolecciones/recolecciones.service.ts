@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { PinataService } from '../pinata/pinata.service';
+import { BlockchainService } from '../blockchain/blockchain.service';
 import { CreateRecoleccionDto } from './dto/create-recoleccion.dto';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 
@@ -18,6 +19,7 @@ export class RecoleccionesService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly pinataService: PinataService,
+    private readonly blockchainService: BlockchainService,
   ) {}
 
   /**
@@ -433,7 +435,50 @@ export class RecoleccionesService {
         );
 
         ipfsUrl = pinataResult.ipfs_url;
-        this.logger.log(`✅ Metadata subido a IPFS: ${ipfsUrl}`);
+        const gatewayUrl = pinataResult.gateway_url;
+        const publicUrl = pinataResult.public_url;
+        
+        // Logs para verificar las URLs
+        this.logger.log(`📦 URLs de Pinata:`);
+        this.logger.log(`   • IPFS URL: ${ipfsUrl}`);
+        this.logger.log(`   • Gateway URL: ${gatewayUrl}`);
+        this.logger.log(`   • Public URL: ${publicUrl}`);
+        this.logger.log(`✅ Metadata subido a IPFS`);
+
+        // PASO 7: Mintear NFT en blockchain automáticamente
+        this.logger.log('🔗 Paso 7: Minteando NFT en blockchain...');
+        this.logger.log(`   • Usando URL: ${publicUrl}`);
+        try {
+          const mintResult = await this.blockchainService.mintNFT(
+            '0x2440783D1d86D91118E7e19F62889dDc96775868',
+            publicUrl, // Usar public_url que tiene el formato correcto del gateway
+          );
+
+          // Construir URL del blockchain explorer
+          const blockchainUrl = `https://shannon-explorer.somnia.network/token/0x4bb21533f7803BBce74421f6bdfc4B6c57706EA2/instance/${mintResult.tokenId}`;
+
+          this.logger.log(`✅ NFT acuñado exitosamente. Token ID: ${mintResult.tokenId}`);
+          this.logger.log(`🔗 URL Blockchain: ${blockchainUrl}`);
+
+          // Guardar datos de blockchain en la BD
+          const { error: blockchainUpdateError } = await supabase
+            .from('recoleccion')
+            .update({
+              blockchain_url: blockchainUrl,
+              token_id: String(mintResult.tokenId),
+              transaction_hash: mintResult.transactionHash,
+            })
+            .eq('id', recoleccionId);
+
+          if (blockchainUpdateError) {
+            this.logger.error('⚠️  No se pudo guardar datos de blockchain en BD:', blockchainUpdateError);
+          } else {
+            this.logger.log('✅ Datos de blockchain guardados en la base de datos');
+          }
+        } catch (blockchainError) {
+          this.logger.error('⚠️  Error al mintear NFT:', blockchainError);
+          // No lanzamos error, la recolección ya está creada y en IPFS
+        }
       } catch (pinataError) {
         this.logger.error('⚠️  Error al subir a Pinata:', pinataError);
         // No lanzamos error aquí, solo logueamos
