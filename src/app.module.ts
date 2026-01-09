@@ -9,6 +9,7 @@ import { RecoleccionesModule } from './recolecciones/recolecciones.module';
 import { ViverosModule } from './viveros/viveros.module';
 import { MetodosRecoleccionModule } from './metodos-recoleccion/metodos-recoleccion.module';
 import { PlantasModule } from './plantas/plantas.module';
+import { PinataModule } from './pinata/pinata.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { PlantasModule } from './plantas/plantas.module';
     ViverosModule,
     MetodosRecoleccionModule,
     PlantasModule,
+    PinataModule,
   ],
   controllers: [AppController],
   providers: [AppService],
