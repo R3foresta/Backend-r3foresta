@@ -4,14 +4,23 @@ import {
   NotFoundException,
   InternalServerErrorException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { PinataService } from '../pinata/pinata.service';
+import { BlockchainService } from '../blockchain/blockchain.service';
 import { CreateRecoleccionDto } from './dto/create-recoleccion.dto';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 
 @Injectable()
 export class RecoleccionesService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  private readonly logger = new Logger(RecoleccionesService.name);
+
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly pinataService: PinataService,
+    private readonly blockchainService: BlockchainService,
+  ) {}
 
   /**
    * Crea una nueva recolección con todas sus relaciones
@@ -388,12 +397,182 @@ export class RecoleccionesService {
       console.log('🎉 ✅ RECOLECCIÓN CREADA EXITOSAMENTE');
       console.log('🌱 ==========================================\n');
 
-      // Retornar datos completos
-      return await this.findOne(recoleccionId);
+      // PASO 6: Subir JSON a Pinata automáticamente
+      console.log('☁️  Paso 6: Subiendo metadata a IPFS/Pinata...');
+      let ipfsUrl: string | null = null;
+      try {
+        // Obtener datos completos de la recolección creada directamente de Supabase
+        const { data: recoleccionCompleta, error: fetchError } = await supabase
+          .from('recoleccion')
+          .select(
+            `
+            *,
+            usuario:usuario_id (id, nombre, username, correo),
+            ubicacion:ubicacion_id (*),
+            vivero:vivero_id (id, codigo, nombre),
+            metodo:metodo_id (id, nombre, descripcion),
+            planta:planta_id (*),
+            fotos:recoleccion_foto (*)
+          `,
+          )
+          .eq('id', recoleccionId)
+          .single();
+
+        if (fetchError || !recoleccionCompleta) {
+          throw new Error('No se pudo obtener la recolección para metadata');
+        }
+
+        // Construir JSON en formato NFT estándar
+        const metadata = this.buildNFTMetadata(
+          recoleccionCompleta,
+          usuarioData.nombre,
+        );
+
+        // Subir a Pinata
+        const pinataResult = await this.pinataService.uploadJson(
+          metadata,
+          `${codigoTrazabilidad}.json`,
+        );
+
+        ipfsUrl = pinataResult.ipfs_url;
+        const gatewayUrl = pinataResult.gateway_url;
+        const publicUrl = pinataResult.public_url;
+        
+        // Logs para verificar las URLs
+        this.logger.log(`📦 URLs de Pinata:`);
+        this.logger.log(`   • IPFS URL: ${ipfsUrl}`);
+        this.logger.log(`   • Gateway URL: ${gatewayUrl}`);
+        this.logger.log(`   • Public URL: ${publicUrl}`);
+        this.logger.log(`✅ Metadata subido a IPFS`);
+
+        // PASO 7: Mintear NFT en blockchain automáticamente
+        this.logger.log('🔗 Paso 7: Minteando NFT en blockchain...');
+        this.logger.log(`   • Usando URL: ${publicUrl}`);
+        try {
+          const mintResult = await this.blockchainService.mintNFT(
+            '0x2440783D1d86D91118E7e19F62889dDc96775868',
+            publicUrl, // Usar public_url que tiene el formato correcto del gateway
+          );
+
+          // Construir URL del blockchain explorer
+          const blockchainUrl = `https://shannon-explorer.somnia.network/token/0x4bb21533f7803BBce74421f6bdfc4B6c57706EA2/instance/${mintResult.tokenId}`;
+
+          this.logger.log(`✅ NFT acuñado exitosamente. Token ID: ${mintResult.tokenId}`);
+          this.logger.log(`🔗 URL Blockchain: ${blockchainUrl}`);
+
+          // Guardar datos de blockchain en la BD
+          const { error: blockchainUpdateError } = await supabase
+            .from('recoleccion')
+            .update({
+              blockchain_url: blockchainUrl,
+              token_id: String(mintResult.tokenId),
+              transaction_hash: mintResult.transactionHash,
+            })
+            .eq('id', recoleccionId);
+
+          if (blockchainUpdateError) {
+            this.logger.error('⚠️  No se pudo guardar datos de blockchain en BD:', blockchainUpdateError);
+          } else {
+            this.logger.log('✅ Datos de blockchain guardados en la base de datos');
+          }
+        } catch (blockchainError) {
+          this.logger.error('⚠️  Error al mintear NFT:', blockchainError);
+          // No lanzamos error, la recolección ya está creada y en IPFS
+        }
+      } catch (pinataError) {
+        this.logger.error('⚠️  Error al subir a Pinata:', pinataError);
+        // No lanzamos error aquí, solo logueamos
+        // La recolección ya fue creada exitosamente
+      }
+
+      console.log('🎉 ✅ PROCESO COMPLETO FINALIZADO');
+      console.log('🌱 ==========================================\n');
+
+      // Retornar datos completos (la URL de IPFS ya está guardada en la BD)
+      return this.findOne(recoleccionId);
     } catch (error) {
       console.error('❌ Error en creación de recolección:', error);
       throw error;
     }
+  }
+
+  /**
+   * Construye el JSON metadata en formato NFT estándar
+   */
+  private buildNFTMetadata(recoleccion: any, nombreUsuario: string) {
+    // Obtener foto principal (foto_total o la primera disponible)
+    const fotoTotal =
+      recoleccion.fotos?.find((f: any) => f.url.includes('total')) ||
+      recoleccion.fotos?.[0];
+    const fotoLugar =
+      recoleccion.fotos?.find((f: any) => f.url.includes('lugar')) ||
+      recoleccion.fotos?.[1];
+
+    // Formatear fecha y hora
+    const fechaStr = recoleccion.fecha; // Ya viene en formato YYYY-MM-DD
+    // Extraer hora del campo created_at que tiene timestamp completo
+    const fechaConHora = new Date(recoleccion.created_at);
+    const horaStr = fechaConHora.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/La_Paz', // Bolivia timezone
+    });
+
+    // Construir ubicación descriptiva
+    const ubicacion = [
+      recoleccion.ubicacion?.comunidad,
+      recoleccion.ubicacion?.departamento,
+      recoleccion.ubicacion?.pais,
+    ]
+      .filter(Boolean)
+      .join(', ');
+
+    const ubicacionCompleta = recoleccion.ubicacion?.zona
+      ? `${ubicacion} Zona: ${recoleccion.ubicacion.zona}`
+      : ubicacion;
+
+    // Construir coordenadas
+    const coordenadas = `${recoleccion.ubicacion?.latitud}, ${recoleccion.ubicacion?.longitud}`;
+
+    // Descripción completa
+    const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${recoleccion.planta?.especie || recoleccion.nombre_comercial} realizada por ${nombreUsuario} el ${fechaStr} a las ${horaStr} en ${ubicacion}. Cantidad: ${recoleccion.cantidad} ${recoleccion.unidad}`;
+
+    // Construir attributes
+    const attributes = [
+      { trait_type: 'ID', value: recoleccion.codigo_trazabilidad },
+      { trait_type: 'Usuario', value: nombreUsuario },
+      { trait_type: 'Tipo', value: 'Recoleccion' },
+      { trait_type: 'Fecha', value: fechaStr },
+      { trait_type: 'Hora', value: horaStr },
+      {
+        trait_type: 'Especie',
+        value: recoleccion.planta?.especie || recoleccion.nombre_comercial,
+      },
+      { trait_type: 'Tipo de material', value: recoleccion.tipo_material },
+      {
+        trait_type: 'Cantidad',
+        value: `${recoleccion.cantidad} ${recoleccion.unidad}`,
+      },
+      { trait_type: 'Metodo', value: recoleccion.metodo?.nombre || 'N/A' },
+      { trait_type: 'Estado', value: recoleccion.estado },
+      { trait_type: 'Ubicacion', value: ubicacionCompleta },
+      { trait_type: 'Coordenadas', value: coordenadas },
+    ];
+
+    // Agregar fotos si existen
+    if (fotoLugar) {
+      attributes.push({ trait_type: 'Foto Lugar', value: fotoLugar.url });
+    }
+    if (fotoTotal) {
+      attributes.push({ trait_type: 'Foto Total', value: fotoTotal.url });
+    }
+
+    return {
+      name: `${recoleccion.codigo_trazabilidad} - Recolección de ${recoleccion.planta?.especie || recoleccion.nombre_comercial}`,
+      description: descripcion,
+      image: fotoTotal?.url || '',
+      attributes: attributes,
+    };
   }
 
   /**

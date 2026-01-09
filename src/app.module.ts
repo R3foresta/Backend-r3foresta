@@ -9,6 +9,8 @@ import { RecoleccionesModule } from './recolecciones/recolecciones.module';
 import { ViverosModule } from './viveros/viveros.module';
 import { MetodosRecoleccionModule } from './metodos-recoleccion/metodos-recoleccion.module';
 import { PlantasModule } from './plantas/plantas.module';
+import { PinataModule } from './pinata/pinata.module';
+import { BlockchainModule } from './blockchain/blockchain.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { PlantasModule } from './plantas/plantas.module';
     ViverosModule,
     MetodosRecoleccionModule,
     PlantasModule,
+    PinataModule,
+    BlockchainModule,
   ],
   controllers: [AppController],
   providers: [AppService],
