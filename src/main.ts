@@ -11,6 +11,7 @@ async function bootstrap() {
       'http://localhost:5173',
       'http://localhost:3000',
       'https://pwa-r3foresta.vercel.app',
+      'https://backend-r3foresta.onrender.com',
       /\.vercel\.app$/, // Permitir todos los subdominios de Vercel
     ],
     credentials: true,
