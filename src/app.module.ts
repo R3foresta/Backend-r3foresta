@@ -9,6 +9,7 @@ import { RecoleccionesModule } from './recolecciones/recolecciones.module';
 import { ViverosModule } from './viveros/viveros.module';
 import { MetodosRecoleccionModule } from './metodos-recoleccion/metodos-recoleccion.module';
 import { PlantasModule } from './plantas/plantas.module';
+import { LotesFaseViveroModule } from './lotes-fase-vivero/lotes-fase-vivero.module';
 import { PinataModule } from './pinata/pinata.module';
 import { BlockchainModule } from './blockchain/blockchain.module';
 
@@ -24,6 +25,7 @@ import { BlockchainModule } from './blockchain/blockchain.module';
     ViverosModule,
     MetodosRecoleccionModule,
     PlantasModule,
+    LotesFaseViveroModule,
     PinataModule,
     BlockchainModule,
   ],
