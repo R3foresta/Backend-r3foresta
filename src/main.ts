@@ -1,9 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Aumentar límite de tamaño del body (solo para campos de texto largos)
+  // NOTA: Las imágenes deben subirse a Supabase Storage, no enviarlas en base64
+  app.use(bodyParser.json({ limit: '5mb' }));
+  app.use(bodyParser.urlencoded({ limit: '5mb', extended: true }));
 
   // Configurar orígenes CORS
   const allowedOrigins = [

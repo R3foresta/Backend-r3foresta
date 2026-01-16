@@ -110,7 +110,7 @@ Registra los viveros forestales.
 ---
 
 ### 5. 🌱 `planta`
-Catálogo de especies vegetales.
+Catálogo de especies vegetales con información taxonómica, morfológica y de uso.
 
 | Campo | Tipo | Restricciones | Descripción |
 |-------|------|---------------|-------------|
@@ -118,14 +118,41 @@ Catálogo de especies vegetales.
 | `especie` | `text` | NOT NULL | Nombre de la especie |
 | `nombre_cientifico` | `text` | NOT NULL | Nombre científico (género + especie) |
 | `variedad` | `text` | NOT NULL | Variedad de la planta |
-| `tipo_planta` | `text` | - | Tipo de planta (árbol, arbusto, etc.) |
-| `tipo_planta_otro` | `text` | Requerido si tipo_planta=Otro | Otro tipo no catalogado |
-| `fuente` | `tipo_material_origen` | NOT NULL | Origen (SEMILLA, ESQUEJE) |
+| `tipo_planta` | `text` | - | Tipo de planta (árbol, arbusto, hierba, etc.) |
+| `tipo_planta_otro` | `text` | Requerido si tipo_planta='Otro' | Otro tipo no catalogado |
+| `fuente` | `tipo_material_origen` | NOT NULL | Origen del material (SEMILLA, ESQUEJE) |
+| `nombre_comun_principal` | `text` | - | Nombre común principal |
+| `nombres_comunes` | `text` | - | Lista de nombres comunes separados por comas |
+| `reino` | `text` | - | Reino taxonómico (ej: Plantae) |
+| `division` | `text` | - | División taxonómica (ej: Magnoliophyta) |
+| `clase` | `text` | - | Clase taxonómica (ej: Magnoliopsida) |
+| `orden` | `text` | - | Orden taxonómico (ej: Fabales) |
+| `familia` | `text` | - | Familia taxonómica (ej: Fabaceae) |
+| `genero` | `text` | - | Género taxonómico (ej: Swietenia) |
+| `origen_geografico` | `text` | - | Región o país de origen de la especie |
+| `habitat_descripcion` | `text` | - | Descripción del hábitat natural |
+| `descripcion_morfologica` | `text` | - | Descripción física de la planta |
+| `usos_industriales` | `text` | - | Usos en industria y manufactura |
+| `usos_medicinales` | `text` | - | Usos medicinales tradicionales o documentados |
+| `usos_ornamentales` | `text` | - | Uso en jardinería y paisajismo |
+| `advertencia_toxicidad` | `text` | - | Advertencias sobre toxicidad o peligros |
+| `notas_manejo_recoleccion` | `text` | - | Notas sobre manejo y recolección |
+| `imagen_url` | `text` | - | URL de imagen representativa de la planta |
 | `created_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Fecha de registro |
 
 **Relaciones:**
 - Una planta puede tener múltiples lotes de fase vivero
 - Una planta puede estar en múltiples recolecciones
+
+**Validaciones:**
+- `tipo_planta_otro`: Solo requerido si `tipo_planta = 'Otro'` y debe contener al menos 1 carácter (sin espacios)
+
+**Índices:**
+```sql
+CREATE UNIQUE INDEX uq_planta_cientifico_variedad 
+ON planta USING btree (lower(nombre_cientifico), lower(variedad));
+```
+*Garantiza unicidad por nombre científico + variedad (case-insensitive)*
 
 ---
 
