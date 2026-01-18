@@ -12,6 +12,7 @@ import { PlantasModule } from './plantas/plantas.module';
 import { LotesFaseViveroModule } from './lotes-fase-vivero/lotes-fase-vivero.module';
 import { PinataModule } from './pinata/pinata.module';
 import { BlockchainModule } from './blockchain/blockchain.module';
+import { PingrepetModule } from './pingrepet/pingrepet.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { BlockchainModule } from './blockchain/blockchain.module';
     LotesFaseViveroModule,
     PinataModule,
     BlockchainModule,
+    PingrepetModule,
   ],
   controllers: [AppController],
   providers: [AppService],
