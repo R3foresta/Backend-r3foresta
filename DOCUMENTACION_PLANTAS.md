@@ -30,13 +30,13 @@ Content-Type: application/json
 | `especie` | `string` | Nombre de la especie | `"Caoba"` |
 | `nombre_cientifico` | `string` | Nombre científico (género + especie) | `"Swietenia macrophylla"` |
 | `tipo_planta` | `string` | Tipo: Árbol, Arbusto, Hierba, Palmera, etc. | `"Árbol"` |
-| `fuente` | `enum` | Tipo de material: `SEMILLA` o `ESQUEJE` | `"SEMILLA"` |
 | `nombres_comunes` | `string` | Nombres comunes separados por comas | `"Caoba, Aguano, Araputanga"` |
 
 ##### Campos Opcionales - Información General
 
 | Campo | Tipo | Descripción | Ejemplo |
 |-------|------|-------------|---------|
+| `fuente` | `enum` | Tipo de material: `SEMILLA` o `ESQUEJE` | `"SEMILLA"` |
 | `imagen_url` | `string` | URL de imagen representativa de la planta | `"https://ejemplo.com/caoba.jpg"` |
 | `tipo_planta_otro` | `string` | Especificación cuando tipo_planta es "Otro" | `"Liana leñosa"` |
 | `nombre_comun_principal` | `string` | Nombre común principal (el más usado) | `"Caoba"` |
@@ -432,7 +432,7 @@ Misma estructura que el endpoint de listar plantas.
 ### Validaciones a Nivel de Aplicación
 
 1. **Campos obligatorios en API:**
-   - `especie`, `nombre_cientifico`, `tipo_planta`, `fuente`, `nombres_comunes`
+   - `especie`, `nombre_cientifico`, `tipo_planta`, `nombres_comunes`
 
 2. **Enumeración fuente:**
    - Solo acepta: `SEMILLA` o `ESQUEJE`
@@ -448,7 +448,7 @@ Misma estructura que el endpoint de listar plantas.
 ## 📝 Notas Importantes
 
 1. **Campos obligatorios vs opcionales:**
-   - **Obligatorios:** `especie`, `nombre_cientifico`, `tipo_planta`, `fuente`, `nombres_comunes`
+   - **Obligatorios:** `especie`, `nombre_cientifico`, `tipo_planta`, `nombres_comunes`
    - **Opcionales:** Todos los demás campos pueden omitirse o enviarse según disponibilidad
    - El frontend puede enviar información parcial y completarla después
 

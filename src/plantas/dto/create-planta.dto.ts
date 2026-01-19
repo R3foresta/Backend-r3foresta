@@ -24,8 +24,8 @@ export class CreatePlantaDto {
   tipo_planta: string;
 
   @IsEnum(TipoMaterialOrigen)
-  @IsNotEmpty()
-  fuente: TipoMaterialOrigen;
+  @IsOptional()
+  fuente?: TipoMaterialOrigen;
 
   @IsString()
   @IsNotEmpty()
