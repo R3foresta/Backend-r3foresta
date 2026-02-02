@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
@@ -58,9 +59,41 @@ async function bootstrap() {
   // Prefijo global para todas las rutas
   app.setGlobalPrefix('api');
 
+  // Configuración de Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Reforesta API')
+    .setDescription('API REST para el sistema de gestión de recolecciones y viveros forestales')
+    .setVersion('1.0')
+    .addTag('recolecciones', 'Endpoints para gestión de recolecciones de material vegetal')
+    .addTag('plantas', 'Endpoints para gestión de plantas y especies')
+    .addTag('viveros', 'Endpoints para gestión de viveros')
+    .addTag('auth', 'Endpoints de autenticación y autorización')
+    .addTag('blockchain', 'Endpoints para integración con blockchain')
+    .addTag('pinata', 'Endpoints para gestión de IPFS/Pinata')
+    .addApiKey(
+      {
+        type: 'apiKey',
+        name: 'x-auth-id',
+        in: 'header',
+        description: 'ID de autenticación del usuario (auth_id de Supabase)',
+      },
+      'x-auth-id',
+    )
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
+    },
+  });
+
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`🚀 Backend NestJS corriendo en http://localhost:${port}`);
+  console.log(`📚 Documentación Swagger disponible en http://localhost:${port}/api/docs`);
 }
 
 void bootstrap();
