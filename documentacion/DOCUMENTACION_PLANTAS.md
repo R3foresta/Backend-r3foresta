@@ -33,7 +33,141 @@ Nombres comunes: Papa, Patata, Turma, Chulo
 
 ## 🔗 Endpoints Disponibles
 
-### 1. 📝 Crear Nueva Planta
+### 1. 🏷️ Listar Tipos de Planta
+
+Obtiene el listado de todos los tipos de planta disponibles en el sistema.
+
+**Endpoint:** `GET /api/plantas/tipos-planta`
+
+#### Ejemplo de Request
+
+```
+GET http://localhost:3000/api/plantas/tipos-planta
+```
+
+#### Respuesta Exitosa - `200 OK`
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "nombre": "Árbol",
+      "created_at": "2026-02-04T10:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "nombre": "Arbusto",
+      "created_at": "2026-02-04T10:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "nombre": "Hierba",
+      "created_at": "2026-02-04T10:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "nombre": "Palma",
+      "created_at": "2026-02-04T10:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "nombre": "Enredadera",
+      "created_at": "2026-02-04T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+#### Posibles Errores
+
+##### Error interno del servidor - `500 Internal Server Error`
+```json
+{
+  "statusCode": 500,
+  "message": "Error al obtener tipos de planta",
+  "error": "Internal Server Error"
+}
+```
+
+---
+
+### 2. 🆕 Crear Nuevo Tipo de Planta
+
+Crea un nuevo tipo de planta en el catálogo. Este endpoint permite agregar tipos personalizados desde el frontend.
+
+**Endpoint:** `POST /api/plantas/tipos-planta`
+
+#### Headers
+```
+Content-Type: application/json
+```
+
+#### Body Parameters
+
+| Campo | Tipo | Requerido | Descripción | Ejemplo |
+|-------|------|-----------|-------------|---------|  
+| `nombre` | `string` | ✅ Sí | Nombre del tipo de planta | `"Liana"`, `"Cactus"`, `"Suculenta"` |
+
+#### Ejemplo de Request
+
+```json
+{
+  "nombre": "Liana"
+}
+```
+
+#### Respuesta Exitosa - `201 Created`
+
+```json
+{
+  "success": true,
+  "message": "Tipo de planta creado exitosamente",
+  "data": {
+    "id": 6,
+    "nombre": "Liana",
+    "created_at": "2026-02-05T14:30:00.000Z"
+  }
+}
+```
+
+#### Posibles Errores
+
+##### 1. Campo obligatorio faltante - `400 Bad Request`
+```json
+{
+  "statusCode": 400,
+  "message": [
+    "El nombre del tipo de planta es obligatorio"
+  ],
+  "error": "Bad Request"
+}
+```
+
+##### 2. Tipo de planta duplicado - `409 Conflict`
+```json
+{
+  "statusCode": 409,
+  "message": "Ya existe un tipo de planta con el nombre \"Liana\".",
+  "error": "Conflict"
+}
+```
+
+**Nota:** La validación de duplicados es **case-insensitive** (no distingue mayúsculas/minúsculas).
+
+##### 3. Error interno del servidor - `500 Internal Server Error`
+```json
+{
+  "statusCode": 500,
+  "message": "Error al crear tipo de planta",
+  "error": "Internal Server Error"
+}
+```
+
+---
+
+### 3. 📝 Crear Nueva Planta
 
 Registra una nueva especie vegetal en el catálogo.
 
@@ -53,17 +187,18 @@ Content-Type: application/json
 | `especie` | `string` | Grupo biológico al que pertenece | `"Caoba"` |
 | `nombre_cientifico` | `string` | Nombre científico único (nomenclatura binomial) | `"Swietenia macrophylla"` |
 | `variedad` | `string` | Variedad específica de la planta | `"Hondureña"`, `"Común"` |
+| `tipo_planta_id` | `number` | ID del tipo de planta (foreign key a tipo_planta) | `1`, `2`, `3` |
 
 ##### Campos Opcionales
 
 | Campo | Tipo | Descripción | Ejemplo |
 |-------|------|-------------|---------|
-| `tipo_planta` | `string` | Clasificación morfológica | `"Árbol"`, `"Arbusto"`, `"Hierba"`, `"Palma"`, `"Enredadera"`, `"Otro"` |
-| `tipo_planta_otro` | `string` | Especificación cuando tipo_planta es "Otro" | `"Liana leñosa"` |
 | `nombre_comun_principal` | `string` | Nombre común más reconocido en la región | `"Caoba de Honduras"` |
 | `nombres_comunes` | `string` | Otros nombres comunes (separados por comas) | `"Caoba, Aguano, Zopilote"` |
 | `imagen_url` | `string` | URL o imagen base64 | `"data:image/png;base64,..."` o `"https://..."` |
 | `notas` | `string` | Información adicional sobre manejo, recolección, características | `"Especie de crecimiento lento, requiere suelos bien drenados"` |
+
+**Nota importante:** Para obtener los IDs de tipos de planta disponibles, usa el endpoint `GET /api/plantas/tipos-planta`. Si el tipo que necesitas no existe, primero créalo con `POST /api/plantas/tipos-planta`.
 
 #### Ejemplo de Request - Básico
 
@@ -71,7 +206,8 @@ Content-Type: application/json
 {
   "especie": "Caoba",
   "nombre_cientifico": "Swietenia macrophylla",
-  "variedad": "Hondureña"
+  "variedad": "Hondureña",
+  "tipo_planta_id": 1
 }
 ```
 
@@ -82,24 +218,11 @@ Content-Type: application/json
   "especie": "Caoba",
   "nombre_cientifico": "Swietenia macrophylla",
   "variedad": "Hondureña",
-  "tipo_planta": "Árbol",
+  "tipo_planta_id": 1,
   "nombre_comun_principal": "Caoba de Honduras",
   "nombres_comunes": "Caoba, Aguano, Zopilote, Araputanga",
   "imagen_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
   "notas": "Especie de crecimiento lento, requiere suelos bien drenados. Recolectar semillas maduras directamente del árbol."
-}
-```
-
-#### Ejemplo de Request - Con tipo_planta "Otro"
-
-```json
-{
-  "especie": "Bejuco de agua",
-  "nombre_cientifico": "Vitis tiliifolia",
-  "variedad": "Común",
-  "tipo_planta": "Otro",
-  "tipo_planta_otro": "Liana leñosa trepadora",
-  "nombres_comunes": "Bejuco de agua, Uva silvestre"
 }
 ```
 
@@ -114,8 +237,7 @@ Content-Type: application/json
     "especie": "Caoba",
     "nombre_cientifico": "Swietenia macrophylla",
     "variedad": "Hondureña",
-    "tipo_planta": "Árbol",
-    "tipo_planta_otro": null,
+    "tipo_planta_id": 1,
     "nombre_comun_principal": "Caoba de Honduras",
     "nombres_comunes": "Caoba, Aguano, Zopilote",
     "imagen_url": "https://[supabase-url]/storage/v1/object/public/fotos_plantas/swietenia_macrophylla_1738674600000.png",
@@ -134,13 +256,23 @@ Content-Type: application/json
   "message": [
     "especie should not be empty",
     "nombre_cientifico should not be empty",
-    "variedad should not be empty"
+    "variedad should not be empty",
+    "tipo_planta_id es obligatorio"
   ],
   "error": "Bad Request"
 }
 ```
 
-##### 2. Planta duplicada - `409 Conflict`
+##### 2. Tipo de planta no existe - `404 Not Found`
+```json
+{
+  "statusCode": 404,
+  "message": "No existe un tipo de planta con ID 99. Use GET /api/plantas/tipos-planta para ver los tipos disponibles.",
+  "error": "Not Found"
+}
+```
+
+##### 3. Planta duplicada - `409 Conflict`
 ```json
 {
   "statusCode": 409,
@@ -151,16 +283,18 @@ Content-Type: application/json
 
 **Nota:** La validación de duplicados es **case-insensitive** (no distingue mayúsculas/minúsculas). Si necesitas crear la misma especie, usa una variedad diferente.
 
-##### 3. Validación de tipo_planta_otro - `400 Bad Request`
+##### 4. tipo_planta_id inválido - `400 Bad Request`
 ```json
 {
   "statusCode": 400,
-  "message": "Si tipo_planta es 'Otro', debe especificar tipo_planta_otro",
+  "message": [
+    "tipo_planta_id debe ser un número entero"
+  ],
   "error": "Bad Request"
 }
 ```
 
-##### 4. Formato de imagen inválido - `400 Bad Request`
+##### 5. Formato de imagen inválido - `400 Bad Request`
 ```json
 {
   "statusCode": 400,
@@ -169,7 +303,7 @@ Content-Type: application/json
 }
 ```
 
-##### 5. Error interno del servidor - `500 Internal Server Error`
+##### 6. Error interno del servidor - `500 Internal Server Error`
 ```json
 {
   "statusCode": 500,
@@ -180,7 +314,7 @@ Content-Type: application/json
 
 ---
 
-### 2. 📋 Listar Todas las Plantas
+### 4. 📋 Listar Todas las Plantas
 
 Obtiene el listado completo de plantas registradas, con opción de búsqueda.
 
@@ -215,8 +349,7 @@ GET http://localhost:3000/api/plantas?q=caoba
       "especie": "Caoba",
       "nombre_cientifico": "Swietenia macrophylla",
       "variedad": "Hondureña",
-      "tipo_planta": "Árbol",
-      "tipo_planta_otro": null,
+      "tipo_planta_id": 1,
       "nombre_comun_principal": "Caoba de Honduras",
       "nombres_comunes": "Caoba, Aguano, Zopilote",
       "imagen_url": "https://[supabase-url]/storage/v1/object/public/fotos_plantas/...",
@@ -228,8 +361,7 @@ GET http://localhost:3000/api/plantas?q=caoba
       "especie": "Roble",
       "nombre_cientifico": "Quercus robur",
       "variedad": "Común",
-      "tipo_planta": "Árbol",
-      "tipo_planta_otro": null,
+      "tipo_planta_id": 1,
       "nombre_comun_principal": "Roble europeo",
       "nombres_comunes": "Roble, Roble común, Carballo",
       "imagen_url": null,
@@ -242,7 +374,7 @@ GET http://localhost:3000/api/plantas?q=caoba
 
 ---
 
-### 3. 🔍 Buscar Plantas
+### 5. 🔍 Buscar Plantas
 
 Endpoint alternativo para búsqueda de plantas (funcionalmente idéntico a GET /plantas?q=).
 
@@ -275,7 +407,27 @@ Misma estructura que el endpoint de listar plantas.
    - Variable: `base_url`
    - Valor: `http://localhost:3000/api`
 
-### Caso de Prueba 1: Crear Planta Básica
+### Caso de Prueba 1: Listar Tipos de Planta Disponibles
+
+1. **Método:** `GET`
+2. **URL:** `{{base_url}}/plantas/tipos-planta`
+3. **Resultado esperado:** Status `200`, lista de tipos de planta con sus IDs
+
+### Caso de Prueba 2: Crear Nuevo Tipo de Planta
+
+1. **Método:** `POST`
+2. **URL:** `{{base_url}}/plantas/tipos-planta`
+3. **Headers:**
+   - `Content-Type: application/json`
+4. **Body (raw JSON):**
+```json
+{
+  "nombre": "Liana"
+}
+```
+5. **Resultado esperado:** Status `201`, nuevo tipo de planta creado con ID
+
+### Caso de Prueba 3: Crear Planta Básica
 
 1. **Método:** `POST`
 2. **URL:** `{{base_url}}/plantas`
@@ -286,12 +438,13 @@ Misma estructura que el endpoint de listar plantas.
 {
   "especie": "Caoba",
   "nombre_cientifico": "Swietenia macrophylla",
-  "variedad": "Hondureña"
+  "variedad": "Hondureña",
+  "tipo_planta_id": 1
 }
 ```
 5. **Resultado esperado:** Status `201`, planta creada con ID
 
-### Caso de Prueba 2: Crear Planta Completa
+### Caso de Prueba 4: Crear Planta Completa
 
 1. **Método:** `POST`
 2. **URL:** `{{base_url}}/plantas`
@@ -301,7 +454,7 @@ Misma estructura que el endpoint de listar plantas.
   "especie": "Roble",
   "nombre_cientifico": "Quercus robur",
   "variedad": "Europeo",
-  "tipo_planta": "Árbol",
+  "tipo_planta_id": 1,
   "nombre_comun_principal": "Roble europeo",
   "nombres_comunes": "Roble, Roble común, Carballo",
   "notas": "Árbol caducifolio de hasta 40m de altura. Madera de alta calidad para construcción y tonelería."
@@ -309,35 +462,34 @@ Misma estructura que el endpoint de listar plantas.
 ```
 4. **Resultado esperado:** Status `201`, planta creada con todos los campos
 
-### Caso de Prueba 3: Crear Planta con Tipo "Otro"
+### Caso de Prueba 5: Validar Tipo de Planta Inexistente
 
 1. **Método:** `POST`
 2. **URL:** `{{base_url}}/plantas`
 3. **Body (raw JSON):**
 ```json
 {
-  "especie": "Bejuco de agua",
-  "nombre_cientifico": "Vitis tiliifolia",
+  "especie": "Planta de prueba",
+  "nombre_cientifico": "Plantus testus",
   "variedad": "Común",
-  "tipo_planta": "Otro",
-  "tipo_planta_otro": "Liana leñosa trepadora"
+  "tipo_planta_id": 999
 }
 ```
-4. **Resultado esperado:** Status `201`, planta creada con tipo personalizado
+4. **Resultado esperado:** Status `404 Not Found` con mensaje indicando que el tipo de planta no existe
 
-### Caso de Prueba 4: Validar Duplicados
+### Caso de Prueba 6: Validar Duplicados
 
 1. Crear una planta: nombre_cientifico "Quercus robur", variedad "Europeo"
 2. Intentar crear otra con los mismos valores
 3. **Resultado esperado:** Status `409 Conflict` con mensaje indicando duplicado
 
-### Caso de Prueba 5: Crear Variedad Diferente
+### Caso de Prueba 7: Crear Variedad Diferente
 
 1. Crear planta: nombre_cientifico "Quercus robur", variedad "Europeo"
 2. Crear otra: nombre_cientifico "Quercus robur", variedad "Americano"
 3. **Resultado esperado:** Ambas creadas exitosamente (Status `201`)
 
-### Caso de Prueba 6: Validar Campos Obligatorios
+### Caso de Prueba 8: Validar Campos Obligatorios
 
 1. **Body incompleto:**
 ```json
@@ -347,7 +499,7 @@ Misma estructura que el endpoint de listar plantas.
 ```
 2. **Resultado esperado:** Status `400`, error de validación (faltan nombre_cientifico y variedad)
 
-### Caso de Prueba 7: Subir Imagen Base64
+### Caso de Prueba 9: Subir Imagen Base64
 
 1. **Body con imagen:**
 ```json
@@ -355,16 +507,18 @@ Misma estructura que el endpoint de listar plantas.
   "especie": "Pino",
   "nombre_cientifico": "Pinus sylvestris",
   "variedad": "Común",
+  "tipo_planta_id": 1,
   "imagen_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 }
 ```
 2. **Resultado esperado:** Status `201`, imagen subida a Supabase Storage y URL retornada
 
-### Caso de Prueba 8: Listar y Buscar
+### Caso de Prueba 10: Listar y Buscar
 
-1. **GET** `{{base_url}}/plantas` → Obtener todas las plantas
-2. **GET** `{{base_url}}/plantas?q=caoba` → Buscar por término
-3. **GET** `{{base_url}}/plantas/search?q=quercus` → Búsqueda alternativa
+1. **GET** `{{base_url}}/plantas/tipos-planta` → Obtener todos los tipos de planta
+2. **GET** `{{base_url}}/plantas` → Obtener todas las plantas
+3. **GET** `{{base_url}}/plantas?q=caoba` → Buscar por término
+4. **GET** `{{base_url}}/plantas/search?q=quercus` → Búsqueda alternativa
 
 ---
 
@@ -385,11 +539,12 @@ Misma estructura que el endpoint de listar plantas.
    ❌ nombre_cientifico: "QUERCUS ROBUR", variedad: "europeo" (considerado duplicado)
    ```
 
-2. **Check Constraint (chk_tipo_planta_otro):**
-   - Si `tipo_planta` = "Otro", entonces `tipo_planta_otro` debe tener un valor válido (no nulo y no vacío)
+2. **Foreign Key Constraint (fk_planta_tipo_planta):**
+   - `tipo_planta_id` debe ser un ID válido existente en la tabla `tipo_planta`
+   - No se pueden crear plantas con `tipo_planta_id` inexistente
 
 3. **Campos obligatorios en BD:**
-   - `especie`, `nombre_cientifico`, `variedad`
+   - `especie`, `nombre_cientifico`, `variedad`, `tipo_planta_id`
 
 4. **Campos con valores por defecto:**
    - `created_at`: Timestamp automático (NOW())
@@ -400,15 +555,20 @@ Misma estructura que el endpoint de listar plantas.
    - `especie` (string, not empty)
    - `nombre_cientifico` (string, not empty)
    - `variedad` (string, not empty)
+   - `tipo_planta_id` (number, integer)
 
-2. **Campos opcionales:**
+2. **Validación de tipo_planta_id:**
+   - Verificación previa que el ID existe en la tabla `tipo_planta`
+   - Si no existe → Error `404 Not Found` con mensaje indicando usar GET /api/plantas/tipos-planta
+
+3. **Campos opcionales:**
    - Todos los demás campos pueden ser `null` u omitirse
 
-3. **Prevención de duplicados:**
+4. **Prevención de duplicados:****
    - Verificación previa con consulta case-insensitive antes de inserción
    - Si existe duplicado → Error `409 Conflict` con mensaje descriptivo
 
-4. **Procesamiento de imágenes:**
+5. **Procesamiento de imágenes:****
    - Acepta URLs directas o imágenes base64
    - Formato base64: `data:image/[tipo];base64,[datos]`
    - Tipos soportados: jpg, jpeg, png, webp
@@ -426,6 +586,8 @@ Misma estructura que el endpoint de listar plantas.
 
 **Campos nuevos/modificados:**
 - `variedad`: Ahora es **requerido** (antes era hardcoded como "Común")
+- `tipo_planta_id`: Ahora es una **foreign key** a la tabla `tipo_planta` (antes era campo de texto)
+- Se eliminó `tipo_planta_otro`: Ahora se crean tipos de planta personalizados directamente en la tabla `tipo_planta`
 - `notas`: Campo general para cualquier información adicional
 
 ---
@@ -435,7 +597,7 @@ Misma estructura que el endpoint de listar plantas.
 ### 1. Estructura Simplificada
 La estructura actual de la tabla se enfoca en los campos **esenciales** para el registro y seguimiento de plantas:
 - Identificación: `especie`, `nombre_cientifico`, `variedad`
-- Clasificación: `tipo_planta`, `tipo_planta_otro`
+- Clasificación: `tipo_planta_id` (relación con tabla `tipo_planta`)
 - Nombres locales: `nombre_comun_principal`, `nombres_comunes`
 - Recursos: `imagen_url`
 - Información adicional: `notas`
@@ -481,18 +643,45 @@ A diferencia de la versión anterior, `variedad` **debe** especificarse en cada 
 - Si hay variaciones: especificar `"Hondureña"`, `"Peruana"`, etc.
 - Siempre debe tener un valor explícito
 
-### 5. Tipo de Planta
+### 5. Tipos de Planta
 
-Valores sugeridos para `tipo_planta`:
-- `"Árbol"`
-- `"Arbusto"`
-- `"Hierba"`
-- `"Palma"`
-- `"Enredadera"`
-- `"Helecho"`
-- `"Cactus"`
-- `"Suculenta"`
-- `"Otro"` (requiere especificar `tipo_planta_otro`)
+Los tipos de planta se gestionan en una tabla separada (`tipo_planta`). Para usar esta funcionalidad:
+
+**1. Listar tipos disponibles:**
+```bash
+GET /api/plantas/tipos-planta
+```
+
+**2. Crear un nuevo tipo (si no existe):**
+```json
+POST /api/plantas/tipos-planta
+{
+  "nombre": "Cactus"
+}
+```
+
+**3. Usar el ID al crear una planta:**
+```json
+POST /api/plantas
+{
+  "especie": "Saguaro",
+  "nombre_cientifico": "Carnegiea gigantea",
+  "variedad": "Común",
+  "tipo_planta_id": 8
+}
+```
+
+**Tipos predefinidos comunes:**
+- Árbol (id: 1)
+- Arbusto (id: 2)  
+- Hierba (id: 3)
+- Palma (id: 4)
+- Enredadera (id: 5)
+- Helecho (id: 6)
+- Suculenta (id: 7)
+- Cactus (id: 8)
+
+_Nota: Los IDs pueden variar según tu base de datos. Siempre consulta el endpoint GET /api/plantas/tipos-planta para obtener los IDs correctos._
 
 ### 6. Formato de Nombres Comunes
 
@@ -585,12 +774,27 @@ Tipos válidos: `png`, `jpg`, `jpeg`, `webp`
 ### Error: Connection refused
 **Solución:** Verificar que el servidor esté corriendo con `npm run start:dev`
 
-### Error: "Si tipo_planta es 'Otro', debe especificar tipo_planta_otro"
-**Solución:** Cuando `tipo_planta` sea `"Otro"`, agregar el campo `tipo_planta_otro`:
+### Error: 404 Not Found - "No existe un tipo de planta con ID..."
+**Causa:** El `tipo_planta_id` proporcionado no existe en la tabla `tipo_planta`
+
+**Soluciones:**
+1. Consultar tipos de planta disponibles: `GET /api/plantas/tipos-planta`
+2. Si el tipo que necesitas no existe, créalo primero: `POST /api/plantas/tipos-planta` con `{"nombre": "Tipo Nuevo"}`
+3. Usar el ID correcto del tipo de planta en tu request
+
+### Error: "tipo_planta_id debe ser un número entero"
+**Causa:** El valor de `tipo_planta_id` no es un número válido
+
+**Solución:** Asegurarse de enviar un número entero (sin comillas):
 ```json
 {
-  "tipo_planta": "Otro",
-  "tipo_planta_otro": "Descripción del tipo personalizado"
+  "tipo_planta_id": 1   // ✅ Correcto
+}
+```
+No usar:
+```json
+{
+  "tipo_planta_id": "1"  // ❌ Incorrecto (es string, no número)
 }
 ```
 
@@ -639,8 +843,9 @@ Todas las respuestas siguen un formato consistente:
 
 ## 📚 Recursos Adicionales
 
-- **Migración SQL:** Ver archivo `/migrations/update_planta_table_structure.sql`
-- **DTO TypeScript:** `/src/plantas/dto/create-planta.dto.ts`
+- **Tabla tipo_planta:** Ver estructura en la definición de base de datos
+- **DTO TypeScript CreatePlantaDto:** `/src/plantas/dto/create-planta.dto.ts`
+- **DTO TypeScript CreateTipoPlantaDto:** `/src/plantas/dto/create-tipo-planta.dto.ts`
 - **Servicio:** `/src/plantas/plantas.service.ts`
 - **Controlador:** `/src/plantas/plantas.controller.ts`
 
