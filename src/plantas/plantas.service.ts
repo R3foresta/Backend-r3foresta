@@ -122,16 +122,17 @@ export class PlantasService {
   async create(createPlantaDto: CreatePlantaDto) {
     const supabase = this.supabaseService.getClient();
 
-    // Verificar duplicado por nombre científico
+    // Verificar duplicado por nombre científico y variedad (case-insensitive)
     const { data: existing } = await supabase
       .from('planta')
-      .select('id')
+      .select('id, nombre_cientifico, variedad')
       .ilike('nombre_cientifico', createPlantaDto.nombre_cientifico)
-      .single();
+      .ilike('variedad', createPlantaDto.variedad)
+      .maybeSingle();
 
     if (existing) {
       throw new ConflictException(
-        `Ya existe una planta con nombre científico "${createPlantaDto.nombre_cientifico}"`,
+        `Ya existe una planta con nombre científico "${existing.nombre_cientifico}" y variedad "${existing.variedad}". No se pueden crear plantas duplicadas.`,
       );
     }
 
@@ -160,27 +161,13 @@ export class PlantasService {
         {
           especie: createPlantaDto.especie,
           nombre_cientifico: createPlantaDto.nombre_cientifico,
-          variedad: 'Común', // Valor por defecto
-          tipo_planta: createPlantaDto.tipo_planta,
+          variedad: createPlantaDto.variedad,
+          tipo_planta: createPlantaDto.tipo_planta || null,
           tipo_planta_otro: createPlantaDto.tipo_planta_otro || null,
-          fuente: createPlantaDto.fuente,
-          nombres_comunes: createPlantaDto.nombres_comunes,
           nombre_comun_principal: createPlantaDto.nombre_comun_principal || null,
-          imagen_url: imagenUrl, // Aquí se guarda la URL pública de Supabase Storage
-          reino: createPlantaDto.reino || null,
-          division: createPlantaDto.division || null,
-          clase: createPlantaDto.clase || null,
-          orden: createPlantaDto.orden || null,
-          familia: createPlantaDto.familia || null,
-          genero: createPlantaDto.genero || null,
-          origen_geografico: createPlantaDto.origen_geografico || null,
-          habitat_descripcion: createPlantaDto.habitat_descripcion || null,
-          descripcion_morfologica: createPlantaDto.descripcion_morfologica || null,
-          usos_industriales: createPlantaDto.usos_industriales || null,
-          usos_medicinales: createPlantaDto.usos_medicinales || null,
-          usos_ornamentales: createPlantaDto.usos_ornamentales || null,
-          advertencia_toxicidad: createPlantaDto.advertencia_toxicidad || null,
-          notas_manejo_recoleccion: createPlantaDto.notas_manejo_recoleccion || null,
+          nombres_comunes: createPlantaDto.nombres_comunes || null,
+          imagen_url: imagenUrl,
+          notas: createPlantaDto.notas || null,
         },
       ])
       .select()

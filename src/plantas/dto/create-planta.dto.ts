@@ -1,14 +1,4 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsEnum,
-} from 'class-validator';
-
-export enum TipoMaterialOrigen {
-  SEMILLA = 'SEMILLA',
-  ESQUEJE = 'ESQUEJE',
-}
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreatePlantaDto {
   @IsString()
@@ -21,21 +11,12 @@ export class CreatePlantaDto {
 
   @IsString()
   @IsNotEmpty()
-  tipo_planta: string;
-
-  @IsEnum(TipoMaterialOrigen)
-  @IsOptional()
-  fuente?: TipoMaterialOrigen;
-
-  @IsString()
-  @IsNotEmpty()
-  nombres_comunes: string;
+  variedad: string;
 
   @IsString()
   @IsOptional()
-  imagen_url?: string;
+  tipo_planta?: string;
 
-  // Campos opcionales adicionales
   @IsString()
   @IsOptional()
   tipo_planta_otro?: string;
@@ -46,57 +27,13 @@ export class CreatePlantaDto {
 
   @IsString()
   @IsOptional()
-  reino?: string;
+  nombres_comunes?: string;
 
   @IsString()
   @IsOptional()
-  division?: string;
+  imagen_url?: string;
 
   @IsString()
   @IsOptional()
-  clase?: string;
-
-  @IsString()
-  @IsOptional()
-  orden?: string;
-
-  @IsString()
-  @IsOptional()
-  familia?: string;
-
-  @IsString()
-  @IsOptional()
-  genero?: string;
-
-  @IsString()
-  @IsOptional()
-  origen_geografico?: string;
-
-  @IsString()
-  @IsOptional()
-  habitat_descripcion?: string;
-
-  @IsString()
-  @IsOptional()
-  descripcion_morfologica?: string;
-
-  @IsString()
-  @IsOptional()
-  usos_industriales?: string;
-
-  @IsString()
-  @IsOptional()
-  usos_medicinales?: string;
-
-  @IsString()
-  @IsOptional()
-  usos_ornamentales?: string;
-
-  @IsString()
-  @IsOptional()
-  advertencia_toxicidad?: string;
-
-  @IsString()
-  @IsOptional()
-  notas_manejo_recoleccion?: string;
+  notas?: string;
 }

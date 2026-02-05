@@ -606,7 +606,7 @@ export class RecoleccionesService {
         `
         *,
         usuario:usuario_id (id, nombre, username),
-        planta:planta_id (id, especie, nombre_cientifico, variedad, fuente),
+        planta:planta_id (id, especie, nombre_cientifico, variedad),
         ubicacion:ubicacion_id (*),
         metodo:metodo_id (id, nombre, descripcion),
         vivero:vivero_id (id, codigo, nombre, ubicacion:ubicacion_id (departamento, comunidad)),
@@ -700,7 +700,7 @@ export class RecoleccionesService {
         `
         *,
         usuario:usuario_id (id, nombre, username),
-        planta:planta_id (id, especie, nombre_cientifico, variedad, fuente),
+        planta:planta_id (id, especie, nombre_cientifico, variedad),
         ubicacion:ubicacion_id (*),
         metodo:metodo_id (id, nombre, descripcion),
         vivero:vivero_id (id, codigo, nombre, ubicacion:ubicacion_id (departamento, comunidad)),
