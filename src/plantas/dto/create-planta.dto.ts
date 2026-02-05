@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsInt } from 'class-validator';
 
 export class CreatePlantaDto {
   @IsString()
@@ -13,13 +13,9 @@ export class CreatePlantaDto {
   @IsNotEmpty()
   variedad: string;
 
-  @IsString()
-  @IsOptional()
-  tipo_planta?: string;
-
-  @IsString()
-  @IsOptional()
-  tipo_planta_otro?: string;
+  @IsInt({ message: 'tipo_planta_id debe ser un número entero' })
+  @IsNotEmpty({ message: 'tipo_planta_id es obligatorio' })
+  tipo_planta_id: number;
 
   @IsString()
   @IsOptional()

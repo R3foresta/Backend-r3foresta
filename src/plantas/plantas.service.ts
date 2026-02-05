@@ -3,9 +3,11 @@ import {
   InternalServerErrorException,
   ConflictException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreatePlantaDto } from './dto/create-planta.dto';
+import { CreateTipoPlantaDto } from './dto/create-tipo-planta.dto';
 
 @Injectable()
 export class PlantasService {
@@ -116,11 +118,86 @@ export class PlantasService {
   }
 
   /**
+   * GET /api/plantas/tipos-planta
+   * Lista todos los tipos de planta disponibles
+   */
+  async findAllTiposPlanta() {
+    const supabase = this.supabaseService.getClient();
+
+    const { data, error } = await supabase
+      .from('tipo_planta')
+      .select('*')
+      .order('nombre', { ascending: true });
+
+    if (error) {
+      console.error('❌ Error al obtener tipos de planta:', error);
+      throw new InternalServerErrorException('Error al obtener tipos de planta');
+    }
+
+    return {
+      success: true,
+      data: data || [],
+    };
+  }
+
+  /**
+   * POST /api/plantas/tipos-planta
+   * Crea un nuevo tipo de planta
+   */
+  async createTipoPlanta(createTipoPlantaDto: CreateTipoPlantaDto) {
+    const supabase = this.supabaseService.getClient();
+
+    // Verificar si ya existe un tipo de planta con el mismo nombre (case-insensitive)
+    const { data: existing } = await supabase
+      .from('tipo_planta')
+      .select('id, nombre')
+      .ilike('nombre', createTipoPlantaDto.nombre)
+      .maybeSingle();
+
+    if (existing) {
+      throw new ConflictException(
+        `Ya existe un tipo de planta con el nombre "${existing.nombre}".`,
+      );
+    }
+
+    // Insertar nuevo tipo de planta
+    const { data, error } = await supabase
+      .from('tipo_planta')
+      .insert([{ nombre: createTipoPlantaDto.nombre }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error al crear tipo de planta:', error);
+      throw new InternalServerErrorException('Error al crear tipo de planta');
+    }
+
+    return {
+      success: true,
+      message: 'Tipo de planta creado exitosamente',
+      data,
+    };
+  }
+
+  /**
    * POST /api/plantas
    * Crea una nueva planta en el catálogo
    */
   async create(createPlantaDto: CreatePlantaDto) {
     const supabase = this.supabaseService.getClient();
+
+    // Verificar que el tipo_planta_id existe
+    const { data: tipoPlanta, error: tipoError } = await supabase
+      .from('tipo_planta')
+      .select('id')
+      .eq('id', createPlantaDto.tipo_planta_id)
+      .maybeSingle();
+
+    if (tipoError || !tipoPlanta) {
+      throw new NotFoundException(
+        `No existe un tipo de planta con ID ${createPlantaDto.tipo_planta_id}. Use GET /api/plantas/tipos-planta para ver los tipos disponibles.`,
+      );
+    }
 
     // Verificar duplicado por nombre científico y variedad (case-insensitive)
     const { data: existing } = await supabase
@@ -162,8 +239,7 @@ export class PlantasService {
           especie: createPlantaDto.especie,
           nombre_cientifico: createPlantaDto.nombre_cientifico,
           variedad: createPlantaDto.variedad,
-          tipo_planta: createPlantaDto.tipo_planta || null,
-          tipo_planta_otro: createPlantaDto.tipo_planta_otro || null,
+          tipo_planta_id: createPlantaDto.tipo_planta_id,
           nombre_comun_principal: createPlantaDto.nombre_comun_principal || null,
           nombres_comunes: createPlantaDto.nombres_comunes || null,
           imagen_url: imagenUrl,
