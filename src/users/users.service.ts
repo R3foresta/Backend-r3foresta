@@ -2,7 +2,9 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
+import { RegisterFormDto } from './dto/register-form.dto';
 import { User } from './entities/user.entity';
 import { Credential } from './entities/credential.entity';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -227,5 +229,88 @@ export class UsersService {
    */
   private generateId(): string {
     return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Obtiene un usuario por su auth_id
+   */
+  async getUserByAuthId(authId: string): Promise<any> {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: user, error } = await supabase
+      .from('usuario')
+      .select('*')
+      .eq('auth_id', authId)
+      .single();
+
+    if (error || !user) {
+      console.error('❌ Error al obtener usuario:', error);
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Retornar usuario (sin datos muy sensibles si hubiera)
+    return user;
+  }
+
+  /**
+   * Completa el registro del usuario con datos del formulario
+   */
+  async registerForm(authId: string, dto: RegisterFormDto): Promise<any> {
+    const supabase = this.supabaseService.getClient();
+
+    // 1. Verificar conflictos
+    // Check doc_identidad
+    const { data: existingDoc } = await supabase
+      .from('usuario')
+      .select('id')
+      .eq('doc_identidad', dto.doc_identidad)
+      .neq('auth_id', authId)
+      .maybeSingle();
+
+    if (existingDoc) {
+      throw new ConflictException('El documento de identidad ya está registrado');
+    }
+
+    // Check wallet_address if present
+    if (dto.wallet_address) {
+      const { data: existingWallet } = await supabase
+        .from('usuario')
+        .select('id')
+        .eq('wallet_address', dto.wallet_address)
+        .neq('auth_id', authId)
+        .maybeSingle();
+      if (existingWallet) {
+        throw new ConflictException('La dirección de wallet ya está registrada');
+      }
+    }
+
+    // 2. Actualizar usuario
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const { data: updatedUser, error } = await supabase
+      .from('usuario')
+      .update({
+        nombre: dto.nombre,
+        apellido: dto.apellido,
+        doc_identidad: dto.doc_identidad,
+        wallet_address: dto.wallet_address || null,
+        organizacion: dto.organizacion || null,
+        contacto: dto.contacto || null,
+        rol: dto.rol || 'GENERAL',
+      })
+      .eq('auth_id', authId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error al actualizar usuario:', error);
+      throw new BadRequestException(
+        `Error al actualizar usuario: ${error.message}`,
+      );
+    }
+
+    console.log('✅ Formulario de registro completado para:', authId);
+
+    // 3. Retornar usuario
+    return updatedUser;
   }
 }
