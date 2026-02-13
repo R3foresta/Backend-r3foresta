@@ -315,7 +315,6 @@ export class AuthService {
   async testSupabaseConnection() {
     try {
       const allUsers = await this.usersService.getAllUsers();
-      
       return {
         success: true,
         message: '✅ Conexión con Supabase funcionando correctamente',
