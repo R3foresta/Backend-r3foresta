@@ -1,39 +1,103 @@
+## Documentación actualizada (Mermaid ER)
+
 ```mermaid
 erDiagram
     %% =====================================================
-    %% R3Foresta - BD Oficial (vFinal + Módulo Plantación)
-    %% Postgres/Supabase aligned
+    %% R3Foresta - BD Oficial (Supabase / Postgres)
+    %% vActual: Ubicaciones por Divisiones Administrativas
     %% =====================================================
 
     USUARIO {
         bigint id PK
-        string userid "handle visible: andy, pablex, etc."
         string nombre
+        string apellido "max 30 chars"
+        string username "UNIQUE; default ''"
+        string correo "UNIQUE; default ''"
+        string auth_id "default ''"
         string doc_identidad "UNIQUE, opcional"
-        string wallet_address "UNIQUE, opcional; formato: 0x + 40 hex"
-        string organizacion "texto (si luego es catálogo se migra)"
+        string wallet_address "UNIQUE; opcional; formato: 0x + 40 hex"
+        string organizacion "texto"
         string contacto "opcional; formato: +########"
-        string rol "DEFAULT=GENERAL; {RECOLECTOR|VIVERO|VOLUNTARIO|GENERAL}"
+        string rol "DEFAULT=GENERAL; (enum rol_usuario)"
         datetime created_at
+    }
+
+    USUARIO_CREDENCIAL {
+        bigint id PK
+        bigint usuario_id FK
+        string credential_id "UNIQUE"
+        string public_key
+        string algorithm "DEFAULT=ES256"
+        int counter "DEFAULT=0"
+        string[] transports "ARRAY"
+        datetime created_at
+        datetime last_used_at
+    }
+
+    %% ==============================
+    %% UBICACIONES (nuevo modelo)
+    %% ==============================
+
+    PAIS {
+        bigint id PK
+        string nombre
+        string codigo_iso2 "UNIQUE"
+        string codigo_iso3 "opcional"
+        bool activo "DEFAULT=true"
+        datetime created_at
+    }
+
+    DIVISION_TIPO {
+        bigint id PK
+        bigint pais_id FK
+        string nombre "Ej: Departamento, Provincia, Estado, Cantón..."
+        int orden "1..n dentro del país"
+        bool activo "DEFAULT=true"
+        datetime created_at
+    }
+
+    DIVISION_ADMINISTRATIVA {
+        bigint id PK
+        bigint pais_id FK
+        bigint parent_id FK "auto-referencia (árbol)"
+        bigint tipo_id FK
+        string nombre
+        string codigo_externo "opcional (INE/ISO/local)"
+        bool activo "DEFAULT=true"
+        bigint reemplazada_por_id FK "opcional; soft-merge"
+        datetime created_at
+        datetime updated_at
     }
 
     UBICACION {
         bigint id PK
-        string pais
-        string departamento
-        string provincia
-        string comunidad
-        string zona
-        decimal latitud "OBLIGATORIO [-90..90] (6 decimales)"
-        decimal longitud "OBLIGATORIO [-180..180] (6 decimales)"
+        decimal latitud "CHECK [-90..90]"
+        decimal longitud "CHECK [-180..180]"
+        bigint pais_id FK "opcional (fallback / filtros rápidos)"
+        bigint division_id FK "opcional: división más específica conocida"
+        string nombre "Ej: Parcela Don Lucho / Vivero Central"
+        int precision_m "opcional; >0"
+        string fuente "GPS_MOVIL | MAPA | MANUAL | LEGACY"
+        string referencia "texto libre (indicaciones / extra)"
         datetime created_at
+        datetime updated_at
     }
 
     VIVERO {
         bigint id PK
-        string codigo "UNIQUE; ej: VIV-001 (autogenerado)"
-        string nombre "UNIQUE (case-insensitive)"
+        string codigo "UNIQUE"
+        string nombre "(enum o user-defined en DB)"
         bigint ubicacion_id FK "UNIQUE (1:1 con UBICACION)"
+        datetime created_at
+    }
+
+    %% ==============================
+    %% Catálogos
+    %% ==============================
+
+    TIPO_PLANTA {
+        int id PK
+        string nombre "UNIQUE"
         datetime created_at
     }
 
@@ -42,36 +106,57 @@ erDiagram
         string especie
         string nombre_cientifico
         string variedad
-        string tipo_planta "Árbol/Arbusto/.../Otro"
-        string tipo_planta_otro "OBLIGATORIO si tipo_planta=Otro"
-        string fuente "tipo_material_origen {SEMILLA|ESQUEJE}"
+        int tipo_planta_id FK
+        string nombre_comun_principal
+        string nombres_comunes
+        string imagen_url
+        string notas
         datetime created_at
     }
 
     METODO_RECOLECCION {
         bigint id PK
-        string nombre "UNIQUE (case-insensitive)"
+        string nombre "(enum/user-defined; UNIQUE)"
         string descripcion
     }
 
+    TIPO_RIEGO {
+        int id PK
+        string nombre "UNIQUE"
+        string descripcion
+    }
+
+    TIPO_ABONO {
+        int id PK
+        string nombre "UNIQUE"
+        string descripcion
+    }
+
+    %% ==============================
+    %% Recolección
+    %% ==============================
+
     RECOLECCION {
         bigint id PK
-        string codigo_trazabilidad "UNIQUE; REC-YYYY-XXXXX"
-        date fecha "OBLIGATORIO; [hoy-45d .. hoy]"
+        date fecha "CHECK [hoy-45d .. hoy]"
         string nombre_cientifico "si no hay planta_id"
         string nombre_comercial "si no hay planta_id"
         decimal cantidad "OBLIGATORIO > 0"
-        string unidad "UNIDAD/UNIDADES para ESQUEJE; KG/G para SEMILLA"
-        string tipo_material "tipo_material_origen {SEMILLA|ESQUEJE}"
-        string estado "DEFAULT=ALMACENADO; {USADO|ALMACENADO|DESECHADO}"
-        boolean especie_nueva "DEFAULT=false"
+        string unidad "texto (regla en backend/enum futuro)"
+        string tipo_material "(enum estado_recoleccion / tipo_material user-defined)"
+        string estado "DEFAULT=ALMACENADO (enum estado_recoleccion)"
+        bool especie_nueva "DEFAULT=false"
         string observaciones "max 1000 chars"
         bigint usuario_id FK
         bigint ubicacion_id FK
         bigint vivero_id FK "opcional"
         bigint metodo_id FK
-        bigint planta_id FK "opcional (si no existe en catálogo)"
+        bigint planta_id FK "opcional"
         datetime created_at
+        string codigo_trazabilidad "UNIQUE"
+        string blockchain_url "opcional"
+        string token_id "opcional"
+        string transaction_hash "opcional"
     }
 
     RECOLECCION_FOTO {
@@ -81,18 +166,17 @@ erDiagram
         int peso_bytes "max 5MB"
         string formato "JPG/JPEG/PNG"
         datetime created_at
-        %% Regla negocio: mínimo 2 fotos por recolección (validar en backend)
     }
 
-    %% =========================================
-    %% FASE VIVERO (antes: LOTE_PLANTACION)
-    %% =========================================
+    %% ==============================
+    %% Fase Vivero
+    %% ==============================
+
     LOTE_FASE_VIVERO {
         bigint id PK
-        string codigo_trazabilidad "UNIQUE; LFV-YYYY-XXXXX"
         bigint planta_id FK
         bigint vivero_id FK
-        bigint responsable_id FK "creador/responsable"
+        bigint responsable_id FK
         date fecha_inicio
         int cantidad_inicio
         int cantidad_embolsadas "DEFAULT=0"
@@ -103,103 +187,90 @@ erDiagram
         date fecha_salida
         decimal altura_prom_sombra
         decimal altura_prom_salida
-        string estado "DEFAULT=INICIO; {INICIO|EMBOLSADO|SOMBRA|LISTA_PLANTAR|SALIDA_VIVERO}"
+        string estado "DEFAULT=INICIO (enum lote_estado)"
         datetime created_at
         datetime updated_at
-        bigint updated_by FK "obligatorio en UPDATE (para historial)"
-    }
-
-    LOTE_FASE_VIVERO_RECOLECCION {
-        bigint lote_id PK, FK
-        bigint recoleccion_id PK, FK
-        %% PK compuesta (lote_id, recoleccion_id)
+        bigint updated_by FK "opcional; recomendado en update"
+        string codigo_trazabilidad "UNIQUE"
     }
 
     LOTE_FASE_VIVERO_HISTORIAL {
         bigint id PK
         bigint lote_id FK
-        int nro_cambio "UNIQUE por lote (lote_id, nro_cambio)"
+        int nro_cambio
         datetime fecha_cambio "DEFAULT=now()"
         bigint responsable_id FK
-        string accion "{INICIO|EMBOLSADO|SOMBRA|LISTA_PLANTAR|SALIDA|AJUSTE}"
-        string estado "{INICIO|EMBOLSADO|SOMBRA|LISTA_PLANTAR|SALIDA_VIVERO}"
-
+        string accion "(enum user-defined)"
+        string estado "(enum user-defined)"
         int cantidad_inicio
         int cantidad_embolsadas
         int cantidad_sombra
         int cantidad_lista_plantar
-
         date fecha_inicio
         date fecha_embolsado
         date fecha_sombra
         date fecha_salida
-
         decimal altura_prom_sombra
         decimal altura_prom_salida
-
         string notas "max 2000 chars"
-        %% Se llena automáticamente en INSERT/UPDATE del LOTE_FASE_VIVERO (triggers)
     }
 
-    %% =========================================
-    %% MÓDULO PLANTACIÓN (campo)
-    %% =========================================
-
-    TIPO_RIEGO {
+    LOTE_FASE_VIVERO_FOTO {
         bigint id PK
-        string nombre "UNIQUE; Botellas recicladas / Goteo / Natural / Inundación"
+        bigint lote_historial_id FK
+        string url
+        int peso_bytes
+        string formato
+        bool es_portada
         string descripcion
+        datetime created_at
     }
 
-    TIPO_ABONO {
-        bigint id PK
-        string nombre "UNIQUE; Humus / Tierra negra / Compost / etc."
-        string descripcion
+    LOTE_FASE_VIVERO_RECOLECCION {
+        bigint lote_id PK, FK
+        bigint recoleccion_id PK, FK
     }
+
+    %% ==============================
+    %% Plantación
+    %% ==============================
 
     PLANTACION {
         bigint id PK
-        string codigo_trazabilidad "UNIQUE; PLA-YYYY-XXXXX"
-        string destino "{ARBORIZACION|FORESTACION|REFORESTACION}"
-        bigint ubicacion_id FK "dónde se plantó (campo)"
-
+        string codigo_trazabilidad "UNIQUE"
+        string destino "CHECK: ARBORIZACION|FORESTACION|REFORESTACION"
+        int ubicacion_id FK
         int cantidad_arboles "OBLIGATORIO > 0"
         date fecha_plantacion "OBLIGATORIO"
-
-        decimal superficie_m2 "opcional: área de la plantación"
-
-        decimal tamano_promedio_cm "tamaño promedio al plantar/monitoreo base"
-        string propietario "nombre del dueño del terreno"
-        string origen_propiedad "{DONADO|ADQUIRIDO|OTRO|NULL}"
-        int frecuencia_monitoreo_dias "cada cuánto se monitorea"
-
-        bigint created_by FK "USUARIO que registra la plantación"
+        decimal superficie_m2
+        decimal tamano_promedio_cm
+        string propietario
+        string origen_propiedad "DONADO|ADQUIRIDO|OTRO|NULL"
+        int frecuencia_monitoreo_dias
+        int created_by FK
         datetime created_at
     }
 
     PLANTACION_USUARIO {
         bigint plantacion_id PK, FK
-        bigint usuario_id PK, FK
-        string rol "RESPONSABLE / VOLUNTARIO / TECNICO / etc."
+        int usuario_id PK, FK
+        string rol "opcional"
     }
 
     PLANTACION_LOTE_FASE_VIVERO {
         bigint plantacion_id PK, FK
-        bigint lote_fase_vivero_id PK, FK
+        int lote_fase_vivero_id PK, FK
         int cantidad_plantines_usados "OBLIGATORIO > 0"
-        %% permite que una plantación use varios lotes de vivero
     }
 
     PLANTACION_RIEGO {
         bigint plantacion_id PK, FK
-        bigint tipo_riego_id PK, FK
-        %% relación N:M entre PLANTACION y TIPO_RIEGO
+        int tipo_riego_id PK, FK
     }
 
     PLANTACION_ABONO {
         bigint plantacion_id PK, FK
-        bigint tipo_abono_id PK, FK
-        %% relación N:M entre PLANTACION y TIPO_ABONO
+        int tipo_abono_id PK, FK
     }
 
     PLANTACION_FOTO {
@@ -207,9 +278,8 @@ erDiagram
         bigint plantacion_id FK
         string url
         int peso_bytes
-        string formato "JPG/JPEG/PNG"
+        string formato
         string descripcion
-        datetime created_at
     }
 
     PLANTACION_MONITOREO {
@@ -220,13 +290,24 @@ erDiagram
         int arboles_muertos
         int arboles_reemplazados
         string notas
-        bigint usuario_id FK "quién monitorea"
+        int usuario_id FK
         datetime created_at
     }
 
     %% =====================================================
     %% Relaciones
     %% =====================================================
+
+    USUARIO ||--o{ USUARIO_CREDENCIAL : tiene
+
+    PAIS ||--o{ DIVISION_TIPO : define
+    PAIS ||--o{ DIVISION_ADMINISTRATIVA : contiene
+    DIVISION_TIPO ||--o{ DIVISION_ADMINISTRATIVA : clasifica
+    DIVISION_ADMINISTRATIVA ||--o{ DIVISION_ADMINISTRATIVA : contiene "parent_id"
+    DIVISION_ADMINISTRATIVA ||--o| DIVISION_ADMINISTRATIVA : reemplaza "reemplazada_por_id"
+
+    PAIS ||--o{ UBICACION : agrupa "opcional via pais_id"
+    DIVISION_ADMINISTRATIVA ||--o{ UBICACION : ubica "opcional via division_id"
 
     UBICACION ||--o{ VIVERO : tiene
     UBICACION ||--o{ RECOLECCION : ocurre_en
@@ -235,7 +316,6 @@ erDiagram
     USUARIO ||--o{ RECOLECCION : recolecta
     USUARIO ||--o{ LOTE_FASE_VIVERO : crea
     USUARIO ||--o{ LOTE_FASE_VIVERO_HISTORIAL : registra
-    USUARIO ||--o{ LOTE_FASE_VIVERO : actualiza "via updated_by"
     USUARIO ||--o{ PLANTACION : registra
     USUARIO ||--o{ PLANTACION_USUARIO : participa
     USUARIO ||--o{ PLANTACION_MONITOREO : monitorea
@@ -247,13 +327,12 @@ erDiagram
     PLANTA ||--o{ LOTE_FASE_VIVERO : se_siembra
 
     METODO_RECOLECCION ||--o{ RECOLECCION : se_usa_en
-
     RECOLECCION ||--o{ RECOLECCION_FOTO : tiene
 
     LOTE_FASE_VIVERO ||--o{ LOTE_FASE_VIVERO_RECOLECCION : usa
     RECOLECCION ||--o{ LOTE_FASE_VIVERO_RECOLECCION : proviene_de
-
     LOTE_FASE_VIVERO ||--o{ LOTE_FASE_VIVERO_HISTORIAL : versiona
+    LOTE_FASE_VIVERO_HISTORIAL ||--o{ LOTE_FASE_VIVERO_FOTO : evidencia
 
     PLANTACION ||--o{ PLANTACION_USUARIO : tiene
     PLANTACION ||--o{ PLANTACION_LOTE_FASE_VIVERO : usa_lotes_vivero
@@ -267,35 +346,38 @@ erDiagram
 
     PLANTACION ||--o{ PLANTACION_FOTO : tiene
     PLANTACION ||--o{ PLANTACION_MONITOREO : tiene_monitoreos
-
 ```
 
 ---
 
-### Aclaraciones (déjalas aparte tal como pediste)
+## Aclaraciones (déjalas aparte tal como pediste)
 
-**En PLANTA:**
+**En UBICACION (nuevo):**
 
-- `string tipo_planta` // Árbol, Arbusto, etc.
-- `string tipo_planta_otro` // texto libre si es "Otro"
-- `string fuente` // SEMILLA / ESQUEJE
+* `division_id` = la **división más específica** conocida (puede ser municipio, comunidad, cantón, etc.)
+* `nombre` = nombre del sitio puntual: *Parcela X, Vivero Y, Sector Z*
+* `fuente` = `GPS_MOVIL | MAPA | MANUAL | LEGACY`
+* `precision_m` = precisión aproximada en metros
+* `referencia` = indicaciones humanas (texto libre)
+
+**En DIVISION_ADMINISTRATIVA:**
+
+* `parent_id` arma el árbol (nivel variable por país)
+* `reemplazada_por_id` sirve para “fusionar/renombrar” sin borrar historia (muy útil para trazabilidad)
 
 **En RECOLECCION:**
 
-- `string unidad` // UNIDAD / UNIDADES / KG / G
-- `string tipo_material` // SEMILLA / ESQUEJE
-- `string estado` // USADO / ALMACENADO / DESECHADO
+* `estado` = `ALMACENADO` por defecto (enum)
+* `tipo_material` = enum user-defined
+* fechas: `fecha` limitada a 45 días hacia atrás
 
 **En LOTE_FASE_VIVERO:**
 
-- `string estado` // INICIO / EMBOLSADO / SOMBRA / LISTA_PLANTAR / SALIDA_VIVERO
-
-**En LOTE_FASE_VIVERO_HISTORIAL:**
-
-- `string accion` // INICIO, EMBOLSADO, SOMBRA, LISTA_PLANTAR, SALIDA, AJUSTE...
+* `estado` = enum `lote_estado`
+* `updated_at` y `updated_by` se usan para auditoría y para el historial
 
 **En PLANTACION:**
 
-- `string destino` // ARBORIZACION / FORESTACION / REFORESTACION
-- `string origen_propiedad` // DONADO / ADQUIRIDO / OTRO / NULL
-- `string codigo_trazabilidad` // código único visible en el bono
+* `destino` = `ARBORIZACION | FORESTACION | REFORESTACION`
+* `origen_propiedad` = `DONADO | ADQUIRIDO | OTRO | NULL`
+
