@@ -133,7 +133,6 @@ export class RecoleccionesService {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       for (const file of files as any[]) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
         const formato = file.mimetype.split('/')[1].toUpperCase();
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         if (!['JPG', 'JPEG', 'PNG'].includes(formato)) {
@@ -399,7 +398,6 @@ export class RecoleccionesService {
 
       // PASO 6: Subir JSON a Pinata automáticamente
       console.log('☁️  Paso 6: Subiendo metadata a IPFS/Pinata...');
-      let ipfsUrl: string | null = null;
       try {
         // Obtener datos completos de la recolección creada directamente de Supabase
         const { data: recoleccionCompleta, error: fetchError } = await supabase
@@ -434,7 +432,7 @@ export class RecoleccionesService {
           `${codigoTrazabilidad}.json`,
         );
 
-        ipfsUrl = pinataResult.ipfs_url;
+        const ipfsUrl = pinataResult.ipfs_url;
         const gatewayUrl = pinataResult.gateway_url;
         const publicUrl = pinataResult.public_url;
         
@@ -643,11 +641,12 @@ export class RecoleccionesService {
     // Aplicar paginación
     query = query.range(offset, offset + limit - 1);
 
-    // Buscar también por nombre de planta si se envía search
-    if (filters.search) {
+    // Buscar también por nombre de planta si se envía search o q
+    const searchTerm = filters.search ?? filters.q;
+    if (searchTerm) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       query = query.or(
-        `nombre_cientifico.ilike.%${filters.search}%,nombre_comercial.ilike.%${filters.search}%`,
+        `nombre_cientifico.ilike.%${searchTerm}%,nombre_comercial.ilike.%${searchTerm}%`,
       );
     }
 
@@ -728,9 +727,10 @@ export class RecoleccionesService {
       query = query.eq('tipo_material', filters.tipo_material);
     }
 
-    if (filters.search) {
+    const searchTerm = filters.search ?? filters.q;
+    if (searchTerm) {
       query = query.or(
-        `nombre_cientifico.ilike.%${filters.search}%,nombre_comercial.ilike.%${filters.search}%`,
+        `nombre_cientifico.ilike.%${searchTerm}%,nombre_comercial.ilike.%${searchTerm}%`,
       );
     }
 

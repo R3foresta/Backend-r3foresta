@@ -5,11 +5,11 @@ import {
   Body,
   Param,
   Query,
-  Request,
   UseInterceptors,
   UploadedFiles,
   ParseIntPipe,
   Headers,
+  BadRequestException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -24,7 +24,7 @@ import {
   ApiSecurity,
   ApiHeader,
 } from '@nestjs/swagger';
-import { plainToClass } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import * as qs from 'qs';
 import { RecoleccionesService } from './recolecciones.service';
@@ -356,12 +356,12 @@ export class RecoleccionesController {
     }
     
     // Convertir a DTO y validar
-    const createRecoleccionDto = plainToClass(CreateRecoleccionDto, parsedBody);
+    const createRecoleccionDto = plainToInstance(CreateRecoleccionDto, parsedBody);
     const errors = await validate(createRecoleccionDto);
     
     if (errors.length > 0) {
       const messages = errors.map(err => Object.values(err.constraints || {}).join(', ')).join('; ');
-      throw new Error(`Validación fallida: ${messages}`);
+      throw new BadRequestException(`Validación fallida: ${messages}`);
     }
     
     // Validar que se envió el auth_id
