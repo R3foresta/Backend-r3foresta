@@ -10,7 +10,9 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { PinataService } from '../pinata/pinata.service';
 import { BlockchainService } from '../blockchain/blockchain.service';
 import { CreateRecoleccionDto } from './dto/create-recoleccion.dto';
+import { CreateUbicacionDto } from './dto/create-ubicacion.dto';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
+import { UbicacionesReadService } from '../common/ubicaciones/ubicaciones-read.service';
 
 @Injectable()
 export class RecoleccionesService {
@@ -20,6 +22,7 @@ export class RecoleccionesService {
     private readonly supabaseService: SupabaseService,
     private readonly pinataService: PinataService,
     private readonly blockchainService: BlockchainService,
+    private readonly ubicacionesReadService: UbicacionesReadService,
   ) {}
 
   /**
@@ -154,6 +157,9 @@ export class RecoleccionesService {
 
     let ubicacionId: number;
     let recoleccionId: number;
+    const ubicacionPayload = await this.validateAndNormalizeUbicacionPayload(
+      createRecoleccionDto.ubicacion,
+    );
     const fotosUrls: Array<{
       url: string;
       peso_bytes: number;
@@ -177,15 +183,7 @@ export class RecoleccionesService {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const { data: ubicacionCreada, error: ubicacionError } = await supabase
         .from('ubicacion')
-        .insert({
-          pais: createRecoleccionDto.ubicacion.pais,
-          departamento: createRecoleccionDto.ubicacion.departamento,
-          provincia: createRecoleccionDto.ubicacion.provincia,
-          comunidad: createRecoleccionDto.ubicacion.comunidad,
-          zona: createRecoleccionDto.ubicacion.zona,
-          latitud: createRecoleccionDto.ubicacion.latitud,
-          longitud: createRecoleccionDto.ubicacion.longitud,
-        })
+        .insert(ubicacionPayload)
         .select()
         .single();
 
@@ -406,8 +404,7 @@ export class RecoleccionesService {
             `
             *,
             usuario:usuario_id (id, nombre, username, correo),
-            ubicacion:ubicacion_id (*),
-            vivero:vivero_id (id, codigo, nombre),
+            vivero:vivero_id (id, codigo, nombre, ubicacion_id),
             metodo:metodo_id (id, nombre, descripcion),
             planta:planta_id (*),
             fotos:recoleccion_foto (*)
@@ -420,9 +417,13 @@ export class RecoleccionesService {
           throw new Error('No se pudo obtener la recolección para metadata');
         }
 
+        const recoleccionEnriquecida = await this.enrichSingleRecoleccion(
+          recoleccionCompleta,
+        );
+
         // Construir JSON en formato NFT estándar
         const metadata = this.buildNFTMetadata(
-          recoleccionCompleta,
+          recoleccionEnriquecida,
           usuarioData.nombre,
         );
 
@@ -516,24 +517,29 @@ export class RecoleccionesService {
       timeZone: 'America/La_Paz', // Bolivia timezone
     });
 
-    // Construir ubicación descriptiva
-    const ubicacion = [
-      recoleccion.ubicacion?.comunidad,
-      recoleccion.ubicacion?.departamento,
-      recoleccion.ubicacion?.pais,
+    const rutaAdministrativa =
+      recoleccion.ubicacion?.division?.ruta
+        ?.map((item: { tipo: string; nombre: string }) => item.nombre)
+        .join(', ') || '';
+
+    const ubicacionCompleta = [
+      recoleccion.ubicacion?.nombre,
+      recoleccion.ubicacion?.referencia,
+      rutaAdministrativa,
+      recoleccion.ubicacion?.pais?.nombre,
     ]
       .filter(Boolean)
       .join(', ');
 
-    const ubicacionCompleta = recoleccion.ubicacion?.zona
-      ? `${ubicacion} Zona: ${recoleccion.ubicacion.zona}`
-      : ubicacion;
-
-    // Construir coordenadas
-    const coordenadas = `${recoleccion.ubicacion?.latitud}, ${recoleccion.ubicacion?.longitud}`;
+    const coordenadas = [
+      recoleccion.ubicacion?.coordenadas?.lat,
+      recoleccion.ubicacion?.coordenadas?.lon,
+    ]
+      .filter((value: number | null | undefined) => value !== null && value !== undefined)
+      .join(', ');
 
     // Descripción completa
-    const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${recoleccion.planta?.especie || recoleccion.nombre_comercial} realizada por ${nombreUsuario} el ${fechaStr} a las ${horaStr} en ${ubicacion}. Cantidad: ${recoleccion.cantidad} ${recoleccion.unidad}`;
+    const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${recoleccion.planta?.especie || recoleccion.nombre_comercial} realizada por ${nombreUsuario} el ${fechaStr} a las ${horaStr} en ${ubicacionCompleta || coordenadas}. Cantidad: ${recoleccion.cantidad} ${recoleccion.unidad}`;
 
     // Construir attributes
     const attributes = [
@@ -605,9 +611,8 @@ export class RecoleccionesService {
         *,
         usuario:usuario_id (id, nombre, username),
         planta:planta_id (id, especie, nombre_cientifico, variedad),
-        ubicacion:ubicacion_id (*),
         metodo:metodo_id (id, nombre, descripcion),
-        vivero:vivero_id (id, codigo, nombre, ubicacion:ubicacion_id (departamento, comunidad)),
+        vivero:vivero_id (id, codigo, nombre, ubicacion_id),
         fotos:recoleccion_foto (*)
       `,
         { count: 'exact' },
@@ -658,10 +663,11 @@ export class RecoleccionesService {
     }
 
     const totalPages = Math.ceil((count || 0) / limit);
+    const enrichedData = await this.enrichRecoleccionesWithUbicaciones(data || []);
 
     return {
       success: true,
-      data: data || [],
+      data: enrichedData,
       pagination: {
         page,
         limit,
@@ -700,9 +706,8 @@ export class RecoleccionesService {
         *,
         usuario:usuario_id (id, nombre, username),
         planta:planta_id (id, especie, nombre_cientifico, variedad),
-        ubicacion:ubicacion_id (*),
         metodo:metodo_id (id, nombre, descripcion),
-        vivero:vivero_id (id, codigo, nombre, ubicacion:ubicacion_id (departamento, comunidad)),
+        vivero:vivero_id (id, codigo, nombre, ubicacion_id),
         fotos:recoleccion_foto (*)
       `,
         { count: 'exact' },
@@ -746,10 +751,11 @@ export class RecoleccionesService {
     }
 
     const totalPages = Math.ceil((count || 0) / limit);
+    const enrichedData = await this.enrichRecoleccionesWithUbicaciones(data || []);
 
     return {
       success: true,
-      data: data || [],
+      data: enrichedData,
       pagination: {
         page,
         limit,
@@ -774,8 +780,7 @@ export class RecoleccionesService {
         `
         *,
         usuario:usuario_id (id, nombre, username, correo),
-        ubicacion:ubicacion_id (*),
-        vivero:vivero_id (id, codigo, nombre),
+        vivero:vivero_id (id, codigo, nombre, ubicacion_id),
         metodo:metodo_id (id, nombre, descripcion),
         planta:planta_id (*),
         fotos:recoleccion_foto (*)
@@ -788,10 +793,109 @@ export class RecoleccionesService {
       throw new NotFoundException('Recolección no encontrada');
     }
 
+    const enrichedData = await this.enrichSingleRecoleccion(data);
+
     return {
       success: true,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      data,
+      data: enrichedData,
     };
+  }
+
+  private async validateAndNormalizeUbicacionPayload(
+    ubicacion: CreateUbicacionDto,
+  ) {
+    const supabase = this.supabaseService.getClient();
+    let paisId = ubicacion.pais_id ?? null;
+
+    if (ubicacion.division_id) {
+      const { data: divisionData, error: divisionError } = await supabase
+        .from('division_administrativa')
+        .select('id, pais_id')
+        .eq('id', ubicacion.division_id)
+        .single();
+
+      if (divisionError || !divisionData) {
+        throw new NotFoundException('División administrativa no encontrada');
+      }
+
+      const divisionPaisId = Number(divisionData.pais_id);
+
+      if (paisId && paisId !== divisionPaisId) {
+        throw new BadRequestException(
+          'division_id no pertenece al pais_id enviado',
+        );
+      }
+
+      paisId = divisionPaisId;
+    }
+
+    if (paisId) {
+      const { data: paisData, error: paisError } = await supabase
+        .from('pais')
+        .select('id')
+        .eq('id', paisId)
+        .single();
+
+      if (paisError || !paisData) {
+        throw new NotFoundException('País no encontrado');
+      }
+    }
+
+    return {
+      pais_id: paisId,
+      division_id: ubicacion.division_id ?? null,
+      nombre: ubicacion.nombre?.trim() || null,
+      referencia: ubicacion.referencia?.trim() || null,
+      latitud: ubicacion.latitud,
+      longitud: ubicacion.longitud,
+      precision_m: ubicacion.precision_m ?? null,
+      fuente: ubicacion.fuente ?? null,
+    };
+  }
+
+  private async enrichSingleRecoleccion(recoleccion: any) {
+    const mapped = await this.enrichRecoleccionesWithUbicaciones([recoleccion]);
+    return mapped[0];
+  }
+
+  private async enrichRecoleccionesWithUbicaciones(recolecciones: any[]) {
+    const ubicacionIds = recolecciones.flatMap((recoleccion: any) => {
+      const ids: number[] = [];
+      if (Number.isInteger(recoleccion.ubicacion_id) && recoleccion.ubicacion_id > 0) {
+        ids.push(recoleccion.ubicacion_id);
+      }
+      if (
+        Number.isInteger(recoleccion.vivero?.ubicacion_id) &&
+        recoleccion.vivero.ubicacion_id > 0
+      ) {
+        ids.push(recoleccion.vivero.ubicacion_id);
+      }
+      return ids;
+    });
+
+    const ubicaciones = await this.ubicacionesReadService.getUbicacionesByIds(
+      ubicacionIds,
+    );
+
+    return recolecciones.map((recoleccion: any) => {
+      const mapped = {
+        ...recoleccion,
+        ubicacion: ubicaciones.get(recoleccion.ubicacion_id) || null,
+        vivero: recoleccion.vivero
+          ? {
+              ...recoleccion.vivero,
+              ubicacion:
+                ubicaciones.get(recoleccion.vivero.ubicacion_id) || null,
+            }
+          : null,
+      };
+
+      delete mapped.ubicacion_id;
+      if (mapped.vivero?.ubicacion_id) {
+        delete mapped.vivero.ubicacion_id;
+      }
+
+      return mapped;
+    });
   }
 }
