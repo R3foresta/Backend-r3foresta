@@ -61,7 +61,7 @@ export class UbicacionesController {
     );
   }
 
-  // verificar si es necesario el endpoint. Realmente no creo que este sea neceesario :)
+  // TODO: verificar si es necesario el endpoint. Realmente no creo que este sea neceesario :)
   @Post('divisiones/flexible')
   @ApiOperation({
     summary: 'Crear o recuperar división flexible',
