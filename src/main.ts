@@ -68,6 +68,7 @@ async function bootstrap() {
     .addTag('plantas', 'Endpoints para gestión de plantas y especies')
     .addTag('viveros', 'Endpoints para gestión de viveros')
     .addTag('auth', 'Endpoints de autenticación y autorización')
+    .addTag('comunidades', 'Endpoints CRUD de comunidades administrativas (nivel 4)')
     .addTag('blockchain', 'Endpoints para integración con blockchain')
     .addTag('pinata', 'Endpoints para gestión de IPFS/Pinata')
     .addApiKey(
