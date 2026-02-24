@@ -13,6 +13,8 @@ import { LotesFaseViveroModule } from './lotes-fase-vivero/lotes-fase-vivero.mod
 import { PinataModule } from './pinata/pinata.module';
 import { BlockchainModule } from './blockchain/blockchain.module';
 import { PingrepetModule } from './pingrepet/pingrepet.module';
+import { UbicacionesModule } from './ubicaciones/ubicaciones.module';
+import { ComunidadesModule } from './comunidades/comunidades.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { PingrepetModule } from './pingrepet/pingrepet.module';
     PinataModule,
     BlockchainModule,
     PingrepetModule,
+    UbicacionesModule,
+    ComunidadesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

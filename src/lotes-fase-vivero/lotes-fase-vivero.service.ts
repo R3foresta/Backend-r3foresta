@@ -5,10 +5,14 @@ import {
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { FiltersLoteFaseViveroDto } from './dto/filters-lote-fase-vivero.dto';
+import { UbicacionesReadService } from '../common/ubicaciones/ubicaciones-read.service';
 
 @Injectable()
 export class LotesFaseViveroService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly ubicacionesReadService: UbicacionesReadService,
+  ) {}
 
   /**
    * GET /api/lotes-fase-vivero
@@ -31,7 +35,7 @@ export class LotesFaseViveroService {
           id,
           codigo,
           nombre,
-          ubicacion:ubicacion_id (departamento, comunidad)
+          ubicacion_id
         ),
         responsable:responsable_id (id, nombre, username)
       `,
@@ -73,9 +77,32 @@ export class LotesFaseViveroService {
 
     const totalPages = Math.ceil((count || 0) / limit);
 
+    const lotes = data || [];
+    const ubicacionIds = lotes
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((lote: any) => lote.vivero?.ubicacion_id)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((id: any) => Number.isInteger(id) && id > 0);
+
+    const ubicaciones = await this.ubicacionesReadService.getUbicacionesByIds(
+      ubicacionIds,
+    );
+
+    const mappedData = lotes.map((lote: any) => ({
+      ...lote,
+      vivero: lote.vivero
+        ? {
+            id: lote.vivero.id,
+            codigo: lote.vivero.codigo,
+            nombre: lote.vivero.nombre,
+            ubicacion: ubicaciones.get(lote.vivero.ubicacion_id) || null,
+          }
+        : null,
+    }));
+
     return {
       success: true,
-      data: data || [],
+      data: mappedData,
       pagination: {
         page,
         limit,
@@ -104,7 +131,7 @@ export class LotesFaseViveroService {
           id,
           codigo,
           nombre,
-          ubicacion:ubicacion_id (departamento, comunidad)
+          ubicacion_id
         ),
         responsable:responsable_id (id, nombre, username)
       `,
@@ -116,9 +143,27 @@ export class LotesFaseViveroService {
       throw new NotFoundException('Lote de fase vivero no encontrado');
     }
 
+    const ubicaciones = await this.ubicacionesReadService.getUbicacionesByIds(
+      [data.vivero?.ubicacion_id].filter(
+        (id): id is number => Number.isInteger(id) && id > 0,
+      ),
+    );
+
+    const mappedData = {
+      ...data,
+      vivero: data.vivero
+        ? {
+            id: data.vivero.id,
+            codigo: data.vivero.codigo,
+            nombre: data.vivero.nombre,
+            ubicacion: ubicaciones.get(data.vivero.ubicacion_id) || null,
+          }
+        : null,
+    };
+
     return {
       success: true,
-      data,
+      data: mappedData,
     };
   }
 }

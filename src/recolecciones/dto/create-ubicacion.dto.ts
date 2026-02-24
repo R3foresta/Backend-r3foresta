@@ -1,53 +1,74 @@
 import {
   IsNotEmpty,
+  IsInt,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
+  Min as MinValue,
   Max,
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+export const FUENTES_UBICACION = ['GPS_MOVIL', 'MAPA', 'MANUAL', 'LEGACY'] as const;
+export type FuenteUbicacion = (typeof FUENTES_UBICACION)[number];
+
 export class CreateUbicacionDto {
   @ApiPropertyOptional({
-    description: 'País donde se realizó la recolección',
-    example: 'Bolivia',
+    description: 'ID de país (catálogo pais)',
+    example: 1,
   })
   @IsOptional()
-  @IsString()
-  pais?: string;
+  @IsInt({ message: 'pais_id debe ser un entero' })
+  @MinValue(1, { message: 'pais_id debe ser mayor a 0' })
+  pais_id?: number;
 
   @ApiPropertyOptional({
-    description: 'Departamento o estado',
-    example: 'Santa Cruz',
+    description: 'ID de división administrativa más específica conocida',
+    example: 999,
   })
   @IsOptional()
-  @IsString()
-  departamento?: string;
+  @IsInt({ message: 'division_id debe ser un entero' })
+  @MinValue(1, { message: 'division_id debe ser mayor a 0' })
+  division_id?: number;
 
   @ApiPropertyOptional({
-    description: 'Provincia',
-    example: 'Velasco',
+    description: 'Nombre del sitio físico',
+    example: 'Vivero Central',
   })
   @IsOptional()
   @IsString()
-  provincia?: string;
+  nombre?: string;
 
   @ApiPropertyOptional({
-    description: 'Comunidad o localidad',
-    example: 'San Ignacio',
+    description: 'Referencia textual del sitio físico',
+    example: 'Zona Sur',
   })
   @IsOptional()
   @IsString()
-  comunidad?: string;
+  referencia?: string;
 
   @ApiPropertyOptional({
-    description: 'Zona específica dentro de la comunidad',
-    example: 'Central',
+    description: 'Precisión en metros del punto capturado',
+    example: 10,
+    minimum: 0.000001,
   })
   @IsOptional()
-  @IsString()
-  zona?: string;
+  @IsNumber({}, { message: 'precision_m debe ser un número' })
+  @MinValue(0.000001, { message: 'precision_m debe ser mayor a 0' })
+  precision_m?: number;
+
+  @ApiPropertyOptional({
+    description: 'Fuente de captura de la ubicación',
+    enum: FUENTES_UBICACION,
+    example: 'GPS_MOVIL',
+  })
+  @IsOptional()
+  @IsIn(FUENTES_UBICACION, {
+    message: 'fuente debe ser GPS_MOVIL, MAPA, MANUAL o LEGACY',
+  })
+  fuente?: FuenteUbicacion;
 
   @ApiProperty({
     description: 'Latitud geográfica (debe estar entre -90 y 90)',
