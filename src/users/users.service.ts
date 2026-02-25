@@ -11,7 +11,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(private readonly supabaseService: SupabaseService) { }
 
   /**
    * Crea un nuevo usuario en Supabase
@@ -316,33 +316,55 @@ export class UsersService {
 
   // Método para actualizar la foto de perfil
   async updateProfilePhoto(authId: string, file: Express.Multer.File): Promise<any> {
-    const supabase = this.supabaseService.getClient();
+    const supabaseAdmin = this.supabaseService.getAdminClient();
 
     const fileExt = file.originalname.split('.').pop();
     const fileName = `profile-picture.${fileExt}`;
-    const filePath = `${authId}/${fileName}`;
+    const folderPath = `${authId}`;
+    const filePath = `${folderPath}/${fileName}`;
 
-    // Subida al bucket
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    // 🧹 PASO 1: Eliminar cualquier foto anterior en la carpeta del usuario
+    // Listamos los archivos en la carpeta del usuario
+    const { data: existingFiles, error: listError } = await supabaseAdmin.storage
+      .from('imagenes-perfil')
+      .list(folderPath);
+
+    if (!listError && existingFiles && existingFiles.length > 0) {
+      // Creamos un array con las rutas completas de los archivos a eliminar
+      const filesToRemove = existingFiles.map((f) => `${folderPath}/${f.name}`);
+
+      // Los eliminamos
+      await supabaseAdmin.storage
+        .from('imagenes-perfil')
+        .remove(filesToRemove);
+    }
+
+    // 🚀 PASO 2: Subida al bucket usando el cliente Admin (bypasa RLS)
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
       .from('imagenes-perfil')
       .upload(filePath, file.buffer, {
         contentType: file.mimetype,
         upsert: true,
+        cacheControl: '0', // 👈 Fuerza a no cachear la imagen en el CDN de Supabase
       });
 
     if (uploadError) {
       throw new BadRequestException(`Error al subir imagen: ${uploadError.message}`);
     }
 
-    // Obtener URL
+    // Obtener URL (puede ser del cliente normal porque es público)
+    const supabase = this.supabaseService.getClient();
     const { data: { publicUrl } } = supabase.storage
       .from('imagenes-perfil')
       .getPublicUrl(filePath);
 
+    // 👇 Añadimos un query param "?v=timestamp" para obligar al navegador a recargar y no usar de su caché local
+    const finalUrl = `${publicUrl}?v=${new Date().getTime()}`;
+
     // Actualizar tabla (Nota: verifica si tu tabla es 'usuario' o 'usuarios')
     const { data: updatedUser, error: dbError } = await supabase
-      .from('usuario') 
-      .update({ foto_perfil_url: publicUrl })
+      .from('usuario')
+      .update({ foto_perfil_url: finalUrl }) // 👈 Guardamos la URL con el bypass
       .eq('auth_id', authId)
       .select()
       .single();
