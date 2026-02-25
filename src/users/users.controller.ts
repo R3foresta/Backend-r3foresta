@@ -5,10 +5,18 @@ import {
   Body,
   Req,
   UnauthorizedException,
+  UseInterceptors,      // <--- Agregado para la foto de perfil
+  Patch,                // <--- Agregado para la foto de perfil
+  UploadedFile,         // <--- Agregado para la foto de perfil
+  ParseFilePipe,        // <--- Agregado para la foto de perfil
+  MaxFileSizeValidator, // <--- Agregado para la foto de perfil
+  FileTypeValidator     // <--- Agregado para la foto de perfil
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from './users.service';
 import { RegisterFormDto } from './dto/register-form.dto';
+
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('users')
 export class UsersController {
@@ -93,5 +101,34 @@ export class UsersController {
 
     // Llamar al servicio
     return this.usersService.registerForm(authId, dto);
+  }
+
+  @Patch('profile/photo')
+  @UseInterceptors(FileInterceptor('file')) // 'file' es el nombre del campo que enviará el front
+  async updateProfilePhoto(
+    @Req() req: any,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }), // Máximo 2MB
+          new FileTypeValidator({ fileType: '.(png|jpeg|jpg|webp)' }), // Solo imágenes
+        ],
+      }),
+    ) file: Express.Multer.File,
+  ) {
+    let authId: string;
+    const authIdHeader = req.headers['x-auth-id'] as string;
+
+    if (authIdHeader) {
+      authId = authIdHeader;
+    } else {
+      const authHeader = req.headers.authorization as string;
+      if (!authHeader) throw new UnauthorizedException();
+      const token = authHeader.split(' ')[1];
+      const payload = this.jwtService.verify(token);
+      authId = payload.sub;
+    }
+
+    return this.usersService.updateProfilePhoto(authId, file);
   }
 }
