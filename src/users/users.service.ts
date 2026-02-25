@@ -9,9 +9,14 @@ import { User } from './entities/user.entity';
 import { Credential } from './entities/credential.entity';
 import { SupabaseService } from '../supabase/supabase.service';
 
+import { ConfigService } from '@nestjs/config'
+
 @Injectable()
 export class UsersService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly configService: ConfigService
+  ) {}
 
   /**
    * Crea un nuevo usuario en Supabase
@@ -311,6 +316,47 @@ export class UsersService {
     console.log('✅ Formulario de registro completado para:', authId);
 
     // 3. Retornar usuario
+    return updatedUser;
+  }
+
+  // Método para actualizar la foto de perfil
+  async updateProfilePhoto(authId: string, file: Express.Multer.File): Promise<any> {
+    const supabase = this.supabaseService.getClient();
+
+    // 🚀 Obtenemos el nombre desde el .env
+    const bucketName = this.configService.get<string>('SUPABASE_BUCKET') || 'imagenes-perfil';
+
+    const fileExt = file.originalname.split('.').pop();
+    const fileName = `profile-picture.${fileExt}`;
+    const filePath = `${authId}/${fileName}`;
+
+    // Subida al bucket
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(filePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      throw new BadRequestException(`Error al subir imagen: ${uploadError.message}`);
+    }
+
+    // Obtener URL
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(filePath);
+
+    // Actualizar tabla (Nota: verifica si tu tabla es 'usuario' o 'usuarios')
+    const { data: updatedUser, error: dbError } = await supabase
+      .from('usuario') 
+      .update({ foto_perfil_url: publicUrl })
+      .eq('auth_id', authId)
+      .select()
+      .single();
+
+    if (dbError) throw new BadRequestException('Error al guardar en DB');
+
     return updatedUser;
   }
 }
