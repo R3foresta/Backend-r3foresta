@@ -29,6 +29,10 @@ import { ValidationError, validate } from 'class-validator';
 import * as qs from 'qs';
 import { RecoleccionesService } from './recolecciones.service';
 import { CreateRecoleccionDto } from './dto/create-recoleccion.dto';
+import {
+  CreateRecoleccionV2Dto,
+  TIPOS_MATERIAL_RECOLECCION_V2_INPUT,
+} from './dto/create-recoleccion-v2.dto';
 import { FUENTES_UBICACION } from './dto/create-ubicacion.dto';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 
@@ -154,6 +158,111 @@ export class RecoleccionesController {
 
     return this.recoleccionesService.create(
       createRecoleccionDto,
+      authId,
+      userRole,
+      files?.fotos,
+    );
+  }
+
+  @Post('v2')
+  @ApiOperation({
+    summary: 'Crear nueva recolección (V2)',
+    description:
+      'Crea una recolección con contrato migrado: estado no se recibe, nombre científico/comercial se deriva de planta y tipo_material se normaliza a SEMILLA/ESQUEJE.',
+  })
+  @ApiSecurity('x-auth-id')
+  @ApiHeader({
+    name: 'x-auth-id',
+    description: 'ID de autenticación del usuario de Supabase',
+    required: true,
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Datos de la recolección v2 (FormData)',
+    schema: {
+      type: 'object',
+      required: [
+        'fecha',
+        'cantidad',
+        'unidad',
+        'tipo_material',
+        'planta_id',
+        'metodo_id',
+        'ubicacion[latitud]',
+        'ubicacion[longitud]',
+      ],
+      properties: {
+        fecha: { type: 'string', format: 'date', example: '2026-03-04' },
+        cantidad: { type: 'number', example: 2.5 },
+        unidad: { type: 'string', example: 'kg' },
+        tipo_material: {
+          type: 'string',
+          enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
+          example: 'SEMILLA',
+        },
+        planta_id: { type: 'number', example: 10 },
+        metodo_id: { type: 'number', example: 1 },
+        vivero_id: { type: 'number', example: 3 },
+        observaciones: { type: 'string', example: 'Lote piloto para trazabilidad v2' },
+        'ubicacion[pais_id]': { type: 'number', example: 1 },
+        'ubicacion[division_id]': { type: 'number', example: 999 },
+        'ubicacion[nombre]': { type: 'string', example: 'Parcela Don Lucho' },
+        'ubicacion[referencia]': { type: 'string', example: 'Zona Sur' },
+        'ubicacion[latitud]': { type: 'number', example: -16.5833 },
+        'ubicacion[longitud]': { type: 'number', example: -68.15 },
+        'ubicacion[precision_m]': { type: 'number', example: 10 },
+        'ubicacion[fuente]': {
+          type: 'string',
+          enum: [...FUENTES_UBICACION],
+          example: 'GPS_MOVIL',
+        },
+        fotos: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Recolección v2 creada exitosamente' })
+  @ApiResponse({ status: 400, description: 'Error de validación en los datos' })
+  @ApiResponse({ status: 401, description: 'No autorizado - falta header x-auth-id' })
+  @ApiResponse({ status: 403, description: 'Prohibido - usuario sin permisos' })
+  @ApiResponse({ status: 404, description: 'Recurso no encontrado' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
+  async createV2(
+    @Body() bodyRaw: any,
+    @Headers('x-auth-id') authId?: string,
+    @UploadedFiles() files?: { fotos?: any[] },
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const parsedBody: any = qs.parse(bodyRaw);
+
+    if (parsedBody.ubicacion) {
+      this.assertNoLegacyUbicacionFields(parsedBody.ubicacion);
+    }
+
+    this.normalizeNumericFields(parsedBody);
+
+    const createRecoleccionV2Dto = plainToInstance(CreateRecoleccionV2Dto, parsedBody);
+    const errors = await validate(createRecoleccionV2Dto, {
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    });
+
+    if (errors.length > 0) {
+      const messages = this.collectValidationMessages(errors).join('; ');
+      throw new BadRequestException(`Validación fallida: ${messages}`);
+    }
+
+    if (!authId) {
+      throw new UnauthorizedException('Header x-auth-id es requerido');
+    }
+
+    const userRole = 'ADMIN';
+
+    return this.recoleccionesService.createV2(
+      createRecoleccionV2Dto,
       authId,
       userRole,
       files?.fotos,
