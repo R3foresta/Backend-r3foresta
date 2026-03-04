@@ -69,6 +69,7 @@ async function bootstrap() {
     .addTag('viveros', 'Endpoints para gestión de viveros')
     .addTag('auth', 'Endpoints de autenticación y autorización')
     .addTag('comunidades', 'Endpoints CRUD de comunidades administrativas (nivel 4)')
+    .addTag('evidencias-trazabilidad', 'Endpoints para consultar evidencias de trazabilidad')
     .addTag('blockchain', 'Endpoints para integración con blockchain')
     .addTag('pinata', 'Endpoints para gestión de IPFS/Pinata')
     .addApiKey(
