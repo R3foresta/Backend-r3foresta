@@ -880,6 +880,7 @@ export class RecoleccionesService {
     return recolecciones.map((recoleccion: any) => {
       const mapped = {
         ...recoleccion,
+        ubicacion_id: recoleccion.ubicacion_id,
         ubicacion: ubicaciones.get(recoleccion.ubicacion_id) || null,
         vivero: recoleccion.vivero
           ? {
@@ -889,11 +890,6 @@ export class RecoleccionesService {
             }
           : null,
       };
-
-      delete mapped.ubicacion_id;
-      if (mapped.vivero?.ubicacion_id) {
-        delete mapped.vivero.ubicacion_id;
-      }
 
       return mapped;
     });
