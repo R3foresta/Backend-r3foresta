@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsString, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { FuentePlanta } from '../enums/fuente-planta.enum';
-
+// TODO: Tenemos este DTO de crear planta pero existe todo un modulo de creación de plantas en src/plantas, entonces se debe unificar todo eso, pero por ahora lo dejamos así para no romper nada.
 export class CreatePlantaDto {
   @ApiProperty({
     description: 'Nombre común de la especie',
