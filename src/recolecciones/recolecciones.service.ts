@@ -1031,8 +1031,12 @@ export class RecoleccionesService {
       .from('recoleccion')
       .select(
         `
-        *,
-        usuario:usuario_id (id, nombre, username),
+        id,
+        cantidad,
+        unidad,
+        fecha,
+        tipo_material,
+        estado,
         planta:planta_id (id, especie, nombre_cientifico, variedad),
         metodo:metodo_id (id, nombre, descripcion),
         vivero:vivero_id (id, codigo, nombre, ubicacion_id)
@@ -1083,9 +1087,35 @@ export class RecoleccionesService {
     const totalPages = Math.ceil((count || 0) / limit);
     const enrichedData = await this.enrichRecoleccionesWithUbicaciones(data || []);
 
+    // Obtener evidencias_trazabilidad para las recolecciones retornadas
+    const recoleccionIds = (data || []).map((r: any) => r.id as number);
+    const evidenciasMap = new Map<number, { ruta_archivo: string }[]>();
+
+    if (recoleccionIds.length > 0) {
+      const { data: evidencias } = await supabase
+        .from('evidencias_trazabilidad')
+        .select('entidad_id, ruta_archivo')
+        .in('entidad_id', recoleccionIds)
+        .is('eliminado_en', null);
+
+      if (evidencias) {
+        for (const ev of evidencias as any[]) {
+          const id = ev.entidad_id as number;
+          if (!evidenciasMap.has(id)) evidenciasMap.set(id, []);
+          evidenciasMap.get(id)!.push({ ruta_archivo: ev.ruta_archivo as string });
+        }
+      }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    const finalData = enrichedData.map((r: any) => ({
+      ...r,
+      evidencias: evidenciasMap.get(r.id as number) ?? [],
+    }));
+
     return {
       success: true,
-      data: enrichedData,
+      data: finalData,
       pagination: {
         page,
         limit,
@@ -1191,7 +1221,30 @@ export class RecoleccionesService {
       .from('recoleccion')
       .select(
         `
-        *,
+        id,
+        fecha,
+        created_at,
+        cantidad,
+        unidad,
+        tipo_material,
+        estado,
+        especie_nueva,
+        observaciones,
+        usuario_id,
+        ubicacion_id,
+        vivero_id,
+        metodo_id,
+        planta_id,
+        codigo_trazabilidad,
+        blockchain_url,
+        token_id,
+        transaction_hash,
+        estado_registro,
+        unidad_canonica,
+        cantidad_inicial_canonica,
+        usuario_validacion_id,
+        fecha_validacion,
+        blockchain_hash_validacion,
         usuario:usuario_id (id, nombre, username, correo),
         vivero:vivero_id (id, codigo, nombre, ubicacion_id),
         metodo:metodo_id (id, nombre, descripcion),
@@ -1350,6 +1403,7 @@ export class RecoleccionesService {
     return recolecciones.map((recoleccion: any) => {
       const mapped = {
         ...recoleccion,
+        ubicacion_id: recoleccion.ubicacion_id,
         ubicacion: ubicaciones.get(recoleccion.ubicacion_id) || null,
         vivero: recoleccion.vivero
           ? {
@@ -1359,11 +1413,6 @@ export class RecoleccionesService {
             }
           : null,
       };
-
-      delete mapped.ubicacion_id;
-      if (mapped.vivero?.ubicacion_id) {
-        delete mapped.vivero.ubicacion_id;
-      }
 
       return mapped;
     });
