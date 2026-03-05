@@ -1,18 +1,30 @@
 import {
+  Body,
   Controller,
   Get,
+  Headers,
   Param,
   ParseIntPipe,
+  Post,
   Query,
+  UnauthorizedException,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBody,
+  ApiConsumes,
+  ApiHeader,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiResponse,
+  ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
 import { EvidenciasTrazabilidadService } from './evidencias-trazabilidad.service';
+import { CreateEvidenciaRecoleccionDto } from './dto/create-evidencia-recoleccion.dto';
 import { ListEvidenciasTrazabilidadDto } from './dto/list-evidencias-trazabilidad.dto';
 
 @ApiTags('evidencias-trazabilidad')
@@ -21,6 +33,72 @@ export class EvidenciasTrazabilidadController {
   constructor(
     private readonly evidenciasTrazabilidadService: EvidenciasTrazabilidadService,
   ) {}
+
+  @Post('recolecciones/:recoleccionId')
+  @ApiOperation({
+    summary: 'Agregar evidencias a una recolección',
+    description:
+      'Sube 1 a 5 fotos y crea registros en evidencias_trazabilidad para una recolección existente.',
+  })
+  @ApiSecurity('x-auth-id')
+  @ApiHeader({
+    name: 'x-auth-id',
+    description: 'ID de autenticación del usuario de Supabase',
+    required: true,
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({
+    name: 'recoleccionId',
+    description: 'ID de la recolección',
+    type: Number,
+    example: 123,
+  })
+  @ApiBody({
+    description: 'Datos y archivos de evidencia (FormData)',
+    schema: {
+      type: 'object',
+      required: ['fotos'],
+      properties: {
+        titulo: { type: 'string', example: 'Seguimiento de lote' },
+        descripcion: { type: 'string', example: 'Registro posterior a la recolección' },
+        metadata: {
+          type: 'string',
+          example: '{"fuente":"app-mobile","dispositivo":"android"}',
+        },
+        tomado_en: { type: 'string', format: 'date-time' },
+        es_principal: { type: 'boolean', example: true },
+        fotos: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Evidencias creadas exitosamente',
+  })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 401, description: 'Header x-auth-id faltante' })
+  @ApiResponse({ status: 404, description: 'Recolección no encontrada' })
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
+  async createForRecoleccion(
+    @Param('recoleccionId', ParseIntPipe) recoleccionId: number,
+    @Body() body: CreateEvidenciaRecoleccionDto,
+    @Headers('x-auth-id') authId?: string,
+    @UploadedFiles() files?: { fotos?: any[] },
+  ) {
+    if (!authId) {
+      throw new UnauthorizedException('Header x-auth-id es requerido');
+    }
+
+    return this.evidenciasTrazabilidadService.createForRecoleccion(
+      recoleccionId,
+      body,
+      authId,
+      files?.fotos,
+    );
+  }
 
   @Get()
   @ApiOperation({
@@ -120,4 +198,3 @@ export class EvidenciasTrazabilidadController {
     return this.evidenciasTrazabilidadService.findOne(id);
   }
 }
-

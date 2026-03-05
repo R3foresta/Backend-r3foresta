@@ -2,9 +2,12 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { createHash } from 'crypto';
 import { SupabaseService } from '../supabase/supabase.service';
+import { CreateEvidenciaRecoleccionDto } from './dto/create-evidencia-recoleccion.dto';
 import { ListEvidenciasTrazabilidadDto } from './dto/list-evidencias-trazabilidad.dto';
 
 type TipoEntidadEvidencia = {
@@ -83,7 +86,284 @@ type EvidenciaRow = {
 
 @Injectable()
 export class EvidenciasTrazabilidadService {
+  private readonly logger = new Logger(EvidenciasTrazabilidadService.name);
+
   constructor(private readonly supabaseService: SupabaseService) {}
+
+  async createForRecoleccion(
+    recoleccionId: number,
+    payload: CreateEvidenciaRecoleccionDto,
+    authId: string,
+    files?: any[],
+  ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException(
+        'Se requiere al menos 1 foto para registrar evidencia',
+      );
+    }
+
+    if (files.length > 5) {
+      throw new BadRequestException('Máximo 5 fotos permitidas por solicitud');
+    }
+
+    // Validación previa de archivos antes de comenzar uploads.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const file of files as any[]) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+      const formato = file.mimetype.split('/')[1].toUpperCase();
+
+      if (!['JPG', 'JPEG', 'PNG'].includes(formato)) {
+        throw new BadRequestException(
+          `Formato ${formato} no permitido. Solo JPG, JPEG, PNG`,
+        );
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (file.size > 5242880) {
+        throw new BadRequestException(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          `Archivo ${file.originalname} supera 5MB`,
+        );
+      }
+    }
+
+    const supabase = this.supabaseService.getClient();
+    const metadataPayload = this.parseMetadata(payload.metadata);
+    const bucketFotos = 'recoleccion_fotos';
+
+    const { data: usuarioData, error: usuarioError } = await supabase
+      .from('usuario')
+      .select('id')
+      .eq('auth_id', authId)
+      .single();
+
+    if (usuarioError || !usuarioData) {
+      throw new NotFoundException(`Usuario con auth_id ${authId} no encontrado`);
+    }
+
+    const userId = Number(usuarioData.id);
+
+    const { data: recoleccionData, error: recoleccionError } = await supabase
+      .from('recoleccion')
+      .select('id, codigo_trazabilidad')
+      .eq('id', recoleccionId)
+      .single();
+
+    if (recoleccionError || !recoleccionData) {
+      throw new NotFoundException(`Recolección con id ${recoleccionId} no encontrada`);
+    }
+
+    const { data: tipoEntidadData, error: tipoEntidadError } = await supabase
+      .from('tipos_entidad_evidencia')
+      .select('id, activo')
+      .ilike('codigo', 'RECOLECCION')
+      .maybeSingle();
+
+    if (tipoEntidadError) {
+      this.logger.error(
+        '❌ Error al resolver tipo_entidad_evidencia RECOLECCION:',
+        tipoEntidadError,
+      );
+      throw new InternalServerErrorException(
+        'Error al resolver tipo de entidad de evidencia',
+      );
+    }
+
+    if (!tipoEntidadData || !tipoEntidadData.activo) {
+      throw new NotFoundException(
+        'No existe un tipo_entidad_evidencia activo para RECOLECCION',
+      );
+    }
+
+    const tipoEntidadId = Number(tipoEntidadData.id);
+
+    const { data: existentes, error: existentesError } = await supabase
+      .from('evidencias_trazabilidad')
+      .select('id, orden, es_principal')
+      .eq('tipo_entidad_id', tipoEntidadId)
+      .eq('entidad_id', recoleccionId)
+      .is('eliminado_en', null)
+      .order('orden', { ascending: false });
+
+    if (existentesError) {
+      this.logger.error(
+        '❌ Error al consultar evidencias existentes:',
+        existentesError,
+      );
+      throw new InternalServerErrorException(
+        'Error al consultar evidencias existentes',
+      );
+    }
+
+    const maxOrden = Math.max(
+      -1,
+      ...(existentes || []).map((item) => Number(item.orden ?? -1)),
+    );
+    const yaTienePrincipal = (existentes || []).some((item) =>
+      Boolean(item.es_principal),
+    );
+
+    const fotosSubidas: Array<{
+      ruta_archivo: string;
+      storage_object_id: string | null;
+      mime_type: string;
+      tamano_bytes: number;
+      formato: string;
+      hash_sha256: string | null;
+    }> = [];
+
+    try {
+      for (const file of files) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const sanitizedOriginalName = String(file.originalname || 'evidencia')
+          .replace(/\s+/g, '_')
+          .replace(/[^\w.-]/g, '');
+        const nombreArchivo = `${Date.now()}_${Math.random()
+          .toString(36)
+          .slice(2, 8)}_${sanitizedOriginalName}`;
+        const rutaStorage = nombreArchivo;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from(bucketFotos)
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+          .upload(rutaStorage, file.buffer, {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            contentType: file.mimetype,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          this.logger.error('❌ Error al subir evidencia a storage:', uploadError);
+          throw new InternalServerErrorException('Error al subir evidencias');
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+        const formato = file.mimetype.split('/')[1].toUpperCase();
+        const storageObjectId =
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          typeof uploadData?.id === 'string' ? uploadData.id : null;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const hashSha256 = file.buffer
+          ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+            createHash('sha256').update(file.buffer).digest('hex')
+          : null;
+
+        fotosSubidas.push({
+          ruta_archivo: rutaStorage,
+          storage_object_id: storageObjectId,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+          mime_type: file.mimetype,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+          tamano_bytes: file.size,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          formato,
+          hash_sha256: hashSha256,
+        });
+      }
+
+      const tituloBase = payload.titulo?.trim() || null;
+      const descripcion = payload.descripcion?.trim() || null;
+      const metadataBase: Record<string, unknown> = {
+        origen: 'POST_EVIDENCIAS_RECOLECCION',
+        ...(metadataPayload || {}),
+      };
+      const forzarPrincipal = payload.es_principal === true;
+
+      const evidenciasInsert = fotosSubidas.map((foto, index) => {
+        const orden = maxOrden + index + 1;
+        const esPrincipal = forzarPrincipal
+          ? index === 0
+          : !yaTienePrincipal && index === 0;
+
+        const titulo = tituloBase
+          ? fotosSubidas.length > 1
+            ? `${tituloBase} ${index + 1}`
+            : tituloBase
+          : `Foto ${orden + 1}`;
+
+        return {
+          tipo_entidad_id: tipoEntidadId,
+          entidad_id: recoleccionId,
+          codigo_trazabilidad: recoleccionData.codigo_trazabilidad,
+          bucket: bucketFotos,
+          ruta_archivo: foto.ruta_archivo,
+          storage_object_id: foto.storage_object_id,
+          tipo_archivo: 'FOTO',
+          mime_type: foto.mime_type,
+          tamano_bytes: foto.tamano_bytes,
+          hash_sha256: foto.hash_sha256,
+          titulo,
+          descripcion,
+          metadata: {
+            ...metadataBase,
+            formato: foto.formato,
+          },
+          es_principal: esPrincipal,
+          orden,
+          tomado_en: payload.tomado_en ?? null,
+          creado_por_usuario_id: userId,
+        };
+      });
+
+      const { data: inserted, error: insertError } = await supabase
+        .from('evidencias_trazabilidad')
+        .insert(evidenciasInsert)
+        .select(
+          `
+          id,
+          tipo_entidad_id,
+          entidad_id,
+          codigo_trazabilidad,
+          bucket,
+          ruta_archivo,
+          storage_object_id,
+          tipo_archivo,
+          mime_type,
+          tamano_bytes,
+          hash_sha256,
+          titulo,
+          descripcion,
+          metadata,
+          es_principal,
+          orden,
+          tomado_en,
+          creado_en,
+          actualizado_en,
+          eliminado_en,
+          creado_por_usuario_id,
+          actualizado_por_usuario_id,
+          eliminado_por_usuario_id,
+          tipo_entidad:tipo_entidad_id (id, codigo, descripcion),
+          creado_por:creado_por_usuario_id (id, nombre),
+          actualizado_por:actualizado_por_usuario_id (id, nombre),
+          eliminado_por:eliminado_por_usuario_id (id, nombre)
+        `,
+        );
+
+      if (insertError) {
+        this.logger.error(
+          '❌ Error al insertar evidencias_trazabilidad:',
+          insertError,
+        );
+        throw new InternalServerErrorException(
+          'Error al registrar evidencias de trazabilidad',
+        );
+      }
+
+      return {
+        success: true,
+        data: (inserted || []).map((row) => this.mapEvidencia(row as EvidenciaRow)),
+      };
+    } catch (error) {
+      if (fotosSubidas.length > 0) {
+        await supabase.storage
+          .from(bucketFotos)
+          .remove(fotosSubidas.map((foto) => foto.ruta_archivo));
+      }
+
+      throw error;
+    }
+  }
 
   async list(filters: ListEvidenciasTrazabilidadDto) {
     const supabase = this.supabaseService.getClient();
@@ -349,6 +629,28 @@ export class EvidenciasTrazabilidadService {
       actualizado_por: actualizadoPor,
       eliminado_por: eliminadoPor,
     };
+  }
+
+  private parseMetadata(
+    metadataRaw?: string,
+  ): Record<string, unknown> | null {
+    if (!metadataRaw || !metadataRaw.trim()) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(metadataRaw) as unknown;
+
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('metadata debe ser un objeto JSON');
+      }
+
+      return parsed as Record<string, unknown>;
+    } catch (error) {
+      throw new BadRequestException(
+        'metadata debe ser un JSON válido serializado en texto',
+      );
+    }
   }
 
   private normalizeRelation<T>(value?: T | T[] | null): T | null {
