@@ -8,7 +8,6 @@ import {
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TipoMaterial } from '../enums/tipo-material.enum';
-import { EstadoRecoleccion } from '../enums/estado-recoleccion.enum';
 
 export class FiltersRecoleccionDto {
   @ApiPropertyOptional({
@@ -36,15 +35,6 @@ export class FiltersRecoleccionDto {
   @IsOptional()
   @IsDateString()
   fecha_fin?: string;
-
-  @ApiPropertyOptional({
-    description: 'Filtrar por estado de la recolección',
-    enum: EstadoRecoleccion,
-    example: EstadoRecoleccion.ALMACENADO,
-  })
-  @IsOptional()
-  @IsEnum(EstadoRecoleccion)
-  estado?: EstadoRecoleccion;
 
   @ApiPropertyOptional({
     description: 'Filtrar por ID de vivero',

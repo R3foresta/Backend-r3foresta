@@ -504,8 +504,8 @@ export class RecoleccionesService {
   /**
    * Crea una nueva recolección bajo contrato V2
    * - No recibe estado en request (se usa default de BD)
-   * - nombre_cientifico/nombre_comercial se derivan desde planta
-   * - tipo_material se normaliza a SEMILLA/ESQUEJE
+   * - nombre_cientifico/nombre_comercial se consumen desde planta (sin snapshot legacy)
+   * - tipo_material canónico: SEMILLA | ESQUEJE
    * - registra evidencias en evidencias_trazabilidad
    */
   async createV2(
@@ -580,7 +580,7 @@ export class RecoleccionesService {
 
     const { data: planta, error: plantaError } = await supabase
       .from('planta')
-      .select('id, especie, nombre_cientifico, nombre_comun_principal')
+      .select('id')
       .eq('id', createRecoleccionDto.planta_id)
       .single();
 
@@ -588,28 +588,32 @@ export class RecoleccionesService {
       throw new NotFoundException('Planta no encontrada');
     }
 
-    if (files && files.length > 0) {
-      if (files.length > 5) {
-        throw new BadRequestException('Máximo 5 fotos permitidas');
+    if (!files || files.length < 2) {
+      throw new BadRequestException(
+        'Se requieren al menos 2 fotos para crear una recolección',
+      );
+    }
+
+    if (files.length > 5) {
+      throw new BadRequestException('Máximo 5 fotos permitidas');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const file of files as any[]) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+      const formato = file.mimetype.split('/')[1].toUpperCase();
+      if (!['JPG', 'JPEG', 'PNG'].includes(formato)) {
+        throw new BadRequestException(
+          `Formato ${formato} no permitido. Solo JPG, JPEG, PNG`,
+        );
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const file of files as any[]) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-        const formato = file.mimetype.split('/')[1].toUpperCase();
-        if (!['JPG', 'JPEG', 'PNG'].includes(formato)) {
-          throw new BadRequestException(
-            `Formato ${formato} no permitido. Solo JPG, JPEG, PNG`,
-          );
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        if (file.size > 5242880) {
-          throw new BadRequestException(
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            `Archivo ${file.originalname} supera 5MB`,
-          );
-        }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (file.size > 5242880) {
+        throw new BadRequestException(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          `Archivo ${file.originalname} supera 5MB`,
+        );
       }
     }
 
@@ -626,12 +630,24 @@ export class RecoleccionesService {
     );
 
     const bucketFotos = 'recoleccion_fotos';
+    const tipoEntidadEvidenciaId = 1;
+
+    const { data: tipoEntidadData, error: tipoEntidadError } = await supabase
+      .from('tipos_entidad_evidencia')
+      .select('id, activo')
+      .eq('id', tipoEntidadEvidenciaId)
+      .single();
+
+    if (tipoEntidadError || !tipoEntidadData || !tipoEntidadData.activo) {
+      throw new NotFoundException(
+        `No existe tipo_entidad_evidencia activo con id=${tipoEntidadEvidenciaId}`,
+      );
+    }
+
     let codigoTrazabilidad: string | null = null;
     let recoleccionId: number | null = null;
     let ubicacionId: number | null = null;
-    let tipoEntidadEvidenciaId: number | null = null;
     const fotosSubidas: Array<{
-      url: string;
       ruta_archivo: string;
       storage_object_id: string | null;
       mime_type: string;
@@ -654,69 +670,57 @@ export class RecoleccionesService {
 
       ubicacionId = Number(ubicacionCreada.id);
 
-      if (files && files.length > 0) {
-        for (const file of files) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          const nombreArchivo = `${Date.now()}_${file.originalname}`;
-          const rutaStorage = nombreArchivo;
+      for (const file of files) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const nombreArchivo = `${Date.now()}_${file.originalname}`;
+        const rutaStorage = nombreArchivo;
 
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from(bucketFotos)
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-            .upload(rutaStorage, file.buffer, {
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-              contentType: file.mimetype,
-              upsert: false,
-            });
-
-          if (uploadError) {
-            this.logger.error('❌ Error al subir foto v2:', uploadError);
-            throw new InternalServerErrorException('Error al subir foto');
-          }
-
-          const { data: publicUrlData } = supabase.storage
-            .from(bucketFotos)
-            .getPublicUrl(rutaStorage);
-
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-          const formato = file.mimetype.split('/')[1].toUpperCase();
-          const storageObjectId =
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            typeof uploadData?.id === 'string' ? uploadData.id : null;
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          const hashSha256 = file.buffer
-            ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
-              createHash('sha256').update(file.buffer).digest('hex')
-            : null;
-
-          fotosSubidas.push({
-            url: publicUrlData.publicUrl,
-            ruta_archivo: rutaStorage,
-            storage_object_id: storageObjectId,
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from(bucketFotos)
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+          .upload(rutaStorage, file.buffer, {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            mime_type: file.mimetype,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            tamano_bytes: file.size,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            formato,
-            hash_sha256: hashSha256,
+            contentType: file.mimetype,
+            upsert: false,
           });
+
+        if (uploadError) {
+          this.logger.error('❌ Error al subir foto v2:', uploadError);
+          throw new InternalServerErrorException('Error al subir foto');
         }
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+        const formato = file.mimetype.split('/')[1].toUpperCase();
+        const storageObjectId =
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          typeof uploadData?.id === 'string' ? uploadData.id : null;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const hashSha256 = file.buffer
+          ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+            createHash('sha256').update(file.buffer).digest('hex')
+          : null;
+
+        fotosSubidas.push({
+          ruta_archivo: rutaStorage,
+          storage_object_id: storageObjectId,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+          mime_type: file.mimetype,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+          tamano_bytes: file.size,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          formato,
+          hash_sha256: hashSha256,
+        });
       }
 
       codigoTrazabilidad = await this.generateCodigoTrazabilidad(createRecoleccionDto.fecha);
-
-      const nombreCientificoPlanta = String(planta.nombre_cientifico ?? '');
-      const nombreComercialPlanta = String(
-        planta.nombre_comun_principal ?? planta.especie ?? '',
-      );
 
       const { data: recoleccionCreada, error: recoleccionError } = await supabase
         .from('recoleccion')
         .insert({
           fecha: createRecoleccionDto.fecha,
-          nombre_cientifico: nombreCientificoPlanta || null,
-          nombre_comercial: nombreComercialPlanta || null,
+          nombre_cientifico: null,
+          nombre_comercial: null,
           cantidad: createRecoleccionDto.cantidad,
           unidad: conversionCanonica.unidad_normalizada,
           tipo_material: tipoMaterialCanonico,
@@ -742,66 +746,39 @@ export class RecoleccionesService {
 
       recoleccionId = Number(recoleccionCreada.id);
 
-      if (fotosSubidas.length > 0) {
-        tipoEntidadEvidenciaId =
-          await this.getTipoEntidadEvidenciaRecoleccionId();
-
-        const evidenciasInsert = fotosSubidas.map((foto, index) => ({
-          tipo_entidad_id: tipoEntidadEvidenciaId,
-          entidad_id: recoleccionId,
-          codigo_trazabilidad: codigoTrazabilidad,
-          bucket: bucketFotos,
-          ruta_archivo: foto.ruta_archivo,
-          storage_object_id: foto.storage_object_id,
-          tipo_archivo: 'FOTO',
-          mime_type: foto.mime_type,
-          tamano_bytes: foto.tamano_bytes,
-          hash_sha256: foto.hash_sha256,
-          titulo: `Foto ${index + 1}`,
-          metadata: {
-            origen: 'CREATE_RECOLECCION_V2',
-            formato: foto.formato,
-          },
-          es_principal: index === 0,
-          orden: index,
-          creado_por_usuario_id: userId,
-        }));
-
-        const { error: evidenciasError } = await supabase
-          .from('evidencias_trazabilidad')
-          .insert(evidenciasInsert);
-
-        if (evidenciasError) {
-          this.logger.error(
-            '❌ Error al guardar evidencias de trazabilidad:',
-            evidenciasError,
-          );
-          throw new InternalServerErrorException(
-            'Error al guardar evidencias de trazabilidad',
-          );
-        }
-
-        // Compatibilidad temporal: mantener poblada recoleccion_foto para lectura legacy.
-        const legacyFotosInsert = fotosSubidas.map((foto) => ({
-          recoleccion_id: recoleccionId,
-          url: foto.url,
-          peso_bytes: foto.tamano_bytes,
+      const evidenciasInsert = fotosSubidas.map((foto, index) => ({
+        tipo_entidad_id: tipoEntidadEvidenciaId,
+        entidad_id: recoleccionId,
+        codigo_trazabilidad: codigoTrazabilidad,
+        bucket: bucketFotos,
+        ruta_archivo: foto.ruta_archivo,
+        storage_object_id: foto.storage_object_id,
+        tipo_archivo: 'FOTO',
+        mime_type: foto.mime_type,
+        tamano_bytes: foto.tamano_bytes,
+        hash_sha256: foto.hash_sha256,
+        titulo: `Foto ${index + 1}`,
+        metadata: {
+          origen: 'CREATE_RECOLECCION_V2',
           formato: foto.formato,
-        }));
+        },
+        es_principal: index === 0,
+        orden: index,
+        creado_por_usuario_id: userId,
+      }));
 
-        const { error: legacyFotosError } = await supabase
-          .from('recoleccion_foto')
-          .insert(legacyFotosInsert);
+      const { error: evidenciasError } = await supabase
+        .from('evidencias_trazabilidad')
+        .insert(evidenciasInsert);
 
-        if (legacyFotosError) {
-          this.logger.error(
-            '❌ Error al guardar fotos legacy en recoleccion_foto:',
-            legacyFotosError,
-          );
-          throw new InternalServerErrorException(
-            'Error al guardar fotos de recolección',
-          );
-        }
+      if (evidenciasError) {
+        this.logger.error(
+          '❌ Error al guardar evidencias de trazabilidad:',
+          evidenciasError,
+        );
+        throw new InternalServerErrorException(
+          'Error al guardar evidencias de trazabilidad',
+        );
       }
 
       return this.findOne(recoleccionId);
@@ -809,18 +786,11 @@ export class RecoleccionesService {
       this.logger.error('❌ Error en createV2 de recolección:', error);
 
       if (recoleccionId) {
-        if (tipoEntidadEvidenciaId) {
-          await supabase
-            .from('evidencias_trazabilidad')
-            .delete()
-            .eq('tipo_entidad_id', tipoEntidadEvidenciaId)
-            .eq('entidad_id', recoleccionId);
-        }
-
         await supabase
-          .from('recoleccion_foto')
+          .from('evidencias_trazabilidad')
           .delete()
-          .eq('recoleccion_id', recoleccionId);
+          .eq('tipo_entidad_id', tipoEntidadEvidenciaId)
+          .eq('entidad_id', recoleccionId);
 
         await supabase.from('recoleccion').delete().eq('id', recoleccionId);
       }
@@ -844,12 +814,8 @@ export class RecoleccionesService {
   ): TipoMaterialRecoleccionV2Canonico {
     const tipoNormalizado = String(tipoMaterial).trim().toUpperCase();
 
-    if (tipoNormalizado === 'SEMILLA') {
-      return 'SEMILLA';
-    }
-
-    if (['ESQUEJE', 'ESTACA', 'PLANTULA', 'INJERTO'].includes(tipoNormalizado)) {
-      return 'ESQUEJE';
+    if (tipoNormalizado === 'SEMILLA' || tipoNormalizado === 'ESQUEJE') {
+      return tipoNormalizado;
     }
 
     throw new BadRequestException(
@@ -950,57 +916,6 @@ export class RecoleccionesService {
 
     const numeroSecuencial = ((count || 0) + 1).toString().padStart(3, '0');
     return `REC-${año}-${numeroSecuencial}`;
-  }
-
-  private async getTipoEntidadEvidenciaRecoleccionId(): Promise<number> {
-    const supabase = this.supabaseService.getClient();
-    const codigosPreferidos = ['RECOLECCION', 'RECOLECCIONES'];
-
-    for (const codigo of codigosPreferidos) {
-      const { data, error } = await supabase
-        .from('tipos_entidad_evidencia')
-        .select('id, codigo')
-        .eq('codigo', codigo)
-        .eq('activo', true)
-        .maybeSingle();
-
-      if (error) {
-        this.logger.error('❌ Error al consultar tipo_entidad_evidencia:', error);
-        throw new InternalServerErrorException(
-          'Error al consultar tipo de entidad para evidencias',
-        );
-      }
-
-      if (data?.id) {
-        return Number(data.id);
-      }
-    }
-
-    const { data: fallbackData, error: fallbackError } = await supabase
-      .from('tipos_entidad_evidencia')
-      .select('id, codigo')
-      .eq('activo', true)
-      .ilike('codigo', '%RECOLECCION%')
-      .order('id', { ascending: true })
-      .limit(1);
-
-    if (fallbackError) {
-      this.logger.error(
-        '❌ Error al consultar fallback de tipo_entidad_evidencia:',
-        fallbackError,
-      );
-      throw new InternalServerErrorException(
-        'Error al consultar tipo de entidad para evidencias',
-      );
-    }
-
-    if (fallbackData && fallbackData.length > 0) {
-      return Number(fallbackData[0].id);
-    }
-
-    throw new NotFoundException(
-      'No existe un tipo_entidad_evidencia activo para RECOLECCION. Registra ese catálogo antes de usar create v2.',
-    );
   }
 
   /**
@@ -1120,8 +1035,7 @@ export class RecoleccionesService {
         usuario:usuario_id (id, nombre, username),
         planta:planta_id (id, especie, nombre_cientifico, variedad),
         metodo:metodo_id (id, nombre, descripcion),
-        vivero:vivero_id (id, codigo, nombre, ubicacion_id),
-        fotos:recoleccion_foto (*)
+        vivero:vivero_id (id, codigo, nombre, ubicacion_id)
       `,
         { count: 'exact' },
       )
@@ -1137,10 +1051,6 @@ export class RecoleccionesService {
 
     if (filters.fecha_fin) {
       query = query.lte('fecha', filters.fecha_fin);
-    }
-
-    if (filters.estado) {
-      query = query.eq('estado', filters.estado);
     }
 
     if (filters.vivero_id) {
@@ -1215,8 +1125,7 @@ export class RecoleccionesService {
         usuario:usuario_id (id, nombre, username),
         planta:planta_id (id, especie, nombre_cientifico, variedad),
         metodo:metodo_id (id, nombre, descripcion),
-        vivero:vivero_id (id, codigo, nombre, ubicacion_id),
-        fotos:recoleccion_foto (*)
+        vivero:vivero_id (id, codigo, nombre, ubicacion_id)
       `,
         { count: 'exact' },
       )
@@ -1230,10 +1139,6 @@ export class RecoleccionesService {
 
     if (filters.fecha_fin) {
       query = query.lte('fecha', filters.fecha_fin);
-    }
-
-    if (filters.estado) {
-      query = query.eq('estado', filters.estado);
     }
 
     if (filters.tipo_material) {
@@ -1290,8 +1195,7 @@ export class RecoleccionesService {
         usuario:usuario_id (id, nombre, username, correo),
         vivero:vivero_id (id, codigo, nombre, ubicacion_id),
         metodo:metodo_id (id, nombre, descripcion),
-        planta:planta_id (*),
-        fotos:recoleccion_foto (*)
+        planta:planta_id (*)
       `,
       )
       .eq('id', id)
@@ -1302,11 +1206,69 @@ export class RecoleccionesService {
     }
 
     const enrichedData = await this.enrichSingleRecoleccion(data);
+    const evidencias = await this.getEvidenciasByRecoleccionId(id);
 
     return {
       success: true,
-      data: enrichedData,
+      data: {
+        ...enrichedData,
+        evidencias,
+      },
     };
+  }
+
+  private async getEvidenciasByRecoleccionId(recoleccionId: number) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data, error } = await supabase
+      .from('evidencias_trazabilidad')
+      .select(
+        `
+        id,
+        tipo_entidad_id,
+        entidad_id,
+        codigo_trazabilidad,
+        bucket,
+        ruta_archivo,
+        storage_object_id,
+        tipo_archivo,
+        mime_type,
+        tamano_bytes,
+        hash_sha256,
+        titulo,
+        descripcion,
+        metadata,
+        es_principal,
+        orden,
+        tomado_en,
+        creado_en,
+        actualizado_en
+      `,
+      )
+      .eq('tipo_entidad_id', 1)
+      .eq('entidad_id', recoleccionId)
+      .is('eliminado_en', null)
+      .order('es_principal', { ascending: false })
+      .order('orden', { ascending: true })
+      .order('creado_en', { ascending: true });
+
+    if (error) {
+      this.logger.error('❌ Error al obtener evidencias de recolección:', error);
+      throw new InternalServerErrorException(
+        'Error al obtener evidencias de recolección',
+      );
+    }
+
+    return (data || []).map((evidencia: any) => {
+      const { data: publicUrlData } = supabase.storage
+        .from(evidencia.bucket)
+        .getPublicUrl(evidencia.ruta_archivo);
+
+      return {
+        ...evidencia,
+        public_url: publicUrlData.publicUrl,
+      };
+    });
   }
 
   private async validateAndNormalizeUbicacionPayload(

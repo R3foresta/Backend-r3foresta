@@ -16,9 +16,6 @@ import { CreateUbicacionDto } from './create-ubicacion.dto';
 export const TIPOS_MATERIAL_RECOLECCION_V2_INPUT = [
   'SEMILLA',
   'ESQUEJE',
-  'ESTACA',
-  'PLANTULA',
-  'INJERTO',
 ] as const;
 
 export type TipoMaterialRecoleccionV2Input =
@@ -65,7 +62,7 @@ export class CreateRecoleccionV2Dto {
 
   @ApiProperty({
     description:
-      'Tipo de material. Se aceptan valores legacy temporalmente y se normalizan a SEMILLA/ESQUEJE.',
+      'Tipo de material canónico del módulo de recolección.',
     enum: TIPOS_MATERIAL_RECOLECCION_V2_INPUT,
     example: 'SEMILLA',
   })
@@ -74,7 +71,7 @@ export class CreateRecoleccionV2Dto {
   )
   @IsNotEmpty({ message: 'El tipo de material es requerido' })
   @IsIn(TIPOS_MATERIAL_RECOLECCION_V2_INPUT, {
-    message: 'tipo_material debe ser SEMILLA, ESQUEJE, ESTACA, PLANTULA o INJERTO',
+    message: 'tipo_material debe ser SEMILLA o ESQUEJE',
   })
   tipo_material: TipoMaterialRecoleccionV2Input;
 

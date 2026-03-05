@@ -76,7 +76,7 @@ export class CreateRecoleccionDto {
   })
   @IsNotEmpty({ message: 'El tipo de material es requerido' })
   @IsEnum(TipoMaterial, {
-    message: 'El tipo de material debe ser SEMILLA, ESTACA, PLANTULA o INJERTO',
+    message: 'El tipo de material debe ser SEMILLA o ESQUEJE',
   })
   tipo_material: TipoMaterial;
 
