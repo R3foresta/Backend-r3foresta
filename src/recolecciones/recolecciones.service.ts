@@ -605,7 +605,7 @@ export class RecoleccionesService {
     const offset = (page - 1) * limit;
 
     let query = supabase
-      .from('recoleccion')
+      .from('vw_recoleccion_estado')
       .select(
         `
         id,
