@@ -1029,20 +1029,7 @@ export class RecoleccionesService {
 
     let query = supabase
       .from('recoleccion')
-      .select(
-        `
-        id,
-        cantidad,
-        unidad,
-        fecha,
-        tipo_material,
-        estado,
-        planta:planta_id (id, especie, nombre_cientifico, variedad),
-        metodo:metodo_id (id, nombre, descripcion),
-        vivero:vivero_id (id, codigo, nombre, ubicacion_id)
-      `,
-        { count: 'exact' },
-      )
+      .select(this.getCanonicalRecoleccionSelect(), { count: 'exact' })
       .eq('usuario_id', userId) // ⚠️ FILTRO AUTOMÁTICO POR USUARIO
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false });
@@ -1065,17 +1052,24 @@ export class RecoleccionesService {
       query = query.eq('tipo_material', filters.tipo_material);
     }
 
+    const searchTerm = filters.search ?? filters.q;
+    const normalizedSearch = searchTerm?.trim();
+    if (normalizedSearch) {
+      const plantIds = await this.findPlantIdsBySearchTerm(normalizedSearch);
+      const orConditions = [
+        `codigo_trazabilidad.ilike.%${normalizedSearch}%`,
+        `observaciones.ilike.%${normalizedSearch}%`,
+      ];
+
+      if (plantIds.length > 0) {
+        orConditions.push(`planta_id.in.(${plantIds.join(',')})`);
+      }
+
+      query = query.or(orConditions.join(','));
+    }
+
     // Aplicar paginación
     query = query.range(offset, offset + limit - 1);
-
-    // Buscar también por nombre de planta si se envía search o q
-    const searchTerm = filters.search ?? filters.q;
-    if (searchTerm) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      query = query.or(
-        `nombre_cientifico.ilike.%${searchTerm}%,nombre_comercial.ilike.%${searchTerm}%`,
-      );
-    }
 
     const { data, error, count } = await query;
 
@@ -1086,32 +1080,15 @@ export class RecoleccionesService {
 
     const totalPages = Math.ceil((count || 0) / limit);
     const enrichedData = await this.enrichRecoleccionesWithUbicaciones(data || []);
-
-    // Obtener evidencias_trazabilidad para las recolecciones retornadas
-    const recoleccionIds = (data || []).map((r: any) => r.id as number);
-    const evidenciasMap = new Map<number, { ruta_archivo: string }[]>();
-
-    if (recoleccionIds.length > 0) {
-      const { data: evidencias } = await supabase
-        .from('evidencias_trazabilidad')
-        .select('entidad_id, ruta_archivo')
-        .in('entidad_id', recoleccionIds)
-        .is('eliminado_en', null);
-
-      if (evidencias) {
-        for (const ev of evidencias as any[]) {
-          const id = ev.entidad_id as number;
-          if (!evidenciasMap.has(id)) evidenciasMap.set(id, []);
-          evidenciasMap.get(id)!.push({ ruta_archivo: ev.ruta_archivo as string });
-        }
-      }
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    const finalData = enrichedData.map((r: any) => ({
-      ...r,
-      evidencias: evidenciasMap.get(r.id as number) ?? [],
-    }));
+    const evidenciasMap = await this.getEvidenciasMapByRecoleccionIds(
+      enrichedData.map((item: any) => Number(item.id)),
+    );
+    const finalData = enrichedData.map((item: any) =>
+      this.mapRecoleccionToCanonicalResponse(
+        item,
+        evidenciasMap.get(Number(item.id)) || [],
+      ),
+    );
 
     return {
       success: true,
@@ -1149,16 +1126,7 @@ export class RecoleccionesService {
 
     let query = supabase
       .from('recoleccion')
-      .select(
-        `
-        *,
-        usuario:usuario_id (id, nombre, username),
-        planta:planta_id (id, especie, nombre_cientifico, variedad),
-        metodo:metodo_id (id, nombre, descripcion),
-        vivero:vivero_id (id, codigo, nombre, ubicacion_id)
-      `,
-        { count: 'exact' },
-      )
+      .select(this.getCanonicalRecoleccionSelect(), { count: 'exact' })
       .eq('vivero_id', viveroId)
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false });
@@ -1176,10 +1144,19 @@ export class RecoleccionesService {
     }
 
     const searchTerm = filters.search ?? filters.q;
-    if (searchTerm) {
-      query = query.or(
-        `nombre_cientifico.ilike.%${searchTerm}%,nombre_comercial.ilike.%${searchTerm}%`,
-      );
+    const normalizedSearch = searchTerm?.trim();
+    if (normalizedSearch) {
+      const plantIds = await this.findPlantIdsBySearchTerm(normalizedSearch);
+      const orConditions = [
+        `codigo_trazabilidad.ilike.%${normalizedSearch}%`,
+        `observaciones.ilike.%${normalizedSearch}%`,
+      ];
+
+      if (plantIds.length > 0) {
+        orConditions.push(`planta_id.in.(${plantIds.join(',')})`);
+      }
+
+      query = query.or(orConditions.join(','));
     }
 
     query = query.range(offset, offset + limit - 1);
@@ -1195,10 +1172,19 @@ export class RecoleccionesService {
 
     const totalPages = Math.ceil((count || 0) / limit);
     const enrichedData = await this.enrichRecoleccionesWithUbicaciones(data || []);
+    const evidenciasMap = await this.getEvidenciasMapByRecoleccionIds(
+      enrichedData.map((item: any) => Number(item.id)),
+    );
+    const finalData = enrichedData.map((item: any) =>
+      this.mapRecoleccionToCanonicalResponse(
+        item,
+        evidenciasMap.get(Number(item.id)) || [],
+      ),
+    );
 
     return {
       success: true,
-      data: enrichedData,
+      data: finalData,
       pagination: {
         page,
         limit,
@@ -1221,34 +1207,7 @@ export class RecoleccionesService {
       .from('recoleccion')
       .select(
         `
-        id,
-        fecha,
-        created_at,
-        cantidad,
-        unidad,
-        tipo_material,
-        estado,
-        especie_nueva,
-        observaciones,
-        usuario_id,
-        ubicacion_id,
-        vivero_id,
-        metodo_id,
-        planta_id,
-        codigo_trazabilidad,
-        blockchain_url,
-        token_id,
-        transaction_hash,
-        estado_registro,
-        unidad_canonica,
-        cantidad_inicial_canonica,
-        usuario_validacion_id,
-        fecha_validacion,
-        blockchain_hash_validacion,
-        usuario:usuario_id (id, nombre, username, correo),
-        vivero:vivero_id (id, codigo, nombre, ubicacion_id),
-        metodo:metodo_id (id, nombre, descripcion),
-        planta:planta_id (*)
+        ${this.getCanonicalRecoleccionSelect()}
       `,
       )
       .eq('id', id)
@@ -1260,18 +1219,94 @@ export class RecoleccionesService {
 
     const enrichedData = await this.enrichSingleRecoleccion(data);
     const evidencias = await this.getEvidenciasByRecoleccionId(id);
+    const canonicalData = this.mapRecoleccionToCanonicalResponse(
+      enrichedData,
+      evidencias,
+    );
 
     return {
       success: true,
-      data: {
-        ...enrichedData,
-        evidencias,
-      },
+      data: canonicalData,
     };
   }
 
-  private async getEvidenciasByRecoleccionId(recoleccionId: number) {
+  private getCanonicalRecoleccionSelect(): string {
+    return `
+      id,
+      fecha,
+      created_at,
+      cantidad,
+      unidad,
+      tipo_material,
+      especie_nueva,
+      observaciones,
+      usuario_id,
+      ubicacion_id,
+      vivero_id,
+      metodo_id,
+      planta_id,
+      codigo_trazabilidad,
+      blockchain_url,
+      token_id,
+      transaction_hash,
+      estado_registro,
+      unidad_canonica,
+      cantidad_inicial_canonica,
+      usuario_validacion_id,
+      fecha_validacion,
+      blockchain_hash_validacion,
+      usuario:usuario_id (id, nombre, username, correo),
+      vivero:vivero_id (id, codigo, nombre, ubicacion_id),
+      metodo:metodo_id (id, nombre, descripcion),
+      planta:planta_id (
+        id,
+        especie,
+        nombre_cientifico,
+        variedad,
+        nombre_comun_principal,
+        nombres_comunes,
+        imagen_url,
+        notas,
+        tipo_planta_id
+      )
+    `;
+  }
+
+  private async findPlantIdsBySearchTerm(searchTerm: string): Promise<number[]> {
     const supabase = this.supabaseService.getClient();
+
+    const { data, error } = await supabase
+      .from('planta')
+      .select('id')
+      .or(
+        `nombre_cientifico.ilike.%${searchTerm}%,nombre_comun_principal.ilike.%${searchTerm}%,especie.ilike.%${searchTerm}%`,
+      );
+
+    if (error) {
+      this.logger.error('❌ Error al buscar plantas para filtro search:', error);
+      throw new InternalServerErrorException('Error al filtrar recolecciones');
+    }
+
+    return (data || [])
+      .map((item: any) => Number(item.id))
+      .filter((id) => Number.isInteger(id) && id > 0);
+  }
+
+  private async getEvidenciasMapByRecoleccionIds(recoleccionIds: number[]) {
+    const supabase = this.supabaseService.getClient();
+    const map = new Map<number, any[]>();
+
+    const ids = Array.from(
+      new Set(
+        recoleccionIds.filter(
+          (id) => Number.isInteger(id) && Number(id) > 0,
+        ),
+      ),
+    );
+
+    if (ids.length === 0) {
+      return map;
+    }
 
     const { data, error } = await supabase
       .from('evidencias_trazabilidad')
@@ -1299,29 +1334,73 @@ export class RecoleccionesService {
       `,
       )
       .eq('tipo_entidad_id', 1)
-      .eq('entidad_id', recoleccionId)
+      .in('entidad_id', ids)
       .is('eliminado_en', null)
+      .order('entidad_id', { ascending: true })
       .order('es_principal', { ascending: false })
       .order('orden', { ascending: true })
       .order('creado_en', { ascending: true });
 
     if (error) {
-      this.logger.error('❌ Error al obtener evidencias de recolección:', error);
+      this.logger.error('❌ Error al obtener evidencias de recolecciones:', error);
       throw new InternalServerErrorException(
-        'Error al obtener evidencias de recolección',
+        'Error al obtener evidencias de recolecciones',
       );
     }
 
-    return (data || []).map((evidencia: any) => {
-      const { data: publicUrlData } = supabase.storage
-        .from(evidencia.bucket)
-        .getPublicUrl(evidencia.ruta_archivo);
+    for (const evidencia of data || []) {
+      const recoleccionId = Number((evidencia as any).entidad_id);
+      if (!map.has(recoleccionId)) {
+        map.set(recoleccionId, []);
+      }
 
-      return {
-        ...evidencia,
+      const { data: publicUrlData } = supabase.storage
+        .from((evidencia as any).bucket)
+        .getPublicUrl((evidencia as any).ruta_archivo);
+
+      map.get(recoleccionId)!.push({
+        ...(evidencia as any),
         public_url: publicUrlData.publicUrl,
-      };
-    });
+      });
+    }
+
+    return map;
+  }
+
+  private mapRecoleccionToCanonicalResponse(recoleccion: any, evidencias: any[]) {
+    const cantidad = Number(recoleccion.cantidad ?? 0);
+    const estadoDetalle = cantidad > 0 ? 'ABIERTO' : 'CERRADO';
+    const nombreCientifico = recoleccion.planta?.nombre_cientifico ?? null;
+    const nombreComunPrincipal =
+      recoleccion.planta?.nombre_comun_principal ?? null;
+
+    const fotos = evidencias.map((evidencia: any) => ({
+      id: evidencia.id,
+      url: evidencia.public_url,
+      es_principal: evidencia.es_principal,
+      orden: evidencia.orden,
+      titulo: evidencia.titulo,
+      descripcion: evidencia.descripcion,
+      mime_type: evidencia.mime_type,
+      tamano_bytes: evidencia.tamano_bytes,
+    }));
+
+    return {
+      ...recoleccion,
+      nombre_cientifico: nombreCientifico,
+      nombre_comercial: nombreComunPrincipal,
+      nombre_comun_principal: nombreComunPrincipal,
+      estado_detalle: estadoDetalle,
+      evidencias,
+      fotos,
+    };
+  }
+
+  private async getEvidenciasByRecoleccionId(recoleccionId: number) {
+    const evidenciasMap = await this.getEvidenciasMapByRecoleccionIds([
+      recoleccionId,
+    ]);
+    return evidenciasMap.get(recoleccionId) || [];
   }
 
   private async validateAndNormalizeUbicacionPayload(
