@@ -20,7 +20,7 @@ import { EstadoRecoleccion } from '../enums/estado-recoleccion.enum';
 export class CreateRecoleccionDto {
   @ApiProperty({
     description: 'Fecha de recolección (no puede ser futura ni mayor a 45 días atrás)',
-    example: '2024-01-20',
+    example: '2026-01-20',
     type: String,
     format: 'date',
   })
@@ -28,6 +28,7 @@ export class CreateRecoleccionDto {
   @IsDateString({}, { message: 'La fecha debe ser válida' })
   fecha: string;
 
+  // TODO: Para el nuevo enpoint de create recolección cuando leemos/registramos este dato usamos los campos de la tabla plantas donde se registrara una nueva planta o se asignara una planta existente.
   @ApiPropertyOptional({
     description: 'Nombre científico de la especie',
     example: 'Swietenia macrophylla',
@@ -36,6 +37,7 @@ export class CreateRecoleccionDto {
   @IsString()
   nombre_cientifico?: string;
 
+  // TODO: Para el nuevo enpoint de create recolección cuando leemos/registramos este dato usamos los campos de la tabla plantas donde se registrara una nueva planta o se asignara una planta existente.
   @ApiPropertyOptional({
     description: 'Nombre comercial o común de la especie',
     example: 'Mara',
@@ -55,6 +57,7 @@ export class CreateRecoleccionDto {
   @Min(0.01, { message: 'La cantidad debe ser mayor a 0' })
   cantidad: number;
 
+  // TODO: La unidad de medida de ingreso puede ser gramos, unidades o kg. dependiendo lo que reciba la UI pero el backend lo debe estandarizar a gr y enviar a la db como gramos o G.
   @ApiProperty({
     description: 'Unidad de medida',
     example: 'kg',
@@ -63,7 +66,9 @@ export class CreateRecoleccionDto {
   @IsNotEmpty({ message: 'La unidad es requerida' })
   @IsString()
   unidad: string;
-
+  
+  // TODO: El TipoMaterial debe cambiar para solamente permitir SEMILLA y ESQUEJE.
+  // En los nuevos endpoints de crear no se incluiran. más bien se cambia la estrctura.
   @ApiProperty({
     description: 'Tipo de material vegetal recolectado',
     enum: TipoMaterial,
@@ -71,10 +76,12 @@ export class CreateRecoleccionDto {
   })
   @IsNotEmpty({ message: 'El tipo de material es requerido' })
   @IsEnum(TipoMaterial, {
-    message: 'El tipo de material debe ser SEMILLA, ESTACA, PLANTULA o INJERTO',
+    message: 'El tipo de material debe ser SEMILLA o ESQUEJE',
   })
   tipo_material: TipoMaterial;
 
+  // TODO: El EstadoRecoleccion se eliminara, ya no es válido.
+  // Se hara despues de crear los nuevos endpoints.
   @ApiPropertyOptional({
     description: 'Estado actual del material (default: ALMACENADO)',
     enum: EstadoRecoleccion,

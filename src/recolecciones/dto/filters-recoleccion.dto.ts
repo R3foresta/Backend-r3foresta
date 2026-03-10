@@ -8,7 +8,6 @@ import {
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TipoMaterial } from '../enums/tipo-material.enum';
-import { EstadoRecoleccion } from '../enums/estado-recoleccion.enum';
 
 export class FiltersRecoleccionDto {
   @ApiPropertyOptional({
@@ -23,7 +22,7 @@ export class FiltersRecoleccionDto {
 
   @ApiPropertyOptional({
     description: 'Fecha de inicio para el filtro de rango (YYYY-MM-DD)',
-    example: '2024-01-01',
+    example: '2025-09-01',
   })
   @IsOptional()
   @IsDateString()
@@ -31,20 +30,11 @@ export class FiltersRecoleccionDto {
 
   @ApiPropertyOptional({
     description: 'Fecha de fin para el filtro de rango (YYYY-MM-DD)',
-    example: '2024-12-31',
+    example: '2026-03-31',
   })
   @IsOptional()
   @IsDateString()
   fecha_fin?: string;
-
-  @ApiPropertyOptional({
-    description: 'Filtrar por estado de la recolección',
-    enum: EstadoRecoleccion,
-    example: EstadoRecoleccion.ALMACENADO,
-  })
-  @IsOptional()
-  @IsEnum(EstadoRecoleccion)
-  estado?: EstadoRecoleccion;
 
   @ApiPropertyOptional({
     description: 'Filtrar por ID de vivero',
@@ -98,7 +88,7 @@ export class FiltersRecoleccionDto {
   q?: string;
 
   @ApiPropertyOptional({
-    description: 'Buscar por nombre científico o comercial de la planta',
+    description: 'Buscar por código de trazabilidad, observaciones o datos de planta (científico/común)',
     example: 'ceibo',
   })
   @IsOptional()

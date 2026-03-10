@@ -28,7 +28,10 @@ import { plainToInstance } from 'class-transformer';
 import { ValidationError, validate } from 'class-validator';
 import * as qs from 'qs';
 import { RecoleccionesService } from './recolecciones.service';
-import { CreateRecoleccionDto } from './dto/create-recoleccion.dto';
+import {
+  CreateRecoleccionV2Dto,
+  TIPOS_MATERIAL_RECOLECCION_V2_INPUT,
+} from './dto/create-recoleccion-v2.dto';
 import { FUENTES_UBICACION } from './dto/create-ubicacion.dto';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 
@@ -39,9 +42,9 @@ export class RecoleccionesController {
 
   @Post()
   @ApiOperation({
-    summary: 'Crear nueva recolección',
+    summary: 'Crear nueva recolección (Canónica)',
     description:
-      'Crea una nueva recolección con ubicación bajo el nuevo modelo (pais_id/division_id/sitio físico).',
+      'Crea una recolección bajo la verdad canónica del módulo (sin campos legacy).',
   })
   @ApiSecurity('x-auth-id')
   @ApiHeader({
@@ -51,7 +54,7 @@ export class RecoleccionesController {
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    description: 'Datos de la recolección (FormData)',
+    description: 'Datos canónicos de la recolección (FormData)',
     schema: {
       type: 'object',
       required: [
@@ -59,30 +62,25 @@ export class RecoleccionesController {
         'cantidad',
         'unidad',
         'tipo_material',
-        'especie_nueva',
+        'planta_id',
         'metodo_id',
         'ubicacion[latitud]',
         'ubicacion[longitud]',
+        'fotos',
       ],
       properties: {
-        fecha: { type: 'string', format: 'date', example: '2024-01-20' },
+        fecha: { type: 'string', format: 'date', example: '2026-03-04' },
         cantidad: { type: 'number', example: 2.5 },
         unidad: { type: 'string', example: 'kg' },
         tipo_material: {
           type: 'string',
-          enum: ['SEMILLA', 'ESTACA', 'PLANTULA', 'INJERTO'],
+          enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
+          example: 'SEMILLA',
         },
-        estado: {
-          type: 'string',
-          enum: ['ALMACENADO', 'EN_PROCESO', 'UTILIZADO', 'DESCARTADO'],
-        },
-        especie_nueva: { type: 'boolean', example: false },
         planta_id: { type: 'number', example: 10 },
         metodo_id: { type: 'number', example: 1 },
         vivero_id: { type: 'number', example: 3 },
-        nombre_cientifico: { type: 'string', example: 'Swietenia macrophylla' },
-        nombre_comercial: { type: 'string', example: 'Mara' },
-        observaciones: { type: 'string', example: 'Semillas en buen estado' },
+        observaciones: { type: 'string', example: 'Registro canónico de recolección' },
         'ubicacion[pais_id]': { type: 'number', example: 1 },
         'ubicacion[division_id]': { type: 'number', example: 999 },
         'ubicacion[nombre]': { type: 'string', example: 'Parcela Don Lucho' },
@@ -94,18 +92,6 @@ export class RecoleccionesController {
           type: 'string',
           enum: [...FUENTES_UBICACION],
           example: 'GPS_MOVIL',
-        },
-        'nueva_planta[especie]': { type: 'string', example: 'Jacarandá' },
-        'nueva_planta[nombre_cientifico]': {
-          type: 'string',
-          example: 'Jacaranda mimosifolia',
-        },
-        'nueva_planta[variedad]': { type: 'string', example: 'Común' },
-        'nueva_planta[tipo_planta]': { type: 'string', example: 'Árbol' },
-        'nueva_planta[tipo_planta_otro]': { type: 'string', example: 'Palmera' },
-        'nueva_planta[fuente]': {
-          type: 'string',
-          enum: ['NATIVA', 'INTRODUCIDA', 'ENDEMICA'],
         },
         fotos: {
           type: 'array',
@@ -126,6 +112,89 @@ export class RecoleccionesController {
     @Headers('x-auth-id') authId?: string,
     @UploadedFiles() files?: { fotos?: any[] },
   ) {
+    return this.handleCreateCanonico(bodyRaw, authId, files?.fotos);
+  }
+
+  @Post('v2')
+  @ApiOperation({
+    summary: 'Crear nueva recolección (V2 - Canónica)',
+    description:
+      'Alias del endpoint canónico de creación de recolección.',
+  })
+  @ApiSecurity('x-auth-id')
+  @ApiHeader({
+    name: 'x-auth-id',
+    description: 'ID de autenticación del usuario de Supabase',
+    required: true,
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Datos de la recolección v2 (FormData)',
+    schema: {
+      type: 'object',
+      required: [
+        'fecha',
+        'cantidad',
+        'unidad',
+        'tipo_material',
+        'planta_id',
+        'metodo_id',
+        'ubicacion[latitud]',
+        'ubicacion[longitud]',
+        'fotos',
+      ],
+      properties: {
+        fecha: { type: 'string', format: 'date', example: '2026-03-04' },
+        cantidad: { type: 'number', example: 2.5 },
+        unidad: { type: 'string', example: 'kg' },
+        tipo_material: {
+          type: 'string',
+          enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
+          example: 'SEMILLA',
+        },
+        planta_id: { type: 'number', example: 10 },
+        metodo_id: { type: 'number', example: 1 },
+        vivero_id: { type: 'number', example: 3 },
+        observaciones: { type: 'string', example: 'Lote piloto para trazabilidad v2' },
+        'ubicacion[pais_id]': { type: 'number', example: 1 },
+        'ubicacion[division_id]': { type: 'number', example: 999 },
+        'ubicacion[nombre]': { type: 'string', example: 'Parcela Don Lucho' },
+        'ubicacion[referencia]': { type: 'string', example: 'Zona Sur' },
+        'ubicacion[latitud]': { type: 'number', example: -16.5833 },
+        'ubicacion[longitud]': { type: 'number', example: -68.15 },
+        'ubicacion[precision_m]': { type: 'number', example: 10 },
+        'ubicacion[fuente]': {
+          type: 'string',
+          enum: [...FUENTES_UBICACION],
+          example: 'GPS_MOVIL',
+        },
+        fotos: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Recolección v2 creada exitosamente' })
+  @ApiResponse({ status: 400, description: 'Error de validación en los datos' })
+  @ApiResponse({ status: 401, description: 'No autorizado - falta header x-auth-id' })
+  @ApiResponse({ status: 403, description: 'Prohibido - usuario sin permisos' })
+  @ApiResponse({ status: 404, description: 'Recurso no encontrado' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
+  async createV2(
+    @Body() bodyRaw: any,
+    @Headers('x-auth-id') authId?: string,
+    @UploadedFiles() files?: { fotos?: any[] },
+  ) {
+    return this.handleCreateCanonico(bodyRaw, authId, files?.fotos);
+  }
+
+  private async handleCreateCanonico(
+    bodyRaw: any,
+    authId?: string,
+    fotos?: any[],
+  ) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const parsedBody: any = qs.parse(bodyRaw);
 
@@ -135,8 +204,8 @@ export class RecoleccionesController {
 
     this.normalizeNumericFields(parsedBody);
 
-    const createRecoleccionDto = plainToInstance(CreateRecoleccionDto, parsedBody);
-    const errors = await validate(createRecoleccionDto, {
+    const createRecoleccionV2Dto = plainToInstance(CreateRecoleccionV2Dto, parsedBody);
+    const errors = await validate(createRecoleccionV2Dto, {
       whitelist: true,
       forbidNonWhitelisted: true,
     });
@@ -152,11 +221,11 @@ export class RecoleccionesController {
 
     const userRole = 'ADMIN';
 
-    return this.recoleccionesService.create(
-      createRecoleccionDto,
+    return this.recoleccionesService.createV2(
+      createRecoleccionV2Dto,
       authId,
       userRole,
-      files?.fotos,
+      fotos,
     );
   }
 
@@ -176,14 +245,9 @@ export class RecoleccionesController {
   @ApiQuery({ name: 'fecha_inicio', required: false, type: String })
   @ApiQuery({ name: 'fecha_fin', required: false, type: String })
   @ApiQuery({
-    name: 'estado',
-    required: false,
-    enum: ['ALMACENADO', 'EN_PROCESO', 'UTILIZADO', 'DESCARTADO'],
-  })
-  @ApiQuery({
     name: 'tipo_material',
     required: false,
-    enum: ['SEMILLA', 'ESTACA', 'PLANTULA', 'INJERTO'],
+    enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
   })
   @ApiQuery({ name: 'vivero_id', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
@@ -206,14 +270,9 @@ export class RecoleccionesController {
   @ApiQuery({ name: 'fecha_inicio', required: false, type: String })
   @ApiQuery({ name: 'fecha_fin', required: false, type: String })
   @ApiQuery({
-    name: 'estado',
-    required: false,
-    enum: ['ALMACENADO', 'EN_PROCESO', 'UTILIZADO', 'DESCARTADO'],
-  })
-  @ApiQuery({
     name: 'tipo_material',
     required: false,
-    enum: ['SEMILLA', 'ESTACA', 'PLANTULA', 'INJERTO'],
+    enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
   })
   @ApiQuery({ name: 'search', required: false, type: String })
   async findByVivero(
@@ -244,12 +303,6 @@ export class RecoleccionesController {
     if (parsedBody.planta_id !== undefined) {
       parsedBody.planta_id = Number(parsedBody.planta_id);
     }
-    if (parsedBody.especie_nueva !== undefined) {
-      parsedBody.especie_nueva =
-        parsedBody.especie_nueva === true ||
-        parsedBody.especie_nueva === 'true';
-    }
-
     if (parsedBody.ubicacion) {
       if (parsedBody.ubicacion.latitud !== undefined) {
         parsedBody.ubicacion.latitud = Number(parsedBody.ubicacion.latitud);
