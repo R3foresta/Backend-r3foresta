@@ -6,6 +6,7 @@ import {
   Headers,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
   UnauthorizedException,
@@ -34,17 +35,23 @@ import {
 } from './dto/create-recoleccion-v2.dto';
 import { FUENTES_UBICACION } from './dto/create-ubicacion.dto';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
+import { UpdateDraftDto } from './dto/update-draft.dto';
+import { RejectValidationDto } from './dto/reject-validation.dto';
 
 @ApiTags('recolecciones')
 @Controller('recolecciones')
 export class RecoleccionesController {
   constructor(private readonly recoleccionesService: RecoleccionesService) {}
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Creación
+  // ─────────────────────────────────────────────────────────────────────────────
+
   @Post()
   @ApiOperation({
     summary: 'Crear nueva recolección (Canónica)',
     description:
-      'Crea una recolección bajo la verdad canónica del módulo (sin campos legacy).',
+      'Crea una recolección bajo la verdad canónica del módulo (sin campos legacy). Se crea en estado BORRADOR.',
   })
   @ApiSecurity('x-auth-id')
   @ApiHeader({
@@ -100,7 +107,7 @@ export class RecoleccionesController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Recolección creada exitosamente' })
+  @ApiResponse({ status: 201, description: 'Recolección creada exitosamente en estado BORRADOR' })
   @ApiResponse({ status: 400, description: 'Error de validación en los datos' })
   @ApiResponse({ status: 401, description: 'No autorizado - falta header x-auth-id' })
   @ApiResponse({ status: 403, description: 'Prohibido - usuario sin permisos' })
@@ -119,7 +126,7 @@ export class RecoleccionesController {
   @ApiOperation({
     summary: 'Crear nueva recolección (V2 - Canónica)',
     description:
-      'Alias del endpoint canónico de creación de recolección.',
+      'Alias del endpoint canónico de creación de recolección. Se crea en estado BORRADOR.',
   })
   @ApiSecurity('x-auth-id')
   @ApiHeader({
@@ -175,7 +182,7 @@ export class RecoleccionesController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Recolección v2 creada exitosamente' })
+  @ApiResponse({ status: 201, description: 'Recolección v2 creada exitosamente en BORRADOR' })
   @ApiResponse({ status: 400, description: 'Error de validación en los datos' })
   @ApiResponse({ status: 401, description: 'No autorizado - falta header x-auth-id' })
   @ApiResponse({ status: 403, description: 'Prohibido - usuario sin permisos' })
@@ -189,6 +196,229 @@ export class RecoleccionesController {
   ) {
     return this.handleCreateCanonico(bodyRaw, authId, files?.fotos);
   }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Flujo de estados
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  @Patch(':id/draft')
+  @ApiOperation({
+    summary: 'Editar borrador de recolección',
+    description:
+      'Permite editar una recolección en BORRADOR o RECHAZADO. Si estaba RECHAZADO, vuelve a BORRADOR.',
+  })
+  @ApiSecurity('x-auth-id')
+  @ApiHeader({ name: 'x-auth-id', description: 'ID de autenticación del usuario', required: true })
+  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (ADMIN, TECNICO, GENERAL)', required: true })
+  @ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' })
+  @ApiBody({ type: UpdateDraftDto })
+  @ApiResponse({ status: 200, description: 'Borrador actualizado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Estado no permite edición' })
+  @ApiResponse({ status: 403, description: 'Sin permisos para editar' })
+  @ApiResponse({ status: 404, description: 'Recolección no encontrada' })
+  async updateDraft(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateDraftDto,
+    @Headers('x-auth-id') authId?: string,
+    @Headers('x-user-role') userRole?: string,
+  ) {
+    if (!authId) {
+      throw new UnauthorizedException('Header x-auth-id es requerido');
+    }
+
+    return this.recoleccionesService.updateDraft(id, dto, authId, userRole || 'TECNICO');
+  }
+
+  @Patch(':id/submit')
+  @ApiOperation({
+    summary: 'Enviar recolección a validación',
+    description: 'Cambia el estado de BORRADOR a PENDIENTE_VALIDACION. Solo el creador o ADMIN.',
+  })
+  @ApiSecurity('x-auth-id')
+  @ApiHeader({ name: 'x-auth-id', description: 'ID de autenticación del usuario', required: true })
+  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario', required: true })
+  @ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' })
+  @ApiResponse({ status: 200, description: 'Recolección enviada a validación' })
+  @ApiResponse({ status: 400, description: 'Estado no permite envío a validación' })
+  @ApiResponse({ status: 403, description: 'Sin permisos' })
+  @ApiResponse({ status: 404, description: 'Recolección no encontrada' })
+  async submitForValidation(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('x-auth-id') authId?: string,
+    @Headers('x-user-role') userRole?: string,
+  ) {
+    if (!authId) {
+      throw new UnauthorizedException('Header x-auth-id es requerido');
+    }
+
+    return this.recoleccionesService.submitForValidation(id, authId, userRole || 'TECNICO');
+  }
+
+  @Patch(':id/approve')
+  @ApiOperation({
+    summary: 'Aprobar validación de recolección',
+    description:
+      'Cambia PENDIENTE_VALIDACION → VALIDADO. Solo GENERAL o ADMIN. Ejecuta Pinata + Blockchain.',
+  })
+  @ApiSecurity('x-auth-id')
+  @ApiHeader({ name: 'x-auth-id', description: 'ID de autenticación del usuario', required: true })
+  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (GENERAL o ADMIN)', required: true })
+  @ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' })
+  @ApiResponse({ status: 200, description: 'Recolección validada y minteada en blockchain' })
+  @ApiResponse({ status: 400, description: 'Estado no permite aprobación' })
+  @ApiResponse({ status: 403, description: 'Sin permisos de validador' })
+  @ApiResponse({ status: 404, description: 'Recolección no encontrada' })
+  async approveValidation(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('x-auth-id') authId?: string,
+    @Headers('x-user-role') userRole?: string,
+  ) {
+    if (!authId) {
+      throw new UnauthorizedException('Header x-auth-id es requerido');
+    }
+
+    if (!userRole) {
+      throw new BadRequestException('Header x-user-role es requerido para validar');
+    }
+
+    return this.recoleccionesService.approveValidation(id, authId, userRole);
+  }
+
+  @Patch(':id/reject')
+  @ApiOperation({
+    summary: 'Rechazar validación de recolección',
+    description:
+      'Cambia PENDIENTE_VALIDACION → RECHAZADO. Solo GENERAL o ADMIN. Requiere motivo.',
+  })
+  @ApiSecurity('x-auth-id')
+  @ApiHeader({ name: 'x-auth-id', description: 'ID de autenticación del usuario', required: true })
+  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (GENERAL o ADMIN)', required: true })
+  @ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' })
+  @ApiBody({ type: RejectValidationDto })
+  @ApiResponse({ status: 200, description: 'Recolección rechazada' })
+  @ApiResponse({ status: 400, description: 'Estado no permite rechazo' })
+  @ApiResponse({ status: 403, description: 'Sin permisos de validador' })
+  @ApiResponse({ status: 404, description: 'Recolección no encontrada' })
+  async rejectValidation(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: RejectValidationDto,
+    @Headers('x-auth-id') authId?: string,
+    @Headers('x-user-role') userRole?: string,
+  ) {
+    if (!authId) {
+      throw new UnauthorizedException('Header x-auth-id es requerido');
+    }
+
+    if (!userRole) {
+      throw new BadRequestException('Header x-user-role es requerido para rechazar');
+    }
+
+    return this.recoleccionesService.rejectValidation(id, authId, userRole, dto);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Consultas
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  @Get('pending-validation')
+  @ApiOperation({
+    summary: 'Listar recolecciones pendientes de validación',
+    description: 'Devuelve recolecciones en estado PENDIENTE_VALIDACION con filtros y paginación.',
+  })
+  @ApiSecurity('x-auth-id')
+  @ApiHeader({ name: 'x-auth-id', description: 'ID de autenticación del usuario', required: true })
+  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (GENERAL o ADMIN)', required: true })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'fecha_inicio', required: false, type: String })
+  @ApiQuery({ name: 'fecha_fin', required: false, type: String })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Lista de recolecciones pendientes de validación' })
+  async findPendingValidation(
+    @Query() filters: FiltersRecoleccionDto,
+    @Headers('x-auth-id') authId?: string,
+    @Headers('x-user-role') userRole?: string,
+  ) {
+    if (!authId) {
+      throw new UnauthorizedException('Header x-auth-id es requerido');
+    }
+
+    if (!userRole || !['GENERAL', 'ADMIN'].includes(userRole.toUpperCase())) {
+      throw new BadRequestException(
+        'Solo usuarios con rol GENERAL o ADMIN pueden ver recolecciones pendientes.',
+      );
+    }
+
+    return this.recoleccionesService.findPendingValidation(filters);
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: 'Listar recolecciones del usuario',
+    description: 'Obtiene recolecciones con filtros opcionales y paginación.',
+  })
+  @ApiSecurity('x-auth-id')
+  @ApiHeader({
+    name: 'x-auth-id',
+    description: 'ID de autenticación del usuario de Supabase',
+    required: true,
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'fecha_inicio', required: false, type: String })
+  @ApiQuery({ name: 'fecha_fin', required: false, type: String })
+  @ApiQuery({
+    name: 'tipo_material',
+    required: false,
+    enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
+  })
+  @ApiQuery({ name: 'vivero_id', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  async findAll(
+    @Query() filters: FiltersRecoleccionDto,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    if (!authId) {
+      throw new UnauthorizedException('Header x-auth-id es requerido');
+    }
+
+    return this.recoleccionesService.findAll(authId, filters);
+  }
+
+  @Get('vivero/:viveroId')
+  @ApiOperation({
+    summary: 'Listar recolecciones por vivero',
+    description: 'Solo devuelve recolecciones VALIDADAS con token_id (minteadas en blockchain).',
+  })
+  @ApiParam({ name: 'viveroId', type: Number, description: 'ID del vivero' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'fecha_inicio', required: false, type: String })
+  @ApiQuery({ name: 'fecha_fin', required: false, type: String })
+  @ApiQuery({
+    name: 'tipo_material',
+    required: false,
+    enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
+  })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  async findByVivero(
+    @Param('viveroId', ParseIntPipe) viveroId: number,
+    @Query() filters: FiltersRecoleccionDto,
+  ) {
+    return this.recoleccionesService.findByVivero(viveroId, filters);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener detalle de recolección' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' })
+  @ApiResponse({ status: 404, description: 'Recolección no encontrada' })
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.recoleccionesService.findOne(id);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Helpers privados del controller
+  // ─────────────────────────────────────────────────────────────────────────────
 
   private async handleCreateCanonico(
     bodyRaw: any,
@@ -227,67 +457,6 @@ export class RecoleccionesController {
       userRole,
       fotos,
     );
-  }
-
-  @Get()
-  @ApiOperation({
-    summary: 'Listar recolecciones del usuario',
-    description: 'Obtiene recolecciones con filtros opcionales y paginación.',
-  })
-  @ApiSecurity('x-auth-id')
-  @ApiHeader({
-    name: 'x-auth-id',
-    description: 'ID de autenticación del usuario de Supabase',
-    required: true,
-  })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'fecha_inicio', required: false, type: String })
-  @ApiQuery({ name: 'fecha_fin', required: false, type: String })
-  @ApiQuery({
-    name: 'tipo_material',
-    required: false,
-    enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
-  })
-  @ApiQuery({ name: 'vivero_id', required: false, type: Number })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  async findAll(
-    @Query() filters: FiltersRecoleccionDto,
-    @Headers('x-auth-id') authId?: string,
-  ) {
-    if (!authId) {
-      throw new UnauthorizedException('Header x-auth-id es requerido');
-    }
-
-    return this.recoleccionesService.findAll(authId, filters);
-  }
-
-  @Get('vivero/:viveroId')
-  @ApiOperation({ summary: 'Listar recolecciones por vivero' })
-  @ApiParam({ name: 'viveroId', type: Number, description: 'ID del vivero' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'fecha_inicio', required: false, type: String })
-  @ApiQuery({ name: 'fecha_fin', required: false, type: String })
-  @ApiQuery({
-    name: 'tipo_material',
-    required: false,
-    enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
-  })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  async findByVivero(
-    @Param('viveroId', ParseIntPipe) viveroId: number,
-    @Query() filters: FiltersRecoleccionDto,
-  ) {
-    return this.recoleccionesService.findByVivero(viveroId, filters);
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Obtener detalle de recolección' })
-  @ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' })
-  @ApiResponse({ status: 404, description: 'Recolección no encontrada' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.recoleccionesService.findOne(id);
   }
 
   private normalizeNumericFields(parsedBody: any): void {
