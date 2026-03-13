@@ -17,6 +17,9 @@ import {
   TipoMaterialRecoleccionV2Canonico,
   TipoMaterialRecoleccionV2Input,
 } from './dto/create-recoleccion-v2.dto';
+import { UpdateDraftDto } from './dto/update-draft.dto';
+import { RejectValidationDto } from './dto/reject-validation.dto';
+import { EstadoRegistro } from './enums/estado-registro.enum';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 import { UbicacionesReadService } from '../common/ubicaciones/ubicaciones-read.service';
 
@@ -337,6 +340,7 @@ export class RecoleccionesService {
             metodo_id: createRecoleccionDto.metodo_id,
             planta_id: plantaIdFinal,
             codigo_trazabilidad: codigoTrazabilidad,
+            estado_registro: EstadoRegistro.BORRADOR,
           })
           .select()
           .single();
@@ -397,100 +401,7 @@ export class RecoleccionesService {
         console.log('💾 Paso 5: Sin fotos para guardar');
       }
 
-      console.log('🎉 ✅ RECOLECCIÓN CREADA EXITOSAMENTE');
-      console.log('🌱 ==========================================\n');
-
-      // PASO 6: Subir JSON a Pinata automáticamente
-      console.log('☁️  Paso 6: Subiendo metadata a IPFS/Pinata...');
-      try {
-        // Obtener datos completos de la recolección creada directamente de Supabase
-        const { data: recoleccionCompleta, error: fetchError } = await supabase
-          .from('recoleccion')
-          .select(
-            `
-            *,
-            usuario:usuario_id (id, nombre, username, correo),
-            vivero:vivero_id (id, codigo, nombre, ubicacion_id),
-            metodo:metodo_id (id, nombre, descripcion),
-            planta:planta_id (*),
-            fotos:recoleccion_foto (*)
-          `,
-          )
-          .eq('id', recoleccionId)
-          .single();
-
-        if (fetchError || !recoleccionCompleta) {
-          throw new Error('No se pudo obtener la recolección para metadata');
-        }
-
-        const recoleccionEnriquecida = await this.enrichSingleRecoleccion(
-          recoleccionCompleta,
-        );
-
-        // Construir JSON en formato NFT estándar
-        const metadata = this.buildNFTMetadata(
-          recoleccionEnriquecida,
-          usuarioData.nombre,
-        );
-
-        // Subir a Pinata
-        const pinataResult = await this.pinataService.uploadJson(
-          metadata,
-          `${codigoTrazabilidad}.json`,
-        );
-
-        const ipfsUrl = pinataResult.ipfs_url;
-        const gatewayUrl = pinataResult.gateway_url;
-        const publicUrl = pinataResult.public_url;
-        
-        // Logs para verificar las URLs
-        this.logger.log(`📦 URLs de Pinata:`);
-        this.logger.log(`   • IPFS URL: ${ipfsUrl}`);
-        this.logger.log(`   • Gateway URL: ${gatewayUrl}`);
-        this.logger.log(`   • Public URL: ${publicUrl}`);
-        this.logger.log(`✅ Metadata subido a IPFS`);
-
-        // PASO 7: Mintear NFT en blockchain automáticamente
-        this.logger.log('🔗 Paso 7: Minteando NFT en blockchain...');
-        this.logger.log(`   • Usando URL: ${publicUrl}`);
-        try {
-          const mintResult = await this.blockchainService.mintNFT(
-            '0x2440783D1d86D91118E7e19F62889dDc96775868',
-            publicUrl, // Usar public_url que tiene el formato correcto del gateway
-          );
-
-          // Construir URL del blockchain explorer
-          const blockchainUrl = `https://shannon-explorer.somnia.network/token/0x4bb21533f7803BBce74421f6bdfc4B6c57706EA2/instance/${mintResult.tokenId}`;
-
-          this.logger.log(`✅ NFT acuñado exitosamente. Token ID: ${mintResult.tokenId}`);
-          this.logger.log(`🔗 URL Blockchain: ${blockchainUrl}`);
-
-          // Guardar datos de blockchain en la BD
-          const { error: blockchainUpdateError } = await supabase
-            .from('recoleccion')
-            .update({
-              blockchain_url: blockchainUrl,
-              token_id: String(mintResult.tokenId),
-              transaction_hash: mintResult.transactionHash,
-            })
-            .eq('id', recoleccionId);
-
-          if (blockchainUpdateError) {
-            this.logger.error('⚠️  No se pudo guardar datos de blockchain en BD:', blockchainUpdateError);
-          } else {
-            this.logger.log('✅ Datos de blockchain guardados en la base de datos');
-          }
-        } catch (blockchainError) {
-          this.logger.error('⚠️  Error al mintear NFT:', blockchainError);
-          // No lanzamos error, la recolección ya está creada y en IPFS
-        }
-      } catch (pinataError) {
-        this.logger.error('⚠️  Error al subir a Pinata:', pinataError);
-        // No lanzamos error aquí, solo logueamos
-        // La recolección ya fue creada exitosamente
-      }
-
-      console.log('🎉 ✅ PROCESO COMPLETO FINALIZADO');
+      console.log('🎉 ✅ RECOLECCIÓN CREADA EXITOSAMENTE (estado: BORRADOR)');
       console.log('🌱 ==========================================\n');
 
       // Retornar datos completos (la URL de IPFS ya está guardada en la BD)
@@ -1002,6 +913,475 @@ export class RecoleccionesService {
     };
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Helpers de usuario y permisos
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Obtiene el usuario por auth_id. Lanza NotFoundException si no existe.
+   */
+  private async getUserByAuthId(authId: string) {
+    const supabase = this.supabaseService.getClient();
+    const { data, error } = await supabase
+      .from('usuario')
+      .select('id, nombre, rol')
+      .eq('auth_id', authId)
+      .single();
+
+    if (error || !data) {
+      throw new NotFoundException(`Usuario con auth_id ${authId} no encontrado`);
+    }
+
+    return data as { id: number; nombre: string; rol: string };
+  }
+
+  /**
+   * Valida que el usuario sea el creador de la recolección o tenga rol ADMIN.
+   */
+  private assertOwnerOrAdmin(
+    recoleccion: { usuario_id: number },
+    userId: number,
+    userRole: string,
+  ): void {
+    const role = String(userRole ?? '').toUpperCase();
+    if (recoleccion.usuario_id !== userId && role !== 'ADMIN') {
+      throw new ForbiddenException(
+        'Solo el creador de la recolección o un ADMIN pueden realizar esta acción.',
+      );
+    }
+  }
+
+  /**
+   * Valida que el usuario tenga rol GENERAL o ADMIN (revisores).
+   */
+  private assertReviewerRole(userRole: string): void {
+    const role = String(userRole ?? '').toUpperCase();
+    if (!['GENERAL', 'ADMIN'].includes(role)) {
+      throw new ForbiddenException(
+        'Solo usuarios con rol GENERAL o ADMIN pueden realizar esta acción.',
+      );
+    }
+  }
+
+  /**
+   * Obtiene una recolección cruda por ID (sin enriquecer). Lanza NotFoundException si no existe.
+   */
+  private async getRawRecoleccion(id: number) {
+    const supabase = this.supabaseService.getClient();
+    const { data, error } = await supabase
+      .from('recoleccion')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      throw new NotFoundException(`Recolección con id ${id} no encontrada`);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return data;
+  }
+
+  /**
+   * Ejecuta el flujo de Pinata + Blockchain para una recolección validada.
+   * No lanza errores — los captura y loguea, para no perder la validación.
+   */
+  private async executeBlockchainFlow(
+    recoleccionId: number,
+    codigoTrazabilidad: string,
+    nombreUsuario: string,
+  ): Promise<void> {
+    const supabase = this.supabaseService.getClient();
+
+    try {
+      this.logger.log(`☁️  Blockchain flow: obteniendo datos de recolección ${recoleccionId}...`);
+
+      const { data: recoleccionCompleta, error: fetchError } = await supabase
+        .from('recoleccion')
+        .select(
+          `
+          *,
+          usuario:usuario_id (id, nombre, username, correo),
+          vivero:vivero_id (id, codigo, nombre, ubicacion_id),
+          metodo:metodo_id (id, nombre, descripcion),
+          planta:planta_id (*),
+          fotos:recoleccion_foto (*)
+        `,
+        )
+        .eq('id', recoleccionId)
+        .single();
+
+      if (fetchError || !recoleccionCompleta) {
+        this.logger.error('⚠️  No se pudo obtener la recolección para metadata:', fetchError);
+        return;
+      }
+
+      const recoleccionEnriquecida = await this.enrichSingleRecoleccion(
+        recoleccionCompleta,
+      );
+
+      // Construir JSON NFT
+      const metadata = this.buildNFTMetadata(recoleccionEnriquecida, nombreUsuario);
+
+      // Subir a Pinata
+      this.logger.log(`📦 Subiendo metadata a IPFS/Pinata para ${codigoTrazabilidad}...`);
+      const pinataResult = await this.pinataService.uploadJson(
+        metadata,
+        `${codigoTrazabilidad}.json`,
+      );
+
+      const publicUrl = pinataResult.public_url;
+      this.logger.log(`✅ Metadata subido a IPFS: ${publicUrl}`);
+
+      // Mintear NFT
+      this.logger.log(`🔗 Minteando NFT en blockchain...`);
+      const mintResult = await this.blockchainService.mintNFT(
+        '0x2440783D1d86D91118E7e19F62889dDc96775868',
+        publicUrl,
+      );
+
+      const blockchainUrl = `https://shannon-explorer.somnia.network/token/0x4bb21533f7803BBce74421f6bdfc4B6c57706EA2/instance/${mintResult.tokenId}`;
+
+      this.logger.log(`✅ NFT acuñado. Token ID: ${mintResult.tokenId}`);
+      this.logger.log(`🔗 URL Blockchain: ${blockchainUrl}`);
+
+      // Guardar en BD
+      const { error: updateError } = await supabase
+        .from('recoleccion')
+        .update({
+          blockchain_url: blockchainUrl,
+          token_id: String(mintResult.tokenId),
+          transaction_hash: mintResult.transactionHash,
+        })
+        .eq('id', recoleccionId);
+
+      if (updateError) {
+        this.logger.error('⚠️  No se pudo guardar datos de blockchain en BD:', updateError);
+      } else {
+        this.logger.log('✅ Datos de blockchain guardados en la base de datos');
+      }
+    } catch (blockchainFlowError) {
+      this.logger.error(
+        `⚠️  Error en flujo blockchain para recolección ${recoleccionId}:`,
+        blockchainFlowError,
+      );
+      // No lanzar error — la validación ya se guardó correctamente
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Métodos de flujo de estados
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Edita un borrador de recolección.
+   * Solo se puede editar si está en BORRADOR o RECHAZADO.
+   * Si está en RECHAZADO, al guardar vuelve a BORRADOR.
+   */
+  async updateDraft(
+    id: number,
+    dto: UpdateDraftDto,
+    authId: string,
+    userRole: string,
+  ) {
+    const supabase = this.supabaseService.getClient();
+    const usuario = await this.getUserByAuthId(authId);
+    const recoleccion = await this.getRawRecoleccion(id);
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const estadoActual = String(recoleccion.estado_registro ?? '').toUpperCase();
+
+    if (
+      estadoActual !== EstadoRegistro.BORRADOR &&
+      estadoActual !== EstadoRegistro.RECHAZADO
+    ) {
+      throw new BadRequestException(
+        `No se puede editar una recolección en estado ${estadoActual}. Solo se puede editar en BORRADOR o RECHAZADO.`,
+      );
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    this.assertOwnerOrAdmin({ usuario_id: recoleccion.usuario_id as number }, usuario.id, userRole);
+
+    // Construir payload de actualización
+    const updatePayload: Record<string, unknown> = {};
+
+    if (dto.fecha !== undefined) updatePayload.fecha = dto.fecha;
+    if (dto.cantidad !== undefined) updatePayload.cantidad = dto.cantidad;
+    if (dto.unidad !== undefined) updatePayload.unidad = dto.unidad;
+    if (dto.tipo_material !== undefined) updatePayload.tipo_material = dto.tipo_material;
+    if (dto.observaciones !== undefined) updatePayload.observaciones = dto.observaciones;
+    if (dto.vivero_id !== undefined) updatePayload.vivero_id = dto.vivero_id;
+    if (dto.metodo_id !== undefined) updatePayload.metodo_id = dto.metodo_id;
+    if (dto.planta_id !== undefined) updatePayload.planta_id = dto.planta_id;
+
+    // Si estaba RECHAZADO, volver a BORRADOR
+    if (estadoActual === EstadoRegistro.RECHAZADO) {
+      updatePayload.estado_registro = EstadoRegistro.BORRADOR;
+      this.logger.log(`📝 Recolección ${id}: RECHAZADO → BORRADOR (edición de borrador)`);
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
+      throw new BadRequestException('No se enviaron campos para actualizar.');
+    }
+
+    const { error: updateError } = await supabase
+      .from('recoleccion')
+      .update(updatePayload)
+      .eq('id', id);
+
+    if (updateError) {
+      this.logger.error('❌ Error al actualizar borrador:', updateError);
+      throw new InternalServerErrorException('Error al actualizar borrador');
+    }
+
+    this.logger.log(`✅ Recolección ${id} actualizada como borrador`);
+    return this.findOne(id);
+  }
+
+  /**
+   * Envía una recolección a validación.
+   * Solo se permite si está en BORRADOR.
+   */
+  async submitForValidation(
+    id: number,
+    authId: string,
+    userRole: string,
+  ) {
+    const supabase = this.supabaseService.getClient();
+    const usuario = await this.getUserByAuthId(authId);
+    const recoleccion = await this.getRawRecoleccion(id);
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const estadoActual = String(recoleccion.estado_registro ?? '').toUpperCase();
+
+    if (estadoActual !== EstadoRegistro.BORRADOR) {
+      throw new BadRequestException(
+        `Solo se puede enviar a validación una recolección en BORRADOR. Estado actual: ${estadoActual}`,
+      );
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    this.assertOwnerOrAdmin({ usuario_id: recoleccion.usuario_id as number }, usuario.id, userRole);
+
+    const { error: updateError } = await supabase
+      .from('recoleccion')
+      .update({ estado_registro: EstadoRegistro.PENDIENTE_VALIDACION })
+      .eq('id', id);
+
+    if (updateError) {
+      this.logger.error('❌ Error al enviar a validación:', updateError);
+      throw new InternalServerErrorException('Error al enviar a validación');
+    }
+
+    this.logger.log(`✅ Recolección ${id}: BORRADOR → PENDIENTE_VALIDACION`);
+    return this.findOne(id);
+  }
+
+  /**
+   * Aprueba la validación de una recolección.
+   * Solo GENERAL o ADMIN. Solo si está en PENDIENTE_VALIDACION.
+   * Ejecuta Pinata + Blockchain después de la validación.
+   */
+  async approveValidation(
+    id: number,
+    authId: string,
+    userRole: string,
+  ) {
+    const supabase = this.supabaseService.getClient();
+    const usuario = await this.getUserByAuthId(authId);
+
+    this.assertReviewerRole(userRole);
+
+    const recoleccion = await this.getRawRecoleccion(id);
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const estadoActual = String(recoleccion.estado_registro ?? '').toUpperCase();
+
+    if (estadoActual !== EstadoRegistro.PENDIENTE_VALIDACION) {
+      throw new BadRequestException(
+        `Solo se puede aprobar una recolección en PENDIENTE_VALIDACION. Estado actual: ${estadoActual}`,
+      );
+    }
+
+    // Actualizar a VALIDADO
+    const { error: updateError } = await supabase
+      .from('recoleccion')
+      .update({
+        estado_registro: EstadoRegistro.VALIDADO,
+        usuario_validacion_id: usuario.id,
+        fecha_validacion: new Date().toISOString(),
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      this.logger.error('❌ Error al aprobar validación:', updateError);
+      throw new InternalServerErrorException('Error al aprobar validación');
+    }
+
+    this.logger.log(`✅ Recolección ${id}: PENDIENTE_VALIDACION → VALIDADO (por usuario ${usuario.id})`);
+
+    // Ejecutar Pinata + Blockchain (no bloquea si falla)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const codigoTrazabilidad = String(recoleccion.codigo_trazabilidad ?? '');
+    await this.executeBlockchainFlow(id, codigoTrazabilidad, usuario.nombre);
+
+    return this.findOne(id);
+  }
+
+  /**
+   * Rechaza la validación de una recolección.
+   * Solo GENERAL o ADMIN. Solo si está en PENDIENTE_VALIDACION.
+   */
+  async rejectValidation(
+    id: number,
+    authId: string,
+    userRole: string,
+    dto: RejectValidationDto,
+  ) {
+    const supabase = this.supabaseService.getClient();
+    await this.getUserByAuthId(authId);
+
+    this.assertReviewerRole(userRole);
+
+    const recoleccion = await this.getRawRecoleccion(id);
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const estadoActual = String(recoleccion.estado_registro ?? '').toUpperCase();
+
+    if (estadoActual !== EstadoRegistro.PENDIENTE_VALIDACION) {
+      throw new BadRequestException(
+        `Solo se puede rechazar una recolección en PENDIENTE_VALIDACION. Estado actual: ${estadoActual}`,
+      );
+    }
+
+    const { error: updateError } = await supabase
+      .from('recoleccion')
+      .update({
+        estado_registro: EstadoRegistro.RECHAZADO,
+        usuario_validacion_id: null,
+        fecha_validacion: null,
+        motivo_rechazo: dto.motivo_rechazo,
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      this.logger.error('❌ Error al rechazar validación:', updateError);
+      throw new InternalServerErrorException('Error al rechazar validación');
+    }
+
+    this.logger.log(`✅ Recolección ${id}: PENDIENTE_VALIDACION → RECHAZADO. Motivo: ${dto.motivo_rechazo}`);
+    return this.findOne(id);
+  }
+
+  /**
+   * Lista recolecciones en PENDIENTE_VALIDACION (para panel de validadores).
+   * - Si userRole es GENERAL o ADMIN: devuelve TODAS las recolecciones pendientes de todos los usuarios
+   * - Si userRole es otro (ej. RECOLECTOR): devuelve solo las recolecciones pendientes del usuario autenticado
+   */
+  async findPendingValidation(
+    filters: FiltersRecoleccionDto,
+    authId: string,
+    userRole: string,
+  ) {
+    const supabase = this.supabaseService.getClient();
+
+    const page = filters.page || 1;
+    const limit = Math.min(filters.limit || 10, 50);
+    const offset = (page - 1) * limit;
+
+    // Determinar si el usuario tiene rol global (GENERAL o ADMIN)
+    const esRolGlobal = ['GENERAL', 'ADMIN'].includes(userRole.toUpperCase());
+
+    let query = supabase
+      .from('recoleccion')
+      .select(this.getCanonicalRecoleccionSelect(), { count: 'exact' })
+      .eq('estado_registro', EstadoRegistro.PENDIENTE_VALIDACION);
+
+    // Si NO es rol global, filtrar por el usuario autenticado
+    if (!esRolGlobal) {
+      const { data: usuarioData, error: usuarioError } = await supabase
+        .from('usuario')
+        .select('id')
+        .eq('auth_id', authId)
+        .single();
+
+      if (usuarioError || !usuarioData) {
+        throw new NotFoundException(`Usuario con auth_id ${authId} no encontrado`);
+      }
+
+      query = query.eq('usuario_id', usuarioData.id);
+    }
+
+    query = query
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (filters.fecha_inicio) {
+      query = query.gte('fecha', filters.fecha_inicio);
+    }
+
+    if (filters.fecha_fin) {
+      query = query.lte('fecha', filters.fecha_fin);
+    }
+
+    if (filters.tipo_material) {
+      query = query.eq('tipo_material', filters.tipo_material);
+    }
+
+    const searchTerm = filters.search ?? filters.q;
+    const normalizedSearch = searchTerm?.trim();
+    if (normalizedSearch) {
+      const plantIds = await this.findPlantIdsBySearchTerm(normalizedSearch);
+      const orConditions = [
+        `codigo_trazabilidad.ilike.%${normalizedSearch}%`,
+        `observaciones.ilike.%${normalizedSearch}%`,
+      ];
+
+      if (plantIds.length > 0) {
+        orConditions.push(`planta_id.in.(${plantIds.join(',')})`);
+      }
+
+      query = query.or(orConditions.join(','));
+    }
+
+    query = query.range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      this.logger.error('❌ Error al obtener recolecciones pendientes:', error);
+      throw new InternalServerErrorException(
+        'Error al obtener recolecciones pendientes de validación',
+      );
+    }
+
+    const totalPages = Math.ceil((count || 0) / limit);
+    const enrichedData = await this.enrichRecoleccionesWithUbicaciones(data || []);
+    const evidenciasMap = await this.getEvidenciasMapByRecoleccionIds(
+      enrichedData.map((item: any) => Number(item.id)),
+    );
+    const finalData = enrichedData.map((item: any) =>
+      this.mapRecoleccionToCanonicalResponse(
+        item,
+        evidenciasMap.get(Number(item.id)) || [],
+      ),
+    );
+
+    return {
+      success: true,
+      data: finalData,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
+  }
+
   /**
    * Obtiene todas las recolecciones del usuario autenticado con filtros
    */
@@ -1029,20 +1409,7 @@ export class RecoleccionesService {
 
     let query = supabase
       .from('recoleccion')
-      .select(
-        `
-        id,
-        cantidad,
-        unidad,
-        fecha,
-        tipo_material,
-        estado,
-        planta:planta_id (id, especie, nombre_cientifico, variedad),
-        metodo:metodo_id (id, nombre, descripcion),
-        vivero:vivero_id (id, codigo, nombre, ubicacion_id)
-      `,
-        { count: 'exact' },
-      )
+      .select(this.getCanonicalRecoleccionSelect(), { count: 'exact' })
       .eq('usuario_id', userId) // ⚠️ FILTRO AUTOMÁTICO POR USUARIO
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false });
@@ -1065,17 +1432,24 @@ export class RecoleccionesService {
       query = query.eq('tipo_material', filters.tipo_material);
     }
 
+    const searchTerm = filters.search ?? filters.q;
+    const normalizedSearch = searchTerm?.trim();
+    if (normalizedSearch) {
+      const plantIds = await this.findPlantIdsBySearchTerm(normalizedSearch);
+      const orConditions = [
+        `codigo_trazabilidad.ilike.%${normalizedSearch}%`,
+        `observaciones.ilike.%${normalizedSearch}%`,
+      ];
+
+      if (plantIds.length > 0) {
+        orConditions.push(`planta_id.in.(${plantIds.join(',')})`);
+      }
+
+      query = query.or(orConditions.join(','));
+    }
+
     // Aplicar paginación
     query = query.range(offset, offset + limit - 1);
-
-    // Buscar también por nombre de planta si se envía search o q
-    const searchTerm = filters.search ?? filters.q;
-    if (searchTerm) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      query = query.or(
-        `nombre_cientifico.ilike.%${searchTerm}%,nombre_comercial.ilike.%${searchTerm}%`,
-      );
-    }
 
     const { data, error, count } = await query;
 
@@ -1086,32 +1460,15 @@ export class RecoleccionesService {
 
     const totalPages = Math.ceil((count || 0) / limit);
     const enrichedData = await this.enrichRecoleccionesWithUbicaciones(data || []);
-
-    // Obtener evidencias_trazabilidad para las recolecciones retornadas
-    const recoleccionIds = (data || []).map((r: any) => r.id as number);
-    const evidenciasMap = new Map<number, { ruta_archivo: string }[]>();
-
-    if (recoleccionIds.length > 0) {
-      const { data: evidencias } = await supabase
-        .from('evidencias_trazabilidad')
-        .select('entidad_id, ruta_archivo')
-        .in('entidad_id', recoleccionIds)
-        .is('eliminado_en', null);
-
-      if (evidencias) {
-        for (const ev of evidencias as any[]) {
-          const id = ev.entidad_id as number;
-          if (!evidenciasMap.has(id)) evidenciasMap.set(id, []);
-          evidenciasMap.get(id)!.push({ ruta_archivo: ev.ruta_archivo as string });
-        }
-      }
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    const finalData = enrichedData.map((r: any) => ({
-      ...r,
-      evidencias: evidenciasMap.get(r.id as number) ?? [],
-    }));
+    const evidenciasMap = await this.getEvidenciasMapByRecoleccionIds(
+      enrichedData.map((item: any) => Number(item.id)),
+    );
+    const finalData = enrichedData.map((item: any) =>
+      this.mapRecoleccionToCanonicalResponse(
+        item,
+        evidenciasMap.get(Number(item.id)) || [],
+      ),
+    );
 
     return {
       success: true,
@@ -1149,17 +1506,10 @@ export class RecoleccionesService {
 
     let query = supabase
       .from('recoleccion')
-      .select(
-        `
-        *,
-        usuario:usuario_id (id, nombre, username),
-        planta:planta_id (id, especie, nombre_cientifico, variedad),
-        metodo:metodo_id (id, nombre, descripcion),
-        vivero:vivero_id (id, codigo, nombre, ubicacion_id)
-      `,
-        { count: 'exact' },
-      )
+      .select(this.getCanonicalRecoleccionSelect(), { count: 'exact' })
       .eq('vivero_id', viveroId)
+      .eq('estado_registro', EstadoRegistro.VALIDADO)
+      .not('token_id', 'is', null)
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -1176,10 +1526,19 @@ export class RecoleccionesService {
     }
 
     const searchTerm = filters.search ?? filters.q;
-    if (searchTerm) {
-      query = query.or(
-        `nombre_cientifico.ilike.%${searchTerm}%,nombre_comercial.ilike.%${searchTerm}%`,
-      );
+    const normalizedSearch = searchTerm?.trim();
+    if (normalizedSearch) {
+      const plantIds = await this.findPlantIdsBySearchTerm(normalizedSearch);
+      const orConditions = [
+        `codigo_trazabilidad.ilike.%${normalizedSearch}%`,
+        `observaciones.ilike.%${normalizedSearch}%`,
+      ];
+
+      if (plantIds.length > 0) {
+        orConditions.push(`planta_id.in.(${plantIds.join(',')})`);
+      }
+
+      query = query.or(orConditions.join(','));
     }
 
     query = query.range(offset, offset + limit - 1);
@@ -1195,10 +1554,19 @@ export class RecoleccionesService {
 
     const totalPages = Math.ceil((count || 0) / limit);
     const enrichedData = await this.enrichRecoleccionesWithUbicaciones(data || []);
+    const evidenciasMap = await this.getEvidenciasMapByRecoleccionIds(
+      enrichedData.map((item: any) => Number(item.id)),
+    );
+    const finalData = enrichedData.map((item: any) =>
+      this.mapRecoleccionToCanonicalResponse(
+        item,
+        evidenciasMap.get(Number(item.id)) || [],
+      ),
+    );
 
     return {
       success: true,
-      data: enrichedData,
+      data: finalData,
       pagination: {
         page,
         limit,
@@ -1221,34 +1589,7 @@ export class RecoleccionesService {
       .from('recoleccion')
       .select(
         `
-        id,
-        fecha,
-        created_at,
-        cantidad,
-        unidad,
-        tipo_material,
-        estado,
-        especie_nueva,
-        observaciones,
-        usuario_id,
-        ubicacion_id,
-        vivero_id,
-        metodo_id,
-        planta_id,
-        codigo_trazabilidad,
-        blockchain_url,
-        token_id,
-        transaction_hash,
-        estado_registro,
-        unidad_canonica,
-        cantidad_inicial_canonica,
-        usuario_validacion_id,
-        fecha_validacion,
-        blockchain_hash_validacion,
-        usuario:usuario_id (id, nombre, username, correo),
-        vivero:vivero_id (id, codigo, nombre, ubicacion_id),
-        metodo:metodo_id (id, nombre, descripcion),
-        planta:planta_id (*)
+        ${this.getCanonicalRecoleccionSelect()}
       `,
       )
       .eq('id', id)
@@ -1260,18 +1601,94 @@ export class RecoleccionesService {
 
     const enrichedData = await this.enrichSingleRecoleccion(data);
     const evidencias = await this.getEvidenciasByRecoleccionId(id);
+    const canonicalData = this.mapRecoleccionToCanonicalResponse(
+      enrichedData,
+      evidencias,
+    );
 
     return {
       success: true,
-      data: {
-        ...enrichedData,
-        evidencias,
-      },
+      data: canonicalData,
     };
   }
 
-  private async getEvidenciasByRecoleccionId(recoleccionId: number) {
+  private getCanonicalRecoleccionSelect(): string {
+    return `
+      id,
+      fecha,
+      created_at,
+      cantidad,
+      unidad,
+      tipo_material,
+      especie_nueva,
+      observaciones,
+      usuario_id,
+      ubicacion_id,
+      vivero_id,
+      metodo_id,
+      planta_id,
+      codigo_trazabilidad,
+      blockchain_url,
+      token_id,
+      transaction_hash,
+      estado_registro,
+      unidad_canonica,
+      cantidad_inicial_canonica,
+      usuario_validacion_id,
+      fecha_validacion,
+      blockchain_hash_validacion,
+      usuario:usuario_id (id, nombre, username, correo),
+      vivero:vivero_id (id, codigo, nombre, ubicacion_id),
+      metodo:metodo_id (id, nombre, descripcion),
+      planta:planta_id (
+        id,
+        especie,
+        nombre_cientifico,
+        variedad,
+        nombre_comun_principal,
+        nombres_comunes,
+        imagen_url,
+        notas,
+        tipo_planta_id
+      )
+    `;
+  }
+
+  private async findPlantIdsBySearchTerm(searchTerm: string): Promise<number[]> {
     const supabase = this.supabaseService.getClient();
+
+    const { data, error } = await supabase
+      .from('planta')
+      .select('id')
+      .or(
+        `nombre_cientifico.ilike.%${searchTerm}%,nombre_comun_principal.ilike.%${searchTerm}%,especie.ilike.%${searchTerm}%`,
+      );
+
+    if (error) {
+      this.logger.error('❌ Error al buscar plantas para filtro search:', error);
+      throw new InternalServerErrorException('Error al filtrar recolecciones');
+    }
+
+    return (data || [])
+      .map((item: any) => Number(item.id))
+      .filter((id) => Number.isInteger(id) && id > 0);
+  }
+
+  private async getEvidenciasMapByRecoleccionIds(recoleccionIds: number[]) {
+    const supabase = this.supabaseService.getClient();
+    const map = new Map<number, any[]>();
+
+    const ids = Array.from(
+      new Set(
+        recoleccionIds.filter(
+          (id) => Number.isInteger(id) && Number(id) > 0,
+        ),
+      ),
+    );
+
+    if (ids.length === 0) {
+      return map;
+    }
 
     const { data, error } = await supabase
       .from('evidencias_trazabilidad')
@@ -1299,29 +1716,85 @@ export class RecoleccionesService {
       `,
       )
       .eq('tipo_entidad_id', 1)
-      .eq('entidad_id', recoleccionId)
+      .in('entidad_id', ids)
       .is('eliminado_en', null)
+      .order('entidad_id', { ascending: true })
       .order('es_principal', { ascending: false })
       .order('orden', { ascending: true })
       .order('creado_en', { ascending: true });
 
     if (error) {
-      this.logger.error('❌ Error al obtener evidencias de recolección:', error);
+      this.logger.error('❌ Error al obtener evidencias de recolecciones:', error);
       throw new InternalServerErrorException(
-        'Error al obtener evidencias de recolección',
+        'Error al obtener evidencias de recolecciones',
       );
     }
 
-    return (data || []).map((evidencia: any) => {
-      const { data: publicUrlData } = supabase.storage
-        .from(evidencia.bucket)
-        .getPublicUrl(evidencia.ruta_archivo);
+    for (const evidencia of data || []) {
+      const recoleccionId = Number((evidencia as any).entidad_id);
+      if (!map.has(recoleccionId)) {
+        map.set(recoleccionId, []);
+      }
 
-      return {
-        ...evidencia,
+      const { data: publicUrlData } = supabase.storage
+        .from((evidencia as any).bucket)
+        .getPublicUrl((evidencia as any).ruta_archivo);
+
+      map.get(recoleccionId)!.push({
+        ...(evidencia as any),
         public_url: publicUrlData.publicUrl,
-      };
-    });
+      });
+    }
+
+    return map;
+  }
+
+  private mapRecoleccionToCanonicalResponse(recoleccion: any, evidencias: any[]) {
+    const cantidad = Number(recoleccion.cantidad ?? 0);
+    const estadoDetalle = cantidad > 0 ? 'ABIERTO' : 'CERRADO';
+    const nombreCientifico = recoleccion.planta?.nombre_cientifico ?? null;
+    const nombreComunPrincipal =
+      recoleccion.planta?.nombre_comun_principal ?? null;
+
+    const fotos = evidencias.map((evidencia: any) => ({
+      id: evidencia.id,
+      url: evidencia.public_url,
+      es_principal: evidencia.es_principal,
+      orden: evidencia.orden,
+      titulo: evidencia.titulo,
+      descripcion: evidencia.descripcion,
+      mime_type: evidencia.mime_type,
+      tamano_bytes: evidencia.tamano_bytes,
+    }));
+
+    // Banderas de permisos basadas en estado_registro
+    const estado = String(recoleccion.estado_registro ?? '').toUpperCase();
+    const canEdit = estado === 'BORRADOR' || estado === 'RECHAZADO';
+    const canSubmitForValidation = estado === 'BORRADOR';
+    const canApprove = estado === 'PENDIENTE_VALIDACION';
+    const canReject = estado === 'PENDIENTE_VALIDACION';
+
+    return {
+      ...recoleccion,
+      nombre_cientifico: nombreCientifico,
+      nombre_comercial: nombreComunPrincipal,
+      nombre_comun_principal: nombreComunPrincipal,
+      estado_detalle: estadoDetalle,
+      evidencias,
+      fotos,
+      // Banderas de permisos para el frontend
+      can_edit: canEdit,
+      can_submit_for_validation: canSubmitForValidation,
+      can_approve: canApprove,
+      can_reject: canReject,
+    };
+  }
+
+  private async getEvidenciasByRecoleccionId(recoleccionId: number) {
+    const evidenciasMap = await this.getEvidenciasMapByRecoleccionIds([
+      recoleccionId,
+    ]);
+    return evidenciasMap.get(recoleccionId) || [];
   }
 
   private async validateAndNormalizeUbicacionPayload(
