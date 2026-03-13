@@ -1276,18 +1276,44 @@ export class RecoleccionesService {
 
   /**
    * Lista recolecciones en PENDIENTE_VALIDACION (para panel de validadores).
+   * - Si userRole es GENERAL o ADMIN: devuelve TODAS las recolecciones pendientes de todos los usuarios
+   * - Si userRole es otro (ej. RECOLECTOR): devuelve solo las recolecciones pendientes del usuario autenticado
    */
-  async findPendingValidation(filters: FiltersRecoleccionDto) {
+  async findPendingValidation(
+    filters: FiltersRecoleccionDto,
+    authId: string,
+    userRole: string,
+  ) {
     const supabase = this.supabaseService.getClient();
 
     const page = filters.page || 1;
     const limit = Math.min(filters.limit || 10, 50);
     const offset = (page - 1) * limit;
 
+    // Determinar si el usuario tiene rol global (GENERAL o ADMIN)
+    const esRolGlobal = ['GENERAL', 'ADMIN'].includes(userRole.toUpperCase());
+
     let query = supabase
       .from('recoleccion')
       .select(this.getCanonicalRecoleccionSelect(), { count: 'exact' })
-      .eq('estado_registro', EstadoRegistro.PENDIENTE_VALIDACION)
+      .eq('estado_registro', EstadoRegistro.PENDIENTE_VALIDACION);
+
+    // Si NO es rol global, filtrar por el usuario autenticado
+    if (!esRolGlobal) {
+      const { data: usuarioData, error: usuarioError } = await supabase
+        .from('usuario')
+        .select('id')
+        .eq('auth_id', authId)
+        .single();
+
+      if (usuarioError || !usuarioData) {
+        throw new NotFoundException(`Usuario con auth_id ${authId} no encontrado`);
+      }
+
+      query = query.eq('usuario_id', usuarioData.id);
+    }
+
+    query = query
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false });
 

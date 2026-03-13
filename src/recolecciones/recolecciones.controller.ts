@@ -323,17 +323,19 @@ export class RecoleccionesController {
   @Get('pending-validation')
   @ApiOperation({
     summary: 'Listar recolecciones pendientes de validación',
-    description: 'Devuelve recolecciones en estado PENDIENTE_VALIDACION con filtros y paginación.',
+    description: 'Devuelve recolecciones en estado PENDIENTE_VALIDACION con filtros y paginación. Usuarios con rol GENERAL o ADMIN ven TODAS las recolecciones pendientes, otros roles solo ven las suyas.',
   })
   @ApiSecurity('x-auth-id')
   @ApiHeader({ name: 'x-auth-id', description: 'ID de autenticación del usuario', required: true })
-  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (GENERAL o ADMIN)', required: true })
+  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (GENERAL, ADMIN, RECOLECTOR, etc.)', required: true })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'fecha_inicio', required: false, type: String })
   @ApiQuery({ name: 'fecha_fin', required: false, type: String })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Lista de recolecciones pendientes de validación' })
+  @ApiResponse({ status: 400, description: 'Header x-user-role es requerido' })
+  @ApiResponse({ status: 401, description: 'Header x-auth-id es requerido' })
   async findPendingValidation(
     @Query() filters: FiltersRecoleccionDto,
     @Headers('x-auth-id') authId?: string,
@@ -343,13 +345,11 @@ export class RecoleccionesController {
       throw new UnauthorizedException('Header x-auth-id es requerido');
     }
 
-    if (!userRole || !['GENERAL', 'ADMIN'].includes(userRole.toUpperCase())) {
-      throw new BadRequestException(
-        'Solo usuarios con rol GENERAL o ADMIN pueden ver recolecciones pendientes.',
-      );
+    if (!userRole) {
+      throw new BadRequestException('Header x-user-role es requerido');
     }
 
-    return this.recoleccionesService.findPendingValidation(filters);
+    return this.recoleccionesService.findPendingValidation(filters, authId, userRole);
   }
 
   @Get()
