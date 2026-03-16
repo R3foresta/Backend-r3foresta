@@ -36,7 +36,7 @@ Guía completa de los endpoints disponibles y las reglas de negocio que el front
 
 | Condición             | Detalle                                               |
 |-----------------------|-------------------------------------------------------|
-| ¿Quién puede validar? | Solo rol `GENERAL` (validador) o `ADMIN`              |
+| ¿Quién puede validar? | Solo rol `VALIDADOR` o `ADMIN`                        |
 | ¿Desde qué estado?    | Solo desde `PENDIENTE_VALIDACION`                     |
 | ¿Qué ocurre al aprobar? | 1. Sube metadata a IPFS (Pinata) → obtiene CID    |
 |                       | 2. Mint NFT en blockchain → guarda `token_id`        |
@@ -57,7 +57,7 @@ Todos los endpoints de escritura y la mayoría de los de lectura requieren los s
 | Header          | Descripción                                          | Ejemplo              |
 |-----------------|------------------------------------------------------|----------------------|
 | `x-auth-id`     | UUID del usuario autenticado en Supabase             | `abc123-uuid-...`    |
-| `x-user-role`   | Rol del usuario (`ADMIN`, `TECNICO`, `GENERAL`)      | `TECNICO`            |
+| `x-user-role`   | Rol del usuario (`ADMIN`, `GENERAL`, `VALIDADOR`, `VOLUNTARIO`) | `GENERAL` |
 
 > **Nota:** `x-user-role` es obligatorio en todos los endpoints de flujo de estados.
 
@@ -123,13 +123,18 @@ Content-Type: multipart/form-data
 Edita campos de una recolección en estado `BORRADOR` o `RECHAZADO`.
 - Si estaba `RECHAZADO`, el estado vuelve automáticamente a `BORRADOR`.
 - No se puede usar si el estado es `PENDIENTE_VALIDACION` o `VALIDADO`.
+- Acepta `application/json` o `multipart/form-data`.
+- Si se envían archivos en `fotos`, se agregan como nuevas evidencias de la recolección y no reemplazan las anteriores.
 
 **Headers:**
 ```
 x-auth-id: <uuid-supabase>
-x-user-role: TECNICO
-Content-Type: application/json
+x-user-role: GENERAL
 ```
+
+**Content-Type soportados:**
+- `application/json`
+- `multipart/form-data`
 
 **Body (todos opcionales):**
 ```json
@@ -144,13 +149,37 @@ Content-Type: application/json
 }
 ```
 
+**Campo adicional en multipart:**
+
+| Campo   | Tipo     | Requerido | Descripción                                      |
+|---------|----------|-----------|--------------------------------------------------|
+| `fotos` | `File[]` | ❌        | 0 a 5 fotos nuevas (JPG/JPEG/PNG, máx 5MB c/u)  |
+
 **Respuesta exitosa `200`:**
 ```json
 {
-  "id": 42,
-  "estado_registro": "BORRADOR",
-  "cantidad": 3.0,
-  "mensaje": "Borrador actualizado exitosamente"
+  "success": true,
+  "data": {
+    "id": 42,
+    "estado_registro": "BORRADOR",
+    "cantidad": 3.0,
+    "fotos": [
+      {
+        "id": 100,
+        "url": "https://...jpg",
+        "es_principal": true,
+        "orden": 0,
+        "titulo": "Foto 1"
+      }
+    ],
+    "evidencias": [
+      {
+        "id": 100,
+        "public_url": "https://...jpg",
+        "tipo_archivo": "FOTO"
+      }
+    ]
+  }
 }
 ```
 
@@ -159,8 +188,10 @@ Content-Type: application/json
 | Código | Cuándo ocurre                           |
 |--------|-----------------------------------------|
 | `400`  | Estado no permite edición (no es BORRADOR ni RECHAZADO) |
+| `400`  | Fotos inválidas o sin parser multipart correcto |
 | `403`  | Usuario no tiene permisos               |
 | `404`  | Recolección no encontrada               |
+| `500`  | Falló la subida o el registro de evidencias y se revirtió la edición |
 
 ---
 
@@ -174,7 +205,7 @@ Solo puede hacerlo el creador de la recolección o un `ADMIN`.
 **Headers:**
 ```
 x-auth-id: <uuid-supabase>
-x-user-role: TECNICO
+x-user-role: GENERAL
 ```
 
 **Sin body.**
@@ -198,7 +229,7 @@ x-user-role: TECNICO
 
 ---
 
-### 4. Aprobar validación *(solo GENERAL o ADMIN)*
+### 4. Aprobar validación *(solo VALIDADOR o ADMIN)*
 
 **`PATCH /api/recolecciones/:id/approve`**
 
@@ -211,7 +242,7 @@ Cambia `PENDIENTE_VALIDACION` → `VALIDADO`.
 **Headers:**
 ```
 x-auth-id: <uuid-supabase>
-x-user-role: GENERAL
+x-user-role: VALIDADOR
 ```
 
 **Sin body.**
@@ -234,7 +265,7 @@ x-user-role: GENERAL
 | Código | Cuándo ocurre                                        |
 |--------|------------------------------------------------------|
 | `400`  | Estado no es PENDIENTE_VALIDACION                    |
-| `403`  | Rol no es GENERAL ni ADMIN                           |
+| `403`  | Rol no es VALIDADOR ni ADMIN                         |
 | `404`  | Recolección no encontrada                            |
 | `500`  | Error al conectar con Pinata o blockchain            |
 
@@ -242,7 +273,7 @@ x-user-role: GENERAL
 
 ---
 
-### 5. Rechazar validación *(solo GENERAL o ADMIN)*
+### 5. Rechazar validación *(solo VALIDADOR o ADMIN)*
 
 **`PATCH /api/recolecciones/:id/reject`**
 
@@ -251,7 +282,7 @@ Cambia `PENDIENTE_VALIDACION` → `RECHAZADO`. Requiere que se envíe el motivo 
 **Headers:**
 ```
 x-auth-id: <uuid-supabase>
-x-user-role: GENERAL
+x-user-role: VALIDADOR
 Content-Type: application/json
 ```
 
@@ -281,7 +312,7 @@ Content-Type: application/json
 **`GET /api/recolecciones`**
 
 Devuelve las recolecciones del usuario autenticado con paginación.
-Roles `ADMIN` y `GENERAL` ven todas; otros roles solo ven las propias.
+Siempre filtra por el usuario autenticado, independientemente del rol.
 
 **Headers:**
 ```
@@ -332,13 +363,13 @@ x-auth-id: <uuid-supabase>
 **`GET /api/recolecciones/pending-validation`**
 
 Devuelve solo las recolecciones en estado `PENDIENTE_VALIDACION`.
-- `GENERAL` o `ADMIN`: ven **todas** las pendientes.
-- Otros roles: solo ven **las propias**.
+- `VALIDADOR` o `ADMIN`: ven **todas** las pendientes de todos los usuarios.
+- `GENERAL` y `VOLUNTARIO`: ven solo **sus propias** pendientes.
 
 **Headers:**
 ```
 x-auth-id: <uuid-supabase>
-x-user-role: GENERAL
+x-user-role: VALIDADOR
 ```
 
 **Query params (todos opcionales):**
@@ -454,7 +485,7 @@ Devuelve el detalle completo de una recolección.
 - Mostrar solo si `estado_registro === 'BORRADOR'`
 - Pedir confirmación antes de ejecutar
 
-### Panel de validación *(solo roles GENERAL / ADMIN)*
+### Panel de validación *(solo roles VALIDADOR / ADMIN)*
 
 - Mostrar solo si `estado_registro === 'PENDIENTE_VALIDACION'`
 - Dos acciones: **Aprobar** y **Rechazar**
@@ -470,17 +501,17 @@ Devuelve el detalle completo de una recolección.
 
 ## ⚡ Resumen de permisos por endpoint
 
-| Endpoint                               | TECNICO        | GENERAL (Validador) | ADMIN          |
-|----------------------------------------|----------------|---------------------|----------------|
-| `POST /recolecciones`                  | ✅ Crear propias | ✅                  | ✅             |
-| `PATCH /:id/draft`                     | ✅ Solo propias | ✅                  | ✅             |
-| `PATCH /:id/submit`                    | ✅ Solo propias | ✅                  | ✅             |
-| `PATCH /:id/approve`                   | ❌             | ✅                  | ✅             |
-| `PATCH /:id/reject`                    | ❌             | ✅                  | ✅             |
-| `GET /recolecciones`                   | ✅ Solo propias | ✅ Todas           | ✅ Todas       |
-| `GET /pending-validation`              | ✅ Solo propias | ✅ Todas           | ✅ Todas       |
-| `GET /vivero/:viveroId`                | ✅             | ✅                  | ✅             |
-| `GET /:id`                             | ✅             | ✅                  | ✅             |
+| Endpoint                  | GENERAL             | VALIDADOR           | VOLUNTARIO      | ADMIN               |
+|---------------------------|---------------------|---------------------|-----------------|---------------------|
+| `POST /recolecciones`     | ✅ Crear propias    | ❌                  | ❌              | ✅                  |
+| `PATCH /:id/draft`        | ✅ Solo propias     | ❌                  | ❌              | ✅ Cualquiera       |
+| `PATCH /:id/submit`       | ✅ Solo propias     | ❌                  | ❌              | ✅ Cualquiera       |
+| `PATCH /:id/approve`      | ❌                  | ✅                  | ❌              | ✅                  |
+| `PATCH /:id/reject`       | ❌                  | ✅                  | ❌              | ✅                  |
+| `GET /recolecciones`      | ✅ Solo propias     | ✅ Solo propias     | ✅ Solo propias | ✅ Solo propias     |
+| `GET /pending-validation` | ✅ Solo propias     | ✅ **Todas**        | ✅ Solo propias | ✅ **Todas**        |
+| `GET /vivero/:viveroId`   | ✅                  | ✅                  | ✅              | ✅                  |
+| `GET /:id`                | ✅                  | ✅                  | ✅              | ✅                  |
 
 ---
 

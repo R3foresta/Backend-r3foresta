@@ -1153,6 +1153,158 @@ export class RecoleccionesService {
     }
   }
 
+  private validateDraftFotos(
+    files: Array<{
+      mimetype?: string;
+      size?: number;
+      originalname?: string;
+      buffer?: Buffer;
+    }>,
+  ): void {
+    if (!files.length) {
+      return;
+    }
+
+    if (files.length > 5) {
+      throw new BadRequestException('Máximo 5 fotos permitidas');
+    }
+
+    for (const file of files) {
+      if (!Buffer.isBuffer(file.buffer)) {
+        throw new BadRequestException(
+          'No se pudieron procesar las fotos enviadas. Verifica que el endpoint use multipart/form-data correctamente.',
+        );
+      }
+
+      const mimeType = String(file.mimetype ?? '').trim().toLowerCase();
+      const formato = mimeType.split('/')[1]?.toUpperCase();
+
+      if (!formato || !['JPG', 'JPEG', 'PNG'].includes(formato)) {
+        throw new BadRequestException(
+          `Formato ${formato || 'DESCONOCIDO'} no permitido. Solo JPG, JPEG, PNG`,
+        );
+      }
+
+      if (Number(file.size ?? 0) > 5242880) {
+        throw new BadRequestException(
+          `Archivo ${file.originalname || 'sin_nombre'} supera 5MB`,
+        );
+      }
+    }
+  }
+
+  private async appendDraftFotosAsEvidencias(
+    recoleccionId: number,
+    codigoTrazabilidad: string,
+    creadoPorUsuarioId: number,
+    files: Array<{
+      mimetype?: string;
+      size?: number;
+      originalname?: string;
+      buffer?: Buffer;
+    }>,
+  ): Promise<{ insertedEvidenceIds: number[]; uploadedPaths: string[] }> {
+    const supabase = this.supabaseService.getClient();
+    const bucketFotos = 'recoleccion_fotos';
+    const tipoEntidadEvidenciaId = 1;
+
+    const { count, error: countError } = await supabase
+      .from('evidencias_trazabilidad')
+      .select('id', { count: 'exact', head: true })
+      .eq('tipo_entidad_id', tipoEntidadEvidenciaId)
+      .eq('entidad_id', recoleccionId)
+      .is('eliminado_en', null);
+
+    if (countError) {
+      this.logger.error(
+        '❌ Error al contar evidencias previas del borrador:',
+        countError,
+      );
+      throw new InternalServerErrorException(
+        'Error al preparar el guardado de fotos del borrador',
+      );
+    }
+
+    const uploadedPaths: string[] = [];
+    const evidenciasInsert: Array<Record<string, unknown>> = [];
+    const timestampBase = Date.now();
+    const ordenInicial = Number(count || 0);
+
+    for (const [index, file] of files.entries()) {
+      const mimeType = String(file.mimetype ?? '').trim();
+      const formato = mimeType.split('/')[1]!.toUpperCase();
+      const safeOriginalName = String(file.originalname || `foto_${index + 1}`)
+        .trim()
+        .replace(/[^a-zA-Z0-9._-]/g, '_');
+      const rutaStorage = `draft_${recoleccionId}_${timestampBase}_${index}_${safeOriginalName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(bucketFotos)
+        .upload(rutaStorage, file.buffer!, {
+          contentType: mimeType,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        this.logger.error('❌ Error al subir foto de borrador:', uploadError);
+        throw new InternalServerErrorException(
+          'Error al subir fotos del borrador',
+        );
+      }
+
+      uploadedPaths.push(rutaStorage);
+
+      const storageObjectId =
+        typeof uploadData?.id === 'string' ? uploadData.id : null;
+      const hashSha256 = createHash('sha256')
+        .update(file.buffer!)
+        .digest('hex');
+      const orden = ordenInicial + index;
+
+      evidenciasInsert.push({
+        tipo_entidad_id: tipoEntidadEvidenciaId,
+        entidad_id: recoleccionId,
+        codigo_trazabilidad: codigoTrazabilidad,
+        bucket: bucketFotos,
+        ruta_archivo: rutaStorage,
+        storage_object_id: storageObjectId,
+        tipo_archivo: 'FOTO',
+        mime_type: mimeType,
+        tamano_bytes: Number(file.size ?? 0),
+        hash_sha256: hashSha256,
+        titulo: `Foto ${orden + 1}`,
+        metadata: {
+          origen: 'UPDATE_DRAFT',
+          formato,
+        },
+        es_principal: orden === 0,
+        orden,
+        creado_por_usuario_id: creadoPorUsuarioId,
+      });
+    }
+
+    const { data: insertedData, error: insertError } = await supabase
+      .from('evidencias_trazabilidad')
+      .insert(evidenciasInsert)
+      .select('id');
+
+    if (insertError) {
+      this.logger.error(
+        '❌ Error al registrar evidencias del borrador:',
+        insertError,
+      );
+      throw new InternalServerErrorException(
+        'Error al guardar fotos del borrador',
+      );
+    }
+
+    const insertedEvidenceIds = (insertedData || [])
+      .map((item: any) => Number(item.id))
+      .filter((evidenceId) => Number.isInteger(evidenceId) && evidenceId > 0);
+
+    return { insertedEvidenceIds, uploadedPaths };
+  }
+
   // ─────────────────────────────────────────────────────────────────────────────
   // Métodos de flujo de estados
   // ─────────────────────────────────────────────────────────────────────────────
@@ -1167,6 +1319,12 @@ export class RecoleccionesService {
     dto: UpdateDraftDto,
     authId: string,
     userRole: string,
+    files: Array<{
+      mimetype?: string;
+      size?: number;
+      originalname?: string;
+      buffer?: Buffer;
+    }> = [],
   ) {
     const supabase = this.supabaseService.getClient();
     const usuario = await this.getUserByAuthId(authId);
@@ -1186,6 +1344,7 @@ export class RecoleccionesService {
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     this.assertOwnerOrAdmin({ usuario_id: recoleccion.usuario_id as number }, usuario.id, userRole);
+    this.validateDraftFotos(files);
 
     // Construir payload de actualización
     const updatePayload: Record<string, unknown> = {};
@@ -1205,21 +1364,70 @@ export class RecoleccionesService {
       this.logger.log(`📝 Recolección ${id}: RECHAZADO → BORRADOR (edición de borrador)`);
     }
 
-    if (Object.keys(updatePayload).length === 0) {
+    if (Object.keys(updatePayload).length === 0 && files.length === 0) {
       throw new BadRequestException('No se enviaron campos para actualizar.');
     }
 
-    const { error: updateError } = await supabase
-      .from('recoleccion')
-      .update(updatePayload)
-      .eq('id', id);
+    const rollbackPayload = Object.keys(updatePayload).reduce(
+      (accumulator, key) => {
+        accumulator[key] = (recoleccion as Record<string, unknown>)[key];
+        return accumulator;
+      },
+      {} as Record<string, unknown>,
+    );
 
-    if (updateError) {
-      this.logger.error('❌ Error al actualizar borrador:', updateError);
-      throw new InternalServerErrorException('Error al actualizar borrador');
+    let recoleccionActualizada = false;
+    let insertedEvidenceIds: number[] = [];
+    let uploadedPaths: string[] = [];
+
+    try {
+      if (Object.keys(updatePayload).length > 0) {
+        const { error: updateError } = await supabase
+          .from('recoleccion')
+          .update(updatePayload)
+          .eq('id', id);
+
+        if (updateError) {
+          this.logger.error('❌ Error al actualizar borrador:', updateError);
+          throw new InternalServerErrorException('Error al actualizar borrador');
+        }
+
+        recoleccionActualizada = true;
+      }
+
+      if (files.length > 0) {
+        const appendResult = await this.appendDraftFotosAsEvidencias(
+          id,
+          String(recoleccion.codigo_trazabilidad ?? ''),
+          usuario.id,
+          files,
+        );
+
+        insertedEvidenceIds = appendResult.insertedEvidenceIds;
+        uploadedPaths = appendResult.uploadedPaths;
+      }
+    } catch (error) {
+      if (insertedEvidenceIds.length > 0) {
+        await supabase
+          .from('evidencias_trazabilidad')
+          .delete()
+          .in('id', insertedEvidenceIds);
+      }
+
+      if (uploadedPaths.length > 0) {
+        await supabase.storage.from('recoleccion_fotos').remove(uploadedPaths);
+      }
+
+      if (recoleccionActualizada && Object.keys(rollbackPayload).length > 0) {
+        await supabase.from('recoleccion').update(rollbackPayload).eq('id', id);
+      }
+
+      throw error;
     }
 
-    this.logger.log(`✅ Recolección ${id} actualizada como borrador`);
+    this.logger.log(
+      `✅ Recolección ${id} actualizada como borrador${files.length > 0 ? ` y ${files.length} foto(s) agregada(s)` : ''}`,
+    );
     return this.findOne(id);
   }
 

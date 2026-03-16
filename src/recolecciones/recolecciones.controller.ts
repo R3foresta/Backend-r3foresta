@@ -210,23 +210,56 @@ export class RecoleccionesController {
   @ApiSecurity('x-auth-id')
   @ApiHeader({ name: 'x-auth-id', description: 'ID de autenticación del usuario', required: true })
   @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (ADMIN, GENERAL, VALIDADOR, VOLUNTARIO)', required: true })
+  @ApiConsumes('application/json', 'multipart/form-data')
   @ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' })
-  @ApiBody({ type: UpdateDraftDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        fecha: { type: 'string', format: 'date', example: '2026-03-04' },
+        cantidad: { type: 'number', example: 2.5 },
+        unidad: { type: 'string', example: 'kg' },
+        tipo_material: {
+          type: 'string',
+          enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
+          example: 'SEMILLA',
+        },
+        observaciones: { type: 'string', example: 'Actualización de datos' },
+        vivero_id: { type: 'number', example: 3 },
+        metodo_id: { type: 'number', example: 1 },
+        planta_id: { type: 'number', example: 10 },
+        fotos: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 200, description: 'Borrador actualizado exitosamente' })
   @ApiResponse({ status: 400, description: 'Estado no permite edición' })
   @ApiResponse({ status: 403, description: 'Sin permisos para editar' })
   @ApiResponse({ status: 404, description: 'Recolección no encontrada' })
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
   async updateDraft(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateDraftDto,
+    @Body() bodyRaw: any,
     @Headers('x-auth-id') authId?: string,
     @Headers('x-user-role') userRole?: string,
+    @UploadedFiles() files?: { fotos?: any[] },
   ) {
     if (!authId) {
       throw new UnauthorizedException('Header x-auth-id es requerido');
     }
 
-    return this.recoleccionesService.updateDraft(id, dto, authId, userRole || 'GENERAL');
+    const dto = await this.parseAndValidateUpdateDraftBody(bodyRaw);
+
+    return this.recoleccionesService.updateDraft(
+      id,
+      dto,
+      authId,
+      userRole || 'GENERAL',
+      files?.fotos,
+    );
   }
 
   @Patch(':id/submit')
@@ -425,8 +458,7 @@ export class RecoleccionesController {
     authId?: string,
     fotos?: any[],
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const parsedBody: any = qs.parse(bodyRaw);
+    const parsedBody = this.parseBodyRaw(bodyRaw);
 
     if (parsedBody.ubicacion) {
       this.assertNoLegacyUbicacionFields(parsedBody.ubicacion);
@@ -488,6 +520,58 @@ export class RecoleccionesController {
       if (parsedBody.ubicacion.precision_m !== undefined) {
         parsedBody.ubicacion.precision_m = Number(parsedBody.ubicacion.precision_m);
       }
+    }
+  }
+
+  private async parseAndValidateUpdateDraftBody(
+    bodyRaw: any,
+  ): Promise<UpdateDraftDto> {
+    const parsedBody = this.parseBodyRaw(bodyRaw);
+    this.normalizeUpdateDraftNumericFields(parsedBody);
+
+    const updateDraftDto = plainToInstance(UpdateDraftDto, parsedBody);
+    const errors = await validate(updateDraftDto, {
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    });
+
+    if (errors.length > 0) {
+      const messages = this.collectValidationMessages(errors).join('; ');
+      throw new BadRequestException(`Validación fallida: ${messages}`);
+    }
+
+    return updateDraftDto;
+  }
+
+  private parseBodyRaw(bodyRaw: any): any {
+    if (!bodyRaw) {
+      return {};
+    }
+
+    if (typeof bodyRaw === 'string') {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      return qs.parse(bodyRaw);
+    }
+
+    if (typeof bodyRaw === 'object') {
+      return bodyRaw;
+    }
+
+    return {};
+  }
+
+  private normalizeUpdateDraftNumericFields(parsedBody: any): void {
+    if (parsedBody.cantidad !== undefined) {
+      parsedBody.cantidad = Number(parsedBody.cantidad);
+    }
+    if (parsedBody.vivero_id !== undefined) {
+      parsedBody.vivero_id = Number(parsedBody.vivero_id);
+    }
+    if (parsedBody.metodo_id !== undefined) {
+      parsedBody.metodo_id = Number(parsedBody.metodo_id);
+    }
+    if (parsedBody.planta_id !== undefined) {
+      parsedBody.planta_id = Number(parsedBody.planta_id);
     }
   }
 
