@@ -62,9 +62,9 @@ export class RecoleccionesService {
     console.log(`✅ Usuario encontrado: ${usuarioData.nombre} (ID: ${userId}, auth_id: ${authId})`);
 
     // Validar permisos
-    if (!['ADMIN', 'TECNICO'].includes(userRole)) {
+    if (!['ADMIN', 'GENERAL'].includes(userRole)) {
       throw new ForbiddenException(
-        'No tienes permisos para crear recolecciones. Solo usuarios con rol ADMIN o TECNICO pueden realizar esta acción.',
+        'No tienes permisos para crear recolecciones. Solo usuarios con rol ADMIN o GENERAL pueden realizar esta acción.',
       );
     }
 
@@ -294,33 +294,19 @@ export class RecoleccionesService {
 
       // PASO 4: Crear recolección
       console.log('📦 Paso 4: Creando registro de recolección...');
-      
-      // Generar código de trazabilidad único formato: REC-YYYY-NNN
-      const fecha = new Date(createRecoleccionDto.fecha);
-      const año = fecha.getFullYear();
-      
-      // Obtener el conteo de recolecciones del año actual para generar el número secuencial
-      const inicioAño = `${año}-01-01`;
-      const finAño = `${año}-12-31`;
-      
-      const { count, error: countError } = await supabase
-        .from('recoleccion')
-        .select('id', { count: 'exact', head: true })
-        .gte('fecha', inicioAño)
-        .lte('fecha', finAño);
-      
-      if (countError) {
-        console.error('❌ Error al contar recolecciones:', countError);
-        throw new InternalServerErrorException('Error al generar código de trazabilidad');
-      }
-      
-      const numeroSecuencial = ((count || 0) + 1).toString().padStart(3, '0');
-      const codigoTrazabilidad = `REC-${año}-${numeroSecuencial}`;
-      console.log('🏷️  Código de trazabilidad generado:', codigoTrazabilidad);
-      
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const { data: recoleccionCreada, error: recoleccionError } =
-        await supabase
+
+      let codigoTrazabilidad = '';
+      let recoleccionCreada: any = null;
+      let recoleccionError: any = null;
+
+      for (let intento = 1; intento <= 5; intento++) {
+        codigoTrazabilidad = await this.generateCodigoTrazabilidad(
+          createRecoleccionDto.fecha,
+        );
+        console.log('🏷️  Código de trazabilidad generado:', codigoTrazabilidad);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const result = await supabase
           .from('recoleccion')
           .insert({
             fecha: createRecoleccionDto.fecha,
@@ -344,6 +330,23 @@ export class RecoleccionesService {
           })
           .select()
           .single();
+
+        recoleccionCreada = result.data;
+        recoleccionError = result.error;
+
+        if (!recoleccionError && recoleccionCreada) {
+          break;
+        }
+
+        if (this.isCodigoTrazabilidadDuplicateError(recoleccionError)) {
+          this.logger.warn(
+            `⚠️ Colisión de código de trazabilidad (${codigoTrazabilidad}), reintentando (${intento}/5)...`,
+          );
+          continue;
+        }
+
+        break;
+      }
 
       if (recoleccionError) {
         console.error('❌ Error al crear recolección:', recoleccionError);
@@ -443,12 +446,12 @@ export class RecoleccionesService {
     const roleFromDb = String(usuarioData.rol ?? '').toUpperCase();
     const roleFromRequestContext = String(userRole ?? '').toUpperCase();
     const hasAllowedRole = [roleFromDb, roleFromRequestContext].some((role) =>
-      ['ADMIN', 'TECNICO'].includes(role),
+      ['ADMIN', 'GENERAL'].includes(role),
     );
 
     if (!hasAllowedRole) {
       throw new ForbiddenException(
-        'No tienes permisos para crear recolecciones. Solo usuarios con rol ADMIN o TECNICO pueden realizar esta acción.',
+        'No tienes permisos para crear recolecciones. Solo usuarios con rol ADMIN o GENERAL pueden realizar esta acción.',
       );
     }
 
@@ -624,31 +627,55 @@ export class RecoleccionesService {
         });
       }
 
-      codigoTrazabilidad = await this.generateCodigoTrazabilidad(createRecoleccionDto.fecha);
+      let recoleccionCreada: any = null;
+      let recoleccionError: any = null;
 
-      const { data: recoleccionCreada, error: recoleccionError } = await supabase
-        .from('recoleccion')
-        .insert({
-          fecha: createRecoleccionDto.fecha,
-          nombre_cientifico: null,
-          nombre_comercial: null,
-          cantidad: createRecoleccionDto.cantidad,
-          unidad: conversionCanonica.unidad_normalizada,
-          tipo_material: tipoMaterialCanonico,
-          especie_nueva: false,
-          observaciones: createRecoleccionDto.observaciones,
-          usuario_id: userId,
-          ubicacion_id: ubicacionId,
-          vivero_id: createRecoleccionDto.vivero_id,
-          metodo_id: createRecoleccionDto.metodo_id,
-          planta_id: createRecoleccionDto.planta_id,
-          codigo_trazabilidad: codigoTrazabilidad,
-          estado_registro: 'BORRADOR',
-          unidad_canonica: conversionCanonica.unidad_canonica,
-          cantidad_inicial_canonica: conversionCanonica.cantidad_canonica,
-        })
-        .select('id')
-        .single();
+      for (let intento = 1; intento <= 5; intento++) {
+        codigoTrazabilidad = await this.generateCodigoTrazabilidad(
+          createRecoleccionDto.fecha,
+        );
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const result = await supabase
+          .from('recoleccion')
+          .insert({
+            fecha: createRecoleccionDto.fecha,
+            nombre_cientifico: null,
+            nombre_comercial: null,
+            cantidad: createRecoleccionDto.cantidad,
+            unidad: conversionCanonica.unidad_normalizada,
+            tipo_material: tipoMaterialCanonico,
+            especie_nueva: false,
+            observaciones: createRecoleccionDto.observaciones,
+            usuario_id: userId,
+            ubicacion_id: ubicacionId,
+            vivero_id: createRecoleccionDto.vivero_id,
+            metodo_id: createRecoleccionDto.metodo_id,
+            planta_id: createRecoleccionDto.planta_id,
+            codigo_trazabilidad: codigoTrazabilidad,
+            estado_registro: 'BORRADOR',
+            unidad_canonica: conversionCanonica.unidad_canonica,
+            cantidad_inicial_canonica: conversionCanonica.cantidad_canonica,
+          })
+          .select('id')
+          .single();
+
+        recoleccionCreada = result.data;
+        recoleccionError = result.error;
+
+        if (!recoleccionError && recoleccionCreada) {
+          break;
+        }
+
+        if (this.isCodigoTrazabilidadDuplicateError(recoleccionError)) {
+          this.logger.warn(
+            `⚠️ Colisión de código de trazabilidad (${codigoTrazabilidad}), reintentando (${intento}/5)...`,
+          );
+          continue;
+        }
+
+        break;
+      }
 
       if (recoleccionError || !recoleccionCreada) {
         this.logger.error('❌ Error al crear recolección v2:', recoleccionError);
@@ -809,24 +836,81 @@ export class RecoleccionesService {
     }
 
     const año = fecha.getFullYear();
-    const inicioAño = `${año}-01-01`;
-    const finAño = `${año}-12-31`;
-
-    const { count, error: countError } = await supabase
+    const prefijo = `REC-${año}-`;
+    const { data, error } = await supabase
       .from('recoleccion')
-      .select('id', { count: 'exact', head: true })
-      .gte('fecha', inicioAño)
-      .lte('fecha', finAño);
+      .select('codigo_trazabilidad')
+      .ilike('codigo_trazabilidad', `${prefijo}%`);
 
-    if (countError) {
-      this.logger.error('❌ Error al contar recolecciones para trazabilidad:', countError);
+    if (error) {
+      this.logger.error(
+        '❌ Error al consultar códigos de trazabilidad para generar correlativo:',
+        error,
+      );
       throw new InternalServerErrorException(
         'Error al generar código de trazabilidad',
       );
     }
 
-    const numeroSecuencial = ((count || 0) + 1).toString().padStart(3, '0');
-    return `REC-${año}-${numeroSecuencial}`;
+    let maxSecuencial = 0;
+    for (const row of data ?? []) {
+      const codigo = String((row as { codigo_trazabilidad?: string }).codigo_trazabilidad ?? '');
+      const secuencial = this.extractSecuencialFromCodigo(codigo, año);
+      if (secuencial > maxSecuencial) {
+        maxSecuencial = secuencial;
+      }
+    }
+
+    let siguiente = maxSecuencial + 1;
+    while (true) {
+      const codigo = `${prefijo}${siguiente.toString().padStart(3, '0')}`;
+      const existe = await this.codigoTrazabilidadExists(codigo);
+      if (!existe) {
+        return codigo;
+      }
+      siguiente += 1;
+    }
+  }
+
+  private extractSecuencialFromCodigo(codigo: string, año: number): number {
+    const prefijo = `REC-${año}-`;
+    if (!codigo.startsWith(prefijo)) {
+      return 0;
+    }
+
+    const parteSecuencial = codigo.slice(prefijo.length);
+    const numero = Number.parseInt(parteSecuencial, 10);
+    return Number.isFinite(numero) ? numero : 0;
+  }
+
+  private async codigoTrazabilidadExists(codigo: string): Promise<boolean> {
+    const supabase = this.supabaseService.getClient();
+    const { data, error } = await supabase
+      .from('recoleccion')
+      .select('id')
+      .eq('codigo_trazabilidad', codigo)
+      .maybeSingle();
+
+    if (error) {
+      this.logger.error('❌ Error al verificar existencia de codigo_trazabilidad:', error);
+      throw new InternalServerErrorException(
+        'Error al validar código de trazabilidad',
+      );
+    }
+
+    return Boolean(data);
+  }
+
+  private isCodigoTrazabilidadDuplicateError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') {
+      return false;
+    }
+
+    const candidate = error as { code?: string; message?: string };
+    return (
+      candidate.code === '23505' &&
+      String(candidate.message ?? '').includes('recoleccion_codigo_trazabilidad_key')
+    );
   }
 
   /**
@@ -952,13 +1036,13 @@ export class RecoleccionesService {
   }
 
   /**
-   * Valida que el usuario tenga rol GENERAL o ADMIN (revisores).
+   * Valida que el usuario tenga rol VALIDADOR o ADMIN (revisores).
    */
   private assertReviewerRole(userRole: string): void {
     const role = String(userRole ?? '').toUpperCase();
-    if (!['GENERAL', 'ADMIN'].includes(role)) {
+    if (!['VALIDADOR', 'ADMIN'].includes(role)) {
       throw new ForbiddenException(
-        'Solo usuarios con rol GENERAL o ADMIN pueden realizar esta acción.',
+        'Solo usuarios con rol VALIDADOR o ADMIN pueden realizar esta acción.',
       );
     }
   }
@@ -1180,7 +1264,7 @@ export class RecoleccionesService {
 
   /**
    * Aprueba la validación de una recolección.
-   * Solo GENERAL o ADMIN. Solo si está en PENDIENTE_VALIDACION.
+   * Solo VALIDADOR o ADMIN. Solo si está en PENDIENTE_VALIDACION.
    * Ejecuta Pinata + Blockchain después de la validación.
    */
   async approveValidation(
@@ -1231,7 +1315,7 @@ export class RecoleccionesService {
 
   /**
    * Rechaza la validación de una recolección.
-   * Solo GENERAL o ADMIN. Solo si está en PENDIENTE_VALIDACION.
+   * Solo VALIDADOR o ADMIN. Solo si está en PENDIENTE_VALIDACION.
    */
   async rejectValidation(
     id: number,
@@ -1276,8 +1360,8 @@ export class RecoleccionesService {
 
   /**
    * Lista recolecciones en PENDIENTE_VALIDACION (para panel de validadores).
-   * - Si userRole es GENERAL o ADMIN: devuelve TODAS las recolecciones pendientes de todos los usuarios
-   * - Si userRole es otro (ej. RECOLECTOR): devuelve solo las recolecciones pendientes del usuario autenticado
+   * - Si userRole es VALIDADOR o ADMIN: devuelve TODAS las recolecciones pendientes de todos los usuarios
+   * - Si userRole es otro (ej. GENERAL/VOLUNTARIO): devuelve solo las recolecciones pendientes del usuario autenticado
    */
   async findPendingValidation(
     filters: FiltersRecoleccionDto,
@@ -1290,8 +1374,8 @@ export class RecoleccionesService {
     const limit = Math.min(filters.limit || 10, 50);
     const offset = (page - 1) * limit;
 
-    // Determinar si el usuario tiene rol global (GENERAL o ADMIN)
-    const esRolGlobal = ['GENERAL', 'ADMIN'].includes(userRole.toUpperCase());
+    // Determinar si el usuario tiene rol global de validación (VALIDADOR o ADMIN)
+    const esRolGlobal = ['VALIDADOR', 'ADMIN'].includes(userRole.toUpperCase());
 
     let query = supabase
       .from('recoleccion')

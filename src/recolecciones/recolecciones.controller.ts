@@ -209,7 +209,7 @@ export class RecoleccionesController {
   })
   @ApiSecurity('x-auth-id')
   @ApiHeader({ name: 'x-auth-id', description: 'ID de autenticación del usuario', required: true })
-  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (ADMIN, TECNICO, GENERAL)', required: true })
+  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (ADMIN, GENERAL, VALIDADOR, VOLUNTARIO)', required: true })
   @ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' })
   @ApiBody({ type: UpdateDraftDto })
   @ApiResponse({ status: 200, description: 'Borrador actualizado exitosamente' })
@@ -226,7 +226,7 @@ export class RecoleccionesController {
       throw new UnauthorizedException('Header x-auth-id es requerido');
     }
 
-    return this.recoleccionesService.updateDraft(id, dto, authId, userRole || 'TECNICO');
+    return this.recoleccionesService.updateDraft(id, dto, authId, userRole || 'GENERAL');
   }
 
   @Patch(':id/submit')
@@ -251,18 +251,18 @@ export class RecoleccionesController {
       throw new UnauthorizedException('Header x-auth-id es requerido');
     }
 
-    return this.recoleccionesService.submitForValidation(id, authId, userRole || 'TECNICO');
+    return this.recoleccionesService.submitForValidation(id, authId, userRole || 'GENERAL');
   }
 
   @Patch(':id/approve')
   @ApiOperation({
     summary: 'Aprobar validación de recolección',
     description:
-      'Cambia PENDIENTE_VALIDACION → VALIDADO. Solo GENERAL o ADMIN. Ejecuta Pinata + Blockchain.',
+      'Cambia PENDIENTE_VALIDACION → VALIDADO. Solo VALIDADOR o ADMIN. Ejecuta Pinata + Blockchain.',
   })
   @ApiSecurity('x-auth-id')
   @ApiHeader({ name: 'x-auth-id', description: 'ID de autenticación del usuario', required: true })
-  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (GENERAL o ADMIN)', required: true })
+  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (VALIDADOR o ADMIN)', required: true })
   @ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' })
   @ApiResponse({ status: 200, description: 'Recolección validada y minteada en blockchain' })
   @ApiResponse({ status: 400, description: 'Estado no permite aprobación' })
@@ -288,11 +288,11 @@ export class RecoleccionesController {
   @ApiOperation({
     summary: 'Rechazar validación de recolección',
     description:
-      'Cambia PENDIENTE_VALIDACION → RECHAZADO. Solo GENERAL o ADMIN. Requiere motivo.',
+      'Cambia PENDIENTE_VALIDACION → RECHAZADO. Solo VALIDADOR o ADMIN. Requiere motivo.',
   })
   @ApiSecurity('x-auth-id')
   @ApiHeader({ name: 'x-auth-id', description: 'ID de autenticación del usuario', required: true })
-  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (GENERAL o ADMIN)', required: true })
+  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (VALIDADOR o ADMIN)', required: true })
   @ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' })
   @ApiBody({ type: RejectValidationDto })
   @ApiResponse({ status: 200, description: 'Recolección rechazada' })
@@ -323,11 +323,11 @@ export class RecoleccionesController {
   @Get('pending-validation')
   @ApiOperation({
     summary: 'Listar recolecciones pendientes de validación',
-    description: 'Devuelve recolecciones en estado PENDIENTE_VALIDACION con filtros y paginación. Usuarios con rol GENERAL o ADMIN ven TODAS las recolecciones pendientes, otros roles solo ven las suyas.',
+    description: 'Devuelve recolecciones en estado PENDIENTE_VALIDACION con filtros y paginación. Usuarios con rol VALIDADOR o ADMIN ven TODAS las recolecciones pendientes, otros roles solo ven las suyas.',
   })
   @ApiSecurity('x-auth-id')
   @ApiHeader({ name: 'x-auth-id', description: 'ID de autenticación del usuario', required: true })
-  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (GENERAL, ADMIN, RECOLECTOR, etc.)', required: true })
+  @ApiHeader({ name: 'x-user-role', description: 'Rol del usuario (ADMIN, GENERAL, VALIDADOR, VOLUNTARIO)', required: true })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'fecha_inicio', required: false, type: String })
