@@ -689,7 +689,7 @@ export class RecoleccionesService {
         entidad_id: recoleccionId,
         codigo_trazabilidad: codigoTrazabilidad,
         bucket: bucketFotos,
-        ruta_archivo: foto.ruta_archivo,
+        ruta_archivo: supabase.storage.from(bucketFotos).getPublicUrl(foto.ruta_archivo).data.publicUrl,
         storage_object_id: foto.storage_object_id,
         tipo_archivo: 'FOTO',
         mime_type: foto.mime_type,
@@ -917,13 +917,15 @@ export class RecoleccionesService {
    * Construye el JSON metadata en formato NFT estándar
    */
   private buildNFTMetadata(recoleccion: any, nombreUsuario: string) {
-    // Obtener foto principal (foto_total o la primera disponible)
-    const fotoTotal =
-      recoleccion.fotos?.find((f: any) => f.url.includes('total')) ||
-      recoleccion.fotos?.[0];
-    const fotoLugar =
-      recoleccion.fotos?.find((f: any) => f.url.includes('lugar')) ||
-      recoleccion.fotos?.[1];
+    // Obtener foto principal desde evidencias (campo fotos del response canónico)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const fotos: any[] = recoleccion.fotos ?? [];
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const fotoPrincipal =
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      fotos.find((f: any) => f.es_principal) || fotos[0] || null;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const imageUrl: string = fotoPrincipal?.url || '';
 
     // Formatear fecha y hora
     const fechaStr = recoleccion.fecha; // Ya viene en formato YYYY-MM-DD
@@ -981,18 +983,17 @@ export class RecoleccionesService {
       { trait_type: 'Coordenadas', value: coordenadas },
     ];
 
-    // Agregar fotos si existen
-    if (fotoLugar) {
-      attributes.push({ trait_type: 'Foto Lugar', value: fotoLugar.url });
-    }
-    if (fotoTotal) {
-      attributes.push({ trait_type: 'Foto Total', value: fotoTotal.url });
-    }
+    // Agregar todas las fotos como atributos
+    fotos.forEach((foto: any, index: number) => {
+      if (foto.url) {
+        attributes.push({ trait_type: `Foto ${index + 1}`, value: foto.url });
+      }
+    });
 
     return {
       name: `${recoleccion.codigo_trazabilidad} - Recolección de ${recoleccion.planta?.especie || recoleccion.nombre_comercial}`,
       description: descripcion,
-      image: fotoTotal?.url || '',
+      image: imageUrl,
       attributes: attributes,
     };
   }
@@ -1080,29 +1081,13 @@ export class RecoleccionesService {
     try {
       this.logger.log(`☁️  Blockchain flow: obteniendo datos de recolección ${recoleccionId}...`);
 
-      const { data: recoleccionCompleta, error: fetchError } = await supabase
-        .from('recoleccion')
-        .select(
-          `
-          *,
-          usuario:usuario_id (id, nombre, username, correo),
-          vivero:vivero_id (id, codigo, nombre, ubicacion_id),
-          metodo:metodo_id (id, nombre, descripcion),
-          planta:planta_id (*),
-          fotos:recoleccion_foto (*)
-        `,
-        )
-        .eq('id', recoleccionId)
-        .single();
-
-      if (fetchError || !recoleccionCompleta) {
-        this.logger.error('⚠️  No se pudo obtener la recolección para metadata:', fetchError);
+      const findResult = await this.findOne(recoleccionId);
+      if (!findResult?.data) {
+        this.logger.error('⚠️  No se pudo obtener la recolección para metadata');
         return;
       }
 
-      const recoleccionEnriquecida = await this.enrichSingleRecoleccion(
-        recoleccionCompleta,
-      );
+      const recoleccionEnriquecida = findResult.data;
 
       // Construir JSON NFT
       const metadata = this.buildNFTMetadata(recoleccionEnriquecida, nombreUsuario);
@@ -1266,7 +1251,7 @@ export class RecoleccionesService {
         entidad_id: recoleccionId,
         codigo_trazabilidad: codigoTrazabilidad,
         bucket: bucketFotos,
-        ruta_archivo: rutaStorage,
+        ruta_archivo: supabase.storage.from(bucketFotos).getPublicUrl(rutaStorage).data.publicUrl,
         storage_object_id: storageObjectId,
         tipo_archivo: 'FOTO',
         mime_type: mimeType,
@@ -2028,13 +2013,20 @@ export class RecoleccionesService {
         map.set(recoleccionId, []);
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from((evidencia as any).bucket)
-        .getPublicUrl((evidencia as any).ruta_archivo);
+      const rutaArchivo = String((evidencia as any).ruta_archivo ?? '');
+      let publicUrl: string;
+      if (rutaArchivo.startsWith('http')) {
+        publicUrl = rutaArchivo;
+      } else {
+        const { data: publicUrlData } = supabase.storage
+          .from((evidencia as any).bucket)
+          .getPublicUrl(rutaArchivo);
+        publicUrl = publicUrlData.publicUrl;
+      }
 
       map.get(recoleccionId)!.push({
         ...(evidencia as any),
-        public_url: publicUrlData.publicUrl,
+        public_url: publicUrl,
       });
     }
 
