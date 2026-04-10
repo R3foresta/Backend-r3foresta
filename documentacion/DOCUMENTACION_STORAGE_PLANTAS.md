@@ -8,7 +8,7 @@ Las imágenes de plantas ahora se guardan automáticamente en **Supabase Storage
 ## 🔧 Configuración del Bucket
 
 ### 1. Ejecutar el script SQL
-Ejecuta el archivo `migrations/create_fotos_plantas_bucket.sql` en el **SQL Editor** de tu proyecto Supabase:
+Ejecuta el archivo `migrations/002_create_fotos_plantas_bucket.sql` en el **SQL Editor** de tu proyecto Supabase:
 
 ```sql
 -- El script crea:
