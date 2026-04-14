@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS public.lote_vivero (
 
   nombre_cientifico_snapshot TEXT NOT NULL,
   nombre_comercial_snapshot TEXT NOT NULL,
-  tipo_material_snapshot TEXT NOT NULL,
+  tipo_material_snapshot public.tipo_material_origen NOT NULL,
 
   fecha_inicio DATE NOT NULL,
 
