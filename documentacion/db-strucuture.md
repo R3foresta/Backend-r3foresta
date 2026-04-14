@@ -1,357 +1,413 @@
-## Documentación actualizada (Mermaid ER)
-
-```mermaid
+ Nuevo Diagrama:
 erDiagram
-    %% =====================================================
-    %% R3Foresta - BD Oficial (Supabase / Postgres)
-    %% vActual: Ubicaciones por Divisiones Administrativas
-    %% =====================================================
 
-    USUARIO {
-        bigint id PK
-        string nombre
-        string apellido "max 30 chars"
-        string username "UNIQUE; default ''"
-        string correo "UNIQUE; default ''"
-        string auth_id "default ''"
-        string doc_identidad "UNIQUE, opcional"
-        string wallet_address "UNIQUE; opcional; formato: 0x + 40 hex"
-        string organizacion "texto"
-        string contacto "opcional; formato: +########"
-        string rol "DEFAULT=GENERAL; (enum rol_usuario)"
-        datetime created_at
-    }
+  PAIS {
+    bigint id PK
+    text nombre
+    character codigo_iso2 "UNIQUE"
+    character codigo_iso3
+    boolean activo
+    timestamptz created_at
+  }
 
-    USUARIO_CREDENCIAL {
-        bigint id PK
-        bigint usuario_id FK
-        string credential_id "UNIQUE"
-        string public_key
-        string algorithm "DEFAULT=ES256"
-        int counter "DEFAULT=0"
-        string[] transports "ARRAY"
-        datetime created_at
-        datetime last_used_at
-    }
+  DIVISION_TIPO {
+    bigint id PK
+    bigint pais_id FK
+    text nombre
+    int orden
+    boolean activo
+    timestamptz created_at
+  }
 
-    %% ==============================
-    %% UBICACIONES (nuevo modelo)
-    %% ==============================
+  DIVISION_ADMINISTRATIVA {
+    bigint id PK
+    bigint pais_id FK
+    bigint parent_id FK "self"
+    bigint tipo_id FK
+    text nombre
+    text codigo_externo
+    boolean activo
+    bigint reemplazada_por_id FK "self"
+    timestamptz created_at
+    timestamptz updated_at
+  }
 
-    PAIS {
-        bigint id PK
-        string nombre
-        string codigo_iso2 "UNIQUE"
-        string codigo_iso3 "opcional"
-        bool activo "DEFAULT=true"
-        datetime created_at
-    }
+  UBICACION {
+    bigint id PK
+    numeric latitud
+    numeric longitud
+    timestamptz created_at
+    bigint pais_id FK
+    bigint division_id FK
+    text nombre
+    int precision_m
+    text fuente
+    text referencia
+    timestamptz updated_at
+  }
 
-    DIVISION_TIPO {
-        bigint id PK
-        bigint pais_id FK
-        string nombre "Ej: Departamento, Provincia, Estado, Cantón..."
-        int orden "1..n dentro del país"
-        bool activo "DEFAULT=true"
-        datetime created_at
-    }
+  USUARIO {
+    bigint id PK
+    text nombre
+    text apellido
+    text doc_identidad "UNIQUE"
+    text wallet_address "UNIQUE"
+    text organizacion
+    text contacto
+    ENUM(rol_usuario) rol
+    timestamptz created_at
+    text username "UNIQUE"
+    text auth_id
+    text correo "UNIQUE"
+    text foto_perfil_url
+  }
 
-    DIVISION_ADMINISTRATIVA {
-        bigint id PK
-        bigint pais_id FK
-        bigint parent_id FK "auto-referencia (árbol)"
-        bigint tipo_id FK
-        string nombre
-        string codigo_externo "opcional (INE/ISO/local)"
-        bool activo "DEFAULT=true"
-        bigint reemplazada_por_id FK "opcional; soft-merge"
-        datetime created_at
-        datetime updated_at
-    }
+  USUARIO_CREDENCIAL {
+    bigint id PK
+    bigint usuario_id FK
+    text credential_id "UNIQUE"
+    text public_key
+    text algorithm
+    int counter
+    ARRAY transports
+    timestamptz created_at
+    timestamptz last_used_at
+  }
 
-    UBICACION {
-        bigint id PK
-        decimal latitud "CHECK [-90..90]"
-        decimal longitud "CHECK [-180..180]"
-        bigint pais_id FK "opcional (fallback / filtros rápidos)"
-        bigint division_id FK "opcional: división más específica conocida"
-        string nombre "Ej: Parcela Don Lucho / Vivero Central"
-        int precision_m "opcional; >0"
-        string fuente "GPS_MOVIL | MAPA | MANUAL | LEGACY"
-        string referencia "texto libre (indicaciones / extra)"
-        datetime created_at
-        datetime updated_at
-    }
+  TIPOS_ENTIDAD_EVIDENCIA {
+    smallint id PK
+    text codigo "UNIQUE"
+    text descripcion
+    boolean activo
+    timestamptz creado_en
+  }
 
-    VIVERO {
-        bigint id PK
-        string codigo "UNIQUE"
-        string nombre "(enum o user-defined en DB)"
-        bigint ubicacion_id FK "UNIQUE (1:1 con UBICACION)"
-        datetime created_at
-    }
+  EVIDENCIAS_TRAZABILIDAD {
+    bigint id PK
+    smallint tipo_entidad_id FK
+    bigint entidad_id "polimórfico"
+    text codigo_trazabilidad
+    text bucket
+    text ruta_archivo
+    uuid storage_object_id
+    text tipo_archivo
+    text mime_type
+    bigint tamano_bytes
+    text hash_sha256
+    text titulo
+    text descripcion
+    jsonb metadata
+    boolean es_principal
+    int orden
+    timestamptz tomado_en
+    timestamptz creado_en
+    timestamptz actualizado_en
+    timestamptz eliminado_en
+    bigint creado_por_usuario_id FK
+    bigint actualizado_por_usuario_id FK
+    bigint eliminado_por_usuario_id FK
+  }
 
-    %% ==============================
-    %% Catálogos
-    %% ==============================
+  VIVERO {
+    bigint id PK
+    text codigo "UNIQUE"
+    text nombre
+    bigint ubicacion_id FK "UNIQUE"
+    timestamptz created_at
+  }
 
-    TIPO_PLANTA {
-        int id PK
-        string nombre "UNIQUE"
-        datetime created_at
-    }
+  TIPO_PLANTA {
+    int id PK
+    text nombre "UNIQUE"
+    timestamptz created_at
+  }
 
-    PLANTA {
-        bigint id PK
-        string especie
-        string nombre_cientifico
-        string variedad
-        int tipo_planta_id FK
-        string nombre_comun_principal
-        string nombres_comunes
-        string imagen_url
-        string notas
-        datetime created_at
-    }
+  PLANTA {
+    bigint id PK
+    text especie
+    text nombre_cientifico
+    text variedad
+    timestamptz created_at
+    text nombre_comun_principal
+    text nombres_comunes
+    text imagen_url
+    text notas
+    int tipo_planta_id FK
+  }
 
-    METODO_RECOLECCION {
-        bigint id PK
-        string nombre "(enum/user-defined; UNIQUE)"
-        string descripcion
-    }
+  METODO_RECOLECCION {
+    bigint id PK
+    text nombre
+    text descripcion
+  }
 
-    TIPO_RIEGO {
-        int id PK
-        string nombre "UNIQUE"
-        string descripcion
-    }
+  RECOLECCION {
+    bigint id PK
+    date fecha
+    ENUM(tipo_material_origen) tipo_material
+    ENUM(estado_recoleccion) estado
+    boolean especie_nueva
+    text observaciones
+    bigint usuario_id FK
+    bigint ubicacion_id FK
+    bigint vivero_id FK
+    bigint metodo_id FK
+    bigint planta_id FK
+    timestamptz created_at
+    text codigo_trazabilidad "UNIQUE"
+    text blockchain_url
+    text token_id
+    text transaction_hash
+    ENUM(estado_registro_recoleccion) estado_registro
+    text unidad_canonica
+    numeric cantidad_inicial_canonica
+    bigint usuario_validacion_id FK
+    timestamptz fecha_validacion
+    text blockchain_tx_validacion
+    numeric saldo_actual
+    ENUM(estado_operativo_recoleccion) estado_operativo
+  }
 
-    TIPO_ABONO {
-        int id PK
-        string nombre "UNIQUE"
-        string descripcion
-    }
+  RECOLECCION_FOTO {
+    bigint id PK
+    bigint recoleccion_id FK
+    text url
+    int peso_bytes
+    text formato
+    timestamptz created_at
+  }
 
-    %% ==============================
-    %% Recolección
-    %% ==============================
+  RECOLECCION_MOVIMIENTO {
+    bigint id PK
+    bigint recoleccion_id FK
+    ENUM(tipo_movimiento_recoleccion) tipo_movimiento
+    numeric delta
+    ENUM(unidad_medida) unidad_medida_movimiento "[ MODIFICAR ]"
+    ENUM(motivo_movimiento_recoleccion) motivo
+    text motivo_otro
+    bigint lote_vivero_id "FK a LOTE_VIVERO"
+    jsonb detalle_cambios
+    bigint created_by FK
+    timestamptz created_at
+    text blockchain_tx_hash
+  }
 
-    RECOLECCION {
-        bigint id PK
-        date fecha "CHECK [hoy-45d .. hoy]"
-        numeric cantidad_inicial_canonica "en unidad canónica G o UNIDAD"
-        string unidad_canonica "G | UNIDAD"
-        string tipo_material "(enum: SEMILLA | ESQUEJE)"
-        string estado "DEFAULT=ALMACENADO (enum estado_recoleccion)"
-        bool especie_nueva "DEFAULT=false"
-        string observaciones "max 1000 chars"
-        bigint usuario_id FK
-        bigint ubicacion_id FK
-        bigint vivero_id FK "opcional"
-        bigint metodo_id FK
-        bigint planta_id FK "opcional"
-        datetime created_at
-        string codigo_trazabilidad "UNIQUE"
-        string blockchain_url "opcional"
-        string token_id "opcional"
-        string transaction_hash "opcional"
-    }
+  LOTE_VIVERO {
+    bigint id PK
+    bigint recoleccion_id FK "NOT NULL - origen único por lote, sin UNIQUE"
+    bigint planta_id FK "NOT NULL"
+    bigint vivero_id FK "NOT NULL"
+    bigint responsable_id FK "NOT NULL"
+    text nombre_cientifico_snapshot "NOT NULL - congelado al crear"
+    text nombre_comercial_snapshot "NOT NULL - congelado al crear"
+    ENUM(tipo_material_origen) tipo_material_snapshot "NOT NULL - congelado al crear"
+    date fecha_inicio "NOT NULL"
+    numeric cantidad_inicial_en_proceso "NOT NULL - lectura operativa de inicio"
+    ENUM(unidad_medida) unidad_medida_inicial "NOT NULL - UNIDAD | GR"
+    int plantas_vivas_iniciales "nullable - materializado al registrar EMBOLSADO"
+    int saldo_vivo_actual "nullable - caché controlada, nunca editar directo"
+    ENUM(subetapa_adaptabilidad) subetapa_actual "nullable - SOMBRA | MEDIA_SOMBRA | SOL_DIRECTO"
+    ENUM(estado_lote_vivero) estado_lote "NOT NULL - ACTIVO | FINALIZADO, default ACTIVO"
+    ENUM(motivo_cierre_lote) motivo_cierre "nullable - DESPACHO_TOTAL | PERDIDA_TOTAL | MIXTO"
+    text codigo_trazabilidad "NOT NULL - UNIQUE"
+    timestamptz created_at "NOT NULL"
+    timestamptz updated_at "NOT NULL"
+}
 
-    RECOLECCION_FOTO {
-        bigint id PK
-        bigint recoleccion_id FK
-        string url
-        int peso_bytes "max 5MB"
-        string formato "JPG/JPEG/PNG"
-        datetime created_at
-    }
+EVENTO_LOTE_VIVERO {
+    bigint id PK
+    bigint lote_id FK "NOT NULL"
+    ENUM(tipo_evento_vivero) tipo_evento "NOT NULL - INICIO | EMBOLSADO | ADAPTABILIDAD | MERMA | DESPACHO | CIERRE_AUTOMATICO"
+    date fecha_evento "NOT NULL"
+    timestamptz created_at "NOT NULL - inmutable, cuándo se guardó realmente"
+    bigint responsable_id FK "NOT NULL"
+    numeric cantidad_afectada "nullable - plantas o unidades según tipo_evento"
+    ENUM(unidad_medida) unidad_medida_evento "nullable - UNIDAD | GR"
+    ENUM(causa_merma_vivero) causa_merma "nullable - solo aplica en MERMA"
+    ENUM(destino_tipo_vivero) destino_tipo "nullable - solo aplica en DESPACHO"
+    text destino_referencia "nullable - solo aplica en DESPACHO"
+    bigint comunidad_destino_id FK "nullable - referencia a DIVISION_ADMINISTRATIVA(id), solo aplica en DESPACHO"
+    ENUM(subetapa_adaptabilidad) subetapa_destino "nullable - SOMBRA | MEDIA_SOMBRA | SOL_DIRECTO"
+    int saldo_vivo_antes "nullable - calculado por sistema"
+    int saldo_vivo_despues "nullable - calculado por sistema"
+    ENUM(motivo_cierre_lote) motivo_cierre_calculado "nullable - DESPACHO_TOTAL | PERDIDA_TOTAL | MIXTO"
+    bigint ref_evento_trigger_id FK "nullable - autorreferencia, solo aplica en CIERRE_AUTOMATICO"
+    jsonb metadata_blockchain "nullable - solo aplica en DESPACHO con anclaje activo"
+    text observaciones "nullable"
+}
 
-    %% ==============================
-    %% Modulo vivero
-    %% ==============================
+  PLANTACION {
+    bigint id PK
+    text codigo_trazabilidad "UNIQUE"
+    text destino
+    int ubicacion_id FK
+    int cantidad_arboles
+    date fecha_plantacion
+    numeric superficie_m2
+    numeric tamano_promedio_cm
+    text propietario
+    text origen_propiedad
+    int frecuencia_monitoreo_dias
+    int created_by FK
+    timestamptz created_at
+  }
 
-    LOTE_VIVERO {
-        bigint id PK
-        bigint recoleccion_id FK
-        bigint planta_id FK
-        bigint vivero_id FK
-        bigint responsable_id FK
-        string nombre_cientifico_snapshot
-        string nombre_comercial_snapshot
-        string tipo_material_snapshot
-        date fecha_inicio
-        decimal cantidad_inicial_en_proceso
-        string unidad_medida_inicial
-        int plantas_vivas_iniciales
-        int saldo_vivo_actual
-        string subetapa_actual
-        string estado_lote "DEFAULT=ACTIVO"
-        string motivo_cierre
-        string codigo_trazabilidad "UNIQUE"
-        datetime created_at
-        datetime updated_at
-    }
+  TIPO_ABONO {
+    int id PK
+    text nombre "UNIQUE"
+    text descripcion
+  }
 
-    EVENTO_LOTE_VIVERO {
-        bigint id PK
-        bigint lote_id FK
-        string tipo_evento
-        date fecha_evento
-        datetime created_at
-        bigint responsable_id FK
-        decimal cantidad_afectada
-        string unidad_medida_evento
-        string causa_merma
-        string destino_tipo
-        string destino_referencia
-        bigint comunidad_destino_id FK
-        string subetapa_destino
-        int saldo_vivo_antes
-        int saldo_vivo_despues
-        string motivo_cierre_calculado
-        bigint ref_evento_trigger_id FK
-        json metadata_blockchain
-        string observaciones
-    }
+  TIPO_RIEGO {
+    int id PK
+    text nombre "UNIQUE"
+    text descripcion
+  }
 
-    %% ==============================
-    %% Plantación
-    %% ==============================
+  PLANTACION_ABONO {
+    bigint plantacion_id PK
+    int tipo_abono_id PK
+  }
 
-    PLANTACION {
-        bigint id PK
-        string codigo_trazabilidad "UNIQUE"
-        string destino "CHECK: ARBORIZACION|FORESTACION|REFORESTACION"
-        int ubicacion_id FK
-        int cantidad_arboles "OBLIGATORIO > 0"
-        date fecha_plantacion "OBLIGATORIO"
-        decimal superficie_m2
-        decimal tamano_promedio_cm
-        string propietario
-        string origen_propiedad "DONADO|ADQUIRIDO|OTRO|NULL"
-        int frecuencia_monitoreo_dias
-        int created_by FK
-        datetime created_at
-    }
+  PLANTACION_RIEGO {
+    bigint plantacion_id PK
+    int tipo_riego_id PK
+  }
 
-    PLANTACION_USUARIO {
-        bigint plantacion_id PK, FK
-        int usuario_id PK, FK
-        string rol "opcional"
-    }
+  PLANTACION_USUARIO {
+    bigint plantacion_id PK
+    int usuario_id PK
+    text rol
+  }
 
-    PLANTACION_RIEGO {
-        bigint plantacion_id PK, FK
-        int tipo_riego_id PK, FK
-    }
+  PLANTACION_FOTO {
+    bigint id PK
+    bigint plantacion_id FK
+    text url
+    int peso_bytes
+    text formato
+    text descripcion
+  }
 
-    PLANTACION_ABONO {
-        bigint plantacion_id PK, FK
-        int tipo_abono_id PK, FK
-    }
+  PLANTACION_MONITOREO {
+    bigint id PK
+    bigint plantacion_id FK
+    date fecha_monitoreo
+    int arboles_vivos
+    int arboles_muertos
+    int arboles_reemplazados
+    text notas
+    int usuario_id FK
+    timestamptz created_at
+  }
 
-    PLANTACION_FOTO {
-        bigint id PK
-        bigint plantacion_id FK
-        string url
-        int peso_bytes
-        string formato
-        string descripcion
-    }
+  PLANTACION_LOTE_VIVERO {
+    bigint plantacion_id PK
+    bigint lote_vivero_id PK
+    int cantidad_plantines_usados
+  }
 
-    PLANTACION_MONITOREO {
-        bigint id PK
-        bigint plantacion_id FK
-        date fecha_monitoreo
-        int arboles_vivos
-        int arboles_muertos
-        int arboles_reemplazados
-        string notas
-        int usuario_id FK
-        datetime created_at
-    }
+  %% === Relaciones sin cambio ===
 
-    %% =====================================================
-    %% Relaciones
-    %% =====================================================
+  PAIS ||--o{ DIVISION_TIPO : tiene
+  PAIS ||--o{ DIVISION_ADMINISTRATIVA : tiene
+  PAIS ||--o{ UBICACION : tiene
+  DIVISION_TIPO ||--o{ DIVISION_ADMINISTRATIVA : clasifica
+  DIVISION_ADMINISTRATIVA ||--o{ DIVISION_ADMINISTRATIVA : parent
+  DIVISION_ADMINISTRATIVA ||--o{ DIVISION_ADMINISTRATIVA : reemplaza
+  UBICACION }o--|| DIVISION_ADMINISTRATIVA : pertenece_a
+  UBICACION ||--|| VIVERO : ubicacion_unica
+  USUARIO ||--o{ USUARIO_CREDENCIAL : tiene
+  USUARIO ||--o{ RECOLECCION : registra
+  UBICACION ||--o{ RECOLECCION : ocurre_en
+  VIVERO ||--o{ RECOLECCION : almacena_en
+  METODO_RECOLECCION ||--o{ RECOLECCION : metodo
+  PLANTA ||--o{ RECOLECCION : identifica
+  RECOLECCION ||--o{ RECOLECCION_FOTO : fotos
+  RECOLECCION ||--o{ RECOLECCION_MOVIMIENTO : movimientos
+  USUARIO ||--o{ RECOLECCION_MOVIMIENTO : creado_por
+  TIPOS_ENTIDAD_EVIDENCIA ||--o{ EVIDENCIAS_TRAZABILIDAD : tipo
+  USUARIO ||--o{ EVIDENCIAS_TRAZABILIDAD : creado_por
+  USUARIO ||--o{ EVIDENCIAS_TRAZABILIDAD : actualizado_por
+  USUARIO ||--o{ EVIDENCIAS_TRAZABILIDAD : eliminado_por
 
-    USUARIO ||--o{ USUARIO_CREDENCIAL : tiene
+  %% === Relaciones módulo vivero — actualizadas ===
 
-    PAIS ||--o{ DIVISION_TIPO : define
-    PAIS ||--o{ DIVISION_ADMINISTRATIVA : contiene
-    DIVISION_TIPO ||--o{ DIVISION_ADMINISTRATIVA : clasifica
-    DIVISION_ADMINISTRATIVA ||--o{ DIVISION_ADMINISTRATIVA : contiene "parent_id"
-    DIVISION_ADMINISTRATIVA ||--o| DIVISION_ADMINISTRATIVA : reemplaza "reemplazada_por_id"
+  RECOLECCION ||--o{ LOTE_VIVERO : "origen único"
+  PLANTA ||--o{ LOTE_VIVERO : planta
+  VIVERO ||--o{ LOTE_VIVERO : contiene
+  USUARIO ||--o{ LOTE_VIVERO : responsable
 
-    PAIS ||--o{ UBICACION : agrupa "opcional via pais_id"
-    DIVISION_ADMINISTRATIVA ||--o{ UBICACION : ubica "opcional via division_id"
+  LOTE_VIVERO ||--o{ EVENTO_LOTE_VIVERO : "historial append-only"
+  USUARIO ||--o{ EVENTO_LOTE_VIVERO : responsable
+  EVENTO_LOTE_VIVERO ||--o| EVENTO_LOTE_VIVERO : "ref_evento_trigger"
 
-    UBICACION ||--o{ VIVERO : tiene
-    UBICACION ||--o{ RECOLECCION : ocurre_en
-    UBICACION ||--o{ PLANTACION : se_ubica_en
+  RECOLECCION_MOVIMIENTO }o--|| LOTE_VIVERO : "registra consumo en M1"
 
-    USUARIO ||--o{ RECOLECCION : recolecta
-    USUARIO ||--o{ LOTE_VIVERO : crea
-    USUARIO ||--o{ EVENTO_LOTE_VIVERO : registra
-    USUARIO ||--o{ PLANTACION : registra
-    USUARIO ||--o{ PLANTACION_USUARIO : participa
-    USUARIO ||--o{ PLANTACION_MONITOREO : monitorea
+  TIPOS_ENTIDAD_EVIDENCIA ||--o{ EVIDENCIAS_TRAZABILIDAD : tipo
 
-    VIVERO ||--o{ RECOLECCION : almacena
-    VIVERO ||--o{ LOTE_VIVERO : contiene
+  %% === Relaciones plantación — sin cambio ===
 
-    PLANTA ||--o{ RECOLECCION : corresponde_a
-    PLANTA ||--o{ LOTE_VIVERO : se_procesa
+  UBICACION ||--o{ PLANTACION : lugar
+  USUARIO ||--o{ PLANTACION : created_by
+  PLANTACION ||--o{ PLANTACION_FOTO : fotos
+  PLANTACION ||--o{ PLANTACION_MONITOREO : monitoreos
+  USUARIO ||--o{ PLANTACION_MONITOREO : registra
+  PLANTACION ||--o{ PLANTACION_ABONO : usa
+  TIPO_ABONO ||--o{ PLANTACION_ABONO : tipo
+  PLANTACION ||--o{ PLANTACION_RIEGO : usa
+  TIPO_RIEGO ||--o{ PLANTACION_RIEGO : tipo
+  PLANTACION ||--o{ PLANTACION_USUARIO : asigna
+  USUARIO ||--o{ PLANTACION_USUARIO : participa
+  PLANTACION ||--o{ PLANTACION_LOTE_VIVERO : usa_lote
+  LOTE_VIVERO ||--o{ PLANTACION_LOTE_VIVERO : se_usa_en
+ENUMS
+RECOLECCION
+tipo_material_origen = [SEMILLA, ESQUEJE, OTRO]
 
-    METODO_RECOLECCION ||--o{ RECOLECCION : se_usa_en
-    RECOLECCION ||--o{ RECOLECCION_FOTO : tiene
+estado_recoleccion = [USADO, ALMACENADO, DESECHADO]
 
-    RECOLECCION ||--o{ LOTE_VIVERO : origina
-    LOTE_VIVERO ||--o{ EVENTO_LOTE_VIVERO : tiene
-    EVENTO_LOTE_VIVERO ||--o| EVENTO_LOTE_VIVERO : referencia
-    DIVISION_ADMINISTRATIVA ||--o{ EVENTO_LOTE_VIVERO : destino_comunidad
+estado_registro_recoleccion = [BORRADOR, PENDIENTE_VALIDACION, VALIDADO, RECHAZADO]
 
-    PLANTACION ||--o{ PLANTACION_USUARIO : tiene
+tipo_movimiento_recoleccion = [
+  CONSUMO_A_VIVERO, DESECHO, CORRECCION, AJUSTE_MIGRACION
+]
+estado_operativo_recoleccion = [ABIERTO, CERRADO]
 
-    PLANTACION ||--o{ PLANTACION_RIEGO : usa_riego
-    TIPO_RIEGO ||--o{ PLANTACION_RIEGO : se_aplica_en
+motivo_movimiento_recoleccion = [
+  CONSUMO_PARA_VIVERO,
+  DESECHO_*,
+  CORRECCION_*,
+  AJUSTE_*,
+  OTRO
+]
+LOTE VIVIERO
+lote_estado = [
+  INICIO, EMBOLSADO, SOMBRA, LISTA_PLANTAR, SALIDA_VIVERO
+]
 
-    PLANTACION ||--o{ PLANTACION_ABONO : usa_abono
-    TIPO_ABONO ||--o{ PLANTACION_ABONO : se_aplica_en
+lote_accion = [
+  INICIO, EMBOLSADO, SOMBRA, LISTA_PLANTAR, SALIDA_VIVERO, AJUSTE
+]
+estado_lote_vivero = [ACTIVO, FINALIZADO]
 
-    PLANTACION ||--o{ PLANTACION_FOTO : tiene
-    PLANTACION ||--o{ PLANTACION_MONITOREO : tiene_monitoreos
-```
+tipo_evento_vivero = [
+  INICIO, EMBOLSADO, ADAPTABILIDAD, MERMA, DESPACHO, CIERRE_AUTOMATICO
+]
 
----
+subetapa_adaptabilidad = [SOMBRA, MEDIA_SOMBRA, SOL_DIRECTO]
 
-## Aclaraciones (déjalas aparte tal como pediste)
+causa_merma_vivero = [
+  PLAGA, ENFERMEDAD, SEQUIA, DANO_FISICO,
+  MUERTE_NATURAL, DESCARTE_CALIDAD, OTRO
+]
 
-**En UBICACION (nuevo):**
+destino_tipo_vivero = [
+  PLANTACION_PROPIA, DONACION_COMUNIDAD, VENTA, OTRO
+]
 
-* `division_id` = la **división más específica** conocida (puede ser municipio, comunidad, cantón, etc.)
-* `nombre` = nombre del sitio puntual: *Parcela X, Vivero Y, Sector Z*
-* `fuente` = `GPS_MOVIL | MAPA | MANUAL | LEGACY`
-* `precision_m` = precisión aproximada en metros
-* `referencia` = indicaciones humanas (texto libre)
-
-**En DIVISION_ADMINISTRATIVA:**
-
-* `parent_id` arma el árbol (nivel variable por país)
-* `reemplazada_por_id` sirve para “fusionar/renombrar” sin borrar historia (muy útil para trazabilidad)
-
-**En RECOLECCION:**
-
-* `estado` = `ALMACENADO` por defecto (enum)
-* `tipo_material` = enum user-defined
-* fechas: `fecha` limitada a 45 días hacia atrás
-
-**En LOTE_VIVERO:**
-
-* `estado_lote` = `ACTIVO | FINALIZADO`
-* los eventos se registran en `EVENTO_LOTE_VIVERO`
-
-**En PLANTACION:**
-
-* `destino` = `ARBORIZACION | FORESTACION | REFORESTACION`
-* `origen_propiedad` = `DONADO | ADQUIRIDO | OTRO | NULL`
+motivo_cierre_lote = [DESPACHO_TOTAL, PERDIDA_TOTAL, MIXTO]
+USUARIO
+rol_usuario = [ADMIN, GENERAL, VALIDADOR, VOLUNTARIO]
+UNIDADES
+unidad_medida = [UNIDAD, GR]

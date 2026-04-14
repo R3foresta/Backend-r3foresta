@@ -1903,6 +1903,8 @@ export class RecoleccionesService {
       estado_registro,
       unidad_canonica,
       cantidad_inicial_canonica,
+      saldo_actual,
+      estado_operativo,
       usuario_validacion_id,
       fecha_validacion,
       blockchain_hash_validacion,
@@ -2026,8 +2028,13 @@ export class RecoleccionesService {
   }
 
   private mapRecoleccionToCanonicalResponse(recoleccion: any, evidencias: any[]) {
-    const cantidad = Number(recoleccion.cantidad_inicial_canonica ?? 0);
-    const estadoDetalle = cantidad > 0 ? 'ABIERTO' : 'CERRADO';
+    const saldoActual = Number(
+      recoleccion.saldo_actual ?? recoleccion.cantidad_inicial_canonica ?? 0,
+    );
+    const estadoOperativo = String(
+      recoleccion.estado_operativo ??
+        (saldoActual > 0 ? 'ABIERTO' : 'CERRADO'),
+    ).toUpperCase();
     const nombreCientifico = recoleccion.planta?.nombre_cientifico ?? null;
     const nombreComunPrincipal =
       recoleccion.planta?.nombre_comun_principal ?? null;
@@ -2055,7 +2062,9 @@ export class RecoleccionesService {
       nombre_cientifico: nombreCientifico,
       nombre_comercial: nombreComunPrincipal,
       nombre_comun_principal: nombreComunPrincipal,
-      estado_detalle: estadoDetalle,
+      saldo_actual: recoleccion.saldo_actual ?? saldoActual,
+      estado_operativo: estadoOperativo,
+      estado_detalle: estadoOperativo,
       evidencias,
       fotos,
       // Banderas de permisos para el frontend
