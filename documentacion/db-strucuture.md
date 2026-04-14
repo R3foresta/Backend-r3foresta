@@ -167,66 +167,51 @@ erDiagram
     }
 
     %% ==============================
-    %% Fase Vivero
+    %% Modulo vivero
     %% ==============================
 
-    LOTE_FASE_VIVERO {
+    LOTE_VIVERO {
         bigint id PK
+        bigint recoleccion_id FK
         bigint planta_id FK
         bigint vivero_id FK
         bigint responsable_id FK
+        string nombre_cientifico_snapshot
+        string nombre_comercial_snapshot
+        string tipo_material_snapshot
         date fecha_inicio
-        int cantidad_inicio
-        int cantidad_embolsadas "DEFAULT=0"
-        int cantidad_sombra "DEFAULT=0"
-        int cantidad_lista_plantar "DEFAULT=0"
-        date fecha_embolsado
-        date fecha_sombra
-        date fecha_salida
-        decimal altura_prom_sombra
-        decimal altura_prom_salida
-        string estado "DEFAULT=INICIO (enum lote_estado)"
+        decimal cantidad_inicial_en_proceso
+        string unidad_medida_inicial
+        int plantas_vivas_iniciales
+        int saldo_vivo_actual
+        string subetapa_actual
+        string estado_lote "DEFAULT=ACTIVO"
+        string motivo_cierre
+        string codigo_trazabilidad "UNIQUE"
         datetime created_at
         datetime updated_at
-        bigint updated_by FK "opcional; recomendado en update"
-        string codigo_trazabilidad "UNIQUE"
     }
 
-    LOTE_FASE_VIVERO_HISTORIAL {
+    EVENTO_LOTE_VIVERO {
         bigint id PK
         bigint lote_id FK
-        int nro_cambio
-        datetime fecha_cambio "DEFAULT=now()"
-        bigint responsable_id FK
-        string accion "(enum user-defined)"
-        string estado "(enum user-defined)"
-        int cantidad_inicio
-        int cantidad_embolsadas
-        int cantidad_sombra
-        int cantidad_lista_plantar
-        date fecha_inicio
-        date fecha_embolsado
-        date fecha_sombra
-        date fecha_salida
-        decimal altura_prom_sombra
-        decimal altura_prom_salida
-        string notas "max 2000 chars"
-    }
-
-    LOTE_FASE_VIVERO_FOTO {
-        bigint id PK
-        bigint lote_historial_id FK
-        string url
-        int peso_bytes
-        string formato
-        bool es_portada
-        string descripcion
+        string tipo_evento
+        date fecha_evento
         datetime created_at
-    }
-
-    LOTE_FASE_VIVERO_RECOLECCION {
-        bigint lote_id PK, FK
-        bigint recoleccion_id PK, FK
+        bigint responsable_id FK
+        decimal cantidad_afectada
+        string unidad_medida_evento
+        string causa_merma
+        string destino_tipo
+        string destino_referencia
+        bigint comunidad_destino_id FK
+        string subetapa_destino
+        int saldo_vivo_antes
+        int saldo_vivo_despues
+        string motivo_cierre_calculado
+        bigint ref_evento_trigger_id FK
+        json metadata_blockchain
+        string observaciones
     }
 
     %% ==============================
@@ -253,12 +238,6 @@ erDiagram
         bigint plantacion_id PK, FK
         int usuario_id PK, FK
         string rol "opcional"
-    }
-
-    PLANTACION_LOTE_FASE_VIVERO {
-        bigint plantacion_id PK, FK
-        int lote_fase_vivero_id PK, FK
-        int cantidad_plantines_usados "OBLIGATORIO > 0"
     }
 
     PLANTACION_RIEGO {
@@ -312,29 +291,27 @@ erDiagram
     UBICACION ||--o{ PLANTACION : se_ubica_en
 
     USUARIO ||--o{ RECOLECCION : recolecta
-    USUARIO ||--o{ LOTE_FASE_VIVERO : crea
-    USUARIO ||--o{ LOTE_FASE_VIVERO_HISTORIAL : registra
+    USUARIO ||--o{ LOTE_VIVERO : crea
+    USUARIO ||--o{ EVENTO_LOTE_VIVERO : registra
     USUARIO ||--o{ PLANTACION : registra
     USUARIO ||--o{ PLANTACION_USUARIO : participa
     USUARIO ||--o{ PLANTACION_MONITOREO : monitorea
 
     VIVERO ||--o{ RECOLECCION : almacena
-    VIVERO ||--o{ LOTE_FASE_VIVERO : se_realiza_en
+    VIVERO ||--o{ LOTE_VIVERO : contiene
 
     PLANTA ||--o{ RECOLECCION : corresponde_a
-    PLANTA ||--o{ LOTE_FASE_VIVERO : se_siembra
+    PLANTA ||--o{ LOTE_VIVERO : se_procesa
 
     METODO_RECOLECCION ||--o{ RECOLECCION : se_usa_en
     RECOLECCION ||--o{ RECOLECCION_FOTO : tiene
 
-    LOTE_FASE_VIVERO ||--o{ LOTE_FASE_VIVERO_RECOLECCION : usa
-    RECOLECCION ||--o{ LOTE_FASE_VIVERO_RECOLECCION : proviene_de
-    LOTE_FASE_VIVERO ||--o{ LOTE_FASE_VIVERO_HISTORIAL : versiona
-    LOTE_FASE_VIVERO_HISTORIAL ||--o{ LOTE_FASE_VIVERO_FOTO : evidencia
+    RECOLECCION ||--o{ LOTE_VIVERO : origina
+    LOTE_VIVERO ||--o{ EVENTO_LOTE_VIVERO : tiene
+    EVENTO_LOTE_VIVERO ||--o| EVENTO_LOTE_VIVERO : referencia
+    DIVISION_ADMINISTRATIVA ||--o{ EVENTO_LOTE_VIVERO : destino_comunidad
 
     PLANTACION ||--o{ PLANTACION_USUARIO : tiene
-    PLANTACION ||--o{ PLANTACION_LOTE_FASE_VIVERO : usa_lotes_vivero
-    LOTE_FASE_VIVERO ||--o{ PLANTACION_LOTE_FASE_VIVERO : provee_plantines
 
     PLANTACION ||--o{ PLANTACION_RIEGO : usa_riego
     TIPO_RIEGO ||--o{ PLANTACION_RIEGO : se_aplica_en
@@ -369,13 +346,12 @@ erDiagram
 * `tipo_material` = enum user-defined
 * fechas: `fecha` limitada a 45 días hacia atrás
 
-**En LOTE_FASE_VIVERO:**
+**En LOTE_VIVERO:**
 
-* `estado` = enum `lote_estado`
-* `updated_at` y `updated_by` se usan para auditoría y para el historial
+* `estado_lote` = `ACTIVO | FINALIZADO`
+* los eventos se registran en `EVENTO_LOTE_VIVERO`
 
 **En PLANTACION:**
 
 * `destino` = `ARBORIZACION | FORESTACION | REFORESTACION`
 * `origen_propiedad` = `DONADO | ADQUIRIDO | OTRO | NULL`
-
