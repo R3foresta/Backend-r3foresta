@@ -69,6 +69,18 @@ describe('RecoleccionesService', () => {
     service = module.get(RecoleccionesService);
   });
 
+  it('proyecta columnas canonicas con aliases compatibles para lecturas', () => {
+    const select = (service as any).getCanonicalRecoleccionSelect() as string;
+
+    expect(select).toContain('cantidad:cantidad_inicial_canonica');
+    expect(select).toContain('unidad:unidad_canonica');
+    expect(select).toContain(
+      'blockchain_hash_validacion:blockchain_tx_validacion',
+    );
+    expect(select).not.toContain('\n      cantidad,\n');
+    expect(select).not.toContain('\n      unidad,\n');
+  });
+
   it('incluye elegibilidad y motivo en el detalle de recoleccion', async () => {
     const recoleccionQuery = createQueryBuilder({
       data: {
