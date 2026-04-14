@@ -4,7 +4,7 @@
 
 Sistema de gestión y seguimiento de viveros y plantaciones forestales que permite:
 - Registro de recolecciones de material vegetal (semillas, esquejes, etc.)
-- Gestión de fase vivero (lotes de plantines) y sus transiciones
+- Gestión de lotes de vivero y sus eventos
 - Plantación en campo con riego, abono, fotos y monitoreo
 - Trazabilidad completa desde la recolección hasta la plantación
 - Gestión de usuarios con roles y autenticación
@@ -32,7 +32,7 @@ Almacena información de los usuarios del sistema.
 
 **Relaciones:**
 - Un usuario puede registrar múltiples recolecciones
-- Un usuario puede crear y actualizar lotes de fase vivero
+- Un usuario puede crear lotes de vivero y registrar eventos
 - Un usuario puede registrar plantaciones y participar en ellas
 - Un usuario puede registrar monitoreos de plantación
 - **Un usuario puede tener múltiples credenciales WebAuthn** → `usuario_credencial(usuario_id)` (1:N)
@@ -104,7 +104,7 @@ Registra los viveros forestales.
 
 **Relaciones:**
 - **ubicacion_id** → `ubicacion(id)` (1:1)
-- Un vivero puede tener múltiples lotes de fase vivero
+- Un vivero puede tener múltiples lotes de vivero
 - Un vivero puede recibir múltiples recolecciones
 
 ---
@@ -141,7 +141,7 @@ Catálogo de especies vegetales con información taxonómica, morfológica y de 
 | `created_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Fecha de registro |
 
 **Relaciones:**
-- Una planta puede tener múltiples lotes de fase vivero
+- Una planta puede tener múltiples lotes de vivero
 - Una planta puede estar en múltiples recolecciones
 
 **Validaciones:**
@@ -175,10 +175,8 @@ Registra las recolecciones de material vegetal.
 | `id` | `bigint` | PK, AUTO | Identificador único |
 | `codigo_trazabilidad` | `text` | UNIQUE | Código tipo `REC-YYYY-XXXXX` |
 | `fecha` | `date` | NOT NULL, últimos 45 días | Fecha de recolección |
-| `nombre_cientifico` | `text` | opcional | Requerido si no hay `planta_id` |
-| `nombre_comercial` | `text` | opcional | Requerido si no hay `planta_id` |
-| `cantidad` | `numeric` | NOT NULL, > 0 | Cantidad recolectada |
-| `unidad` | `text` | NOT NULL | UNIDAD/UNIDADES para ESQUEJE; KG/G para SEMILLA |
+| `cantidad_inicial_canonica` | `numeric` | NOT NULL, > 0 | Cantidad en unidad canónica (G o UNIDAD) |
+| `unidad_canonica` | `text` | NOT NULL | `G` para semillas en gramos, `UNIDAD` para esquejes |
 | `tipo_material` | `tipo_material_origen` | NOT NULL | SEMILLA o ESQUEJE |
 | `estado` | `estado_recoleccion` | NOT NULL, DEFAULT 'ALMACENADO' | Estado actual |
 | `especie_nueva` | `boolean` | NOT NULL, DEFAULT false | ¿Es nueva especie? |
@@ -219,98 +217,69 @@ Almacena fotos asociadas a recolecciones.
 
 ---
 
-### 9. 🧪 `lote_fase_vivero`
-Gestiona lotes de plantines en fase de vivero.
+### 9. 🧪 `lote_vivero`
+Gestiona los lotes de material vegetal dentro del vivero con snapshots del material de origen.
 
 | Campo | Tipo | Restricciones | Descripción |
 |-------|------|---------------|-------------|
 | `id` | `bigint` | PK, AUTO | Identificador único |
-| `codigo_trazabilidad` | `text` | UNIQUE | Código tipo `LFV-YYYY-XXXXX` |
+| `recoleccion_id` | `bigint` | NOT NULL, FK | Recolección de origen |
 | `planta_id` | `bigint` | NOT NULL, FK | Especie del lote |
 | `vivero_id` | `bigint` | NOT NULL, FK | Vivero donde está |
 | `responsable_id` | `bigint` | NOT NULL, FK | Responsable del lote |
+| `nombre_cientifico_snapshot` | `text` | NOT NULL | Nombre científico al crear el lote |
+| `nombre_comercial_snapshot` | `text` | NOT NULL | Nombre comercial al crear el lote |
+| `tipo_material_snapshot` | `text` | NOT NULL | Tipo de material al crear el lote |
 | `fecha_inicio` | `date` | NOT NULL | Fecha de inicio del lote |
-| `cantidad_inicio` | `integer` | NOT NULL | Cantidad inicial |
-| `cantidad_embolsadas` | `integer` | NOT NULL, DEFAULT 0 | Plantas embolsadas |
-| `cantidad_sombra` | `integer` | NOT NULL, DEFAULT 0 | Plantas en sombra |
-| `cantidad_lista_plantar` | `integer` | NOT NULL, DEFAULT 0 | Listas para plantar |
-| `fecha_embolsado` | `date` | - | Fecha de embolsado |
-| `fecha_sombra` | `date` | - | Fecha ingreso a sombra |
-| `fecha_salida` | `date` | - | Fecha de salida del vivero |
-| `altura_prom_sombra` | `numeric` | - | Altura promedio al entrar a sombra |
-| `altura_prom_salida` | `numeric` | - | Altura promedio al salir |
-| `estado` | `lote_fase_vivero_estado` | NOT NULL, DEFAULT 'INICIO' | Estado actual |
+| `cantidad_inicial_en_proceso` | `numeric` | NOT NULL | Cantidad inicial en proceso |
+| `unidad_medida_inicial` | `unidad_medida` | NOT NULL | Unidad inicial |
+| `plantas_vivas_iniciales` | `integer` | - | Plantas vivas iniciales |
+| `saldo_vivo_actual` | `integer` | - | Saldo vivo actual |
+| `subetapa_actual` | `subetapa_adaptabilidad` | - | Subetapa actual |
+| `estado_lote` | `estado_lote_vivero` | NOT NULL, DEFAULT 'ACTIVO' | Estado del lote |
+| `motivo_cierre` | `motivo_cierre_lote` | - | Motivo de cierre |
+| `codigo_trazabilidad` | `text` | NOT NULL, UNIQUE | Código de trazabilidad |
 | `created_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Fecha de creación |
-| `updated_at` | `timestamp with time zone` | - | Última actualización |
-| `updated_by` | `bigint` | FK | Usuario que actualizó (obligatorio en UPDATE) |
+| `updated_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Última actualización |
 
 **Relaciones:**
+- **recoleccion_id** → `recoleccion(id)`
 - **planta_id** → `planta(id)`
 - **vivero_id** → `vivero(id)`
 - **responsable_id** → `usuario(id)`
-- **updated_by** → `usuario(id)`
 
 ---
 
-### 10. 📋 `lote_fase_vivero_historial`
-Registra los cambios realizados en un lote de fase vivero.
+### 10. 📋 `evento_lote_vivero`
+Registra los eventos operativos de un lote de vivero.
 
 | Campo | Tipo | Restricciones | Descripción |
 |-------|------|---------------|-------------|
 | `id` | `bigint` | PK, AUTO | Identificador único |
-| `lote_id` | `bigint` | NOT NULL, FK | Lote al que pertenece |
-| `nro_cambio` | `integer` | UNIQUE por lote | Número secuencial del cambio |
-| `fecha_cambio` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Cuándo se hizo el cambio |
-| `responsable_id` | `bigint` | NOT NULL, FK | Quién hizo el cambio |
-| `accion` | `accion_historial_lote` | NOT NULL | Tipo de acción |
-| `estado` | `lote_fase_vivero_estado` | NOT NULL | Estado después del cambio |
-| `cantidad_inicio` | `integer` | - | Snapshot: cantidad inicial |
-| `cantidad_embolsadas` | `integer` | - | Snapshot: embolsadas |
-| `cantidad_sombra` | `integer` | - | Snapshot: en sombra |
-| `cantidad_lista_plantar` | `integer` | - | Snapshot: listas |
-| `fecha_inicio` | `date` | - | Snapshot: fecha inicio |
-| `fecha_embolsado` | `date` | - | Snapshot: fecha embolsado |
-| `fecha_sombra` | `date` | - | Snapshot: fecha sombra |
-| `fecha_salida` | `date` | - | Snapshot: fecha salida |
-| `altura_prom_sombra` | `numeric` | - | Snapshot: altura sombra |
-| `altura_prom_salida` | `numeric` | - | Snapshot: altura salida |
-| `notas` | `text` | max 2000 chars | Observaciones del cambio |
+| `lote_id` | `bigint` | NOT NULL, FK | Lote asociado |
+| `tipo_evento` | `tipo_evento_vivero` | NOT NULL | Tipo de evento |
+| `fecha_evento` | `date` | NOT NULL | Fecha del evento |
+| `created_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Fecha de registro |
+| `responsable_id` | `bigint` | NOT NULL, FK | Responsable del evento |
+| `cantidad_afectada` | `numeric` | - | Cantidad afectada |
+| `unidad_medida_evento` | `unidad_medida` | - | Unidad del evento |
+| `causa_merma` | `causa_merma_vivero` | - | Causa de merma |
+| `destino_tipo` | `destino_tipo_vivero` | - | Tipo de destino |
+| `destino_referencia` | `text` | - | Referencia de destino |
+| `comunidad_destino_id` | `bigint` | FK | Comunidad de destino |
+| `subetapa_destino` | `subetapa_adaptabilidad` | - | Subetapa destino |
+| `saldo_vivo_antes` | `integer` | - | Saldo antes del evento |
+| `saldo_vivo_despues` | `integer` | - | Saldo después del evento |
+| `motivo_cierre_calculado` | `motivo_cierre_lote` | - | Motivo de cierre calculado |
+| `ref_evento_trigger_id` | `bigint` | FK | Evento relacionado |
+| `metadata_blockchain` | `jsonb` | - | Metadata blockchain |
+| `observaciones` | `text` | - | Observaciones |
 
 **Relaciones:**
-- **lote_id** → `lote_fase_vivero(id)`
+- **lote_id** → `lote_vivero(id)`
 - **responsable_id** → `usuario(id)`
-
-**Propósito:**
-- Auditoría y trazabilidad completa de modificaciones
-
----
-
-### 11. 📷 `lote_fase_vivero_foto`
-Almacena fotos asociadas a un cambio en el historial de un lote de fase vivero.
-
-| Campo | Tipo | Restricciones | Descripción |
-|-------|------|---------------|-------------|
-| `id` | `bigint` | PK, AUTO | Identificador único |
-| `lote_historial_id` | `bigint` | NOT NULL, FK | Referencia al historial del lote |
-| `url` | `text` | NOT NULL | URL de la imagen |
-| `peso_bytes` | `integer` | max 5MB | Tamaño del archivo |
-| `formato` | `text` | JPG, JPEG, PNG | Formato de imagen |
-| `es_portada` | `boolean` | - | TRUE si es la foto principal de ese cambio |
-| `descripcion` | `text` | - | Descripción (ej: detalle de raíces, vista general) |
-| `created_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Fecha de subida |
-
-**Relaciones:**
-- **lote_historial_id** → `lote_fase_vivero_historial(id)`
-
----
-
-### 12. 🔗 `lote_fase_vivero_recoleccion`
-Relación N:M entre lotes de fase vivero y recolecciones.
-
-| Campo | Tipo | Restricciones | Descripción |
-|-------|------|---------------|-------------|
-| `lote_id` | `bigint` | PK, FK | Lote de fase vivero |
-| `recoleccion_id` | `bigint` | PK, FK | Recolección de origen |
+- **comunidad_destino_id** → `division_administrativa(id)`
+- **ref_evento_trigger_id** → `evento_lote_vivero(id)`
 
 ---
 
@@ -369,17 +338,6 @@ Relación de usuarios participantes en una plantación.
 | `plantacion_id` | `bigint` | PK, FK | Plantación |
 | `usuario_id` | `bigint` | PK, FK | Usuario participante |
 | `rol` | `text` | - | RESPONSABLE / VOLUNTARIO / TECNICO / etc. |
-
----
-
-### 17. 🔗 `plantacion_lote_fase_vivero`
-Relación N:M entre plantaciones y lotes de fase vivero.
-
-| Campo | Tipo | Restricciones | Descripción |
-|-------|------|---------------|-------------|
-| `plantacion_id` | `bigint` | PK, FK | Plantación |
-| `lote_fase_vivero_id` | `bigint` | PK, FK | Lote de fase vivero |
-| `cantidad_plantines_usados` | `integer` | NOT NULL, > 0 | Plantines usados |
 
 ---
 
@@ -458,23 +416,59 @@ Registra monitoreos de una plantación.
 'DESECHADO'
 ```
 
-### `lote_fase_vivero_estado`
+### `estado_lote_vivero`
 ```sql
-'INICIO'
-'EMBOLSADO'
-'SOMBRA'
-'LISTA_PLANTAR'
-'SALIDA_VIVERO'
+'ACTIVO'
+'FINALIZADO'
 ```
 
-### `accion_historial_lote`
+### `tipo_evento_vivero`
 ```sql
 'INICIO'
 'EMBOLSADO'
+'ADAPTABILIDAD'
+'MERMA'
+'DESPACHO'
+'CIERRE_AUTOMATICO'
+```
+
+### `motivo_cierre_lote`
+```sql
+'DESPACHO_TOTAL'
+'PERDIDA_TOTAL'
+'MIXTO'
+```
+
+### `subetapa_adaptabilidad`
+```sql
 'SOMBRA'
-'LISTA_PLANTAR'
-'SALIDA'
-'AJUSTE'
+'MEDIA_SOMBRA'
+'SOL_DIRECTO'
+```
+
+### `causa_merma_vivero`
+```sql
+'PLAGA'
+'ENFERMEDAD'
+'SEQUIA'
+'DANO_FISICO'
+'MUERTE_NATURAL'
+'DESCARTE_CALIDAD'
+'OTRO'
+```
+
+### `destino_tipo_vivero`
+```sql
+'PLANTACION_PROPIA'
+'DONACION_COMUNIDAD'
+'VENTA'
+'OTRO'
+```
+
+### `unidad_medida`
+```sql
+'UNIDAD'
+'GR'
 ```
 
 ### `destino_plantacion`
@@ -504,16 +498,15 @@ usuario
  │                ├─ vivero
  │                ├─ planta
  │                └─ metodo_recoleccion
- ├─< lote_fase_vivero >─ vivero
- │          └─< lote_fase_vivero_historial
- │                    └─< lote_fase_vivero_foto
+ ├─< lote_vivero >─ vivero
+ │          └─< evento_lote_vivero
  └─< plantacion >─ ubicacion
             ├─< plantacion_foto
             ├─< plantacion_monitoreo
             └─< plantacion_usuario
 
-recoleccion <-> lote_fase_vivero (N:M)
-plantacion <-> lote_fase_vivero (N:M)
+recoleccion -> lote_vivero (1:N)
+lote_vivero -> evento_lote_vivero (1:N)
 plantacion <-> tipo_riego (N:M)
 plantacion <-> tipo_abono (N:M)
 ```
@@ -527,20 +520,20 @@ plantacion <-> tipo_abono (N:M)
 Usuario → Recolecta material → Registra ubicación → Asigna vivero destino
 ```
 
-### 2️⃣ Fase Vivero
+### 2️⃣ Vivero
 ```
-Crea lote (LFV) → Transiciones: INICIO → EMBOLSADO → SOMBRA → LISTA_PLANTAR → SALIDA_VIVERO
+Crea lote de vivero → Registra eventos: INICIO, EMBOLSADO, ADAPTABILIDAD, MERMA o DESPACHO
 ```
 
 ### 3️⃣ Plantación en Campo
 ```
-Se crea plantación → Se vinculan lotes LFV → Se registran riego, abono y fotos
+Se crea plantación → Se registran riego, abono y fotos
 ```
 
 ### 4️⃣ Monitoreo y Auditoría
 ```
 Monitoreos periódicos → Registro de estado y mortalidad
-Historial automático en LOTE_FASE_VIVERO_HISTORIAL con fotos en LOTE_FASE_VIVERO_FOTO
+Eventos operativos en EVENTO_LOTE_VIVERO
 ```
 
 ---
@@ -589,19 +582,18 @@ GET  /api/auth/test-supabase       → Verificar conexión a base de datos
 
 ### Por Usuario
 - Total de recolecciones realizadas
-- Lotes LFV bajo su responsabilidad
+- Lotes de vivero bajo su responsabilidad
 - Plantaciones registradas o en las que participa
 - Monitoreos realizados
 
 ### Por Vivero
-- Cantidad de lotes LFV activos por estado
+- Cantidad de lotes de vivero activos por estado
 - Especies en proceso
 - Capacidad utilizada vs disponible
 
 ### Por Plantación
 - Superficie plantada por destino
 - Evolución de supervivencia por monitoreos
-- Lotes LFV utilizados y trazabilidad
 
 ### Por Especie (Planta)
 - Total de recolecciones
@@ -618,11 +610,15 @@ CREATE INDEX idx_recoleccion_usuario ON recoleccion(usuario_id);
 CREATE INDEX idx_recoleccion_fecha ON recoleccion(fecha);
 CREATE UNIQUE INDEX idx_recoleccion_codigo ON recoleccion(codigo_trazabilidad);
 
--- Lotes fase vivero
-CREATE INDEX idx_lfv_estado ON lote_fase_vivero(estado);
-CREATE INDEX idx_lfv_vivero ON lote_fase_vivero(vivero_id);
-CREATE INDEX idx_lfv_historial_lote ON lote_fase_vivero_historial(lote_id);
-CREATE INDEX idx_lfv_foto_historial ON lote_fase_vivero_foto(lote_historial_id);
+-- Lotes de vivero
+CREATE INDEX idx_lote_vivero_recoleccion_id ON lote_vivero(recoleccion_id);
+CREATE INDEX idx_lote_vivero_vivero_id ON lote_vivero(vivero_id);
+CREATE INDEX idx_lote_vivero_estado_lote ON lote_vivero(estado_lote);
+
+-- Eventos de lotes de vivero
+CREATE INDEX idx_evento_lote_vivero_lote_fecha ON evento_lote_vivero(lote_id, fecha_evento);
+CREATE INDEX idx_evento_lote_vivero_tipo_evento ON evento_lote_vivero(tipo_evento);
+CREATE INDEX idx_evento_lote_vivero_responsable_id ON evento_lote_vivero(responsable_id);
 
 -- Plantaciones
 CREATE INDEX idx_plantacion_fecha ON plantacion(fecha_plantacion);
@@ -636,9 +632,9 @@ CREATE INDEX idx_usuario_credencial_credential_id ON usuario_credencial(credenti
 
 ### Triggers Sugeridos
 ```sql
--- Actualizar updated_at automáticamente en LOTE_FASE_VIVERO
--- Registrar automáticamente en LOTE_FASE_VIVERO_HISTORIAL
--- Validar transiciones de estado en LOTE_FASE_VIVERO
+-- Actualizar updated_at automáticamente en LOTE_VIVERO
+-- Registrar eventos derivados cuando el cierre del lote sea automático
+-- Validar consistencia de saldos entre eventos
 ```
 
 ### Políticas de Seguridad (RLS - Supabase)
@@ -662,5 +658,5 @@ Este sistema permite:
 - ✅ Autenticación biométrica sin contraseña (WebAuthn)
 
 **Base de Datos:** PostgreSQL en Supabase  
-**Total de Tablas:** 21 (20 del dominio + 1 de autenticación)  
+**Total de Tablas:** Pendiente de consolidar tras la migración del modelo de vivero
 **Última actualización:** Alineada con `db-strucuture.md` (vFinal + Módulo Plantación)

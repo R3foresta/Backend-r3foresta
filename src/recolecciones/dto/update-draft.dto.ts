@@ -1,0 +1,90 @@
+import {
+  IsDateString,
+  IsIn,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
+import { Transform } from 'class-transformer';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { TIPOS_MATERIAL_RECOLECCION_V2_INPUT } from './create-recoleccion-v2.dto';
+import type { TipoMaterialRecoleccionV2Input } from './create-recoleccion-v2.dto';
+
+export class UpdateDraftDto {
+  @ApiPropertyOptional({
+    description: 'Fecha de recolección',
+    example: '2026-03-04',
+  })
+  @IsOptional()
+  @IsDateString({}, { message: 'La fecha debe ser válida' })
+  fecha?: string;
+
+  @ApiPropertyOptional({
+    description: 'Cantidad de material recolectado',
+    example: 2.5,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'La cantidad debe ser un número' })
+  @Min(0.01, { message: 'La cantidad debe ser mayor a 0' })
+  cantidad?: number;
+
+  @ApiPropertyOptional({
+    description: 'Unidad reportada (ej: g, kg, unidad)',
+    example: 'kg',
+  })
+  @IsOptional()
+  @IsString({ message: 'La unidad debe ser texto' })
+  unidad?: string;
+
+  @ApiPropertyOptional({
+    description: 'Tipo de material',
+    enum: TIPOS_MATERIAL_RECOLECCION_V2_INPUT,
+    example: 'SEMILLA',
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsIn(TIPOS_MATERIAL_RECOLECCION_V2_INPUT, {
+    message: 'tipo_material debe ser SEMILLA o ESQUEJE',
+  })
+  tipo_material?: TipoMaterialRecoleccionV2Input;
+
+  @ApiPropertyOptional({
+    description: 'Observaciones adicionales',
+    example: 'Actualización de datos',
+    maxLength: 1000,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000, {
+    message: 'Las observaciones no pueden superar 1000 caracteres',
+  })
+  observaciones?: string;
+
+  @ApiPropertyOptional({
+    description: 'ID del vivero',
+    example: 3,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'vivero_id debe ser numérico' })
+  vivero_id?: number;
+
+  @ApiPropertyOptional({
+    description: 'ID del método de recolección',
+    example: 1,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'metodo_id debe ser numérico' })
+  metodo_id?: number;
+
+  @ApiPropertyOptional({
+    description: 'ID de la planta',
+    example: 10,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'planta_id debe ser numérico' })
+  planta_id?: number;
+}

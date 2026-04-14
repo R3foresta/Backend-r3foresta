@@ -124,10 +124,6 @@ Content-Type: multipart/form-data
   "estado": "ALMACENADO",
   "especie_nueva": false,
   "planta_id": 5,
-  "metodo_id": 1,
-  "vivero_id": 3,
-  "nombre_cientifico": "Ceiba pentandra",
-  "nombre_comercial": "Ceibo",
   "observaciones": "Recolección en buen estado",
   "ubicacion[pais]": "Bolivia",
   "ubicacion[departamento]": "La Paz",
@@ -275,10 +271,8 @@ GET /api/recolecciones?search=ceibo&vivero_id=3
     "id": 123,
     "codigo_trazabilidad": "REC-2024-045",
     "fecha": "2024-01-15",
-    "nombre_cientifico": "Ceiba pentandra",
-    "nombre_comercial": "Ceibo",
-    "cantidad": 2.5,
-    "unidad": "kg",
+    "cantidad_inicial_canonica": 2500,
+    "unidad_canonica": "G",
     "tipo_material": "SEMILLA",
     "estado": "ALMACENADO",
     "especie_nueva": false,
@@ -345,11 +339,9 @@ GET /api/recolecciones?search=ceibo&vivero_id=3
 ```typescript
 {
   fecha: string;                    // Formato: "YYYY-MM-DD", no más de 45 días atrás
-  nombre_cientifico?: string;        // Opcional si especie_nueva = false
-  nombre_comercial?: string;         // Opcional
-  cantidad: number;                  // Mayor a 0
-  unidad: string;                    // Ej: "kg", "unidades"
-  tipo_material: TipoMaterial;       // SEMILLA | ESTACA | PLANTULA | INJERTO
+  cantidad: number;                  // Mayor a 0 (el backend convierte a canónico)
+  unidad: string;                    // Ej: "kg", "g", "unidad" (el backend normaliza)
+  tipo_material: TipoMaterial;       // SEMILLA | ESQUEJE
   estado?: EstadoRecoleccion;        // Default: ALMACENADO
   especie_nueva: boolean;            // true = nueva especie, false = existente
   observaciones?: string;            // Máx. 1000 caracteres
