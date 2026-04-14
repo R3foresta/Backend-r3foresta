@@ -139,11 +139,9 @@ erDiagram
     RECOLECCION {
         bigint id PK
         date fecha "CHECK [hoy-45d .. hoy]"
-        string nombre_cientifico "si no hay planta_id"
-        string nombre_comercial "si no hay planta_id"
-        decimal cantidad "OBLIGATORIO > 0"
-        string unidad "texto (regla en backend/enum futuro)"
-        string tipo_material "(enum estado_recoleccion / tipo_material user-defined)"
+        numeric cantidad_inicial_canonica "en unidad canónica G o UNIDAD"
+        string unidad_canonica "G | UNIDAD"
+        string tipo_material "(enum: SEMILLA | ESQUEJE)"
         string estado "DEFAULT=ALMACENADO (enum estado_recoleccion)"
         bool especie_nueva "DEFAULT=false"
         string observaciones "max 1000 chars"

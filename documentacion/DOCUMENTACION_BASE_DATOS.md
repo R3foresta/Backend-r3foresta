@@ -175,10 +175,8 @@ Registra las recolecciones de material vegetal.
 | `id` | `bigint` | PK, AUTO | Identificador único |
 | `codigo_trazabilidad` | `text` | UNIQUE | Código tipo `REC-YYYY-XXXXX` |
 | `fecha` | `date` | NOT NULL, últimos 45 días | Fecha de recolección |
-| `nombre_cientifico` | `text` | opcional | Requerido si no hay `planta_id` |
-| `nombre_comercial` | `text` | opcional | Requerido si no hay `planta_id` |
-| `cantidad` | `numeric` | NOT NULL, > 0 | Cantidad recolectada |
-| `unidad` | `text` | NOT NULL | UNIDAD/UNIDADES para ESQUEJE; KG/G para SEMILLA |
+| `cantidad_inicial_canonica` | `numeric` | NOT NULL, > 0 | Cantidad en unidad canónica (G o UNIDAD) |
+| `unidad_canonica` | `text` | NOT NULL | `G` para semillas en gramos, `UNIDAD` para esquejes |
 | `tipo_material` | `tipo_material_origen` | NOT NULL | SEMILLA o ESQUEJE |
 | `estado` | `estado_recoleccion` | NOT NULL, DEFAULT 'ALMACENADO' | Estado actual |
 | `especie_nueva` | `boolean` | NOT NULL, DEFAULT false | ¿Es nueva especie? |

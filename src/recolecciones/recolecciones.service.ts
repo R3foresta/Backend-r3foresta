@@ -310,10 +310,6 @@ export class RecoleccionesService {
           .from('recoleccion')
           .insert({
             fecha: createRecoleccionDto.fecha,
-            nombre_cientifico: createRecoleccionDto.especie_nueva
-              ? createRecoleccionDto.nueva_planta!.nombre_cientifico
-              : createRecoleccionDto.nombre_cientifico,
-            nombre_comercial: createRecoleccionDto.nombre_comercial,
             cantidad_inicial_canonica: createRecoleccionDto.cantidad,
             unidad_canonica: createRecoleccionDto.unidad,
             tipo_material: createRecoleccionDto.tipo_material,
@@ -640,8 +636,6 @@ export class RecoleccionesService {
           .from('recoleccion')
           .insert({
             fecha: createRecoleccionDto.fecha,
-            nombre_cientifico: null,
-            nombre_comercial: null,
             tipo_material: tipoMaterialCanonico,
             especie_nueva: false,
             observaciones: createRecoleccionDto.observaciones,
@@ -957,7 +951,7 @@ export class RecoleccionesService {
       .join(', ');
 
     // Descripción completa
-    const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${recoleccion.planta?.especie || recoleccion.nombre_comercial} realizada por ${nombreUsuario} el ${fechaStr} a las ${horaStr} en ${ubicacionCompleta || coordenadas}. Cantidad: ${recoleccion.cantidad_inicial_canonica} ${recoleccion.unidad_canonica}. Método: ${recoleccion.metodo?.nombre || 'N/A'}. Estado: ${recoleccion.estado}. Observaciones: ${recoleccion.observaciones || 'N/A'}.`;
+    const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${recoleccion.planta?.especie || recoleccion.planta?.nombre_comun_principal} realizada por ${nombreUsuario} el ${fechaStr} a las ${horaStr} en ${ubicacionCompleta || coordenadas}. Cantidad: ${recoleccion.cantidad_inicial_canonica} ${recoleccion.unidad_canonica}. Método: ${recoleccion.metodo?.nombre || 'N/A'}. Estado: ${recoleccion.estado}. Observaciones: ${recoleccion.observaciones || 'N/A'}.`;
 
     // Construir attributes
     const attributes = [
@@ -968,7 +962,7 @@ export class RecoleccionesService {
       { trait_type: 'Hora', value: horaStr },
       {
         trait_type: 'Especie',
-        value: recoleccion.planta?.especie || recoleccion.nombre_comercial,
+        value: recoleccion.planta?.especie || recoleccion.planta?.nombre_comun_principal,
       },
       { trait_type: 'Tipo de material', value: recoleccion.tipo_material },
       {
@@ -989,7 +983,7 @@ export class RecoleccionesService {
     });
 
     return {
-      name: `${recoleccion.codigo_trazabilidad} - Recolección de ${recoleccion.planta?.especie || recoleccion.nombre_comercial}`,
+      name: `${recoleccion.codigo_trazabilidad} - Recolección de ${recoleccion.planta?.especie || recoleccion.planta?.nombre_comun_principal}`,
       description: descripcion,
       image: imageUrl,
       attributes: attributes,
