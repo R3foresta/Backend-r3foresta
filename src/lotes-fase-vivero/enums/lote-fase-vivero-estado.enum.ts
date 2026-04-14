@@ -1,7 +1,0 @@
-export enum LoteFaseViveroEstado {
-  INICIO = 'INICIO',
-  EMBOLSADO = 'EMBOLSADO',
-  SOMBRA = 'SOMBRA',
-  LISTA_PLANTAR = 'LISTA_PLANTAR',
-  SALIDA_VIVERO = 'SALIDA_VIVERO',
-}
