@@ -314,8 +314,8 @@ export class RecoleccionesService {
               ? createRecoleccionDto.nueva_planta!.nombre_cientifico
               : createRecoleccionDto.nombre_cientifico,
             nombre_comercial: createRecoleccionDto.nombre_comercial,
-            cantidad: createRecoleccionDto.cantidad,
-            unidad: createRecoleccionDto.unidad,
+            cantidad_inicial_canonica: createRecoleccionDto.cantidad,
+            unidad_canonica: createRecoleccionDto.unidad,
             tipo_material: createRecoleccionDto.tipo_material,
             estado: createRecoleccionDto.estado || 'ALMACENADO',
             especie_nueva: createRecoleccionDto.especie_nueva,
@@ -642,8 +642,6 @@ export class RecoleccionesService {
             fecha: createRecoleccionDto.fecha,
             nombre_cientifico: null,
             nombre_comercial: null,
-            cantidad: createRecoleccionDto.cantidad,
-            unidad: conversionCanonica.unidad_normalizada,
             tipo_material: tipoMaterialCanonico,
             especie_nueva: false,
             observaciones: createRecoleccionDto.observaciones,
@@ -959,7 +957,7 @@ export class RecoleccionesService {
       .join(', ');
 
     // Descripción completa
-    const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${recoleccion.planta?.especie || recoleccion.nombre_comercial} realizada por ${nombreUsuario} el ${fechaStr} a las ${horaStr} en ${ubicacionCompleta || coordenadas}. Cantidad: ${recoleccion.cantidad} ${recoleccion.unidad}`;
+    const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${recoleccion.planta?.especie || recoleccion.nombre_comercial} realizada por ${nombreUsuario} el ${fechaStr} a las ${horaStr} en ${ubicacionCompleta || coordenadas}. Cantidad: ${recoleccion.cantidad_inicial_canonica} ${recoleccion.unidad_canonica}. Método: ${recoleccion.metodo?.nombre || 'N/A'}. Estado: ${recoleccion.estado}. Observaciones: ${recoleccion.observaciones || 'N/A'}.`;
 
     // Construir attributes
     const attributes = [
@@ -975,7 +973,7 @@ export class RecoleccionesService {
       { trait_type: 'Tipo de material', value: recoleccion.tipo_material },
       {
         trait_type: 'Cantidad',
-        value: `${recoleccion.cantidad} ${recoleccion.unidad}`,
+        value: `${recoleccion.cantidad_inicial_canonica} ${recoleccion.unidad_canonica}`,
       },
       { trait_type: 'Metodo', value: recoleccion.metodo?.nombre || 'N/A' },
       { trait_type: 'Estado', value: recoleccion.estado },
@@ -1335,8 +1333,8 @@ export class RecoleccionesService {
     const updatePayload: Record<string, unknown> = {};
 
     if (dto.fecha !== undefined) updatePayload.fecha = dto.fecha;
-    if (dto.cantidad !== undefined) updatePayload.cantidad = dto.cantidad;
-    if (dto.unidad !== undefined) updatePayload.unidad = dto.unidad;
+    if (dto.cantidad !== undefined) updatePayload.cantidad_inicial_canonica = dto.cantidad;
+    if (dto.unidad !== undefined) updatePayload.unidad_canonica = dto.unidad;
     if (dto.tipo_material !== undefined) updatePayload.tipo_material = dto.tipo_material;
     if (dto.observaciones !== undefined) updatePayload.observaciones = dto.observaciones;
     if (dto.vivero_id !== undefined) updatePayload.vivero_id = dto.vivero_id;
@@ -2034,7 +2032,7 @@ export class RecoleccionesService {
   }
 
   private mapRecoleccionToCanonicalResponse(recoleccion: any, evidencias: any[]) {
-    const cantidad = Number(recoleccion.cantidad ?? 0);
+    const cantidad = Number(recoleccion.cantidad_inicial_canonica ?? 0);
     const estadoDetalle = cantidad > 0 ? 'ABIERTO' : 'CERRADO';
     const nombreCientifico = recoleccion.planta?.nombre_cientifico ?? null;
     const nombreComunPrincipal =
