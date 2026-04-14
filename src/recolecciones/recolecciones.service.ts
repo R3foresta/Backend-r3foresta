@@ -22,6 +22,7 @@ import { RejectValidationDto } from './dto/reject-validation.dto';
 import { EstadoRegistro } from './enums/estado-registro.enum';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 import { UbicacionesReadService } from '../common/ubicaciones/ubicaciones-read.service';
+import { RecoleccionElegibilidadService } from './recoleccion-elegibilidad.service';
 
 @Injectable()
 export class RecoleccionesService {
@@ -32,6 +33,7 @@ export class RecoleccionesService {
     private readonly pinataService: PinataService,
     private readonly blockchainService: BlockchainService,
     private readonly ubicacionesReadService: UbicacionesReadService,
+    private readonly recoleccionElegibilidadService: RecoleccionElegibilidadService,
   ) {}
 
   /**
@@ -1634,6 +1636,7 @@ export class RecoleccionesService {
       this.mapRecoleccionToCanonicalResponse(
         item,
         evidenciasMap.get(Number(item.id)) || [],
+        filters.cantidad_solicitada_vivero,
       ),
     );
 
@@ -1736,6 +1739,7 @@ export class RecoleccionesService {
       this.mapRecoleccionToCanonicalResponse(
         item,
         evidenciasMap.get(Number(item.id)) || [],
+        filters.cantidad_solicitada_vivero,
       ),
     );
 
@@ -1777,8 +1781,6 @@ export class RecoleccionesService {
       .from('recoleccion')
       .select(this.getCanonicalRecoleccionSelect(), { count: 'exact' })
       .eq('vivero_id', viveroId)
-      .eq('estado_registro', EstadoRegistro.VALIDADO)
-      .not('token_id', 'is', null)
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -1830,6 +1832,7 @@ export class RecoleccionesService {
       this.mapRecoleccionToCanonicalResponse(
         item,
         evidenciasMap.get(Number(item.id)) || [],
+        filters.cantidad_solicitada_vivero,
       ),
     );
 
@@ -1850,7 +1853,7 @@ export class RecoleccionesService {
   /**
    * Obtiene una recolección por ID con todas sus relaciones
    */
-  async findOne(id: number) {
+  async findOne(id: number, cantidadSolicitadaVivero?: number) {
     const supabase = this.supabaseService.getClient();
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -1873,6 +1876,7 @@ export class RecoleccionesService {
     const canonicalData = this.mapRecoleccionToCanonicalResponse(
       enrichedData,
       evidencias,
+      cantidadSolicitadaVivero,
     );
 
     return {
@@ -2027,7 +2031,11 @@ export class RecoleccionesService {
     return map;
   }
 
-  private mapRecoleccionToCanonicalResponse(recoleccion: any, evidencias: any[]) {
+  private mapRecoleccionToCanonicalResponse(
+    recoleccion: any,
+    evidencias: any[],
+    cantidadSolicitadaVivero?: number,
+  ) {
     const saldoActual = Number(
       recoleccion.saldo_actual ?? recoleccion.cantidad_inicial_canonica ?? 0,
     );
@@ -2056,15 +2064,25 @@ export class RecoleccionesService {
     const canSubmitForValidation = estado === 'BORRADOR';
     const canApprove = estado === 'PENDIENTE_VALIDACION';
     const canReject = estado === 'PENDIENTE_VALIDACION';
+    const elegibilidadVivero =
+      this.recoleccionElegibilidadService.evaluarRecoleccionElegibleParaInicioVivero(
+        recoleccion,
+        cantidadSolicitadaVivero,
+      );
 
     return {
       ...recoleccion,
       nombre_cientifico: nombreCientifico,
       nombre_comercial: nombreComunPrincipal,
       nombre_comun_principal: nombreComunPrincipal,
-      saldo_actual: recoleccion.saldo_actual ?? saldoActual,
+      saldo_actual: saldoActual,
       estado_operativo: estadoOperativo,
       estado_detalle: estadoOperativo,
+      elegible_para_vivero: elegibilidadVivero.elegible,
+      motivo_no_elegibilidad_para_vivero:
+        elegibilidadVivero.motivo_no_elegibilidad,
+      cantidad_solicitada_vivero_evaluada:
+        elegibilidadVivero.cantidad_solicitada,
       evidencias,
       fotos,
       // Banderas de permisos para el frontend

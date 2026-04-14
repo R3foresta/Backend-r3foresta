@@ -35,6 +35,7 @@ import {
 } from './dto/create-recoleccion-v2.dto';
 import { FUENTES_UBICACION } from './dto/create-ubicacion.dto';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
+import { RecoleccionElegibilidadViveroQueryDto } from './dto/recoleccion-elegibilidad-vivero-query.dto';
 import { UpdateDraftDto } from './dto/update-draft.dto';
 import { RejectValidationDto } from './dto/reject-validation.dto';
 
@@ -366,6 +367,13 @@ export class RecoleccionesController {
   @ApiQuery({ name: 'fecha_inicio', required: false, type: String })
   @ApiQuery({ name: 'fecha_fin', required: false, type: String })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({
+    name: 'cantidad_solicitada_vivero',
+    required: false,
+    type: Number,
+    description:
+      'Cantidad a evaluar contra el saldo materializado para determinar elegibilidad hacia vivero.',
+  })
   @ApiResponse({ status: 200, description: 'Lista de recolecciones pendientes de validación' })
   @ApiResponse({ status: 400, description: 'Header x-user-role es requerido' })
   @ApiResponse({ status: 401, description: 'Header x-auth-id es requerido' })
@@ -407,6 +415,13 @@ export class RecoleccionesController {
   })
   @ApiQuery({ name: 'vivero_id', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({
+    name: 'cantidad_solicitada_vivero',
+    required: false,
+    type: Number,
+    description:
+      'Cantidad a evaluar contra el saldo materializado para determinar elegibilidad hacia vivero.',
+  })
   async findAll(
     @Query() filters: FiltersRecoleccionDto,
     @Headers('x-auth-id') authId?: string,
@@ -421,7 +436,8 @@ export class RecoleccionesController {
   @Get('vivero/:viveroId')
   @ApiOperation({
     summary: 'Listar recolecciones por vivero',
-    description: 'Solo devuelve recolecciones VALIDADAS con token_id (minteadas en blockchain).',
+    description:
+      'Devuelve recolecciones del vivero con saldo materializado, estado operativo y elegibilidad para inicio de lote de vivero.',
   })
   @ApiParam({ name: 'viveroId', type: Number, description: 'ID del vivero' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -434,6 +450,13 @@ export class RecoleccionesController {
     enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
   })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({
+    name: 'cantidad_solicitada_vivero',
+    required: false,
+    type: Number,
+    description:
+      'Cantidad a evaluar contra el saldo materializado para determinar elegibilidad hacia vivero.',
+  })
   async findByVivero(
     @Param('viveroId', ParseIntPipe) viveroId: number,
     @Query() filters: FiltersRecoleccionDto,
@@ -442,11 +465,28 @@ export class RecoleccionesController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener detalle de recolección' })
+  @ApiOperation({
+    summary: 'Obtener detalle de recolección',
+    description:
+      'Devuelve saldo actual, estado operativo y elegibilidad para uso como origen de vivero.',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' })
+  @ApiQuery({
+    name: 'cantidad_solicitada_vivero',
+    required: false,
+    type: Number,
+    description:
+      'Cantidad a evaluar contra el saldo materializado para determinar elegibilidad hacia vivero.',
+  })
   @ApiResponse({ status: 404, description: 'Recolección no encontrada' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.recoleccionesService.findOne(id);
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: RecoleccionElegibilidadViveroQueryDto,
+  ) {
+    return this.recoleccionesService.findOne(
+      id,
+      query.cantidad_solicitada_vivero,
+    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────────

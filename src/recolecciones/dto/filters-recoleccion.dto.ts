@@ -4,6 +4,7 @@ import {
   IsDateString,
   IsEnum,
   IsString,
+  IsPositive,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -94,4 +95,16 @@ export class FiltersRecoleccionDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Cantidad a evaluar para consumo hacia vivero. Si se envía, la elegibilidad exige saldo suficiente para ese consumo.',
+    example: 250,
+    type: Number,
+  })
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  cantidad_solicitada_vivero?: number;
 }
