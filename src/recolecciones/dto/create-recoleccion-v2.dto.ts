@@ -1,6 +1,7 @@
 import {
   IsDateString,
   IsIn,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -12,6 +13,7 @@ import {
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CreateUbicacionDto } from './create-ubicacion.dto';
+import { UnidadMedida } from '../enums/unidad-medida.enum';
 
 export const TIPOS_MATERIAL_RECOLECCION_V2_INPUT = [
   'SEMILLA',
@@ -51,14 +53,16 @@ export class CreateRecoleccionV2Dto {
   @Min(0.01, { message: 'La cantidad debe ser mayor a 0' })
   cantidad: number;
 
-  @ApiProperty({
-    description: 'Unidad reportada por el cliente (ej: g, kg, unidad)',
-    example: 'kg',
-    type: String,
+@ApiProperty({
+    description: 'Unidad de medida canónica (G o UNIDAD)',
+    enum: UnidadMedida, // Esto ayuda a Swagger a mostrar un desplegable
+    example: UnidadMedida.G, // O UnidadMedida.UNIDAD
   })
   @IsNotEmpty({ message: 'La unidad es requerida' })
-  @IsString({ message: 'La unidad debe ser texto' })
-  unidad: string;
+  @IsEnum(UnidadMedida, { 
+    message: 'La unidad debe ser G (gramos) o UNIDAD' 
+  })
+  unidad: UnidadMedida; // Cambiamos el tipo de string a UnidadMedida
 
   @ApiProperty({
     description:

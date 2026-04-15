@@ -23,6 +23,7 @@ import { EstadoRegistro } from './enums/estado-registro.enum';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 import { UbicacionesReadService } from '../common/ubicaciones/ubicaciones-read.service';
 import { RecoleccionElegibilidadService } from './recoleccion-elegibilidad.service';
+import { UnidadMedida } from './enums/unidad-medida.enum';
 
 @Injectable()
 export class RecoleccionesService {
@@ -760,7 +761,7 @@ export class RecoleccionesService {
     unidad: string,
     tipoMaterial: TipoMaterialRecoleccionV2Canonico,
   ): {
-    unidad_canonica: 'G' | 'UNIDAD';
+    unidad_canonica: UnidadMedida;
     cantidad_canonica: number;
     unidad_normalizada: string;
   } {
@@ -777,21 +778,21 @@ export class RecoleccionesService {
     const unidadesKilogramo = new Set(['KG', 'KILO', 'KILOS', 'KILOGRAMO', 'KILOGRAMOS']);
     const unidadesUnidad = new Set(['UNIDAD', 'UNIDADES', 'UND', 'U']);
 
-    let unidadCanonica: 'G' | 'UNIDAD';
+    let unidadCanonica: UnidadMedida;
     let cantidadCanonica: number;
 
     if (unidadesGramo.has(unidadNormalizada)) {
-      unidadCanonica = 'G';
+      unidadCanonica = UnidadMedida.G; // <--- Uso del Enum
       cantidadCanonica = cantidad;
     } else if (unidadesKilogramo.has(unidadNormalizada)) {
-      unidadCanonica = 'G';
+      unidadCanonica = UnidadMedida.G; // <--- Convertimos Kg a G (Enum G)
       cantidadCanonica = cantidad * 1000;
     } else if (unidadesUnidad.has(unidadNormalizada)) {
-      unidadCanonica = 'UNIDAD';
+      unidadCanonica = UnidadMedida.UNIDAD; // <--- Uso del Enum
       cantidadCanonica = cantidad;
     } else {
       throw new BadRequestException(
-        'unidad no soportada. Usa g/gr/kg o unidad/und',
+        'Unidad no soportada. Usa g, kg o unidad',
       );
     }
 
@@ -816,7 +817,7 @@ export class RecoleccionesService {
 
     return {
       unidad_canonica: unidadCanonica,
-      cantidad_canonica: cantidadCanonicaRedondeada,
+      cantidad_canonica: Number(cantidadCanonica.toFixed(6)),
       unidad_normalizada: unidadNormalizada,
     };
   }
