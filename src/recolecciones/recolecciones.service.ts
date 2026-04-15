@@ -1886,8 +1886,6 @@ export class RecoleccionesService {
       id,
       fecha,
       created_at,
-      cantidad,
-      unidad,
       tipo_material,
       especie_nueva,
       observaciones,
