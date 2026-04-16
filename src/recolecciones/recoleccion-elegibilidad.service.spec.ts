@@ -57,6 +57,21 @@ describe('RecoleccionElegibilidadService', () => {
     );
   });
 
+  it('rechaza cuando estado_operativo trae un valor invalido', () => {
+    const resultado = service.evaluarRecoleccionElegibleParaInicioVivero({
+      estado_registro: EstadoRegistro.VALIDADO,
+      estado_operativo: 'INCONSISTENTE',
+      saldo_actual: 80,
+      planta_id: 55,
+    });
+
+    expect(resultado.elegible).toBe(false);
+    expect(resultado.estado_operativo).toBe('CERRADO');
+    expect(resultado.motivo_no_elegibilidad).toBe(
+      'La recoleccion tiene un estado_operativo invalido.',
+    );
+  });
+
   it('rechaza cuando no existe planta asociada', () => {
     const resultado = service.evaluarRecoleccionElegibleParaInicioVivero({
       estado_registro: EstadoRegistro.VALIDADO,

@@ -315,7 +315,6 @@ export class RecoleccionesService {
             cantidad_inicial_canonica: createRecoleccionDto.cantidad,
             unidad_canonica: createRecoleccionDto.unidad,
             tipo_material: createRecoleccionDto.tipo_material,
-            estado: createRecoleccionDto.estado || 'ALMACENADO',
             especie_nueva: createRecoleccionDto.especie_nueva,
             observaciones: createRecoleccionDto.observaciones,
             usuario_id: userId,
@@ -953,7 +952,7 @@ export class RecoleccionesService {
       .join(', ');
 
     // Descripción completa
-    const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${recoleccion.planta?.especie || recoleccion.planta?.nombre_comun_principal} realizada por ${nombreUsuario} el ${fechaStr} a las ${horaStr} en ${ubicacionCompleta || coordenadas}. Cantidad: ${recoleccion.cantidad_inicial_canonica} ${recoleccion.unidad_canonica}. Método: ${recoleccion.metodo?.nombre || 'N/A'}. Estado: ${recoleccion.estado}. Observaciones: ${recoleccion.observaciones || 'N/A'}.`;
+    const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${recoleccion.planta?.especie || recoleccion.planta?.nombre_comun_principal} realizada por ${nombreUsuario} el ${fechaStr} a las ${horaStr} en ${ubicacionCompleta || coordenadas}. Cantidad: ${recoleccion.cantidad_inicial_canonica} ${recoleccion.unidad_canonica}. Método: ${recoleccion.metodo?.nombre || 'N/A'}. Estado de registro: ${recoleccion.estado_registro || 'N/A'}. Estado operativo: ${recoleccion.estado_operativo || 'N/A'}. Observaciones: ${recoleccion.observaciones || 'N/A'}.`;
 
     // Construir attributes
     const attributes = [
@@ -972,7 +971,14 @@ export class RecoleccionesService {
         value: `${recoleccion.cantidad_inicial_canonica} ${recoleccion.unidad_canonica}`,
       },
       { trait_type: 'Metodo', value: recoleccion.metodo?.nombre || 'N/A' },
-      { trait_type: 'Estado', value: recoleccion.estado },
+      {
+        trait_type: 'Estado de registro',
+        value: recoleccion.estado_registro || 'N/A',
+      },
+      {
+        trait_type: 'Estado operativo',
+        value: recoleccion.estado_operativo || 'N/A',
+      },
       { trait_type: 'Ubicacion', value: ubicacionCompleta },
       { trait_type: 'Coordenadas', value: coordenadas },
     ];

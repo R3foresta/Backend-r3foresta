@@ -15,7 +15,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CreateUbicacionDto } from './create-ubicacion.dto';
 import { CreatePlantaDto } from './create-planta.dto';
 import { TipoMaterial } from '../enums/tipo-material.enum';
-import { EstadoRecoleccion } from '../enums/estado-recoleccion.enum';
 
 export class CreateRecoleccionDto {
   @ApiProperty({
@@ -79,20 +78,6 @@ export class CreateRecoleccionDto {
     message: 'El tipo de material debe ser SEMILLA o ESQUEJE',
   })
   tipo_material: TipoMaterial;
-
-  // TODO: El EstadoRecoleccion se eliminara, ya no es válido.
-  // Se hara despues de crear los nuevos endpoints.
-  @ApiPropertyOptional({
-    description: 'Estado actual del material (default: ALMACENADO)',
-    enum: EstadoRecoleccion,
-    example: EstadoRecoleccion.ALMACENADO,
-  })
-  @IsOptional()
-  @IsEnum(EstadoRecoleccion, {
-    message:
-      'El estado debe ser ALMACENADO, EN_PROCESO, UTILIZADO o DESCARTADO',
-  })
-  estado?: EstadoRecoleccion;
 
   @ApiProperty({
     description:
