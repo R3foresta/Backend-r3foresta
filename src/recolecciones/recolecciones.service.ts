@@ -16,6 +16,7 @@ import {
   CreateRecoleccionV2Dto,
   TipoMaterialRecoleccionV2Canonico,
   TipoMaterialRecoleccionV2Input,
+  UnidadCanonicaRecoleccion,
 } from './dto/create-recoleccion-v2.dto';
 import { UpdateDraftDto } from './dto/update-draft.dto';
 import { RejectValidationDto } from './dto/reject-validation.dto';
@@ -176,15 +177,20 @@ export class RecoleccionesService {
       peso_bytes: number;
       formato: string;
     }> = [];
+    const canonicalInput = this.validateCanonicalCantidadYUnidad(
+      createRecoleccionDto.cantidad_inicial_canonica,
+      this.normalizeUnidadCanonica(createRecoleccionDto.unidad_canonica),
+      createRecoleccionDto.tipo_material,
+    );
 
     try {
       console.log('\n🌱 ============ CREANDO RECOLECCIÓN ============');
       console.log('📥 Datos recibidos:');
       console.log('   • Fecha:', createRecoleccionDto.fecha);
       console.log(
-        '   • Cantidad:',
-        createRecoleccionDto.cantidad,
-        createRecoleccionDto.unidad,
+        '   • Cantidad canónica:',
+        canonicalInput.cantidad_canonica,
+        canonicalInput.unidad_canonica,
       );
       console.log('   • Tipo material:', createRecoleccionDto.tipo_material);
       console.log('   • Usuario ID:', userId);
@@ -312,8 +318,10 @@ export class RecoleccionesService {
           .from('recoleccion')
           .insert({
             fecha: createRecoleccionDto.fecha,
-            cantidad_inicial_canonica: createRecoleccionDto.cantidad,
-            unidad_canonica: createRecoleccionDto.unidad,
+            cantidad_inicial_canonica: canonicalInput.cantidad_canonica,
+            unidad_canonica: canonicalInput.unidad_canonica,
+            saldo_actual: canonicalInput.cantidad_canonica,
+            estado_operativo: 'ABIERTO',
             tipo_material: createRecoleccionDto.tipo_material,
             especie_nueva: createRecoleccionDto.especie_nueva,
             observaciones: createRecoleccionDto.observaciones,
@@ -531,9 +539,9 @@ export class RecoleccionesService {
     const tipoMaterialCanonico = this.normalizeTipoMaterialV2(
       createRecoleccionDto.tipo_material,
     );
-    const conversionCanonica = this.normalizeCantidadYUnidadCanonica(
-      createRecoleccionDto.cantidad,
-      createRecoleccionDto.unidad,
+    const canonicalInput = this.validateCanonicalCantidadYUnidad(
+      createRecoleccionDto.cantidad_inicial_canonica,
+      this.normalizeUnidadCanonica(createRecoleccionDto.unidad_canonica),
       tipoMaterialCanonico,
     );
     const ubicacionPayload = await this.validateAndNormalizeUbicacionPayload(
@@ -647,8 +655,10 @@ export class RecoleccionesService {
             planta_id: createRecoleccionDto.planta_id,
             codigo_trazabilidad: codigoTrazabilidad,
             estado_registro: 'BORRADOR',
-            unidad_canonica: conversionCanonica.unidad_canonica,
-            cantidad_inicial_canonica: conversionCanonica.cantidad_canonica,
+            unidad_canonica: canonicalInput.unidad_canonica,
+            cantidad_inicial_canonica: canonicalInput.cantidad_canonica,
+            saldo_actual: canonicalInput.cantidad_canonica,
+            estado_operativo: 'ABIERTO',
           })
           .select('id')
           .single();
@@ -754,60 +764,35 @@ export class RecoleccionesService {
     );
   }
 
-  private normalizeCantidadYUnidadCanonica(
+  private validateCanonicalCantidadYUnidad(
     cantidad: number,
-    unidad: string,
-    tipoMaterial: TipoMaterialRecoleccionV2Canonico,
+    unidadCanonica: UnidadCanonicaRecoleccion,
+    tipoMaterial: string,
   ): {
     unidad_canonica: 'G' | 'UNIDAD';
     cantidad_canonica: number;
-    unidad_normalizada: string;
   } {
     if (!Number.isFinite(cantidad) || cantidad <= 0) {
-      throw new BadRequestException('La cantidad debe ser un número mayor a 0');
-    }
-
-    const unidadNormalizada = String(unidad ?? '').trim().toUpperCase();
-    if (!unidadNormalizada) {
-      throw new BadRequestException('La unidad es requerida');
-    }
-
-    const unidadesGramo = new Set(['G', 'GR', 'GRAMO', 'GRAMOS']);
-    const unidadesKilogramo = new Set(['KG', 'KILO', 'KILOS', 'KILOGRAMO', 'KILOGRAMOS']);
-    const unidadesUnidad = new Set(['UNIDAD', 'UNIDADES', 'UND', 'U']);
-
-    let unidadCanonica: 'G' | 'UNIDAD';
-    let cantidadCanonica: number;
-
-    if (unidadesGramo.has(unidadNormalizada)) {
-      unidadCanonica = 'G';
-      cantidadCanonica = cantidad;
-    } else if (unidadesKilogramo.has(unidadNormalizada)) {
-      unidadCanonica = 'G';
-      cantidadCanonica = cantidad * 1000;
-    } else if (unidadesUnidad.has(unidadNormalizada)) {
-      unidadCanonica = 'UNIDAD';
-      cantidadCanonica = cantidad;
-    } else {
       throw new BadRequestException(
-        'unidad no soportada. Usa g/gr/kg o unidad/und',
+        'cantidad_inicial_canonica debe ser un número mayor a 0',
       );
     }
 
     if (tipoMaterial === 'ESQUEJE' && unidadCanonica !== 'UNIDAD') {
       throw new BadRequestException(
-        'Para tipo_material ESQUEJE la unidad debe ser de conteo (UNIDAD).',
+        'Para tipo_material ESQUEJE la unidad_canonica debe ser UNIDAD.',
       );
     }
+
+    const cantidadCanonica = Number(cantidad.toFixed(6));
 
     if (unidadCanonica === 'UNIDAD' && !Number.isInteger(cantidadCanonica)) {
       throw new BadRequestException(
-        'Para unidad de conteo la cantidad debe ser un número entero.',
+        'Para unidad_canonica=UNIDAD la cantidad_inicial_canonica debe ser entera.',
       );
     }
 
-    const cantidadCanonicaRedondeada = Number(cantidadCanonica.toFixed(6));
-    if (cantidadCanonicaRedondeada <= 0) {
+    if (cantidadCanonica <= 0) {
       throw new BadRequestException(
         'La cantidad canónica resultante debe ser mayor a 0',
       );
@@ -815,9 +800,20 @@ export class RecoleccionesService {
 
     return {
       unidad_canonica: unidadCanonica,
-      cantidad_canonica: cantidadCanonicaRedondeada,
-      unidad_normalizada: unidadNormalizada,
+      cantidad_canonica: cantidadCanonica,
     };
+  }
+
+  private normalizeUnidadCanonica(
+    unidadCanonica: string | null | undefined,
+  ): UnidadCanonicaRecoleccion {
+    const normalized = String(unidadCanonica ?? '').trim().toUpperCase();
+
+    if (normalized === 'G' || normalized === 'UNIDAD') {
+      return normalized;
+    }
+
+    throw new BadRequestException('unidad_canonica debe ser G o UNIDAD');
   }
 
   private async generateCodigoTrazabilidad(fechaISO: string): Promise<string> {
@@ -1335,13 +1331,36 @@ export class RecoleccionesService {
     const updatePayload: Record<string, unknown> = {};
 
     if (dto.fecha !== undefined) updatePayload.fecha = dto.fecha;
-    if (dto.cantidad !== undefined) updatePayload.cantidad_inicial_canonica = dto.cantidad;
-    if (dto.unidad !== undefined) updatePayload.unidad_canonica = dto.unidad;
     if (dto.tipo_material !== undefined) updatePayload.tipo_material = dto.tipo_material;
     if (dto.observaciones !== undefined) updatePayload.observaciones = dto.observaciones;
     if (dto.vivero_id !== undefined) updatePayload.vivero_id = dto.vivero_id;
     if (dto.metodo_id !== undefined) updatePayload.metodo_id = dto.metodo_id;
     if (dto.planta_id !== undefined) updatePayload.planta_id = dto.planta_id;
+
+    if (
+      dto.cantidad_inicial_canonica !== undefined ||
+      dto.unidad_canonica !== undefined ||
+      dto.tipo_material !== undefined
+    ) {
+      const tipoMaterialObjetivo = String(
+        dto.tipo_material ?? recoleccion.tipo_material ?? '',
+      ).toUpperCase() as TipoMaterialRecoleccionV2Canonico;
+      const cantidadObjetivo = Number(
+        dto.cantidad_inicial_canonica ?? recoleccion.cantidad_inicial_canonica,
+      );
+      const unidadCanonicaObjetivo = this.normalizeUnidadCanonica(
+        String(dto.unidad_canonica ?? recoleccion.unidad_canonica),
+      );
+
+      const canonicalInput = this.validateCanonicalCantidadYUnidad(
+        cantidadObjetivo,
+        unidadCanonicaObjetivo,
+        tipoMaterialObjetivo,
+      );
+
+      updatePayload.cantidad_inicial_canonica = canonicalInput.cantidad_canonica;
+      updatePayload.unidad_canonica = canonicalInput.unidad_canonica;
+    }
 
     // Si estaba RECHAZADO, volver a BORRADOR
     if (estadoActual === EstadoRegistro.RECHAZADO) {
@@ -1896,8 +1915,6 @@ export class RecoleccionesService {
       id,
       fecha,
       created_at,
-      cantidad:cantidad_inicial_canonica,
-      unidad:unidad_canonica,
       tipo_material,
       especie_nueva,
       observaciones,

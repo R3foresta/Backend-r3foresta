@@ -3,6 +3,7 @@ import {
   IsNumber,
   IsString,
   IsEnum,
+  IsIn,
   IsBoolean,
   IsOptional,
   MaxLength,
@@ -46,25 +47,31 @@ export class CreateRecoleccionDto {
   nombre_comercial?: string;
 
   @ApiProperty({
-    description: 'Cantidad de material recolectado (debe ser mayor a 0)',
+    description: 'Cantidad canónica inicial del material (debe ser mayor a 0)',
     example: 2.5,
     type: Number,
     minimum: 0.01,
   })
-  @IsNotEmpty({ message: 'La cantidad es requerida' })
-  @IsNumber({}, { message: 'La cantidad debe ser un número' })
-  @Min(0.01, { message: 'La cantidad debe ser mayor a 0' })
-  cantidad: number;
+  @IsNotEmpty({ message: 'cantidad_inicial_canonica es requerida' })
+  @IsNumber(
+    {},
+    { message: 'cantidad_inicial_canonica debe ser un número' },
+  )
+  @Min(0.01, { message: 'cantidad_inicial_canonica debe ser mayor a 0' })
+  cantidad_inicial_canonica: number;
 
-  // TODO: La unidad de medida de ingreso puede ser gramos, unidades o kg. dependiendo lo que reciba la UI pero el backend lo debe estandarizar a gr y enviar a la db como gramos o G.
   @ApiProperty({
-    description: 'Unidad de medida',
-    example: 'kg',
+    description: 'Unidad canónica inicial del material (G o UNIDAD)',
+    example: 'G',
+    enum: ['G', 'UNIDAD'],
     type: String,
   })
-  @IsNotEmpty({ message: 'La unidad es requerida' })
+  @IsNotEmpty({ message: 'unidad_canonica es requerida' })
   @IsString()
-  unidad: string;
+  @IsIn(['G', 'UNIDAD'], {
+    message: 'unidad_canonica debe ser G o UNIDAD',
+  })
+  unidad_canonica: 'G' | 'UNIDAD';
   
   // TODO: El TipoMaterial debe cambiar para solamente permitir SEMILLA y ESQUEJE.
   // En los nuevos endpoints de crear no se incluiran. más bien se cambia la estrctura.

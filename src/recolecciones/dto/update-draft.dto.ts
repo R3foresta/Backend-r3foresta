@@ -9,8 +9,12 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { TIPOS_MATERIAL_RECOLECCION_V2_INPUT } from './create-recoleccion-v2.dto';
+import {
+  TIPOS_MATERIAL_RECOLECCION_V2_INPUT,
+  UNIDADES_CANONICAS_RECOLECCION,
+} from './create-recoleccion-v2.dto';
 import type { TipoMaterialRecoleccionV2Input } from './create-recoleccion-v2.dto';
+import type { UnidadCanonicaRecoleccion } from './create-recoleccion-v2.dto';
 
 export class UpdateDraftDto {
   @ApiPropertyOptional({
@@ -22,21 +26,28 @@ export class UpdateDraftDto {
   fecha?: string;
 
   @ApiPropertyOptional({
-    description: 'Cantidad de material recolectado',
+    description: 'Cantidad canónica inicial',
     example: 2.5,
   })
   @IsOptional()
-  @IsNumber({}, { message: 'La cantidad debe ser un número' })
-  @Min(0.01, { message: 'La cantidad debe ser mayor a 0' })
-  cantidad?: number;
+  @IsNumber({}, { message: 'cantidad_inicial_canonica debe ser un número' })
+  @Min(0.01, { message: 'cantidad_inicial_canonica debe ser mayor a 0' })
+  cantidad_inicial_canonica?: number;
 
   @ApiPropertyOptional({
-    description: 'Unidad reportada (ej: g, kg, unidad)',
-    example: 'kg',
+    description: 'Unidad canónica inicial (G o UNIDAD)',
+    enum: UNIDADES_CANONICAS_RECOLECCION,
+    example: 'G',
   })
   @IsOptional()
-  @IsString({ message: 'La unidad debe ser texto' })
-  unidad?: string;
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString({ message: 'unidad_canonica debe ser texto' })
+  @IsIn(UNIDADES_CANONICAS_RECOLECCION, {
+    message: 'unidad_canonica debe ser G o UNIDAD',
+  })
+  unidad_canonica?: UnidadCanonicaRecoleccion;
 
   @ApiPropertyOptional({
     description: 'Tipo de material',

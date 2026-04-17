@@ -69,16 +69,14 @@ describe('RecoleccionesService', () => {
     service = module.get(RecoleccionesService);
   });
 
-  it('proyecta columnas canonicas con aliases compatibles para lecturas', () => {
+  it('proyecta columnas canonicas sin aliases legacy de cantidad/unidad', () => {
     const select = (service as any).getCanonicalRecoleccionSelect() as string;
 
-    expect(select).toContain('cantidad:cantidad_inicial_canonica');
-    expect(select).toContain('unidad:unidad_canonica');
-    expect(select).toContain(
-      'blockchain_hash_validacion:blockchain_tx_validacion',
-    );
-    expect(select).not.toContain('\n      cantidad,\n');
-    expect(select).not.toContain('\n      unidad,\n');
+    expect(select).toContain('cantidad_inicial_canonica');
+    expect(select).toContain('unidad_canonica');
+    expect(select).toContain('blockchain_hash_validacion');
+    expect(select).not.toContain('cantidad:cantidad_inicial_canonica');
+    expect(select).not.toContain('unidad:unidad_canonica');
   });
 
   it('incluye elegibilidad y motivo en el detalle de recoleccion', async () => {
