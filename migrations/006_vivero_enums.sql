@@ -128,7 +128,7 @@ BEGIN
   ) THEN
     CREATE TYPE public.unidad_medida AS ENUM (
       'UNIDAD',
-      'GR'
+      'G'
     );
   END IF;
 END;
