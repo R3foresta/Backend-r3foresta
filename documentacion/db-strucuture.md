@@ -365,8 +365,6 @@ ENUMS
 RECOLECCION
 tipo_material_origen = [SEMILLA, ESQUEJE, OTRO]
 
-estado_recoleccion = [USADO, ALMACENADO, DESECHADO]
-
 estado_registro_recoleccion = [BORRADOR, PENDIENTE_VALIDACION, VALIDADO, RECHAZADO]
 
 tipo_movimiento_recoleccion = [
@@ -382,13 +380,7 @@ motivo_movimiento_recoleccion = [
   OTRO
 ]
 LOTE VIVIERO
-lote_estado = [
-  INICIO, EMBOLSADO, SOMBRA, LISTA_PLANTAR, SALIDA_VIVERO
-]
 
-lote_accion = [
-  INICIO, EMBOLSADO, SOMBRA, LISTA_PLANTAR, SALIDA_VIVERO, AJUSTE
-]
 estado_lote_vivero = [ACTIVO, FINALIZADO]
 
 tipo_evento_vivero = [
