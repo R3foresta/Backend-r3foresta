@@ -145,7 +145,6 @@ erDiagram
     bigint id PK
     date fecha
     ENUM(tipo_material_origen) tipo_material
-    ENUM(estado_recoleccion) estado
     boolean especie_nueva
     text observaciones
     bigint usuario_id FK
@@ -363,7 +362,7 @@ EVENTO_LOTE_VIVERO {
   LOTE_VIVERO ||--o{ PLANTACION_LOTE_VIVERO : se_usa_en
 ENUMS
 RECOLECCION
-tipo_material_origen = [SEMILLA, ESQUEJE, OTRO]
+tipo_material_origen = [SEMILLA, ESQUEJE]
 
 estado_registro_recoleccion = [BORRADOR, PENDIENTE_VALIDACION, VALIDADO, RECHAZADO]
 

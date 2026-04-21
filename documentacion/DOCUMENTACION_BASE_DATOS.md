@@ -178,7 +178,6 @@ Registra las recolecciones de material vegetal.
 | `cantidad_inicial_canonica` | `numeric` | NOT NULL, > 0 | Cantidad en unidad canónica (G o UNIDAD) |
 | `unidad_canonica` | `text` | NOT NULL | `G` para semillas en gramos, `UNIDAD` para esquejes |
 | `tipo_material` | `tipo_material_origen` | NOT NULL | SEMILLA o ESQUEJE |
-| `estado` | `estado_recoleccion` | NOT NULL, DEFAULT 'ALMACENADO' | Estado actual |
 | `especie_nueva` | `boolean` | NOT NULL, DEFAULT false | ¿Es nueva especie? |
 | `observaciones` | `text` | max 1000 chars | Notas adicionales |
 | `usuario_id` | `bigint` | NOT NULL, FK | Usuario que registró |
@@ -409,12 +408,6 @@ Registra monitoreos de una plantación.
 'ESQUEJE'
 ```
 
-### `estado_recoleccion`
-```sql
-'ALMACENADO'
-'USADO'
-'DESECHADO'
-```
 
 ### `estado_lote_vivero`
 ```sql
