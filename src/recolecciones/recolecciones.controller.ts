@@ -67,8 +67,8 @@ export class RecoleccionesController {
       type: 'object',
       required: [
         'fecha',
-        'cantidad',
-        'unidad',
+        'cantidad_inicial_canonica',
+        'unidad_canonica',
         'tipo_material',
         'planta_id',
         'metodo_id',
@@ -78,8 +78,12 @@ export class RecoleccionesController {
       ],
       properties: {
         fecha: { type: 'string', format: 'date', example: '2026-03-04' },
-        cantidad: { type: 'number', example: 2.5 },
-        unidad: { type: 'string', example: 'kg' },
+        cantidad_inicial_canonica: { type: 'number', example: 250 },
+        unidad_canonica: {
+          type: 'string',
+          enum: ['G', 'UNIDAD'],
+          example: 'G',
+        },
         tipo_material: {
           type: 'string',
           enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
@@ -142,8 +146,8 @@ export class RecoleccionesController {
       type: 'object',
       required: [
         'fecha',
-        'cantidad',
-        'unidad',
+        'cantidad_inicial_canonica',
+        'unidad_canonica',
         'tipo_material',
         'planta_id',
         'metodo_id',
@@ -153,8 +157,12 @@ export class RecoleccionesController {
       ],
       properties: {
         fecha: { type: 'string', format: 'date', example: '2026-03-04' },
-        cantidad: { type: 'number', example: 2.5 },
-        unidad: { type: 'string', example: 'kg' },
+        cantidad_inicial_canonica: { type: 'number', example: 250 },
+        unidad_canonica: {
+          type: 'string',
+          enum: ['G', 'UNIDAD'],
+          example: 'G',
+        },
         tipo_material: {
           type: 'string',
           enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
@@ -218,8 +226,12 @@ export class RecoleccionesController {
       type: 'object',
       properties: {
         fecha: { type: 'string', format: 'date', example: '2026-03-04' },
-        cantidad: { type: 'number', example: 2.5 },
-        unidad: { type: 'string', example: 'kg' },
+        cantidad_inicial_canonica: { type: 'number', example: 250 },
+        unidad_canonica: {
+          type: 'string',
+          enum: ['G', 'UNIDAD'],
+          example: 'G',
+        },
         tipo_material: {
           type: 'string',
           enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
@@ -532,8 +544,10 @@ export class RecoleccionesController {
   }
 
   private normalizeNumericFields(parsedBody: any): void {
-    if (parsedBody.cantidad !== undefined) {
-      parsedBody.cantidad = Number(parsedBody.cantidad);
+    if (parsedBody.cantidad_inicial_canonica !== undefined) {
+      parsedBody.cantidad_inicial_canonica = Number(
+        parsedBody.cantidad_inicial_canonica,
+      );
     }
     if (parsedBody.vivero_id !== undefined) {
       parsedBody.vivero_id = Number(parsedBody.vivero_id);
@@ -601,8 +615,10 @@ export class RecoleccionesController {
   }
 
   private normalizeUpdateDraftNumericFields(parsedBody: any): void {
-    if (parsedBody.cantidad !== undefined) {
-      parsedBody.cantidad = Number(parsedBody.cantidad);
+    if (parsedBody.cantidad_inicial_canonica !== undefined) {
+      parsedBody.cantidad_inicial_canonica = Number(
+        parsedBody.cantidad_inicial_canonica,
+      );
     }
     if (parsedBody.vivero_id !== undefined) {
       parsedBody.vivero_id = Number(parsedBody.vivero_id);

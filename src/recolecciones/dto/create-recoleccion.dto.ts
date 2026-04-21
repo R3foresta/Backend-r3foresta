@@ -3,6 +3,7 @@ import {
   IsNumber,
   IsString,
   IsEnum,
+  IsIn,
   IsBoolean,
   IsOptional,
   MaxLength,
@@ -15,8 +16,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CreateUbicacionDto } from './create-ubicacion.dto';
 import { CreatePlantaDto } from './create-planta.dto';
 import { TipoMaterial } from '../enums/tipo-material.enum';
-import { EstadoRecoleccion } from '../enums/estado-recoleccion.enum';
-import { UnidadMedida } from '../enums/unidad-medida.enum';
 
 export class CreateRecoleccionDto {
   @ApiProperty({
@@ -48,27 +47,31 @@ export class CreateRecoleccionDto {
   nombre_comercial?: string;
 
   @ApiProperty({
-    description: 'Cantidad de material recolectado (debe ser mayor a 0)',
+    description: 'Cantidad canónica inicial del material (debe ser mayor a 0)',
     example: 2.5,
     type: Number,
     minimum: 0.01,
   })
-  @IsNotEmpty({ message: 'La cantidad es requerida' })
-  @IsNumber({}, { message: 'La cantidad debe ser un número' })
-  @Min(0.01, { message: 'La cantidad debe ser mayor a 0' })
-  cantidad: number;
+  @IsNotEmpty({ message: 'cantidad_inicial_canonica es requerida' })
+  @IsNumber(
+    {},
+    { message: 'cantidad_inicial_canonica debe ser un número' },
+  )
+  @Min(0.01, { message: 'cantidad_inicial_canonica debe ser mayor a 0' })
+  cantidad_inicial_canonica: number;
 
-  // TODO: La unidad de medida de ingreso puede ser gramos, unidades o kg. dependiendo lo que reciba la UI pero el backend lo debe estandarizar a gr y enviar a la db como gramos o G.
   @ApiProperty({
-      description: 'Unidad de medida canónica (G o UNIDAD)',
-      enum: UnidadMedida, // Esto ayuda a Swagger a mostrar un desplegable
-      example: UnidadMedida.G, // O UnidadMedida.UNIDAD
-    })
-    @IsNotEmpty({ message: 'La unidad es requerida' })
-    @IsEnum(UnidadMedida, { 
-      message: 'La unidad debe ser G (gramos) o UNIDAD' 
-    })
-    unidad: UnidadMedida; // Cambiamos el tipo de string a UnidadMedida
+    description: 'Unidad canónica inicial del material (G o UNIDAD)',
+    example: 'G',
+    enum: ['G', 'UNIDAD'],
+    type: String,
+  })
+  @IsNotEmpty({ message: 'unidad_canonica es requerida' })
+  @IsString()
+  @IsIn(['G', 'UNIDAD'], {
+    message: 'unidad_canonica debe ser G o UNIDAD',
+  })
+  unidad_canonica: 'G' | 'UNIDAD';
   
   // TODO: El TipoMaterial debe cambiar para solamente permitir SEMILLA y ESQUEJE.
   // En los nuevos endpoints de crear no se incluiran. más bien se cambia la estrctura.
@@ -82,20 +85,6 @@ export class CreateRecoleccionDto {
     message: 'El tipo de material debe ser SEMILLA o ESQUEJE',
   })
   tipo_material: TipoMaterial;
-
-  // TODO: El EstadoRecoleccion se eliminara, ya no es válido.
-  // Se hara despues de crear los nuevos endpoints.
-  @ApiPropertyOptional({
-    description: 'Estado actual del material (default: ALMACENADO)',
-    enum: EstadoRecoleccion,
-    example: EstadoRecoleccion.ALMACENADO,
-  })
-  @IsOptional()
-  @IsEnum(EstadoRecoleccion, {
-    message:
-      'El estado debe ser ALMACENADO, EN_PROCESO, UTILIZADO o DESCARTADO',
-  })
-  estado?: EstadoRecoleccion;
 
   @ApiProperty({
     description:

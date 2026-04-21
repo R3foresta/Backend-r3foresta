@@ -1,6 +1,0 @@
-export enum EstadoRecoleccion {
-  ALMACENADO = 'ALMACENADO',
-  EN_PROCESO = 'EN_PROCESO',
-  UTILIZADO = 'UTILIZADO',
-  DESCARTADO = 'DESCARTADO',
-}

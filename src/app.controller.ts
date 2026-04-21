@@ -19,7 +19,7 @@ export class AppController {
     try {
       const { data, error } = await this.supabaseService
         .getClient()
-        .from('recolecciones')
+        .from('recoleccion')
         .select('id')
         .limit(1);
 

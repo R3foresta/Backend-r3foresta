@@ -12,16 +12,6 @@ import { TipoMaterial } from '../enums/tipo-material.enum';
 
 export class FiltersRecoleccionDto {
   @ApiPropertyOptional({
-    description: 'ID del usuario (uso interno)',
-    example: 10,
-    type: Number,
-  })
-  @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  usuario_id?: number;
-
-  @ApiPropertyOptional({
     description: 'Fecha de inicio para el filtro de rango (YYYY-MM-DD)',
     example: '2025-09-01',
   })

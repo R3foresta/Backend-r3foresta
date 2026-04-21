@@ -18,6 +18,11 @@ export interface EvaluacionElegibilidadInicioVivero {
   estado_operativo: 'ABIERTO' | 'CERRADO';
 }
 
+interface EstadoOperativoResuelto {
+  estadoOperativo: 'ABIERTO' | 'CERRADO';
+  esEstadoValido: boolean;
+}
+
 @Injectable()
 export class RecoleccionElegibilidadService {
   evaluarRecoleccionElegibleParaInicioVivero(
@@ -25,7 +30,7 @@ export class RecoleccionElegibilidadService {
     cantidadSolicitada?: number | null,
   ): EvaluacionElegibilidadInicioVivero {
     const saldoActual = this.normalizarSaldoActual(recoleccion);
-    const estadoOperativo = this.normalizarEstadoOperativo(
+    const { estadoOperativo, esEstadoValido } = this.resolverEstadoOperativo(
       recoleccion,
       saldoActual,
     );
@@ -39,6 +44,16 @@ export class RecoleccionElegibilidadService {
       return this.crearResultado(
         false,
         'La recoleccion no esta validada.',
+        cantidadEvaluada,
+        saldoActual,
+        estadoOperativo,
+      );
+    }
+
+    if (!esEstadoValido) {
+      return this.crearResultado(
+        false,
+        'La recoleccion tiene un estado_operativo invalido.',
         cantidadEvaluada,
         saldoActual,
         estadoOperativo,
@@ -136,16 +151,33 @@ export class RecoleccionElegibilidadService {
     return Number.isFinite(saldo) ? saldo : 0;
   }
 
-  private normalizarEstadoOperativo(
+  private resolverEstadoOperativo(
     recoleccion: RecoleccionOperativaSnapshot,
     saldoActual: number,
-  ): 'ABIERTO' | 'CERRADO' {
-    const estado = String(
-      recoleccion.estado_operativo ??
-        (saldoActual > 0 ? 'ABIERTO' : 'CERRADO'),
-    ).toUpperCase();
+  ): EstadoOperativoResuelto {
+    if (
+      recoleccion.estado_operativo === undefined ||
+      recoleccion.estado_operativo === null
+    ) {
+      return {
+        estadoOperativo: saldoActual > 0 ? 'ABIERTO' : 'CERRADO',
+        esEstadoValido: true,
+      };
+    }
 
-    return estado === 'CERRADO' ? 'CERRADO' : 'ABIERTO';
+    const estado = String(recoleccion.estado_operativo).toUpperCase();
+
+    if (estado === 'ABIERTO' || estado === 'CERRADO') {
+      return {
+        estadoOperativo: estado,
+        esEstadoValido: true,
+      };
+    }
+
+    return {
+      estadoOperativo: 'CERRADO',
+      esEstadoValido: false,
+    };
   }
 
   private normalizarPlantaId(plantaId: number | string | null | undefined) {

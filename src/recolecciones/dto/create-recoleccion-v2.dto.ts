@@ -31,6 +31,11 @@ export const TIPOS_MATERIAL_RECOLECCION_V2_CANONICO = [
 export type TipoMaterialRecoleccionV2Canonico =
   (typeof TIPOS_MATERIAL_RECOLECCION_V2_CANONICO)[number];
 
+export const UNIDADES_CANONICAS_RECOLECCION = ['G', 'UNIDAD'] as const;
+
+export type UnidadCanonicaRecoleccion =
+  (typeof UNIDADES_CANONICAS_RECOLECCION)[number];
+
 export class CreateRecoleccionV2Dto {
   @ApiProperty({
     description: 'Fecha de recolección (no puede ser futura ni mayor a 45 días atrás)',
@@ -43,26 +48,31 @@ export class CreateRecoleccionV2Dto {
   fecha: string;
 
   @ApiProperty({
-    description: 'Cantidad de material recolectado (debe ser mayor a 0)',
+    description: 'Cantidad canónica inicial (debe ser mayor a 0)',
     example: 2.5,
     type: Number,
     minimum: 0.01,
   })
-  @IsNotEmpty({ message: 'La cantidad es requerida' })
-  @IsNumber({}, { message: 'La cantidad debe ser un número' })
-  @Min(0.01, { message: 'La cantidad debe ser mayor a 0' })
-  cantidad: number;
+  @IsNotEmpty({ message: 'cantidad_inicial_canonica es requerida' })
+  @IsNumber({}, { message: 'cantidad_inicial_canonica debe ser un número' })
+  @Min(0.01, { message: 'cantidad_inicial_canonica debe ser mayor a 0' })
+  cantidad_inicial_canonica: number;
 
-@ApiProperty({
-    description: 'Unidad de medida canónica (G o UNIDAD)',
-    enum: UnidadMedida, // Esto ayuda a Swagger a mostrar un desplegable
-    example: UnidadMedida.G, // O UnidadMedida.UNIDAD
+  @ApiProperty({
+    description: 'Unidad canónica inicial del material (G o UNIDAD)',
+    example: 'G',
+    type: String,
+    enum: UNIDADES_CANONICAS_RECOLECCION,
   })
-  @IsNotEmpty({ message: 'La unidad es requerida' })
-  @IsEnum(UnidadMedida, { 
-    message: 'La unidad debe ser G (gramos) o UNIDAD' 
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsNotEmpty({ message: 'unidad_canonica es requerida' })
+  @IsString({ message: 'unidad_canonica debe ser texto' })
+  @IsIn(UNIDADES_CANONICAS_RECOLECCION, {
+    message: 'unidad_canonica debe ser G o UNIDAD',
   })
-  unidad: UnidadMedida; // Cambiamos el tipo de string a UnidadMedida
+  unidad_canonica: UnidadCanonicaRecoleccion;
 
   @ApiProperty({
     description:
