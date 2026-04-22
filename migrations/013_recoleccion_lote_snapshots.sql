@@ -65,3 +65,12 @@ COMMENT ON COLUMN public.lote_vivero.nombre_comunidad_origen_snapshot
 
 COMMENT ON COLUMN public.lote_vivero.nombre_responsable_snapshot
   IS 'Nombre del responsable que crea el lote de vivero, congelado al momento de creacion.';
+
+COMMENT ON COLUMN public.lote_vivero.nombre_comercial_snapshot
+  IS 'Nombre comercial heredado heredada desde recoleccion y congelada al crear el lote.';
+
+COMMENT ON COLUMN public.lote_vivero.nombre_comercial_snapshot
+  IS 'Nombre comercial heredado heredada desde recoleccion y congelada al crear el lote.';
+
+COMMENT ON COLUMN public.lote_vivero.tipo_material_snapshot
+  IS 'Tipo de material heredado heredada desde recoleccion y congelada al crear el lote.';
