@@ -14,7 +14,6 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CreateUbicacionDto } from './create-ubicacion.dto';
-import { CreatePlantaDto } from './create-planta.dto';
 import { TipoMaterial } from '../enums/tipo-material.enum';
 
 export class CreateRecoleccionDto {
@@ -87,14 +86,13 @@ export class CreateRecoleccionDto {
   tipo_material: TipoMaterial;
 
   @ApiProperty({
-    description:
-      'Indica si es una especie nueva. Si es true, se debe enviar nueva_planta. Si es false, se debe enviar planta_id',
-    example: false,
-    type: Boolean,
+    description: 'ID de planta existente. Obligatorio para asegurar integridad botánica.',
+    example: 10,
+    type: Number,
   })
-  @IsNotEmpty({ message: 'El campo especie_nueva es requerido' })
-  @IsBoolean({ message: 'especie_nueva debe ser verdadero o falso' })
-  especie_nueva: boolean;
+  @IsNotEmpty({ message: 'El planta_id es requerido. Seleccione una especie del catálogo.' })
+  @IsNumber({}, { message: 'planta_id debe ser un número válido' })
+  planta_id: number;
 
   @ApiPropertyOptional({
     description: 'Observaciones adicionales sobre la recolección',
@@ -103,9 +101,7 @@ export class CreateRecoleccionDto {
   })
   @IsOptional()
   @IsString()
-  @MaxLength(1000, {
-    message: 'Las observaciones no pueden superar 1000 caracteres',
-  })
+  @MaxLength(1000, { message: 'Las observaciones no pueden superar 1000 caracteres' })
   observaciones?: string;
 
   @ApiProperty({
@@ -134,22 +130,4 @@ export class CreateRecoleccionDto {
   @IsNotEmpty({ message: 'El método de recolección es requerido' })
   @IsNumber()
   metodo_id: number;
-
-  @ApiPropertyOptional({
-    description: 'ID de planta existente (requerido si especie_nueva = false)',
-    example: 10,
-    type: Number,
-  })
-  @IsOptional()
-  @IsNumber()
-  planta_id?: number;
-
-  @ApiPropertyOptional({
-    description: 'Datos de nueva planta (requerido si especie_nueva = true)',
-    type: CreatePlantaDto,
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CreatePlantaDto)
-  nueva_planta?: CreatePlantaDto;
 }

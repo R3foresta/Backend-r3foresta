@@ -24,6 +24,7 @@ import { EstadoRegistro } from './enums/estado-registro.enum';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 import { UbicacionesReadService } from '../common/ubicaciones/ubicaciones-read.service';
 import { RecoleccionElegibilidadService } from './recoleccion-elegibilidad.service';
+import { PlantasService } from 'src/plantas/plantas.service';
 
 @Injectable()
 export class RecoleccionesService {
@@ -31,6 +32,7 @@ export class RecoleccionesService {
 
   constructor(
     private readonly supabaseService: SupabaseService,
+    private readonly plantasService: PlantasService,
     private readonly pinataService: PinataService,
     private readonly blockchainService: BlockchainService,
     private readonly ubicacionesReadService: UbicacionesReadService,
@@ -112,32 +114,23 @@ export class RecoleccionesService {
     }
 
     // Validar planta_id o nueva_planta según especie_nueva
-    let plantaIdFinal = createRecoleccionDto.planta_id;
-
-    if (!createRecoleccionDto.especie_nueva) {
-      if (!createRecoleccionDto.planta_id) {
-        throw new BadRequestException(
-          'planta_id es requerido cuando especie_nueva = false',
-        );
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const { data: planta, error: plantaError } = await supabase
-        .from('planta')
-        .select('*')
-        .eq('id', createRecoleccionDto.planta_id)
-        .single();
-
-      if (plantaError || !planta) {
-        throw new NotFoundException('Planta no encontrada');
-      }
-    } else {
-      if (!createRecoleccionDto.nueva_planta) {
-        throw new BadRequestException(
-          'nueva_planta es requerido cuando especie_nueva = true',
-        );
-      }
+    // 1. Validar que el ID venga en la petición
+    if (!createRecoleccionDto.planta_id) {
+      throw new BadRequestException('El planta_id es obligatorio.');
     }
+
+    // 2. Validar que la planta exista realmente en el catálogo (Usando el servicio o supabase)
+    const { data: planta, error: plantaError } = await supabase
+      .from('planta')
+      .select('id')
+      .eq('id', createRecoleccionDto.planta_id)
+      .maybeSingle();
+
+    if (plantaError || !planta) {
+      throw new NotFoundException(`La planta con ID ${createRecoleccionDto.planta_id} no existe en el catálogo botánico.`);
+    }
+
+    const plantaIdFinal = planta.id;
 
     // Validar fotos si se envían
     if (files && files.length > 0) {
@@ -213,43 +206,7 @@ export class RecoleccionesService {
       ubicacionId = ubicacionCreada.id;
       console.log('✅ Ubicación creada con ID:', ubicacionId);
 
-      // PASO 2: Crear planta si especie_nueva = true
-      if (createRecoleccionDto.especie_nueva) {
-        console.log('🌿 Paso 2: Creando nueva planta...');
-        
-        const plantaData = {
-          especie: createRecoleccionDto.nueva_planta!.especie,
-          nombre_cientifico: createRecoleccionDto.nueva_planta!.nombre_cientifico,
-          variedad: createRecoleccionDto.nueva_planta!.variedad || 'Sin especificar',
-          tipo_planta: createRecoleccionDto.nueva_planta!.tipo_planta,
-          tipo_planta_otro: createRecoleccionDto.nueva_planta!.tipo_planta_otro,
-          // Temporalmente comentado hasta que el enum fuente_planta esté creado en Supabase
-          // fuente: createRecoleccionDto.nueva_planta!.fuente,
-        };
-
-        console.log('📋 Datos de planta a insertar:', JSON.stringify(plantaData, null, 2));
-        
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const { data: plantaCreada, error: plantaError } = await supabase
-          .from('planta')
-          .insert(plantaData)
-          .select()
-          .single();
-
-        if (plantaError) {
-          console.error('❌ Error al crear planta:', plantaError);
-          console.error('❌ Datos que se intentaron insertar:', plantaData);
-          // Rollback: eliminar ubicación
-          await supabase.from('ubicacion').delete().eq('id', ubicacionId);
-          throw new InternalServerErrorException('Error al crear planta');
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        plantaIdFinal = plantaCreada.id;
-        console.log('✅ Planta creada con ID:', plantaIdFinal);
-      } else {
-        console.log('🌿 Paso 2: Usando planta existente ID:', plantaIdFinal);
-      }
+      // PASO 2: Crear planta si especie_nueva = true ya se validó que planta_id existe, así que no es necesario crear una nueva planta.
 
       // PASO 3: Subir fotos a Supabase Storage
       if (files && files.length > 0) {
@@ -274,9 +231,7 @@ export class RecoleccionesService {
             console.error('❌ Error al subir foto:', uploadError);
             // Rollback
             await supabase.from('ubicacion').delete().eq('id', ubicacionId);
-            if (createRecoleccionDto.especie_nueva && plantaIdFinal) {
-              await supabase.from('planta').delete().eq('id', plantaIdFinal);
-            }
+            
             throw new InternalServerErrorException('Error al subir foto');
           }
 
@@ -323,7 +278,7 @@ export class RecoleccionesService {
             saldo_actual: canonicalInput.cantidad_canonica,
             estado_operativo: 'ABIERTO',
             tipo_material: createRecoleccionDto.tipo_material,
-            especie_nueva: createRecoleccionDto.especie_nueva,
+            // BORRAMOS LA LÍNEA DE especie_nueva AQUÍ
             observaciones: createRecoleccionDto.observaciones,
             usuario_id: userId,
             ubicacion_id: ubicacionId,
@@ -357,9 +312,7 @@ export class RecoleccionesService {
         console.error('❌ Error al crear recolección:', recoleccionError);
         // Rollback completo
         await supabase.from('ubicacion').delete().eq('id', ubicacionId);
-        if (createRecoleccionDto.especie_nueva && plantaIdFinal) {
-          await supabase.from('planta').delete().eq('id', plantaIdFinal);
-        }
+        
         // Eliminar fotos
         for (const foto of fotosUrls) {
           const nombreArchivo = foto.url.split('/').pop();
@@ -393,9 +346,7 @@ export class RecoleccionesService {
           // Rollback completo
           await supabase.from('recoleccion').delete().eq('id', recoleccionId);
           await supabase.from('ubicacion').delete().eq('id', ubicacionId);
-          if (createRecoleccionDto.especie_nueva && plantaIdFinal) {
-            await supabase.from('planta').delete().eq('id', plantaIdFinal);
-          }
+          
           for (const foto of fotosUrls) {
             const nombreArchivo = foto.url.split('/').pop();
             await supabase.storage
