@@ -30,9 +30,9 @@ import { ValidationError, validate } from 'class-validator';
 import * as qs from 'qs';
 import { RecoleccionesService } from './recolecciones.service';
 import {
-  CreateRecoleccionV2Dto,
-  TIPOS_MATERIAL_RECOLECCION_V2_INPUT,
-} from './dto/create-recoleccion-v2.dto';
+  CreateRecoleccionDto,
+  TIPOS_MATERIAL_RECOLECCION_INPUT,
+} from './dto/create-recoleccion.dto';
 import { FUENTES_UBICACION } from './dto/create-ubicacion.dto';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 import { RecoleccionElegibilidadViveroQueryDto } from './dto/recoleccion-elegibilidad-vivero-query.dto';
@@ -86,7 +86,7 @@ export class RecoleccionesController {
         },
         tipo_material: {
           type: 'string',
-          enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
+          enum: [...TIPOS_MATERIAL_RECOLECCION_INPUT],
           example: 'SEMILLA',
         },
         planta_id: { type: 'number', example: 10 },
@@ -127,85 +127,6 @@ export class RecoleccionesController {
     return this.handleCreateCanonico(bodyRaw, authId, files?.fotos);
   }
 
-  @Post('v2')
-  @ApiOperation({
-    summary: 'Crear nueva recolección (V2 - Canónica)',
-    description:
-      'Alias del endpoint canónico de creación de recolección. Se crea en estado BORRADOR.',
-  })
-  @ApiSecurity('x-auth-id')
-  @ApiHeader({
-    name: 'x-auth-id',
-    description: 'ID de autenticación del usuario de Supabase',
-    required: true,
-  })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    description: 'Datos de la recolección v2 (FormData)',
-    schema: {
-      type: 'object',
-      required: [
-        'fecha',
-        'cantidad_inicial_canonica',
-        'unidad_canonica',
-        'tipo_material',
-        'planta_id',
-        'metodo_id',
-        'ubicacion[latitud]',
-        'ubicacion[longitud]',
-        'fotos',
-      ],
-      properties: {
-        fecha: { type: 'string', format: 'date', example: '2026-03-04' },
-        cantidad_inicial_canonica: { type: 'number', example: 250 },
-        unidad_canonica: {
-          type: 'string',
-          enum: ['G', 'UNIDAD'],
-          example: 'G',
-        },
-        tipo_material: {
-          type: 'string',
-          enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
-          example: 'SEMILLA',
-        },
-        planta_id: { type: 'number', example: 10 },
-        metodo_id: { type: 'number', example: 1 },
-        vivero_id: { type: 'number', example: 3 },
-        observaciones: { type: 'string', example: 'Lote piloto para trazabilidad v2' },
-        'ubicacion[pais_id]': { type: 'number', example: 1 },
-        'ubicacion[division_id]': { type: 'number', example: 999 },
-        'ubicacion[nombre]': { type: 'string', example: 'Parcela Don Lucho' },
-        'ubicacion[referencia]': { type: 'string', example: 'Zona Sur' },
-        'ubicacion[latitud]': { type: 'number', example: -16.5833 },
-        'ubicacion[longitud]': { type: 'number', example: -68.15 },
-        'ubicacion[precision_m]': { type: 'number', example: 10 },
-        'ubicacion[fuente]': {
-          type: 'string',
-          enum: [...FUENTES_UBICACION],
-          example: 'GPS_MOVIL',
-        },
-        fotos: {
-          type: 'array',
-          items: { type: 'string', format: 'binary' },
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 201, description: 'Recolección v2 creada exitosamente en BORRADOR' })
-  @ApiResponse({ status: 400, description: 'Error de validación en los datos' })
-  @ApiResponse({ status: 401, description: 'No autorizado - falta header x-auth-id' })
-  @ApiResponse({ status: 403, description: 'Prohibido - usuario sin permisos' })
-  @ApiResponse({ status: 404, description: 'Recurso no encontrado' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
-  async createV2(
-    @Body() bodyRaw: any,
-    @Headers('x-auth-id') authId?: string,
-    @UploadedFiles() files?: { fotos?: any[] },
-  ) {
-    return this.handleCreateCanonico(bodyRaw, authId, files?.fotos);
-  }
-
   // ─────────────────────────────────────────────────────────────────────────────
   // Flujo de estados
   // ─────────────────────────────────────────────────────────────────────────────
@@ -234,7 +155,7 @@ export class RecoleccionesController {
         },
         tipo_material: {
           type: 'string',
-          enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
+          enum: [...TIPOS_MATERIAL_RECOLECCION_INPUT],
           example: 'SEMILLA',
         },
         observaciones: { type: 'string', example: 'Actualización de datos' },
@@ -423,7 +344,7 @@ export class RecoleccionesController {
   @ApiQuery({
     name: 'tipo_material',
     required: false,
-    enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
+    enum: [...TIPOS_MATERIAL_RECOLECCION_INPUT],
   })
   @ApiQuery({ name: 'vivero_id', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
@@ -459,7 +380,7 @@ export class RecoleccionesController {
   @ApiQuery({
     name: 'tipo_material',
     required: false,
-    enum: [...TIPOS_MATERIAL_RECOLECCION_V2_INPUT],
+    enum: [...TIPOS_MATERIAL_RECOLECCION_INPUT],
   })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({
@@ -518,8 +439,8 @@ export class RecoleccionesController {
 
     this.normalizeNumericFields(parsedBody);
 
-    const createRecoleccionV2Dto = plainToInstance(CreateRecoleccionV2Dto, parsedBody);
-    const errors = await validate(createRecoleccionV2Dto, {
+    const createRecoleccionDto = plainToInstance(CreateRecoleccionDto, parsedBody);
+    const errors = await validate(createRecoleccionDto, {
       whitelist: true,
       forbidNonWhitelisted: true,
     });
@@ -533,12 +454,10 @@ export class RecoleccionesController {
       throw new UnauthorizedException('Header x-auth-id es requerido');
     }
 
-    const userRole = 'ADMIN';
-
-    return this.recoleccionesService.createV2(
-      createRecoleccionV2Dto,
+    return this.recoleccionesService.create(
+      createRecoleccionDto,
       authId,
-      userRole,
+      undefined,
       fotos,
     );
   }

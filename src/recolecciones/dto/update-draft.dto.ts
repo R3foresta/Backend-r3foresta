@@ -10,11 +10,11 @@ import {
 import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  TIPOS_MATERIAL_RECOLECCION_V2_INPUT,
+  TIPOS_MATERIAL_RECOLECCION_INPUT,
   UNIDADES_CANONICAS_RECOLECCION,
-} from './create-recoleccion-v2.dto';
-import type { TipoMaterialRecoleccionV2Input } from './create-recoleccion-v2.dto';
-import type { UnidadCanonicaRecoleccion } from './create-recoleccion-v2.dto';
+} from './create-recoleccion.dto';
+import type { TipoMaterialRecoleccionInput } from './create-recoleccion.dto';
+import type { UnidadCanonicaRecoleccion } from './create-recoleccion.dto';
 
 export class UpdateDraftDto {
   @ApiPropertyOptional({
@@ -51,17 +51,17 @@ export class UpdateDraftDto {
 
   @ApiPropertyOptional({
     description: 'Tipo de material',
-    enum: TIPOS_MATERIAL_RECOLECCION_V2_INPUT,
+    enum: TIPOS_MATERIAL_RECOLECCION_INPUT,
     example: 'SEMILLA',
   })
   @IsOptional()
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim().toUpperCase() : value,
   )
-  @IsIn(TIPOS_MATERIAL_RECOLECCION_V2_INPUT, {
+  @IsIn(TIPOS_MATERIAL_RECOLECCION_INPUT, {
     message: 'tipo_material debe ser SEMILLA o ESQUEJE',
   })
-  tipo_material?: TipoMaterialRecoleccionV2Input;
+  tipo_material?: TipoMaterialRecoleccionInput;
 
   @ApiPropertyOptional({
     description: 'Observaciones adicionales',
