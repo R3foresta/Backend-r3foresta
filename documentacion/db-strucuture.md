@@ -167,15 +167,6 @@ erDiagram
     ENUM(estado_operativo_recoleccion) estado_operativo
   }
 
-  RECOLECCION_FOTO {
-    bigint id PK
-    bigint recoleccion_id FK
-    text url
-    int peso_bytes
-    text formato
-    timestamptz created_at
-  }
-
   RECOLECCION_MOVIMIENTO {
     bigint id PK
     bigint recoleccion_id FK
@@ -322,7 +313,6 @@ EVENTO_LOTE_VIVERO {
   VIVERO ||--o{ RECOLECCION : almacena_en
   METODO_RECOLECCION ||--o{ RECOLECCION : metodo
   PLANTA ||--o{ RECOLECCION : identifica
-  RECOLECCION ||--o{ RECOLECCION_FOTO : fotos
   RECOLECCION ||--o{ RECOLECCION_MOVIMIENTO : movimientos
   USUARIO ||--o{ RECOLECCION_MOVIMIENTO : creado_por
   TIPOS_ENTIDAD_EVIDENCIA ||--o{ EVIDENCIAS_TRAZABILIDAD : tipo

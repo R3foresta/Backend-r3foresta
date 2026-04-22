@@ -196,27 +196,7 @@ Registra las recolecciones de material vegetal.
 
 ---
 
-### 8. 📸 `recoleccion_foto`
-Almacena fotos asociadas a recolecciones.
-
-| Campo | Tipo | Restricciones | Descripción |
-|-------|------|---------------|-------------|
-| `id` | `bigint` | PK, AUTO | Identificador único |
-| `recoleccion_id` | `bigint` | NOT NULL, FK | Recolección asociada |
-| `url` | `text` | NOT NULL | URL de la imagen |
-| `peso_bytes` | `integer` | max 5MB | Tamaño del archivo |
-| `formato` | `text` | JPG, JPEG, PNG | Formato de imagen |
-| `created_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Fecha de subida |
-
-**Relaciones:**
-- **recoleccion_id** → `recoleccion(id)`
-
-**Regla de negocio:**
-- Mínimo 2 fotos por recolección (validar en backend)
-
----
-
-### 9. 🧪 `lote_vivero`
+### 8. 🧪 `lote_vivero`
 Gestiona los lotes de material vegetal dentro del vivero con snapshots del material de origen.
 
 | Campo | Tipo | Restricciones | Descripción |

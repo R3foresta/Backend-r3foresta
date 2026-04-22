@@ -319,8 +319,7 @@ GET /api/plantas/search?q=ced
 5. **Crear planta (si especie nueva)**: INSERT en tabla `planta`
 6. **Subir fotos**: Upload a Supabase Storage bucket `recolecciones`
 7. **Crear recolección**: INSERT en tabla `recoleccion`
-8. **Guardar fotos**: INSERT en tabla `recoleccion_foto`
-9. **Rollback automático** en caso de error en cualquier paso
+8. **Rollback automático** en caso de error en cualquier paso
 
 ---
 
@@ -403,7 +402,6 @@ Ejecutar SQL para crear tablas:
 - `ubicacion`
 - `planta`
 - `recoleccion`
-- `recoleccion_foto`
 - `vivero`
 - `metodo_recoleccion`
 - `usuario`
@@ -474,7 +472,6 @@ curl http://localhost:3000/api/plantas?q=caoba
 - [x] Creación de ubicación
 - [x] Creación de planta si especie_nueva = true
 - [x] Upload de fotos a Supabase Storage
-- [x] Guardado de fotos en recoleccion_foto
 - [x] Transacciones con rollback
 - [x] Endpoint GET /api/recolecciones (con filtros)
 - [x] Endpoint GET /api/recolecciones/:id
