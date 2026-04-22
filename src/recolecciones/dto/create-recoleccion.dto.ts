@@ -1,26 +1,43 @@
 import {
+  IsDateString,
+  IsIn,
   IsNotEmpty,
   IsNumber,
-  IsString,
-  IsEnum,
-  IsIn,
-  IsBoolean,
   IsOptional,
+  IsString,
   MaxLength,
   Min,
   ValidateNested,
-  IsDateString,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CreateUbicacionDto } from './create-ubicacion.dto';
-import { CreatePlantaDto } from './create-planta.dto';
-import { TipoMaterial } from '../enums/tipo-material.enum';
+
+export const TIPOS_MATERIAL_RECOLECCION_INPUT = [
+  'SEMILLA',
+  'ESQUEJE',
+] as const;
+
+export type TipoMaterialRecoleccionInput =
+  (typeof TIPOS_MATERIAL_RECOLECCION_INPUT)[number];
+
+export const TIPOS_MATERIAL_RECOLECCION_CANONICO = [
+  'SEMILLA',
+  'ESQUEJE',
+] as const;
+
+export type TipoMaterialRecoleccionCanonico =
+  (typeof TIPOS_MATERIAL_RECOLECCION_CANONICO)[number];
+
+export const UNIDADES_CANONICAS_RECOLECCION = ['G', 'UNIDAD'] as const;
+
+export type UnidadCanonicaRecoleccion =
+  (typeof UNIDADES_CANONICAS_RECOLECCION)[number];
 
 export class CreateRecoleccionDto {
   @ApiProperty({
     description: 'Fecha de recolección (no puede ser futura ni mayor a 45 días atrás)',
-    example: '2026-01-20',
+    example: '2026-03-04',
     type: String,
     format: 'date',
   })
@@ -28,77 +45,50 @@ export class CreateRecoleccionDto {
   @IsDateString({}, { message: 'La fecha debe ser válida' })
   fecha: string;
 
-  // TODO: Para el nuevo enpoint de create recolección cuando leemos/registramos este dato usamos los campos de la tabla plantas donde se registrara una nueva planta o se asignara una planta existente.
-  @ApiPropertyOptional({
-    description: 'Nombre científico de la especie',
-    example: 'Swietenia macrophylla',
-  })
-  @IsOptional()
-  @IsString()
-  nombre_cientifico?: string;
-
-  // TODO: Para el nuevo enpoint de create recolección cuando leemos/registramos este dato usamos los campos de la tabla plantas donde se registrara una nueva planta o se asignara una planta existente.
-  @ApiPropertyOptional({
-    description: 'Nombre comercial o común de la especie',
-    example: 'Mara',
-  })
-  @IsOptional()
-  @IsString()
-  nombre_comercial?: string;
-
   @ApiProperty({
-    description: 'Cantidad canónica inicial del material (debe ser mayor a 0)',
+    description: 'Cantidad canónica inicial (debe ser mayor a 0)',
     example: 2.5,
     type: Number,
     minimum: 0.01,
   })
   @IsNotEmpty({ message: 'cantidad_inicial_canonica es requerida' })
-  @IsNumber(
-    {},
-    { message: 'cantidad_inicial_canonica debe ser un número' },
-  )
+  @IsNumber({}, { message: 'cantidad_inicial_canonica debe ser un número' })
   @Min(0.01, { message: 'cantidad_inicial_canonica debe ser mayor a 0' })
   cantidad_inicial_canonica: number;
 
   @ApiProperty({
     description: 'Unidad canónica inicial del material (G o UNIDAD)',
     example: 'G',
-    enum: ['G', 'UNIDAD'],
     type: String,
+    enum: UNIDADES_CANONICAS_RECOLECCION,
   })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
   @IsNotEmpty({ message: 'unidad_canonica es requerida' })
-  @IsString()
-  @IsIn(['G', 'UNIDAD'], {
+  @IsString({ message: 'unidad_canonica debe ser texto' })
+  @IsIn(UNIDADES_CANONICAS_RECOLECCION, {
     message: 'unidad_canonica debe ser G o UNIDAD',
   })
-  unidad_canonica: 'G' | 'UNIDAD';
-  
-  // TODO: El TipoMaterial debe cambiar para solamente permitir SEMILLA y ESQUEJE.
-  // En los nuevos endpoints de crear no se incluiran. más bien se cambia la estrctura.
-  @ApiProperty({
-    description: 'Tipo de material vegetal recolectado',
-    enum: TipoMaterial,
-    example: TipoMaterial.SEMILLA,
-  })
-  @IsNotEmpty({ message: 'El tipo de material es requerido' })
-  @IsEnum(TipoMaterial, {
-    message: 'El tipo de material debe ser SEMILLA o ESQUEJE',
-  })
-  tipo_material: TipoMaterial;
+  unidad_canonica: UnidadCanonicaRecoleccion;
 
   @ApiProperty({
-    description:
-      'Indica si es una especie nueva. Si es true, se debe enviar nueva_planta. Si es false, se debe enviar planta_id',
-    example: false,
-    type: Boolean,
+    description: 'Tipo de material canónico del módulo de recolección',
+    enum: TIPOS_MATERIAL_RECOLECCION_INPUT,
+    example: 'SEMILLA',
   })
-  @IsNotEmpty({ message: 'El campo especie_nueva es requerido' })
-  @IsBoolean({ message: 'especie_nueva debe ser verdadero o falso' })
-  especie_nueva: boolean;
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsNotEmpty({ message: 'El tipo de material es requerido' })
+  @IsIn(TIPOS_MATERIAL_RECOLECCION_INPUT, {
+    message: 'tipo_material debe ser SEMILLA o ESQUEJE',
+  })
+  tipo_material: TipoMaterialRecoleccionInput;
 
   @ApiPropertyOptional({
     description: 'Observaciones adicionales sobre la recolección',
-    example: 'Semillas en buen estado, bien conservadas',
+    example: 'Muestra inicial de vivero para lote de pruebas',
     maxLength: 1000,
   })
   @IsOptional()
@@ -123,7 +113,7 @@ export class CreateRecoleccionDto {
     type: Number,
   })
   @IsOptional()
-  @IsNumber()
+  @IsNumber({}, { message: 'vivero_id debe ser numérico' })
   vivero_id?: number;
 
   @ApiProperty({
@@ -132,24 +122,16 @@ export class CreateRecoleccionDto {
     type: Number,
   })
   @IsNotEmpty({ message: 'El método de recolección es requerido' })
-  @IsNumber()
+  @IsNumber({}, { message: 'metodo_id debe ser numérico' })
   metodo_id: number;
 
-  @ApiPropertyOptional({
-    description: 'ID de planta existente (requerido si especie_nueva = false)',
+  @ApiProperty({
+    description:
+      'ID de planta existente. La identidad vegetal canónica se consume desde planta al crear la recolección.',
     example: 10,
     type: Number,
   })
-  @IsOptional()
-  @IsNumber()
-  planta_id?: number;
-
-  @ApiPropertyOptional({
-    description: 'Datos de nueva planta (requerido si especie_nueva = true)',
-    type: CreatePlantaDto,
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CreatePlantaDto)
-  nueva_planta?: CreatePlantaDto;
+  @IsNotEmpty({ message: 'planta_id es requerido' })
+  @IsNumber({}, { message: 'planta_id debe ser numérico' })
+  planta_id: number;
 }

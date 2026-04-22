@@ -10,14 +10,13 @@ import { createHash } from 'crypto';
 import { SupabaseService } from '../supabase/supabase.service';
 import { PinataService } from '../pinata/pinata.service';
 import { BlockchainService } from '../blockchain/blockchain.service';
-import { CreateRecoleccionDto } from './dto/create-recoleccion.dto';
 import { CreateUbicacionDto } from './dto/create-ubicacion.dto';
 import {
-  CreateRecoleccionV2Dto,
-  TipoMaterialRecoleccionV2Canonico,
-  TipoMaterialRecoleccionV2Input,
+  CreateRecoleccionDto,
+  TipoMaterialRecoleccionCanonico,
+  TipoMaterialRecoleccionInput,
   UnidadCanonicaRecoleccion,
-} from './dto/create-recoleccion-v2.dto';
+} from './dto/create-recoleccion.dto';
 import { UpdateDraftDto } from './dto/update-draft.dto';
 import { RejectValidationDto } from './dto/reject-validation.dto';
 import { EstadoRegistro } from './enums/estado-registro.enum';
@@ -38,399 +37,16 @@ export class RecoleccionesService {
   ) {}
 
   /**
-   * Crea una nueva recolección con todas sus relaciones
+   * Crea una nueva recolección bajo el contrato canónico del módulo.
+   * - No recibe estado en request
+   * - nombre_cientifico/nombre_comercial se consumen desde planta
+   * - tipo_material canónico: SEMILLA | ESQUEJE
+   * - registra evidencias en evidencias_trazabilidad
    */
   async create(
     createRecoleccionDto: CreateRecoleccionDto,
     authId: string,
-    userRole: string,
-    files?: any[],
-  ) {
-    const supabase = this.supabaseService.getClient();
-
-    // Buscar el ID numérico del usuario usando su auth_id
-    const { data: usuarioData, error: usuarioError } = await supabase
-      .from('usuario')
-      .select('id, nombre, rol')
-      .eq('auth_id', authId)
-      .single();
-
-    if (usuarioError || !usuarioData) {
-      throw new NotFoundException(
-        `Usuario con auth_id ${authId} no encontrado`,
-      );
-    }
-
-    const userId = usuarioData.id;
-    console.log(`✅ Usuario encontrado: ${usuarioData.nombre} (ID: ${userId}, auth_id: ${authId})`);
-
-    // Validar permisos
-    if (!['ADMIN', 'GENERAL'].includes(userRole)) {
-      throw new ForbiddenException(
-        'No tienes permisos para crear recolecciones. Solo usuarios con rol ADMIN o GENERAL pueden realizar esta acción.',
-      );
-    }
-
-    // Validar fecha (no más de 45 días atrás)
-    const fecha = new Date(createRecoleccionDto.fecha);
-    const hoy = new Date();
-    const hace45Dias = new Date();
-    hace45Dias.setDate(hoy.getDate() - 45);
-
-    if (fecha > hoy) {
-      throw new BadRequestException('La fecha no puede ser futura');
-    }
-
-    if (fecha < hace45Dias) {
-      throw new BadRequestException(
-        'La fecha no puede ser mayor a 45 días atrás',
-      );
-    }
-
-    // Validar vivero_id si se envía
-    if (createRecoleccionDto.vivero_id) {
-      const { data: vivero, error: viveroError } = await supabase
-        .from('vivero')
-        .select('id')
-        .eq('id', createRecoleccionDto.vivero_id)
-        .single();
-
-      if (viveroError || !vivero) {
-        throw new NotFoundException('Vivero no encontrado');
-      }
-    }
-
-    // Validar metodo_id
-    const { data: metodo, error: metodoError } = await supabase
-      .from('metodo_recoleccion')
-      .select('id')
-      .eq('id', createRecoleccionDto.metodo_id)
-      .single();
-
-    if (metodoError || !metodo) {
-      throw new NotFoundException('Método de recolección no encontrado');
-    }
-
-    // Validar planta_id o nueva_planta según especie_nueva
-    let plantaIdFinal = createRecoleccionDto.planta_id;
-
-    if (!createRecoleccionDto.especie_nueva) {
-      if (!createRecoleccionDto.planta_id) {
-        throw new BadRequestException(
-          'planta_id es requerido cuando especie_nueva = false',
-        );
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const { data: planta, error: plantaError } = await supabase
-        .from('planta')
-        .select('*')
-        .eq('id', createRecoleccionDto.planta_id)
-        .single();
-
-      if (plantaError || !planta) {
-        throw new NotFoundException('Planta no encontrada');
-      }
-    } else {
-      if (!createRecoleccionDto.nueva_planta) {
-        throw new BadRequestException(
-          'nueva_planta es requerido cuando especie_nueva = true',
-        );
-      }
-    }
-
-    // Validar fotos si se envían
-    if (files && files.length > 0) {
-      if (files.length > 5) {
-        throw new BadRequestException('Máximo 5 fotos permitidas');
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const file of files as any[]) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-        const formato = file.mimetype.split('/')[1].toUpperCase();
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        if (!['JPG', 'JPEG', 'PNG'].includes(formato)) {
-          throw new BadRequestException(
-            `Formato ${formato} no permitido. Solo JPG, JPEG, PNG`,
-          );
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        if (file.size > 5242880) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          throw new BadRequestException(
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            `Archivo ${file.originalname} supera 5MB`,
-          );
-        }
-      }
-    }
-
-    let ubicacionId: number;
-    let recoleccionId: number;
-    const ubicacionPayload = await this.validateAndNormalizeUbicacionPayload(
-      createRecoleccionDto.ubicacion,
-    );
-    const fotosUrls: Array<{
-      url: string;
-      peso_bytes: number;
-      formato: string;
-    }> = [];
-    const canonicalInput = this.validateCanonicalCantidadYUnidad(
-      createRecoleccionDto.cantidad_inicial_canonica,
-      this.normalizeUnidadCanonica(createRecoleccionDto.unidad_canonica),
-      createRecoleccionDto.tipo_material,
-    );
-
-    try {
-      console.log('\n🌱 ============ CREANDO RECOLECCIÓN ============');
-      console.log('📥 Datos recibidos:');
-      console.log('   • Fecha:', createRecoleccionDto.fecha);
-      console.log(
-        '   • Cantidad canónica:',
-        canonicalInput.cantidad_canonica,
-        canonicalInput.unidad_canonica,
-      );
-      console.log('   • Tipo material:', createRecoleccionDto.tipo_material);
-      console.log('   • Usuario ID:', userId);
-
-      // PASO 1: Crear ubicación
-      console.log('📍 Paso 1: Creando ubicación...');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const { data: ubicacionCreada, error: ubicacionError } = await supabase
-        .from('ubicacion')
-        .insert(ubicacionPayload)
-        .select()
-        .single();
-
-      if (ubicacionError) {
-        console.error('❌ Error al crear ubicación:', ubicacionError);
-        throw new InternalServerErrorException('Error al crear ubicación');
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      ubicacionId = ubicacionCreada.id;
-      console.log('✅ Ubicación creada con ID:', ubicacionId);
-
-      // PASO 2: Crear planta si especie_nueva = true
-      if (createRecoleccionDto.especie_nueva) {
-        console.log('🌿 Paso 2: Creando nueva planta...');
-        
-        const plantaData = {
-          especie: createRecoleccionDto.nueva_planta!.especie,
-          nombre_cientifico: createRecoleccionDto.nueva_planta!.nombre_cientifico,
-          variedad: createRecoleccionDto.nueva_planta!.variedad || 'Sin especificar',
-          tipo_planta: createRecoleccionDto.nueva_planta!.tipo_planta,
-          tipo_planta_otro: createRecoleccionDto.nueva_planta!.tipo_planta_otro,
-          // Temporalmente comentado hasta que el enum fuente_planta esté creado en Supabase
-          // fuente: createRecoleccionDto.nueva_planta!.fuente,
-        };
-
-        console.log('📋 Datos de planta a insertar:', JSON.stringify(plantaData, null, 2));
-        
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const { data: plantaCreada, error: plantaError } = await supabase
-          .from('planta')
-          .insert(plantaData)
-          .select()
-          .single();
-
-        if (plantaError) {
-          console.error('❌ Error al crear planta:', plantaError);
-          console.error('❌ Datos que se intentaron insertar:', plantaData);
-          // Rollback: eliminar ubicación
-          await supabase.from('ubicacion').delete().eq('id', ubicacionId);
-          throw new InternalServerErrorException('Error al crear planta');
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        plantaIdFinal = plantaCreada.id;
-        console.log('✅ Planta creada con ID:', plantaIdFinal);
-      } else {
-        console.log('🌿 Paso 2: Usando planta existente ID:', plantaIdFinal);
-      }
-
-      // PASO 3: Subir fotos a Supabase Storage
-      if (files && files.length > 0) {
-        console.log(`📸 Paso 3: Subiendo ${files.length} fotos...`);
-        for (const file of files) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          const nombreArchivo = `${Date.now()}_${file.originalname}`;
-          const rutaStorage = `${nombreArchivo}`;
-
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { data: uploadData, error: uploadError } =
-            await supabase.storage
-              .from('recoleccion_fotos')
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-              .upload(rutaStorage, file.buffer, {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                contentType: file.mimetype,
-                upsert: false,
-              });
-
-          if (uploadError) {
-            console.error('❌ Error al subir foto:', uploadError);
-            // Rollback
-            await supabase.from('ubicacion').delete().eq('id', ubicacionId);
-            if (createRecoleccionDto.especie_nueva && plantaIdFinal) {
-              await supabase.from('planta').delete().eq('id', plantaIdFinal);
-            }
-            throw new InternalServerErrorException('Error al subir foto');
-          }
-
-          const { data: publicUrlData } = supabase.storage
-            .from('recoleccion_fotos')
-            .getPublicUrl(rutaStorage);
-
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-          const formato = file.mimetype.split('/')[1].toUpperCase();
-
-          fotosUrls.push({
-            url: publicUrlData.publicUrl,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            peso_bytes: file.size,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            formato: formato,
-          });
-        }
-        console.log('✅ Fotos subidas correctamente');
-      } else {
-        console.log('📸 Paso 3: Sin fotos para subir');
-      }
-
-      // PASO 4: Crear recolección
-      console.log('📦 Paso 4: Creando registro de recolección...');
-
-      let codigoTrazabilidad = '';
-      let recoleccionCreada: any = null;
-      let recoleccionError: any = null;
-
-      for (let intento = 1; intento <= 5; intento++) {
-        codigoTrazabilidad = await this.generateCodigoTrazabilidad(
-          createRecoleccionDto.fecha,
-        );
-        console.log('🏷️  Código de trazabilidad generado:', codigoTrazabilidad);
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const result = await supabase
-          .from('recoleccion')
-          .insert({
-            fecha: createRecoleccionDto.fecha,
-            cantidad_inicial_canonica: canonicalInput.cantidad_canonica,
-            unidad_canonica: canonicalInput.unidad_canonica,
-            saldo_actual: canonicalInput.cantidad_canonica,
-            estado_operativo: 'ABIERTO',
-            tipo_material: createRecoleccionDto.tipo_material,
-            especie_nueva: createRecoleccionDto.especie_nueva,
-            observaciones: createRecoleccionDto.observaciones,
-            usuario_id: userId,
-            ubicacion_id: ubicacionId,
-            vivero_id: createRecoleccionDto.vivero_id,
-            metodo_id: createRecoleccionDto.metodo_id,
-            planta_id: plantaIdFinal,
-            codigo_trazabilidad: codigoTrazabilidad,
-            estado_registro: EstadoRegistro.BORRADOR,
-          })
-          .select()
-          .single();
-
-        recoleccionCreada = result.data;
-        recoleccionError = result.error;
-
-        if (!recoleccionError && recoleccionCreada) {
-          break;
-        }
-
-        if (this.isCodigoTrazabilidadDuplicateError(recoleccionError)) {
-          this.logger.warn(
-            `⚠️ Colisión de código de trazabilidad (${codigoTrazabilidad}), reintentando (${intento}/5)...`,
-          );
-          continue;
-        }
-
-        break;
-      }
-
-      if (recoleccionError) {
-        console.error('❌ Error al crear recolección:', recoleccionError);
-        // Rollback completo
-        await supabase.from('ubicacion').delete().eq('id', ubicacionId);
-        if (createRecoleccionDto.especie_nueva && plantaIdFinal) {
-          await supabase.from('planta').delete().eq('id', plantaIdFinal);
-        }
-        // Eliminar fotos
-        for (const foto of fotosUrls) {
-          const nombreArchivo = foto.url.split('/').pop();
-          await supabase.storage
-            .from('recoleccion_fotos')
-            .remove([nombreArchivo!]);
-        }
-        throw new InternalServerErrorException('Error al crear recolección');
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      recoleccionId = recoleccionCreada.id;
-      console.log('✅ Recolección creada con ID:', recoleccionId);
-
-      // PASO 5: Crear registros en recoleccion_foto
-      if (fotosUrls.length > 0) {
-        console.log(`💾 Paso 5: Guardando ${fotosUrls.length} fotos en BD...`);
-        const fotosInsert = fotosUrls.map((foto) => ({
-          recoleccion_id: recoleccionId,
-          url: foto.url,
-          peso_bytes: foto.peso_bytes,
-          formato: foto.formato,
-        }));
-
-        const { error: fotosError } = await supabase
-          .from('recoleccion_foto')
-          .insert(fotosInsert);
-
-        if (fotosError) {
-          console.error('❌ Error al guardar fotos:', fotosError);
-          // Rollback completo
-          await supabase.from('recoleccion').delete().eq('id', recoleccionId);
-          await supabase.from('ubicacion').delete().eq('id', ubicacionId);
-          if (createRecoleccionDto.especie_nueva && plantaIdFinal) {
-            await supabase.from('planta').delete().eq('id', plantaIdFinal);
-          }
-          for (const foto of fotosUrls) {
-            const nombreArchivo = foto.url.split('/').pop();
-            await supabase.storage
-              .from('recoleccion_fotos')
-              .remove([nombreArchivo!]);
-          }
-          throw new InternalServerErrorException('Error al guardar fotos');
-        }
-        console.log('✅ Fotos guardadas en base de datos');
-      } else {
-        console.log('💾 Paso 5: Sin fotos para guardar');
-      }
-
-      console.log('🎉 ✅ RECOLECCIÓN CREADA EXITOSAMENTE (estado: BORRADOR)');
-      console.log('🌱 ==========================================\n');
-
-      // Retornar datos completos (la URL de IPFS ya está guardada en la BD)
-      return this.findOne(recoleccionId);
-    } catch (error) {
-      console.error('❌ Error en creación de recolección:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Crea una nueva recolección bajo contrato V2
-   * - No recibe estado en request (se usa default de BD)
-   * - nombre_cientifico/nombre_comercial se consumen desde planta (sin snapshot legacy)
-   * - tipo_material canónico: SEMILLA | ESQUEJE
-   * - registra evidencias en evidencias_trazabilidad
-   */
-  async createV2(
-    createRecoleccionDto: CreateRecoleccionV2Dto,
-    authId: string,
-    userRole: string,
+    userRole?: string,
     files?: any[],
   ) {
     const supabase = this.supabaseService.getClient();
@@ -536,7 +152,7 @@ export class RecoleccionesService {
       }
     }
 
-    const tipoMaterialCanonico = this.normalizeTipoMaterialV2(
+    const tipoMaterialCanonico = this.normalizeTipoMaterial(
       createRecoleccionDto.tipo_material,
     );
     const canonicalInput = this.validateCanonicalCantidadYUnidad(
@@ -583,7 +199,7 @@ export class RecoleccionesService {
         .single();
 
       if (ubicacionError || !ubicacionCreada) {
-        this.logger.error('❌ Error al crear ubicación v2:', ubicacionError);
+        this.logger.error('❌ Error al crear ubicación:', ubicacionError);
         throw new InternalServerErrorException('Error al crear ubicación');
       }
 
@@ -681,8 +297,8 @@ export class RecoleccionesService {
       }
 
       if (recoleccionError || !recoleccionCreada) {
-        this.logger.error('❌ Error al crear recolección v2:', recoleccionError);
-        throw new InternalServerErrorException('Error al crear recolección v2');
+        this.logger.error('❌ Error al crear recolección:', recoleccionError);
+        throw new InternalServerErrorException('Error al crear recolección');
       }
 
       recoleccionId = Number(recoleccionCreada.id);
@@ -700,7 +316,7 @@ export class RecoleccionesService {
         hash_sha256: foto.hash_sha256,
         titulo: `Foto ${index + 1}`,
         metadata: {
-          origen: 'CREATE_RECOLECCION_V2',
+          origen: 'CREATE_RECOLECCION',
           formato: foto.formato,
         },
         es_principal: index === 0,
@@ -724,7 +340,7 @@ export class RecoleccionesService {
 
       return this.findOne(recoleccionId);
     } catch (error) {
-      this.logger.error('❌ Error en createV2 de recolección:', error);
+      this.logger.error('❌ Error en create de recolección:', error);
 
       if (recoleccionId) {
         await supabase
@@ -750,9 +366,9 @@ export class RecoleccionesService {
     }
   }
 
-  private normalizeTipoMaterialV2(
-    tipoMaterial: TipoMaterialRecoleccionV2Input,
-  ): TipoMaterialRecoleccionV2Canonico {
+  private normalizeTipoMaterial(
+    tipoMaterial: TipoMaterialRecoleccionInput,
+  ): TipoMaterialRecoleccionCanonico {
     const tipoNormalizado = String(tipoMaterial).trim().toUpperCase();
 
     if (tipoNormalizado === 'SEMILLA' || tipoNormalizado === 'ESQUEJE') {
@@ -1344,7 +960,7 @@ export class RecoleccionesService {
     ) {
       const tipoMaterialObjetivo = String(
         dto.tipo_material ?? recoleccion.tipo_material ?? '',
-      ).toUpperCase() as TipoMaterialRecoleccionV2Canonico;
+      ).toUpperCase() as TipoMaterialRecoleccionCanonico;
       const cantidadObjetivo = Number(
         dto.cantidad_inicial_canonica ?? recoleccion.cantidad_inicial_canonica,
       );
