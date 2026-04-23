@@ -85,16 +85,18 @@ export class RecoleccionesService {
       );
     }
 
-    const fecha = new Date(createRecoleccionDto.fecha);
-    const hoy = new Date();
-    const hace45Dias = new Date();
-    hace45Dias.setDate(hoy.getDate() - 45);
+    const fechaRecoleccion = this.normalizeIsoDateString(
+      createRecoleccionDto.fecha,
+      'fecha',
+    );
+    const fechaActualNegocio = this.getCurrentBusinessDate();
+    const fechaMinimaPermitida = this.addDaysToIsoDate(fechaActualNegocio, -45);
 
-    if (fecha > hoy) {
+    if (fechaRecoleccion > fechaActualNegocio) {
       throw new BadRequestException('La fecha no puede ser futura');
     }
 
-    if (fecha < hace45Dias) {
+    if (fechaRecoleccion < fechaMinimaPermitida) {
       throw new BadRequestException(
         'La fecha no puede ser mayor a 45 días atrás',
       );
@@ -266,15 +268,14 @@ export class RecoleccionesService {
       let recoleccionError: any = null;
 
       for (let intento = 1; intento <= 5; intento++) {
-        codigoTrazabilidad = await this.generateCodigoTrazabilidad(
-          createRecoleccionDto.fecha,
-        );
+        codigoTrazabilidad =
+          await this.generateCodigoTrazabilidad(fechaRecoleccion);
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const result = await supabase
           .from('recoleccion')
           .insert({
-            fecha: createRecoleccionDto.fecha,
+            fecha: fechaRecoleccion,
             tipo_material: tipoMaterialCanonico,
             especie_nueva: false,
             observaciones: createRecoleccionDto.observaciones,
@@ -463,13 +464,8 @@ export class RecoleccionesService {
 
   private async generateCodigoTrazabilidad(fechaISO: string): Promise<string> {
     const supabase = this.supabaseService.getClient();
-    const fecha = new Date(fechaISO);
-
-    if (Number.isNaN(fecha.getTime())) {
-      throw new BadRequestException('La fecha no es válida para trazabilidad');
-    }
-
-    const año = fecha.getFullYear();
+    const fechaNormalizada = this.normalizeIsoDateString(fechaISO, 'fecha');
+    const año = Number(fechaNormalizada.slice(0, 4));
     const prefijo = `REC-${año}-`;
     const { data, error } = await supabase
       .from('recoleccion')
@@ -561,15 +557,12 @@ export class RecoleccionesService {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const imageUrl: string = fotoPrincipal?.url || '';
 
-    // Formatear fecha y hora
-    const fechaStr = recoleccion.fecha; // Ya viene en formato YYYY-MM-DD
-    // Extraer hora del campo created_at que tiene timestamp completo
-    const fechaConHora = new Date(recoleccion.created_at);
-    const horaStr = fechaConHora.toLocaleTimeString('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'America/La_Paz', // Bolivia timezone
-    });
+    // Con granularidad diaria, created_at puede venir como DATE sin hora.
+    const fechaStr = String(recoleccion.fecha ?? '').trim() || 'N/A';
+    const horaStr =
+      this.extractHoraFromTimestamp(recoleccion.created_at) ?? 'NO_REGISTRADA';
+    const fragmentoHoraDescripcion =
+      horaStr === 'NO_REGISTRADA' ? '' : ` a las ${horaStr}`;
 
     const rutaAdministrativa =
       recoleccion.ubicacion?.division?.ruta
@@ -612,7 +605,7 @@ export class RecoleccionesService {
     }
 
     // Descripción completa
-    const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${identidadPlanta} realizada por ${nombreRecolector} el ${fechaStr} a las ${horaStr} en ${ubicacionCompleta || coordenadas}. Cantidad: ${recoleccion.cantidad_inicial_canonica} ${recoleccion.unidad_canonica}. Método: ${recoleccion.metodo?.nombre || 'N/A'}. Estado de registro: ${recoleccion.estado_registro || 'N/A'}. Estado operativo: ${recoleccion.estado_operativo || 'N/A'}. Observaciones: ${recoleccion.observaciones || 'N/A'}.`;
+    const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${identidadPlanta} realizada por ${nombreRecolector} el ${fechaStr}${fragmentoHoraDescripcion} en ${ubicacionCompleta || coordenadas}. Cantidad: ${recoleccion.cantidad_inicial_canonica} ${recoleccion.unidad_canonica}. Método: ${recoleccion.metodo?.nombre || 'N/A'}. Estado de registro: ${recoleccion.estado_registro || 'N/A'}. Estado operativo: ${recoleccion.estado_operativo || 'N/A'}. Observaciones: ${recoleccion.observaciones || 'N/A'}.`;
 
     // Construir attributes
     const attributes = [
@@ -1246,7 +1239,7 @@ export class RecoleccionesService {
       usuarioId: recoleccion.usuario_id,
       ubicacionId: recoleccion.ubicacion_id,
     });
-    const fechaValidacion = new Date().toISOString();
+    const fechaValidacion = this.getCurrentBusinessDate();
 
     // Actualizar a VALIDADO y congelar snapshots oficiales
     const { error: updateError } = await supabase
@@ -1297,6 +1290,74 @@ export class RecoleccionesService {
     await this.executeBlockchainFlow(id, codigoTrazabilidad);
 
     return this.findOne(id);
+  }
+
+  private getCurrentBusinessDate(): string {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/La_Paz',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date());
+
+    const year = parts.find((part) => part.type === 'year')?.value;
+    const month = parts.find((part) => part.type === 'month')?.value;
+    const day = parts.find((part) => part.type === 'day')?.value;
+
+    if (!year || !month || !day) {
+      throw new InternalServerErrorException(
+        'No se pudo resolver la fecha actual de negocio.',
+      );
+    }
+
+    return `${year}-${month}-${day}`;
+  }
+
+  private normalizeIsoDateString(value: string, fieldName: string): string {
+    const normalized = String(value ?? '').trim();
+    const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
+
+    if (!isoDatePattern.test(normalized)) {
+      throw new BadRequestException(`${fieldName} debe tener formato YYYY-MM-DD`);
+    }
+
+    const parsed = new Date(`${normalized}T00:00:00Z`);
+    if (
+      Number.isNaN(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== normalized
+    ) {
+      throw new BadRequestException(`${fieldName} no es una fecha válida`);
+    }
+
+    return normalized;
+  }
+
+  private addDaysToIsoDate(isoDate: string, days: number): string {
+    const baseDate = new Date(`${isoDate}T00:00:00Z`);
+    baseDate.setUTCDate(baseDate.getUTCDate() + days);
+    return baseDate.toISOString().slice(0, 10);
+  }
+
+  private extractHoraFromTimestamp(value: unknown): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const normalized = value.trim();
+    if (!normalized.includes('T')) {
+      return null;
+    }
+
+    const parsed = new Date(normalized);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return parsed.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/La_Paz',
+    });
   }
 
   /**
@@ -1412,7 +1473,8 @@ export class RecoleccionesService {
 
     query = query
       .order('fecha', { ascending: false })
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
 
     if (filters.fecha_inicio) {
       query = query.gte('fecha', filters.fecha_inicio);
@@ -1502,7 +1564,8 @@ export class RecoleccionesService {
       .select(this.getCanonicalRecoleccionSelect(), { count: 'exact' })
       .eq('usuario_id', userId) // ⚠️ FILTRO AUTOMÁTICO POR USUARIO
       .order('fecha', { ascending: false })
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
 
     // Aplicar filtros opcionales
 
@@ -1592,7 +1655,8 @@ export class RecoleccionesService {
       .select(this.getCanonicalRecoleccionSelect(), { count: 'exact' })
       .eq('vivero_id', viveroId)
       .order('fecha', { ascending: false })
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
 
     if (filters.fecha_inicio) {
       query = query.gte('fecha', filters.fecha_inicio);
@@ -1801,7 +1865,8 @@ export class RecoleccionesService {
       .order('entidad_id', { ascending: true })
       .order('es_principal', { ascending: false })
       .order('orden', { ascending: true })
-      .order('creado_en', { ascending: true });
+      .order('creado_en', { ascending: true })
+      .order('id', { ascending: true });
 
     if (error) {
       this.logger.error('❌ Error al obtener evidencias de recolecciones:', error);
