@@ -23,19 +23,7 @@ import { EstadoRegistro } from './enums/estado-registro.enum';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 import { UbicacionesReadService } from '../common/ubicaciones/ubicaciones-read.service';
 import { RecoleccionElegibilidadService } from './recoleccion-elegibilidad.service';
-
-type RecoleccionSnapshotPayload = {
-  nombre_cientifico_snapshot: string;
-  nombre_comercial_snapshot: string;
-  variedad_snapshot: string;
-  nombre_comunidad_snapshot: string;
-  nombre_recolector_snapshot: string;
-};
-
-const SNAPSHOT_DEFAULTS = {
-  VARIEDAD: 'comun',
-  COMUNIDAD: 'SIN ESPECIFICAR',
-} as const;
+import { RecoleccionSnapshotsService } from './recoleccion-snapshots.service';
 
 @Injectable()
 export class RecoleccionesService {
@@ -47,6 +35,7 @@ export class RecoleccionesService {
     private readonly blockchainService: BlockchainService,
     private readonly ubicacionesReadService: UbicacionesReadService,
     private readonly recoleccionElegibilidadService: RecoleccionElegibilidadService,
+    private readonly recoleccionSnapshotsService: RecoleccionSnapshotsService,
   ) {}
 
   /**
@@ -217,7 +206,7 @@ export class RecoleccionesService {
       }
 
       ubicacionId = Number(ubicacionCreada.id);
-      const snapshotPayload = await this.resolveRecoleccionSnapshots({
+      const snapshotPayload = await this.recoleccionSnapshotsService.resolve({
         plantaId: createRecoleccionDto.planta_id,
         usuarioId: userId,
         ubicacionId,
@@ -581,14 +570,25 @@ export class RecoleccionesService {
     ]
       .filter((value: number | null | undefined) => value !== null && value !== undefined)
       .join(', ');
-    const identidadPlanta = this.toRequiredTrimmedString(
-      recoleccion.nombre_comercial_snapshot,
-      `La recolección ${recoleccion.id ?? recoleccion.codigo_trazabilidad} no tiene nombre_comercial_snapshot válido`,
-    );
-    const nombreRecolector = this.toRequiredTrimmedString(
-      recoleccion.nombre_recolector_snapshot,
-      `La recolección ${recoleccion.id ?? recoleccion.codigo_trazabilidad} no tiene nombre_recolector_snapshot válido`,
-    );
+    const recoleccionRef = recoleccion.id ?? recoleccion.codigo_trazabilidad;
+    const identidadPlanta = String(
+      recoleccion.nombre_comercial_snapshot ?? '',
+    ).trim();
+    const nombreRecolector = String(
+      recoleccion.nombre_recolector_snapshot ?? '',
+    ).trim();
+
+    if (!identidadPlanta) {
+      throw new BadRequestException(
+        `La recolección ${recoleccionRef} no tiene nombre_comercial_snapshot válido`,
+      );
+    }
+
+    if (!nombreRecolector) {
+      throw new BadRequestException(
+        `La recolección ${recoleccionRef} no tiene nombre_recolector_snapshot válido`,
+      );
+    }
 
     // Descripción completa
     const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${identidadPlanta} realizada por ${nombreRecolector} el ${fechaStr} a las ${horaStr} en ${ubicacionCompleta || coordenadas}. Cantidad: ${recoleccion.cantidad_inicial_canonica} ${recoleccion.unidad_canonica}. Método: ${recoleccion.metodo?.nombre || 'N/A'}. Estado de registro: ${recoleccion.estado_registro || 'N/A'}. Estado operativo: ${recoleccion.estado_operativo || 'N/A'}. Observaciones: ${recoleccion.observaciones || 'N/A'}.`;
@@ -704,161 +704,6 @@ export class RecoleccionesService {
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return data;
-  }
-
-  private async resolveRecoleccionSnapshots(params: {
-    plantaId: number;
-    usuarioId: number;
-    ubicacionId: number;
-  }): Promise<RecoleccionSnapshotPayload> {
-    const [plantaSnapshot, nombreRecolector, nombreComunidad] =
-      await Promise.all([
-        this.getPlantaSnapshotData(params.plantaId),
-        this.getUsuarioDisplayNameById(params.usuarioId),
-        this.getNombreComunidadByUbicacionId(params.ubicacionId),
-      ]);
-
-    return {
-      nombre_cientifico_snapshot: plantaSnapshot.nombre_cientifico_snapshot,
-      nombre_comercial_snapshot: plantaSnapshot.nombre_comercial_snapshot,
-      variedad_snapshot: plantaSnapshot.variedad_snapshot,
-      nombre_comunidad_snapshot: nombreComunidad,
-      nombre_recolector_snapshot: nombreRecolector,
-    };
-  }
-
-  private async getPlantaSnapshotData(plantaId: number): Promise<{
-    nombre_cientifico_snapshot: string;
-    nombre_comercial_snapshot: string;
-    variedad_snapshot: string;
-  }> {
-    const supabase = this.supabaseService.getClient();
-    const { data, error } = await supabase
-      .from('planta')
-      .select('nombre_cientifico, nombre_comun_principal, especie, variedad')
-      .eq('id', plantaId)
-      .single();
-
-    if (error || !data) {
-      this.logger.error(
-        `❌ Error al resolver snapshot de planta para recolección (planta_id=${plantaId}):`,
-        error,
-      );
-      throw new NotFoundException('Planta no encontrada');
-    }
-
-    const nombreCientifico = this.toRequiredTrimmedString(
-      data.nombre_cientifico,
-      `La planta ${plantaId} no tiene nombre_cientifico válido`,
-    );
-    const nombreComercial =
-      this.toTrimmedString(data.nombre_comun_principal) ??
-      this.toTrimmedString(data.especie);
-
-    if (!nombreComercial) {
-      throw new BadRequestException(
-        `La planta ${plantaId} no tiene nombre comercial válido ni especie de respaldo`,
-      );
-    }
-
-    return {
-      nombre_cientifico_snapshot: nombreCientifico,
-      nombre_comercial_snapshot: nombreComercial,
-      variedad_snapshot:
-        this.toTrimmedString(data.variedad) ?? SNAPSHOT_DEFAULTS.VARIEDAD,
-    };
-  }
-
-  private async getUsuarioDisplayNameById(usuarioId: number): Promise<string> {
-    const supabase = this.supabaseService.getClient();
-
-    const { data, error } = await supabase
-      .from('usuario')
-      .select('nombre, apellido, username')
-      .eq('id', usuarioId)
-      .single();
-
-    if (error || !data) {
-      this.logger.error(
-        `❌ Error al resolver snapshot de recolector (usuario_id=${usuarioId}):`,
-        error,
-      );
-      throw new NotFoundException('Usuario no encontrado');
-    }
-
-    const nombre = this.toTrimmedString(data.nombre);
-    const apellido = this.toTrimmedString(data.apellido);
-    const username = this.toTrimmedString(data.username);
-
-    const fullName = [nombre, apellido].filter(Boolean).join(' ').trim();
-    const displayName = fullName || username || nombre;
-    if (!displayName) {
-      throw new BadRequestException(
-        `El usuario ${usuarioId} no tiene nombre válido para snapshot`,
-      );
-    }
-
-    return displayName;
-  }
-
-  private async getNombreComunidadByUbicacionId(
-    ubicacionId: number,
-  ): Promise<string> {
-    const supabase = this.supabaseService.getClient();
-
-    const { data: ubicacionData, error: ubicacionError } = await supabase
-      .from('ubicacion')
-      .select('division_id')
-      .eq('id', ubicacionId)
-      .single();
-
-    if (ubicacionError || !ubicacionData) {
-      this.logger.error(
-        `❌ Error al resolver ubicación para snapshot de comunidad (ubicacion_id=${ubicacionId}):`,
-        ubicacionError,
-      );
-      throw new NotFoundException('Ubicación no encontrada');
-    }
-
-    const divisionId = ubicacionData.division_id;
-    if (!Number.isInteger(divisionId) || divisionId <= 0) {
-      return SNAPSHOT_DEFAULTS.COMUNIDAD;
-    }
-
-    const { data: divisionData, error: divisionError } = await supabase
-      .from('division_administrativa')
-      .select('nombre')
-      .eq('id', divisionId)
-      .single();
-
-    if (divisionError || !divisionData) {
-      this.logger.error(
-        `❌ Error al resolver división administrativa para snapshot de comunidad (division_id=${divisionId}):`,
-        divisionError,
-      );
-      throw new NotFoundException('División administrativa no encontrada');
-    }
-
-    return (
-      this.toTrimmedString(divisionData.nombre) ?? SNAPSHOT_DEFAULTS.COMUNIDAD
-    );
-  }
-
-  private toTrimmedString(value: unknown): string | null {
-    if (typeof value !== 'string') {
-      return null;
-    }
-
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : null;
-  }
-
-  private toRequiredTrimmedString(value: unknown, errorMessage: string): string {
-    const trimmed = this.toTrimmedString(value);
-    if (!trimmed) {
-      throw new BadRequestException(errorMessage);
-    }
-    return trimmed;
   }
 
   private async buildRecoleccionSearchOrConditions(
@@ -1191,7 +1036,7 @@ export class RecoleccionesService {
       dto.planta_id !== undefined || estadoActual === EstadoRegistro.RECHAZADO;
 
     if (shouldRefreshSnapshots) {
-      const snapshotPayload = await this.resolveRecoleccionSnapshots({
+      const snapshotPayload = await this.recoleccionSnapshotsService.resolve({
         plantaId: dto.planta_id ?? recoleccion.planta_id,
         usuarioId: recoleccion.usuario_id,
         ubicacionId: recoleccion.ubicacion_id,
@@ -1332,7 +1177,7 @@ export class RecoleccionesService {
       );
     }
 
-    const snapshotPayload = await this.resolveRecoleccionSnapshots({
+    const snapshotPayload = await this.recoleccionSnapshotsService.resolve({
       plantaId: recoleccion.planta_id,
       usuarioId: recoleccion.usuario_id,
       ubicacionId: recoleccion.ubicacion_id,
