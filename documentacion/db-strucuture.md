@@ -1,4 +1,3 @@
- Nuevo Diagrama:
 erDiagram
 
   PAIS {
@@ -145,6 +144,11 @@ erDiagram
     bigint id PK
     date fecha
     ENUM(tipo_material_origen) tipo_material
+    text nombre_cientifico_snapshot "NOT NULL - snapshot oficial se congela al VALIDAR"
+    text nombre_comercial_snapshot "NOT NULL - naming oficial; snapshot se congela al VALIDAR"
+    text variedad_snapshot "NOT NULL - snapshot oficial se congela al VALIDARr"
+    text nombre_comunidad_snapshot "NOT NULL - comunidad donde se recolectó; snapshot oficial se congela al VALIDAR"
+    text nombre_recolector_snapshot "NOT NULL - snapshot oficial se congela al VALIDAR"
     boolean especie_nueva
     text observaciones
     bigint usuario_id FK
@@ -153,26 +157,33 @@ erDiagram
     bigint metodo_id FK
     bigint planta_id FK
     timestamptz created_at
+    timestamptz updated_at "nullable - ultima edicion de ficha en BORRADOR o RECHAZADO"
+    bigint updated_by FK "nullable"
+    timestamptz deleted_at "nullable - soft delete solo para BORRADOR"
+    bigint deleted_by FK "nullable"
     text codigo_trazabilidad "UNIQUE"
     text blockchain_url
     text token_id
     text transaction_hash
     ENUM(estado_registro_recoleccion) estado_registro
-    text unidad_canonica
+    ENUM(unidad_medida) unidad_canonica
     numeric cantidad_inicial_canonica
-    bigint usuario_validacion_id FK
-    timestamptz fecha_validacion
+  bigint usuario_validacion_id FK "nullable - solo cuando la solicitud fue aprobada"
+    timestamptz fecha_validacion "nullable - solo cuando pasa a VALIDADO"
     text blockchain_tx_validacion
     numeric saldo_actual
     ENUM(estado_operativo_recoleccion) estado_operativo
   }
 
-  RECOLECCION_FOTO {
+  RECOLECCION_HISTORIAL {
     bigint id PK
     bigint recoleccion_id FK
-    text url
-    int peso_bytes
-    text formato
+    ENUM(tipo_historial_recoleccion) tipo_historial
+    ENUM(estado_registro_recoleccion) estado_origen
+    ENUM(estado_registro_recoleccion) estado_destino
+    text observaciones
+    jsonb metadata
+    bigint actor_user_id FK
     timestamptz created_at
   }
 
@@ -181,11 +192,11 @@ erDiagram
     bigint recoleccion_id FK
     ENUM(tipo_movimiento_recoleccion) tipo_movimiento
     numeric delta
-    ENUM(unidad_medida) unidad_medida_movimiento "[ MODIFICAR ]"
+    ENUM(unidad_medida) unidad_medida_movimiento
     ENUM(motivo_movimiento_recoleccion) motivo
     text motivo_otro
     bigint lote_vivero_id "FK a LOTE_VIVERO"
-    jsonb detalle_cambios
+    jsonb detalle_cambios "nullable - solo para correcciones o ajustes tecnicos futuros"
     bigint created_by FK
     timestamptz created_at
     text blockchain_tx_hash
@@ -197,12 +208,15 @@ erDiagram
     bigint planta_id FK "NOT NULL"
     bigint vivero_id FK "NOT NULL"
     bigint responsable_id FK "NOT NULL"
-    text nombre_cientifico_snapshot "NOT NULL - congelado al crear"
-    text nombre_comercial_snapshot "NOT NULL - congelado al crear"
-    ENUM(tipo_material_origen) tipo_material_snapshot "NOT NULL - congelado al crear"
+    text nombre_cientifico_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
+    text nombre_comercial_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
+    ENUM(tipo_material_origen) tipo_material_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
+    text variedad_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
+    text nombre_comunidad_origen_snapshot "NOT NULL - congelado al crear"
+    text nombre_responsable_snapshot "NOT NULL - congelado al crear"
     date fecha_inicio "NOT NULL"
     numeric cantidad_inicial_en_proceso "NOT NULL - lectura operativa de inicio"
-    ENUM(unidad_medida) unidad_medida_inicial "NOT NULL - UNIDAD | GR"
+    ENUM(unidad_medida) unidad_medida_inicial "NOT NULL - UNIDAD | G"
     int plantas_vivas_iniciales "nullable - materializado al registrar EMBOLSADO"
     int saldo_vivo_actual "nullable - caché controlada, nunca editar directo"
     ENUM(subetapa_adaptabilidad) subetapa_actual "nullable - SOMBRA | MEDIA_SOMBRA | SOL_DIRECTO"
@@ -221,7 +235,7 @@ EVENTO_LOTE_VIVERO {
     timestamptz created_at "NOT NULL - inmutable, cuándo se guardó realmente"
     bigint responsable_id FK "NOT NULL"
     numeric cantidad_afectada "nullable - plantas o unidades según tipo_evento"
-    ENUM(unidad_medida) unidad_medida_evento "nullable - UNIDAD | GR"
+    ENUM(unidad_medida) unidad_medida_evento "nullable - UNIDAD | G"
     ENUM(causa_merma_vivero) causa_merma "nullable - solo aplica en MERMA"
     ENUM(destino_tipo_vivero) destino_tipo "nullable - solo aplica en DESPACHO"
     text destino_referencia "nullable - solo aplica en DESPACHO"
@@ -322,7 +336,8 @@ EVENTO_LOTE_VIVERO {
   VIVERO ||--o{ RECOLECCION : almacena_en
   METODO_RECOLECCION ||--o{ RECOLECCION : metodo
   PLANTA ||--o{ RECOLECCION : identifica
-  RECOLECCION ||--o{ RECOLECCION_FOTO : fotos
+  RECOLECCION ||--o{ RECOLECCION_HISTORIAL : historial_ciclo_vida
+  USUARIO ||--o{ RECOLECCION_HISTORIAL : actor
   RECOLECCION ||--o{ RECOLECCION_MOVIMIENTO : movimientos
   USUARIO ||--o{ RECOLECCION_MOVIMIENTO : creado_por
   TIPOS_ENTIDAD_EVIDENCIA ||--o{ EVIDENCIAS_TRAZABILIDAD : tipo
@@ -369,17 +384,16 @@ estado_registro_recoleccion = [BORRADOR, PENDIENTE_VALIDACION, VALIDADO, RECHAZA
 tipo_movimiento_recoleccion = [
   CONSUMO_A_VIVERO, DESECHO, CORRECCION, AJUSTE_MIGRACION
 ]
-estado_operativo_recoleccion = [ABIERTO, CERRADO]
 
 motivo_movimiento_recoleccion = [
-  CONSUMO_PARA_VIVERO,
-  DESECHO_*,
-  CORRECCION_*,
-  AJUSTE_*,
-  OTRO
+CONSUMO_PARA_VIVERO, DESECHO_MALA_CALIDAD, DESECHO_PLAGA, DESECHO_HONGO, DESECHO_PUDRICION, DESECHO_DANO_TRANSPORTE, DESECHO_DANO_MANIPULACION, DESECHO_CONTAMINACION, DESECHO_CADUCIDAD, DESECHO_OTRO, CORRECCION_CONTEO_FISICO, CORRECCION_ERROR_DIGITACION, CORRECCION_CAMBIO_UNIDAD, CORRECCION_OTRO, AJUSTE_MIGRACION, AJUSTE_INTEGRIDAD_DATOS, AJUSTE_REVERSA_OPERACION, AJUSTE_OTRO, OTRO
 ]
-LOTE VIVIERO
+motivo_movimiento_recoleccion se mantiene en DB como enum oficial, pero debe documentarse y tratarse en tres grupos:
+Motivos funcionales: usados en la operación normal del negocio.
+Motivos correctivos: usados para correcciones auditadas.
+Motivos técnicos: usados para migraciones, integridad o reversas técnicas.
 
+LOTE VIVIERO
 estado_lote_vivero = [ACTIVO, FINALIZADO]
 
 tipo_evento_vivero = [
@@ -398,7 +412,8 @@ destino_tipo_vivero = [
 ]
 
 motivo_cierre_lote = [DESPACHO_TOTAL, PERDIDA_TOTAL, MIXTO]
+estado_operativo_recoleccion = [ABIERTO, CERRADO]
 USUARIO
 rol_usuario = [ADMIN, GENERAL, VALIDADOR, VOLUNTARIO]
 UNIDADES
-unidad_medida = [UNIDAD, GR]
+unidad_medida = [UNIDAD, G]
