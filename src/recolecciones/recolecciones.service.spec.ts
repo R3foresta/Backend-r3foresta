@@ -4,6 +4,8 @@ import { UbicacionesReadService } from '../common/ubicaciones/ubicaciones-read.s
 import { PinataService } from '../pinata/pinata.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { RecoleccionElegibilidadService } from './recoleccion-elegibilidad.service';
+import { RecoleccionHistorialService } from './recoleccion-historial.service';
+import { RecoleccionSnapshotsService } from './recoleccion-snapshots.service';
 import { RecoleccionesService } from './recolecciones.service';
 
 function createQueryBuilder(result: {
@@ -47,6 +49,8 @@ describe('RecoleccionesService', () => {
       providers: [
         RecoleccionesService,
         RecoleccionElegibilidadService,
+        RecoleccionHistorialService,
+        RecoleccionSnapshotsService,
         {
           provide: SupabaseService,
           useValue: supabaseService,
