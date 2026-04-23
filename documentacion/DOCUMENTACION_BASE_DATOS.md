@@ -185,7 +185,7 @@ Registra las recolecciones de material vegetal.
 | `vivero_id` | `bigint` | FK | Vivero de destino |
 | `metodo_id` | `bigint` | NOT NULL, FK | Método de recolección |
 | `planta_id` | `bigint` | FK | Planta asociada |
-| `created_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Fecha de registro |
+| `created_at` | `date` | NOT NULL, DEFAULT CURRENT_DATE | Fecha de registro |
 
 **Relaciones:**
 - **usuario_id** → `usuario(id)`
@@ -206,7 +206,7 @@ Almacena fotos asociadas a recolecciones.
 | `url` | `text` | NOT NULL | URL de la imagen |
 | `peso_bytes` | `integer` | max 5MB | Tamaño del archivo |
 | `formato` | `text` | JPG, JPEG, PNG | Formato de imagen |
-| `created_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Fecha de subida |
+| `created_at` | `date` | NOT NULL, DEFAULT CURRENT_DATE | Fecha de subida |
 
 **Relaciones:**
 - **recoleccion_id** → `recoleccion(id)`
@@ -238,8 +238,8 @@ Gestiona los lotes de material vegetal dentro del vivero con snapshots del mater
 | `estado_lote` | `estado_lote_vivero` | NOT NULL, DEFAULT 'ACTIVO' | Estado del lote |
 | `motivo_cierre` | `motivo_cierre_lote` | - | Motivo de cierre |
 | `codigo_trazabilidad` | `text` | NOT NULL, UNIQUE | Código de trazabilidad |
-| `created_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Fecha de creación |
-| `updated_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Última actualización |
+| `created_at` | `date` | NOT NULL, DEFAULT CURRENT_DATE | Fecha de creación |
+| `updated_at` | `date` | NOT NULL, DEFAULT CURRENT_DATE | Última actualización |
 
 **Relaciones:**
 - **recoleccion_id** → `recoleccion(id)`
@@ -258,7 +258,7 @@ Registra los eventos operativos de un lote de vivero.
 | `lote_id` | `bigint` | NOT NULL, FK | Lote asociado |
 | `tipo_evento` | `tipo_evento_vivero` | NOT NULL | Tipo de evento |
 | `fecha_evento` | `date` | NOT NULL | Fecha del evento |
-| `created_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Fecha de registro |
+| `created_at` | `date` | NOT NULL, DEFAULT CURRENT_DATE | Fecha de registro |
 | `responsable_id` | `bigint` | NOT NULL, FK | Responsable del evento |
 | `cantidad_afectada` | `numeric` | - | Cantidad afectada |
 | `unidad_medida_evento` | `unidad_medida` | - | Unidad del evento |
