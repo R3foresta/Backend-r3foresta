@@ -75,11 +75,16 @@ describe('RecoleccionesService', () => {
     expect(select).toContain('cantidad_inicial_canonica');
     expect(select).toContain('unidad_canonica');
     expect(select).toContain('blockchain_hash_validacion');
+    expect(select).toContain('nombre_cientifico_snapshot');
+    expect(select).toContain('nombre_comercial_snapshot');
+    expect(select).toContain('variedad_snapshot');
+    expect(select).toContain('nombre_comunidad_snapshot');
+    expect(select).toContain('nombre_recolector_snapshot');
     expect(select).not.toContain('cantidad:cantidad_inicial_canonica');
     expect(select).not.toContain('unidad:unidad_canonica');
   });
 
-  it('incluye elegibilidad y motivo en el detalle de recoleccion', async () => {
+  it('incluye elegibilidad y prioriza snapshots en el detalle de recoleccion', async () => {
     const recoleccionQuery = createQueryBuilder({
       data: {
         id: 9,
@@ -88,9 +93,13 @@ describe('RecoleccionesService', () => {
         saldo_actual: 40,
         cantidad_inicial_canonica: 50,
         planta_id: 12,
+        nombre_cientifico_snapshot: 'Swietenia macrophylla snapshot',
+        nombre_comercial_snapshot: 'Mara snapshot',
+        variedad_snapshot: 'Tardía',
         planta: {
           nombre_cientifico: 'Swietenia macrophylla',
           nombre_comun_principal: 'Mara',
+          variedad: 'Común',
         },
       },
       error: null,
@@ -127,6 +136,11 @@ describe('RecoleccionesService', () => {
 
     expect(response.data.saldo_actual).toBe(40);
     expect(response.data.estado_operativo).toBe('ABIERTO');
+    expect(response.data.nombre_cientifico).toBe(
+      'Swietenia macrophylla snapshot',
+    );
+    expect(response.data.nombre_comercial).toBe('Mara snapshot');
+    expect(response.data.variedad).toBe('Tardía');
     expect(response.data.elegible_para_vivero).toBe(false);
     expect(response.data.motivo_no_elegibilidad_para_vivero).toBe(
       'La recoleccion no tiene saldo suficiente para la cantidad solicitada.',
