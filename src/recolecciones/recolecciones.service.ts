@@ -24,6 +24,19 @@ import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 import { UbicacionesReadService } from '../common/ubicaciones/ubicaciones-read.service';
 import { RecoleccionElegibilidadService } from './recoleccion-elegibilidad.service';
 
+type RecoleccionSnapshotPayload = {
+  nombre_cientifico_snapshot: string;
+  nombre_comercial_snapshot: string;
+  variedad_snapshot: string;
+  nombre_comunidad_snapshot: string;
+  nombre_recolector_snapshot: string;
+};
+
+const SNAPSHOT_DEFAULTS = {
+  VARIEDAD: 'comun',
+  COMUNIDAD: 'SIN ESPECIFICAR',
+} as const;
+
 @Injectable()
 export class RecoleccionesService {
   private readonly logger = new Logger(RecoleccionesService.name);
@@ -39,7 +52,7 @@ export class RecoleccionesService {
   /**
    * Crea una nueva recolección bajo el contrato canónico del módulo.
    * - No recibe estado en request
-   * - nombre_cientifico/nombre_comercial se consumen desde planta
+   * - los snapshots se recalculan en borrador y se vuelven a congelar al validar
    * - tipo_material canónico: SEMILLA | ESQUEJE
    * - registra evidencias en evidencias_trazabilidad
    */
@@ -204,6 +217,11 @@ export class RecoleccionesService {
       }
 
       ubicacionId = Number(ubicacionCreada.id);
+      const snapshotPayload = await this.resolveRecoleccionSnapshots({
+        plantaId: createRecoleccionDto.planta_id,
+        usuarioId: userId,
+        ubicacionId,
+      });
 
       for (const file of files) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -220,7 +238,7 @@ export class RecoleccionesService {
           });
 
         if (uploadError) {
-          this.logger.error('❌ Error al subir foto v2:', uploadError);
+          this.logger.error('❌ Error al subir foto:', uploadError);
           throw new InternalServerErrorException('Error al subir foto');
         }
 
@@ -269,6 +287,7 @@ export class RecoleccionesService {
             vivero_id: createRecoleccionDto.vivero_id,
             metodo_id: createRecoleccionDto.metodo_id,
             planta_id: createRecoleccionDto.planta_id,
+            ...snapshotPayload,
             codigo_trazabilidad: codigoTrazabilidad,
             estado_registro: 'BORRADOR',
             unidad_canonica: canonicalInput.unidad_canonica,
@@ -376,7 +395,7 @@ export class RecoleccionesService {
     }
 
     throw new BadRequestException(
-      'tipo_material no soportado para v2. Usa SEMILLA o ESQUEJE.',
+      'tipo_material no soportado. Usa SEMILLA o ESQUEJE.',
     );
   }
 
@@ -521,7 +540,7 @@ export class RecoleccionesService {
   /**
    * Construye el JSON metadata en formato NFT estándar
    */
-  private buildNFTMetadata(recoleccion: any, nombreUsuario: string) {
+  private buildNFTMetadata(recoleccion: any) {
     // Obtener foto principal desde evidencias (campo fotos del response canónico)
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const fotos: any[] = recoleccion.fotos ?? [];
@@ -562,20 +581,28 @@ export class RecoleccionesService {
     ]
       .filter((value: number | null | undefined) => value !== null && value !== undefined)
       .join(', ');
+    const identidadPlanta = this.toRequiredTrimmedString(
+      recoleccion.nombre_comercial_snapshot,
+      `La recolección ${recoleccion.id ?? recoleccion.codigo_trazabilidad} no tiene nombre_comercial_snapshot válido`,
+    );
+    const nombreRecolector = this.toRequiredTrimmedString(
+      recoleccion.nombre_recolector_snapshot,
+      `La recolección ${recoleccion.id ?? recoleccion.codigo_trazabilidad} no tiene nombre_recolector_snapshot válido`,
+    );
 
     // Descripción completa
-    const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${recoleccion.planta?.especie || recoleccion.planta?.nombre_comun_principal} realizada por ${nombreUsuario} el ${fechaStr} a las ${horaStr} en ${ubicacionCompleta || coordenadas}. Cantidad: ${recoleccion.cantidad_inicial_canonica} ${recoleccion.unidad_canonica}. Método: ${recoleccion.metodo?.nombre || 'N/A'}. Estado de registro: ${recoleccion.estado_registro || 'N/A'}. Estado operativo: ${recoleccion.estado_operativo || 'N/A'}. Observaciones: ${recoleccion.observaciones || 'N/A'}.`;
+    const descripcion = `Recolección de ${recoleccion.tipo_material.toLowerCase()} de ${identidadPlanta} realizada por ${nombreRecolector} el ${fechaStr} a las ${horaStr} en ${ubicacionCompleta || coordenadas}. Cantidad: ${recoleccion.cantidad_inicial_canonica} ${recoleccion.unidad_canonica}. Método: ${recoleccion.metodo?.nombre || 'N/A'}. Estado de registro: ${recoleccion.estado_registro || 'N/A'}. Estado operativo: ${recoleccion.estado_operativo || 'N/A'}. Observaciones: ${recoleccion.observaciones || 'N/A'}.`;
 
     // Construir attributes
     const attributes = [
       { trait_type: 'ID', value: recoleccion.codigo_trazabilidad },
-      { trait_type: 'Usuario', value: nombreUsuario },
+      { trait_type: 'Usuario', value: nombreRecolector },
       { trait_type: 'Tipo', value: 'Recoleccion' },
       { trait_type: 'Fecha', value: fechaStr },
       { trait_type: 'Hora', value: horaStr },
       {
         trait_type: 'Especie',
-        value: recoleccion.planta?.especie || recoleccion.planta?.nombre_comun_principal,
+        value: identidadPlanta,
       },
       { trait_type: 'Tipo de material', value: recoleccion.tipo_material },
       {
@@ -603,7 +630,7 @@ export class RecoleccionesService {
     });
 
     return {
-      name: `${recoleccion.codigo_trazabilidad} - Recolección de ${recoleccion.planta?.especie || recoleccion.planta?.nombre_comun_principal}`,
+      name: `${recoleccion.codigo_trazabilidad} - Recolección de ${identidadPlanta}`,
       description: descripcion,
       image: imageUrl,
       attributes: attributes,
@@ -679,6 +706,183 @@ export class RecoleccionesService {
     return data;
   }
 
+  private async resolveRecoleccionSnapshots(params: {
+    plantaId: number;
+    usuarioId: number;
+    ubicacionId: number;
+  }): Promise<RecoleccionSnapshotPayload> {
+    const [plantaSnapshot, nombreRecolector, nombreComunidad] =
+      await Promise.all([
+        this.getPlantaSnapshotData(params.plantaId),
+        this.getUsuarioDisplayNameById(params.usuarioId),
+        this.getNombreComunidadByUbicacionId(params.ubicacionId),
+      ]);
+
+    return {
+      nombre_cientifico_snapshot: plantaSnapshot.nombre_cientifico_snapshot,
+      nombre_comercial_snapshot: plantaSnapshot.nombre_comercial_snapshot,
+      variedad_snapshot: plantaSnapshot.variedad_snapshot,
+      nombre_comunidad_snapshot: nombreComunidad,
+      nombre_recolector_snapshot: nombreRecolector,
+    };
+  }
+
+  private async getPlantaSnapshotData(plantaId: number): Promise<{
+    nombre_cientifico_snapshot: string;
+    nombre_comercial_snapshot: string;
+    variedad_snapshot: string;
+  }> {
+    const supabase = this.supabaseService.getClient();
+    const { data, error } = await supabase
+      .from('planta')
+      .select('nombre_cientifico, nombre_comun_principal, especie, variedad')
+      .eq('id', plantaId)
+      .single();
+
+    if (error || !data) {
+      this.logger.error(
+        `❌ Error al resolver snapshot de planta para recolección (planta_id=${plantaId}):`,
+        error,
+      );
+      throw new NotFoundException('Planta no encontrada');
+    }
+
+    const nombreCientifico = this.toRequiredTrimmedString(
+      data.nombre_cientifico,
+      `La planta ${plantaId} no tiene nombre_cientifico válido`,
+    );
+    const nombreComercial =
+      this.toTrimmedString(data.nombre_comun_principal) ??
+      this.toTrimmedString(data.especie);
+
+    if (!nombreComercial) {
+      throw new BadRequestException(
+        `La planta ${plantaId} no tiene nombre comercial válido ni especie de respaldo`,
+      );
+    }
+
+    return {
+      nombre_cientifico_snapshot: nombreCientifico,
+      nombre_comercial_snapshot: nombreComercial,
+      variedad_snapshot:
+        this.toTrimmedString(data.variedad) ?? SNAPSHOT_DEFAULTS.VARIEDAD,
+    };
+  }
+
+  private async getUsuarioDisplayNameById(usuarioId: number): Promise<string> {
+    const supabase = this.supabaseService.getClient();
+
+    const { data, error } = await supabase
+      .from('usuario')
+      .select('nombre, apellido, username')
+      .eq('id', usuarioId)
+      .single();
+
+    if (error || !data) {
+      this.logger.error(
+        `❌ Error al resolver snapshot de recolector (usuario_id=${usuarioId}):`,
+        error,
+      );
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const nombre = this.toTrimmedString(data.nombre);
+    const apellido = this.toTrimmedString(data.apellido);
+    const username = this.toTrimmedString(data.username);
+
+    const fullName = [nombre, apellido].filter(Boolean).join(' ').trim();
+    const displayName = fullName || username || nombre;
+    if (!displayName) {
+      throw new BadRequestException(
+        `El usuario ${usuarioId} no tiene nombre válido para snapshot`,
+      );
+    }
+
+    return displayName;
+  }
+
+  private async getNombreComunidadByUbicacionId(
+    ubicacionId: number,
+  ): Promise<string> {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: ubicacionData, error: ubicacionError } = await supabase
+      .from('ubicacion')
+      .select('division_id')
+      .eq('id', ubicacionId)
+      .single();
+
+    if (ubicacionError || !ubicacionData) {
+      this.logger.error(
+        `❌ Error al resolver ubicación para snapshot de comunidad (ubicacion_id=${ubicacionId}):`,
+        ubicacionError,
+      );
+      throw new NotFoundException('Ubicación no encontrada');
+    }
+
+    const divisionId = ubicacionData.division_id;
+    if (!Number.isInteger(divisionId) || divisionId <= 0) {
+      return SNAPSHOT_DEFAULTS.COMUNIDAD;
+    }
+
+    const { data: divisionData, error: divisionError } = await supabase
+      .from('division_administrativa')
+      .select('nombre')
+      .eq('id', divisionId)
+      .single();
+
+    if (divisionError || !divisionData) {
+      this.logger.error(
+        `❌ Error al resolver división administrativa para snapshot de comunidad (division_id=${divisionId}):`,
+        divisionError,
+      );
+      throw new NotFoundException('División administrativa no encontrada');
+    }
+
+    return (
+      this.toTrimmedString(divisionData.nombre) ?? SNAPSHOT_DEFAULTS.COMUNIDAD
+    );
+  }
+
+  private toTrimmedString(value: unknown): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  private toRequiredTrimmedString(value: unknown, errorMessage: string): string {
+    const trimmed = this.toTrimmedString(value);
+    if (!trimmed) {
+      throw new BadRequestException(errorMessage);
+    }
+    return trimmed;
+  }
+
+  private async buildRecoleccionSearchOrConditions(
+    searchTerm: string,
+  ): Promise<string[]> {
+    const normalizedSearch = searchTerm.trim();
+    const orConditions = [
+      `codigo_trazabilidad.ilike.%${normalizedSearch}%`,
+      `observaciones.ilike.%${normalizedSearch}%`,
+      `nombre_cientifico_snapshot.ilike.%${normalizedSearch}%`,
+      `nombre_comercial_snapshot.ilike.%${normalizedSearch}%`,
+      `variedad_snapshot.ilike.%${normalizedSearch}%`,
+      `nombre_comunidad_snapshot.ilike.%${normalizedSearch}%`,
+      `nombre_recolector_snapshot.ilike.%${normalizedSearch}%`,
+    ];
+    const plantIds = await this.findPlantIdsBySearchTerm(normalizedSearch);
+
+    if (plantIds.length > 0) {
+      orConditions.push(`planta_id.in.(${plantIds.join(',')})`);
+    }
+
+    return orConditions;
+  }
+
   /**
    * Ejecuta el flujo de Pinata + Blockchain para una recolección validada.
    * No lanza errores — los captura y loguea, para no perder la validación.
@@ -686,7 +890,6 @@ export class RecoleccionesService {
   private async executeBlockchainFlow(
     recoleccionId: number,
     codigoTrazabilidad: string,
-    nombreUsuario: string,
   ): Promise<void> {
     const supabase = this.supabaseService.getClient();
 
@@ -702,7 +905,7 @@ export class RecoleccionesService {
       const recoleccionEnriquecida = findResult.data;
 
       // Construir JSON NFT
-      const metadata = this.buildNFTMetadata(recoleccionEnriquecida, nombreUsuario);
+      const metadata = this.buildNFTMetadata(recoleccionEnriquecida);
 
       // Subir a Pinata
       this.logger.log(`📦 Subiendo metadata a IPFS/Pinata para ${codigoTrazabilidad}...`);
@@ -984,6 +1187,19 @@ export class RecoleccionesService {
       this.logger.log(`📝 Recolección ${id}: RECHAZADO → BORRADOR (edición de borrador)`);
     }
 
+    const shouldRefreshSnapshots =
+      dto.planta_id !== undefined || estadoActual === EstadoRegistro.RECHAZADO;
+
+    if (shouldRefreshSnapshots) {
+      const snapshotPayload = await this.resolveRecoleccionSnapshots({
+        plantaId: dto.planta_id ?? recoleccion.planta_id,
+        usuarioId: recoleccion.usuario_id,
+        ubicacionId: recoleccion.ubicacion_id,
+      });
+
+      Object.assign(updatePayload, snapshotPayload);
+    }
+
     if (Object.keys(updatePayload).length === 0 && files.length === 0) {
       throw new BadRequestException('No se enviaron campos para actualizar.');
     }
@@ -1116,13 +1332,20 @@ export class RecoleccionesService {
       );
     }
 
-    // Actualizar a VALIDADO
+    const snapshotPayload = await this.resolveRecoleccionSnapshots({
+      plantaId: recoleccion.planta_id,
+      usuarioId: recoleccion.usuario_id,
+      ubicacionId: recoleccion.ubicacion_id,
+    });
+
+    // Actualizar a VALIDADO y congelar snapshots oficiales
     const { error: updateError } = await supabase
       .from('recoleccion')
       .update({
         estado_registro: EstadoRegistro.VALIDADO,
         usuario_validacion_id: usuario.id,
         fecha_validacion: new Date().toISOString(),
+        ...snapshotPayload,
       })
       .eq('id', id);
 
@@ -1136,7 +1359,7 @@ export class RecoleccionesService {
     // Ejecutar Pinata + Blockchain (no bloquea si falla)
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const codigoTrazabilidad = String(recoleccion.codigo_trazabilidad ?? '');
-    await this.executeBlockchainFlow(id, codigoTrazabilidad, usuario.nombre);
+    await this.executeBlockchainFlow(id, codigoTrazabilidad);
 
     return this.findOne(id);
   }
@@ -1244,16 +1467,8 @@ export class RecoleccionesService {
     const searchTerm = filters.search ?? filters.q;
     const normalizedSearch = searchTerm?.trim();
     if (normalizedSearch) {
-      const plantIds = await this.findPlantIdsBySearchTerm(normalizedSearch);
-      const orConditions = [
-        `codigo_trazabilidad.ilike.%${normalizedSearch}%`,
-        `observaciones.ilike.%${normalizedSearch}%`,
-      ];
-
-      if (plantIds.length > 0) {
-        orConditions.push(`planta_id.in.(${plantIds.join(',')})`);
-      }
-
+      const orConditions =
+        await this.buildRecoleccionSearchOrConditions(normalizedSearch);
       query = query.or(orConditions.join(','));
     }
 
@@ -1348,16 +1563,8 @@ export class RecoleccionesService {
     const searchTerm = filters.search ?? filters.q;
     const normalizedSearch = searchTerm?.trim();
     if (normalizedSearch) {
-      const plantIds = await this.findPlantIdsBySearchTerm(normalizedSearch);
-      const orConditions = [
-        `codigo_trazabilidad.ilike.%${normalizedSearch}%`,
-        `observaciones.ilike.%${normalizedSearch}%`,
-      ];
-
-      if (plantIds.length > 0) {
-        orConditions.push(`planta_id.in.(${plantIds.join(',')})`);
-      }
-
+      const orConditions =
+        await this.buildRecoleccionSearchOrConditions(normalizedSearch);
       query = query.or(orConditions.join(','));
     }
 
@@ -1440,16 +1647,8 @@ export class RecoleccionesService {
     const searchTerm = filters.search ?? filters.q;
     const normalizedSearch = searchTerm?.trim();
     if (normalizedSearch) {
-      const plantIds = await this.findPlantIdsBySearchTerm(normalizedSearch);
-      const orConditions = [
-        `codigo_trazabilidad.ilike.%${normalizedSearch}%`,
-        `observaciones.ilike.%${normalizedSearch}%`,
-      ];
-
-      if (plantIds.length > 0) {
-        orConditions.push(`planta_id.in.(${plantIds.join(',')})`);
-      }
-
+      const orConditions =
+        await this.buildRecoleccionSearchOrConditions(normalizedSearch);
       query = query.or(orConditions.join(','));
     }
 
@@ -1551,6 +1750,11 @@ export class RecoleccionesService {
       usuario_validacion_id,
       fecha_validacion,
       blockchain_hash_validacion,
+      nombre_cientifico_snapshot,
+      nombre_comercial_snapshot,
+      variedad_snapshot,
+      nombre_comunidad_snapshot,
+      nombre_recolector_snapshot,
       usuario:usuario_id (id, nombre, apellido, username, correo),
       vivero:vivero_id (id, codigo, nombre, ubicacion_id),
       metodo:metodo_id (id, nombre, descripcion),
@@ -1682,9 +1886,17 @@ export class RecoleccionesService {
       recoleccion.estado_operativo ??
         (saldoActual > 0 ? 'ABIERTO' : 'CERRADO'),
     ).toUpperCase();
-    const nombreCientifico = recoleccion.planta?.nombre_cientifico ?? null;
-    const nombreComunPrincipal =
-      recoleccion.planta?.nombre_comun_principal ?? null;
+    const nombreCientifico =
+      recoleccion.nombre_cientifico_snapshot ??
+      recoleccion.planta?.nombre_cientifico ??
+      null;
+    const nombreComercial =
+      recoleccion.nombre_comercial_snapshot ??
+      recoleccion.planta?.nombre_comun_principal ??
+      recoleccion.planta?.especie ??
+      null;
+    const variedad =
+      recoleccion.variedad_snapshot ?? recoleccion.planta?.variedad ?? null;
 
     const fotos = evidencias.map((evidencia: any) => ({
       id: evidencia.id,
@@ -1712,8 +1924,9 @@ export class RecoleccionesService {
     return {
       ...recoleccion,
       nombre_cientifico: nombreCientifico,
-      nombre_comercial: nombreComunPrincipal,
-      nombre_comun_principal: nombreComunPrincipal,
+      nombre_comercial: nombreComercial,
+      nombre_comun_principal: nombreComercial,
+      variedad,
       saldo_actual: saldoActual,
       estado_operativo: estadoOperativo,
       estado_detalle: estadoOperativo,
