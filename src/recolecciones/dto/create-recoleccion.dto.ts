@@ -33,6 +33,7 @@ export const UNIDADES_CANONICAS_RECOLECCION = ['G', 'UNIDAD'] as const;
 
 export type UnidadCanonicaRecoleccion =
   (typeof UNIDADES_CANONICAS_RECOLECCION)[number];
+import { TipoMaterial } from '../enums/tipo-material.enum';
 
 export class CreateRecoleccionDto {
   @ApiProperty({
@@ -62,14 +63,10 @@ export class CreateRecoleccionDto {
     type: String,
     enum: UNIDADES_CANONICAS_RECOLECCION,
   })
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toUpperCase() : value,
-  )
+  @Transform(({ value }) => typeof value === 'string' ? value.trim().toUpperCase() : value)
   @IsNotEmpty({ message: 'unidad_canonica es requerida' })
   @IsString({ message: 'unidad_canonica debe ser texto' })
-  @IsIn(UNIDADES_CANONICAS_RECOLECCION, {
-    message: 'unidad_canonica debe ser G o UNIDAD',
-  })
+  @IsIn(UNIDADES_CANONICAS_RECOLECCION, { message: 'unidad_canonica debe ser G o UNIDAD' })
   unidad_canonica: UnidadCanonicaRecoleccion;
 
   @ApiProperty({
@@ -77,29 +74,32 @@ export class CreateRecoleccionDto {
     enum: TIPOS_MATERIAL_RECOLECCION_INPUT,
     example: 'SEMILLA',
   })
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toUpperCase() : value,
-  )
+  @Transform(({ value }) => typeof value === 'string' ? value.trim().toUpperCase() : value)
   @IsNotEmpty({ message: 'El tipo de material es requerido' })
-  @IsIn(TIPOS_MATERIAL_RECOLECCION_INPUT, {
-    message: 'tipo_material debe ser SEMILLA o ESQUEJE',
-  })
+  @IsIn(TIPOS_MATERIAL_RECOLECCION_INPUT, { message: 'tipo_material debe ser SEMILLA o ESQUEJE' })
   tipo_material: TipoMaterialRecoleccionInput;
+
+  @ApiProperty({
+    description: 'ID de planta existente. Obligatorio para asegurar integridad botánica.',
+    example: 10,
+    type: Number,
+  })
+  @IsNotEmpty({ message: 'El planta_id es requerido.' })
+  @IsNumber({}, { message: 'planta_id debe ser un número válido' })
+  planta_id: number;
 
   @ApiPropertyOptional({
     description: 'Observaciones adicionales sobre la recolección',
-    example: 'Muestra inicial de vivero para lote de pruebas',
+    example: 'Muestra inicial de lote',
     maxLength: 1000,
   })
   @IsOptional()
   @IsString()
-  @MaxLength(1000, {
-    message: 'Las observaciones no pueden superar 1000 caracteres',
-  })
+  @MaxLength(1000, { message: 'Las observaciones no pueden superar 1000 caracteres' })
   observaciones?: string;
 
   @ApiProperty({
-    description: 'Datos de ubicación geográfica donde se realizó la recolección',
+    description: 'Datos de ubicación geográfica',
     type: CreateUbicacionDto,
   })
   @IsNotEmpty({ message: 'La ubicación es requerida' })
@@ -108,7 +108,7 @@ export class CreateRecoleccionDto {
   ubicacion: CreateUbicacionDto;
 
   @ApiPropertyOptional({
-    description: 'ID del vivero al que se asignará la recolección',
+    description: 'ID del vivero',
     example: 3,
     type: Number,
   })
@@ -117,21 +117,11 @@ export class CreateRecoleccionDto {
   vivero_id?: number;
 
   @ApiProperty({
-    description: 'ID del método de recolección utilizado',
+    description: 'ID del método de recolección',
     example: 1,
     type: Number,
   })
   @IsNotEmpty({ message: 'El método de recolección es requerido' })
   @IsNumber({}, { message: 'metodo_id debe ser numérico' })
   metodo_id: number;
-
-  @ApiProperty({
-    description:
-      'ID de planta existente. La identidad vegetal canónica se consume desde planta al crear la recolección.',
-    example: 10,
-    type: Number,
-  })
-  @IsNotEmpty({ message: 'planta_id es requerido' })
-  @IsNumber({}, { message: 'planta_id debe ser numérico' })
-  planta_id: number;
 }

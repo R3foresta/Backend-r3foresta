@@ -28,6 +28,7 @@ import {
   TipoHistorialRecoleccion,
 } from './recoleccion-historial.service';
 import { RecoleccionSnapshotsService } from './recoleccion-snapshots.service';
+import { PlantasService } from 'src/plantas/plantas.service';
 
 @Injectable()
 export class RecoleccionesService {
@@ -41,6 +42,7 @@ export class RecoleccionesService {
     private readonly recoleccionElegibilidadService: RecoleccionElegibilidadService,
     private readonly recoleccionHistorialService: RecoleccionHistorialService,
     private readonly recoleccionSnapshotsService: RecoleccionSnapshotsService,
+    private readonly plantasService: PlantasService,
   ) {}
 
   /**
