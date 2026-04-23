@@ -23,6 +23,10 @@ import { EstadoRegistro } from './enums/estado-registro.enum';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 import { UbicacionesReadService } from '../common/ubicaciones/ubicaciones-read.service';
 import { RecoleccionElegibilidadService } from './recoleccion-elegibilidad.service';
+import {
+  RecoleccionHistorialService,
+  TipoHistorialRecoleccion,
+} from './recoleccion-historial.service';
 import { RecoleccionSnapshotsService } from './recoleccion-snapshots.service';
 
 @Injectable()
@@ -35,6 +39,7 @@ export class RecoleccionesService {
     private readonly blockchainService: BlockchainService,
     private readonly ubicacionesReadService: UbicacionesReadService,
     private readonly recoleccionElegibilidadService: RecoleccionElegibilidadService,
+    private readonly recoleccionHistorialService: RecoleccionHistorialService,
     private readonly recoleccionSnapshotsService: RecoleccionSnapshotsService,
   ) {}
 
@@ -346,7 +351,21 @@ export class RecoleccionesService {
         );
       }
 
-      return this.findOne(recoleccionId);
+      const response = await this.findOne(recoleccionId);
+
+      await this.recoleccionHistorialService.registrarEvento({
+        recoleccionId,
+        tipoHistorial: TipoHistorialRecoleccion.BORRADOR_CREADO,
+        estadoOrigen: null,
+        estadoDestino: EstadoRegistro.BORRADOR,
+        actorUserId: userId,
+        metadata: {
+          codigo_trazabilidad: codigoTrazabilidad,
+          origen: 'CREATE_RECOLECCION',
+        },
+      });
+
+      return response;
     } catch (error) {
       this.logger.error('❌ Error en create de recolección:', error);
 
@@ -704,6 +723,29 @@ export class RecoleccionesService {
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return data;
+  }
+
+  private async rollbackRecoleccionUpdate(
+    id: number,
+    rollbackPayload: Record<string, unknown>,
+    context: string,
+  ): Promise<void> {
+    if (Object.keys(rollbackPayload).length === 0) {
+      return;
+    }
+
+    const supabase = this.supabaseService.getClient();
+    const { error } = await supabase
+      .from('recoleccion')
+      .update(rollbackPayload)
+      .eq('id', id);
+
+    if (error) {
+      this.logger.error(
+        `⚠️ No se pudo revertir recolección ${id} después de error en ${context}:`,
+        error,
+      );
+    }
   }
 
   private async buildRecoleccionSearchOrConditions(
@@ -1147,6 +1189,26 @@ export class RecoleccionesService {
       throw new InternalServerErrorException('Error al enviar a validación');
     }
 
+    try {
+      await this.recoleccionHistorialService.registrarEvento({
+        recoleccionId: id,
+        tipoHistorial: TipoHistorialRecoleccion.SOLICITUD_VALIDACION,
+        estadoOrigen: EstadoRegistro.BORRADOR,
+        estadoDestino: EstadoRegistro.PENDIENTE_VALIDACION,
+        actorUserId: usuario.id,
+        metadata: {
+          codigo_trazabilidad: recoleccion.codigo_trazabilidad ?? null,
+        },
+      });
+    } catch (error) {
+      await this.rollbackRecoleccionUpdate(
+        id,
+        { estado_registro: EstadoRegistro.BORRADOR },
+        'historial de solicitud de validación',
+      );
+      throw error;
+    }
+
     this.logger.log(`✅ Recolección ${id}: BORRADOR → PENDIENTE_VALIDACION`);
     return this.findOne(id);
   }
@@ -1182,6 +1244,7 @@ export class RecoleccionesService {
       usuarioId: recoleccion.usuario_id,
       ubicacionId: recoleccion.ubicacion_id,
     });
+    const fechaValidacion = new Date().toISOString();
 
     // Actualizar a VALIDADO y congelar snapshots oficiales
     const { error: updateError } = await supabase
@@ -1189,7 +1252,7 @@ export class RecoleccionesService {
       .update({
         estado_registro: EstadoRegistro.VALIDADO,
         usuario_validacion_id: usuario.id,
-        fecha_validacion: new Date().toISOString(),
+        fecha_validacion: fechaValidacion,
         ...snapshotPayload,
       })
       .eq('id', id);
@@ -1197,6 +1260,31 @@ export class RecoleccionesService {
     if (updateError) {
       this.logger.error('❌ Error al aprobar validación:', updateError);
       throw new InternalServerErrorException('Error al aprobar validación');
+    }
+
+    try {
+      await this.recoleccionHistorialService.registrarEvento({
+        recoleccionId: id,
+        tipoHistorial: TipoHistorialRecoleccion.VALIDACION_APROBADA,
+        estadoOrigen: EstadoRegistro.PENDIENTE_VALIDACION,
+        estadoDestino: EstadoRegistro.VALIDADO,
+        actorUserId: usuario.id,
+        metadata: {
+          codigo_trazabilidad: recoleccion.codigo_trazabilidad ?? null,
+          fecha_validacion: fechaValidacion,
+        },
+      });
+    } catch (error) {
+      await this.rollbackRecoleccionUpdate(
+        id,
+        {
+          estado_registro: recoleccion.estado_registro ?? null,
+          usuario_validacion_id: recoleccion.usuario_validacion_id ?? null,
+          fecha_validacion: recoleccion.fecha_validacion ?? null,
+        },
+        'historial de validación aprobada',
+      );
+      throw error;
     }
 
     this.logger.log(`✅ Recolección ${id}: PENDIENTE_VALIDACION → VALIDADO (por usuario ${usuario.id})`);
@@ -1220,7 +1308,7 @@ export class RecoleccionesService {
     dto: RejectValidationDto,
   ) {
     const supabase = this.supabaseService.getClient();
-    await this.getUserByAuthId(authId);
+    const usuario = await this.getUserByAuthId(authId);
 
     this.assertReviewerRole(userRole);
 
@@ -1248,6 +1336,33 @@ export class RecoleccionesService {
     if (updateError) {
       this.logger.error('❌ Error al rechazar validación:', updateError);
       throw new InternalServerErrorException('Error al rechazar validación');
+    }
+
+    try {
+      await this.recoleccionHistorialService.registrarEvento({
+        recoleccionId: id,
+        tipoHistorial: TipoHistorialRecoleccion.VALIDACION_RECHAZADA,
+        estadoOrigen: EstadoRegistro.PENDIENTE_VALIDACION,
+        estadoDestino: EstadoRegistro.RECHAZADO,
+        observaciones: dto.motivo_rechazo,
+        actorUserId: usuario.id,
+        metadata: {
+          codigo_trazabilidad: recoleccion.codigo_trazabilidad ?? null,
+          motivo_rechazo: dto.motivo_rechazo,
+        },
+      });
+    } catch (error) {
+      await this.rollbackRecoleccionUpdate(
+        id,
+        {
+          estado_registro: recoleccion.estado_registro ?? null,
+          usuario_validacion_id: recoleccion.usuario_validacion_id ?? null,
+          fecha_validacion: recoleccion.fecha_validacion ?? null,
+          motivo_rechazo: recoleccion.motivo_rechazo ?? null,
+        },
+        'historial de validación rechazada',
+      );
+      throw error;
     }
 
     this.logger.log(`✅ Recolección ${id}: PENDIENTE_VALIDACION → RECHAZADO. Motivo: ${dto.motivo_rechazo}`);

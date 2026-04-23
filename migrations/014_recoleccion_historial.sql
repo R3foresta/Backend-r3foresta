@@ -204,3 +204,15 @@ CREATE TRIGGER trg_recoleccion_historial_prevent_mutation
 BEFORE UPDATE OR DELETE OR TRUNCATE ON public.recoleccion_historial
 FOR EACH STATEMENT
 EXECUTE FUNCTION public.fn_recoleccion_historial_prevent_mutation();
+
+GRANT INSERT, SELECT ON TABLE public.recoleccion_historial TO service_role;
+
+DO $$
+BEGIN
+  IF to_regclass('public.recoleccion_historial_id_seq') IS NOT NULL THEN
+    GRANT USAGE, SELECT ON SEQUENCE public.recoleccion_historial_id_seq TO service_role;
+  END IF;
+END;
+$$;
+
+NOTIFY pgrst, 'reload schema';
