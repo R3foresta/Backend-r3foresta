@@ -1,6 +1,1 @@
-export enum EstadoRegistro {
-  BORRADOR = 'BORRADOR',
-  PENDIENTE_VALIDACION = 'PENDIENTE_VALIDACION',
-  VALIDADO = 'VALIDADO',
-  RECHAZADO = 'RECHAZADO',
-}
+export * from '../domain/enums/estado-registro.enum';

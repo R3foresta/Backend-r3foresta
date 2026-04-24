@@ -1,5 +1,1 @@
-export enum FuentePlanta {
-  NATIVA = 'NATIVA',
-  INTRODUCIDA = 'INTRODUCIDA',
-  ENDEMICA = 'ENDEMICA',
-}
+export * from '../domain/enums/fuente-planta.enum';

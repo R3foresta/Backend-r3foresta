@@ -1,14 +1,24 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { BlockchainService } from '../blockchain/blockchain.service';
-import { UbicacionesReadService } from '../common/ubicaciones/ubicaciones-read.service';
-import { PinataService } from '../pinata/pinata.service';
-import { PlantasService } from '../plantas/plantas.service';
-import { SupabaseService } from '../supabase/supabase.service';
-import { RecoleccionElegibilidadService } from './recoleccion-elegibilidad.service';
-import { RecoleccionHistorialService } from './recoleccion-historial.service';
-import { RecoleccionSnapshotsService } from './recoleccion-snapshots.service';
-import { RecoleccionesService } from './recolecciones.service';
+import { BlockchainService } from '../../blockchain/blockchain.service';
+import { UbicacionesReadService } from '../../common/ubicaciones/ubicaciones-read.service';
+import { PinataService } from '../../pinata/pinata.service';
+import { PlantasService } from '../../plantas/plantas.service';
+import { SupabaseService } from '../../supabase/supabase.service';
+import { RecoleccionAuthService } from '../application/recoleccion-auth.service';
+import { RecoleccionBlockchainService } from '../application/recoleccion-blockchain.service';
+import { RecoleccionCodigosService } from '../application/recoleccion-codigos.service';
+import { RecoleccionCompletitudService } from '../application/recoleccion-completitud.service';
+import { RecoleccionConsultasService } from '../application/recoleccion-consultas.service';
+import { RecoleccionCreationService } from '../application/recoleccion-creation.service';
+import { RecoleccionDraftService } from '../application/recoleccion-draft.service';
+import { RecoleccionElegibilidadService } from '../application/recoleccion-elegibilidad.service';
+import { RecoleccionEvidenciasService } from '../application/recoleccion-evidencias.service';
+import { RecoleccionHistorialService } from '../application/recoleccion-historial.service';
+import { RecoleccionSnapshotsService } from '../application/recoleccion-snapshots.service';
+import { RecoleccionUbicacionService } from '../application/recoleccion-ubicacion.service';
+import { RecoleccionValidacionService } from '../application/recoleccion-validacion.service';
+import { RecoleccionesService } from '../application/recolecciones.service';
 
 /**
  * FUNCIÓN HELPER: Crea un mock de QueryBuilder
@@ -42,6 +52,9 @@ function createQueryBuilder(result: {
     or: jest.fn().mockReturnThis(),            // .or('id.eq.1,id.eq.2')
     order: jest.fn().mockReturnThis(),         // .order('fecha', { ascending: false })
     range: jest.fn().mockReturnThis(),         // .range(0, 9) - para paginación
+    update: jest.fn().mockReturnThis(),        // .update({ campo: valor })
+    insert: jest.fn().mockReturnThis(),        // .insert({ campo: valor })
+    delete: jest.fn().mockReturnThis(),        // .delete()
     
     // Métodos que devuelven Promise (terminan la cadena)
     single: jest.fn().mockResolvedValue(result),  // Espera UN resultado
@@ -102,6 +115,16 @@ describe('RecoleccionesService', () => {
         RecoleccionElegibilidadService,
         RecoleccionHistorialService,
         RecoleccionSnapshotsService,
+        RecoleccionAuthService,
+        RecoleccionBlockchainService,
+        RecoleccionCodigosService,
+        RecoleccionCompletitudService,
+        RecoleccionConsultasService,
+        RecoleccionCreationService,
+        RecoleccionDraftService,
+        RecoleccionEvidenciasService,
+        RecoleccionUbicacionService,
+        RecoleccionValidacionService,
         
         // MOCKS de dependencias externas
         // Formato: { provide: ClaseReal, useValue: MockObject }
@@ -263,6 +286,8 @@ describe('RecoleccionesService', () => {
         estado_operativo: 'ABIERTO',      // Todavía abierta para operaciones
         saldo_actual: 40,                 // Pero solo quedan 40 unidades
         cantidad_inicial_canonica: 50,    // Se recolectaron 50 inicialmente
+        tipo_material: 'SEMILLA',
+        ubicacion_id: 100,
         planta_id: 12,
         
         // SNAPSHOTS (datos congelados en el momento de la recolección)
@@ -283,9 +308,41 @@ describe('RecoleccionesService', () => {
     
     // Mock del query a la tabla 'evidencias_trazabilidad'
     const evidenciasQuery = createQueryBuilder({
-      data: [],  // Sin evidencias en este test
+      data: [
+        {
+          id: 1,
+          entidad_id: 9,
+          bucket: 'recoleccion_fotos',
+          ruta_archivo: 'foto-1.jpg',
+          es_principal: true,
+          orden: 0,
+        },
+        {
+          id: 2,
+          entidad_id: 9,
+          bucket: 'recoleccion_fotos',
+          ruta_archivo: 'foto-2.jpg',
+          es_principal: false,
+          orden: 1,
+        },
+      ],
       error: null,
     });
+    ubicacionesReadService.getUbicacionesByIds.mockResolvedValue(
+      new Map([
+        [
+          100,
+          {
+            id: 100,
+            nombre: 'Parcela',
+            referencia: null,
+            coordenadas: { lat: -16.5, lon: -68.15 },
+            pais: null,
+            division: null,
+          },
+        ],
+      ]),
+    );
 
     // 2. CONFIGURAR EL CLIENTE MOCK
     const client = {
@@ -371,6 +428,8 @@ describe('RecoleccionesService', () => {
           estado_operativo: 'ABIERTO',
           saldo_actual: 20,
           cantidad_inicial_canonica: 20,
+          tipo_material: 'SEMILLA',
+          ubicacion_id: 101,
           planta_id: 5,
           planta: {
             nombre_cientifico: 'Cedrela odorata',
@@ -384,6 +443,8 @@ describe('RecoleccionesService', () => {
           estado_operativo: 'ABIERTO',
           saldo_actual: 20,
           cantidad_inicial_canonica: 20,
+          tipo_material: 'SEMILLA',
+          ubicacion_id: 102,
           planta_id: 6,
           planta: {
             nombre_cientifico: 'Ceiba speciosa',
@@ -396,10 +457,69 @@ describe('RecoleccionesService', () => {
     });
     
     const evidenciasQuery = createQueryBuilder({
-      data: [],
+      data: [
+        {
+          id: 1,
+          entidad_id: 1,
+          bucket: 'recoleccion_fotos',
+          ruta_archivo: 'foto-1a.jpg',
+          es_principal: true,
+          orden: 0,
+        },
+        {
+          id: 2,
+          entidad_id: 1,
+          bucket: 'recoleccion_fotos',
+          ruta_archivo: 'foto-1b.jpg',
+          es_principal: false,
+          orden: 1,
+        },
+        {
+          id: 3,
+          entidad_id: 2,
+          bucket: 'recoleccion_fotos',
+          ruta_archivo: 'foto-2a.jpg',
+          es_principal: true,
+          orden: 0,
+        },
+        {
+          id: 4,
+          entidad_id: 2,
+          bucket: 'recoleccion_fotos',
+          ruta_archivo: 'foto-2b.jpg',
+          es_principal: false,
+          orden: 1,
+        },
+      ],
       error: null,
       count: 0,
     });
+    ubicacionesReadService.getUbicacionesByIds.mockResolvedValue(
+      new Map([
+        [
+          101,
+          {
+            id: 101,
+            nombre: 'Parcela 1',
+            referencia: null,
+            coordenadas: { lat: -16.5, lon: -68.15 },
+            pais: null,
+            division: null,
+          },
+        ],
+        [
+          102,
+          {
+            id: 102,
+            nombre: 'Parcela 2',
+            referencia: null,
+            coordenadas: { lat: -16.6, lon: -68.16 },
+            pais: null,
+            division: null,
+          },
+        ],
+      ]),
+    );
 
     // 2. CONFIGURAR CLIENTE MOCK
     const client = {
@@ -460,5 +580,287 @@ describe('RecoleccionesService', () => {
     // RECOLECCIÓN 2: ELEGIBLE (estado VALIDADO + saldo suficiente)
     expect(response.data[1].elegible_para_vivero).toBe(true);
     expect(response.data[1].cantidad_solicitada_vivero_evaluada).toBe(10);
+  });
+
+  it('rechaza cambio de unidad en borrador si no llega una cantidad nueva', async () => {
+    const usuarioQuery = createQueryBuilder({
+      data: { id: 7, nombre: 'Recolector', rol: 'GENERAL' },
+      error: null,
+    });
+    const recoleccionQuery = createQueryBuilder({
+      data: {
+        id: 9,
+        estado_registro: 'BORRADOR',
+        usuario_id: 7,
+        tipo_material: 'SEMILLA',
+        cantidad_inicial_canonica: 500,
+        unidad_canonica: 'G',
+      },
+      error: null,
+    });
+    const client = {
+      from: jest.fn((table: string) => {
+        if (table === 'usuario') return usuarioQuery;
+        if (table === 'recoleccion') return recoleccionQuery;
+        throw new Error(`Tabla no esperada en test: ${table}`);
+      }),
+    };
+
+    supabaseService.getClient.mockReturnValue(client);
+
+    await expect(
+      service.updateDraft(
+        9,
+        { unidad_canonica: 'KG' },
+        'auth-general',
+        'ADMIN',
+      ),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(recoleccionQuery.update).not.toHaveBeenCalled();
+  });
+
+  it('no reconvierte gramos persistidos cuando solo cambia el tipo de material', async () => {
+    const usuarioQuery = createQueryBuilder({
+      data: { id: 7, nombre: 'Recolector', rol: 'GENERAL' },
+      error: null,
+    });
+    const rawQuery = createQueryBuilder({
+      data: {
+        id: 9,
+        estado_registro: 'BORRADOR',
+        usuario_id: 7,
+        ubicacion_id: 100,
+        tipo_material: 'SEMILLA',
+        cantidad_inicial_canonica: 500,
+        unidad_canonica: 'G',
+      },
+      error: null,
+    });
+    const updateQuery = createQueryBuilder({ data: null, error: null });
+    const findOneQuery = createQueryBuilder({
+      data: {
+        id: 9,
+        estado_registro: 'BORRADOR',
+        estado_operativo: 'ABIERTO',
+        saldo_actual: 500,
+        cantidad_inicial_canonica: 500,
+        unidad_canonica: 'G',
+        tipo_material: 'SEMILLA',
+        usuario_id: 7,
+        ubicacion_id: 100,
+        planta_id: 12,
+        planta: {
+          nombre_cientifico: 'Swietenia macrophylla',
+          nombre_comun_principal: 'Mara',
+        },
+      },
+      error: null,
+    });
+    const evidenciasQuery = createQueryBuilder({
+      data: [
+        {
+          id: 1,
+          entidad_id: 9,
+          bucket: 'recoleccion_fotos',
+          ruta_archivo: 'foto-1.jpg',
+          es_principal: true,
+          orden: 0,
+        },
+        {
+          id: 2,
+          entidad_id: 9,
+          bucket: 'recoleccion_fotos',
+          ruta_archivo: 'foto-2.jpg',
+          es_principal: false,
+          orden: 1,
+        },
+      ],
+      error: null,
+    });
+    const recoleccionQueries = [rawQuery, updateQuery, findOneQuery];
+    const client = {
+      from: jest.fn((table: string) => {
+        if (table === 'usuario') return usuarioQuery;
+        if (table === 'recoleccion') return recoleccionQueries.shift();
+        if (table === 'evidencias_trazabilidad') return evidenciasQuery;
+        throw new Error(`Tabla no esperada en test: ${table}`);
+      }),
+      storage: {
+        from: jest.fn(() => ({
+          getPublicUrl: jest.fn(() => ({
+            data: { publicUrl: 'https://example.test/evidencia.jpg' },
+          })),
+        })),
+      },
+    };
+
+    supabaseService.getClient.mockReturnValue(client);
+    ubicacionesReadService.getUbicacionesByIds.mockResolvedValue(
+      new Map([
+        [
+          100,
+          {
+            id: 100,
+            nombre: 'Parcela',
+            referencia: null,
+            coordenadas: { lat: -16.5, lon: -68.15 },
+            pais: null,
+            division: null,
+          },
+        ],
+      ]),
+    );
+
+    await service.updateDraft(
+      9,
+      { tipo_material: 'SEMILLA' },
+      'auth-general',
+      'ADMIN',
+    );
+
+    expect(updateQuery.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tipo_material: 'SEMILLA',
+        cantidad_inicial_canonica: 500,
+        unidad_canonica: 'G',
+      }),
+    );
+  });
+
+  it('bloquea submit si el borrador no tiene evidencia minima completa', async () => {
+    const usuarioQuery = createQueryBuilder({
+      data: { id: 7, nombre: 'Recolector', rol: 'GENERAL' },
+      error: null,
+    });
+    const recoleccionQuery = createQueryBuilder({
+      data: {
+        id: 9,
+        fecha: '2026-03-04',
+        estado_registro: 'BORRADOR',
+        usuario_id: 7,
+        ubicacion_id: 100,
+        vivero_id: 3,
+        metodo_id: 1,
+        planta_id: 12,
+        tipo_material: 'SEMILLA',
+        cantidad_inicial_canonica: 500,
+        unidad_canonica: 'G',
+      },
+      error: null,
+    });
+    const ubicacionQuery = createQueryBuilder({
+      data: { latitud: -16.5, longitud: -68.15 },
+      error: null,
+    });
+    const evidenciasQuery = createQueryBuilder({
+      data: null,
+      error: null,
+      count: 1,
+    });
+    const client = {
+      from: jest.fn((table: string) => {
+        if (table === 'usuario') return usuarioQuery;
+        if (table === 'recoleccion') return recoleccionQuery;
+        if (table === 'ubicacion') return ubicacionQuery;
+        if (table === 'evidencias_trazabilidad') return evidenciasQuery;
+        throw new Error(`Tabla no esperada en test: ${table}`);
+      }),
+    };
+
+    supabaseService.getClient.mockReturnValue(client);
+
+    await expect(
+      service.submitForValidation(9, 'auth-general', 'GENERAL'),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(recoleccionQuery.update).not.toHaveBeenCalled();
+  });
+
+  it('bloquea approve si la solicitud no tiene evidencia minima completa', async () => {
+    const usuarioQuery = createQueryBuilder({
+      data: { id: 8, nombre: 'Validador', rol: 'VALIDADOR' },
+      error: null,
+    });
+    const recoleccionQuery = createQueryBuilder({
+      data: {
+        id: 9,
+        fecha: '2026-03-04',
+        estado_registro: 'PENDIENTE_VALIDACION',
+        usuario_id: 7,
+        ubicacion_id: 100,
+        vivero_id: 3,
+        metodo_id: 1,
+        planta_id: 12,
+        tipo_material: 'SEMILLA',
+        cantidad_inicial_canonica: 500,
+        unidad_canonica: 'G',
+      },
+      error: null,
+    });
+    const ubicacionQuery = createQueryBuilder({
+      data: { latitud: -16.5, longitud: -68.15 },
+      error: null,
+    });
+    const evidenciasQuery = createQueryBuilder({
+      data: null,
+      error: null,
+      count: 1,
+    });
+    const client = {
+      from: jest.fn((table: string) => {
+        if (table === 'usuario') return usuarioQuery;
+        if (table === 'recoleccion') return recoleccionQuery;
+        if (table === 'ubicacion') return ubicacionQuery;
+        if (table === 'evidencias_trazabilidad') return evidenciasQuery;
+        throw new Error(`Tabla no esperada en test: ${table}`);
+      }),
+    };
+
+    supabaseService.getClient.mockReturnValue(client);
+
+    await expect(
+      service.approveValidation(9, 'auth-validador', 'VALIDADOR'),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(recoleccionQuery.update).not.toHaveBeenCalled();
+  });
+
+  it('usa el rol de base de datos para aprobar aunque el header venga elevado', async () => {
+    const usuarioQuery = createQueryBuilder({
+      data: { id: 7, nombre: 'Recolector', rol: 'GENERAL' },
+      error: null,
+    });
+    const client = {
+      from: jest.fn((table: string) => {
+        if (table === 'usuario') return usuarioQuery;
+        throw new Error(`Tabla no esperada en test: ${table}`);
+      }),
+    };
+
+    supabaseService.getClient.mockReturnValue(client);
+
+    await expect(
+      service.approveValidation(9, 'auth-general', 'ADMIN'),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('usa el rol de base de datos para crear aunque el header venga elevado', async () => {
+    const usuarioQuery = createQueryBuilder({
+      data: { id: 7, nombre: 'Recolector', rol: 'VOLUNTARIO' },
+      error: null,
+    });
+    const client = {
+      from: jest.fn((table: string) => {
+        if (table === 'usuario') return usuarioQuery;
+        throw new Error(`Tabla no esperada en test: ${table}`);
+      }),
+    };
+
+    supabaseService.getClient.mockReturnValue(client);
+
+    await expect(
+      service.create({} as any, 'auth-voluntario', 'ADMIN', []),
+    ).rejects.toThrow(ForbiddenException);
   });
 });

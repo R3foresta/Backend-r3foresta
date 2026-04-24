@@ -1,4 +1,1 @@
-export enum TipoMaterial {
-  SEMILLA = 'SEMILLA',
-  ESQUEJE = 'ESQUEJE',
-}
+export * from '../domain/enums/tipo-material.enum';

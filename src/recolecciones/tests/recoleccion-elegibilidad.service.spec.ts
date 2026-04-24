@@ -1,9 +1,15 @@
 import { BadRequestException } from '@nestjs/common';
-import { RecoleccionElegibilidadService } from './recoleccion-elegibilidad.service';
-import { EstadoRegistro } from './enums/estado-registro.enum';
+import { RecoleccionElegibilidadService } from '../application/recoleccion-elegibilidad.service';
+import { EstadoRegistro } from '../domain/enums/estado-registro.enum';
 
 describe('RecoleccionElegibilidadService', () => {
   let service: RecoleccionElegibilidadService;
+  const elegibleBase = {
+    tipo_material: 'SEMILLA',
+    fotos_count: 2,
+    latitud: -16.5,
+    longitud: -68.15,
+  };
 
   beforeEach(() => {
     service = new RecoleccionElegibilidadService();
@@ -16,6 +22,7 @@ describe('RecoleccionElegibilidadService', () => {
         estado_operativo: 'ABIERTO',
         saldo_actual: 120,
         planta_id: 55,
+        ...elegibleBase,
       },
       80,
     );
@@ -37,6 +44,7 @@ describe('RecoleccionElegibilidadService', () => {
       estado_registro: EstadoRegistro.VALIDADO,
       saldo_actual: 10,
       planta_id: 55,
+      ...elegibleBase,
     });
 
     expect(resultado.elegible).toBe(true);
@@ -51,6 +59,7 @@ describe('RecoleccionElegibilidadService', () => {
       estado_registro: EstadoRegistro.VALIDADO,
       saldo_actual: 0,
       planta_id: 55,
+      ...elegibleBase,
     });
 
     expect(resultado.elegible).toBe(false);
@@ -80,6 +89,7 @@ describe('RecoleccionElegibilidadService', () => {
       estado_operativo: 'CERRADO',
       saldo_actual: 0,
       planta_id: 55,
+      ...elegibleBase,
     });
 
     expect(resultado.elegible).toBe(false);
@@ -94,6 +104,7 @@ describe('RecoleccionElegibilidadService', () => {
       estado_operativo: 'INCONSISTENTE',
       saldo_actual: 80,
       planta_id: 55,
+      ...elegibleBase,
     });
 
     expect(resultado.elegible).toBe(false);
@@ -109,11 +120,48 @@ describe('RecoleccionElegibilidadService', () => {
       estado_operativo: 'ABIERTO',
       saldo_actual: 50,
       planta_id: null,
+      ...elegibleBase,
     });
 
     expect(resultado.elegible).toBe(false);
     expect(resultado.motivo_no_elegibilidad).toBe(
       'La recoleccion no tiene planta asociada.',
+    );
+  });
+
+  it('rechaza una recoleccion validada sin evidencia minima', () => {
+    const resultado = service.evaluarRecoleccionElegibleParaInicioVivero({
+      estado_registro: EstadoRegistro.VALIDADO,
+      estado_operativo: 'ABIERTO',
+      saldo_actual: 50,
+      planta_id: 55,
+      tipo_material: 'SEMILLA',
+      fotos_count: 1,
+      latitud: -16.5,
+      longitud: -68.15,
+    });
+
+    expect(resultado.elegible).toBe(false);
+    expect(resultado.motivo_no_elegibilidad).toBe(
+      'La recoleccion no tiene evidencia minima completa.',
+    );
+  });
+
+  it('rechaza una recoleccion validada sin ubicacion valida', () => {
+    const resultado = service.evaluarRecoleccionElegibleParaInicioVivero({
+      estado_registro: EstadoRegistro.VALIDADO,
+      estado_operativo: 'ABIERTO',
+      saldo_actual: 50,
+      planta_id: 55,
+      tipo_material: 'SEMILLA',
+      fotos_count: 2,
+      latitud: null,
+      longitud: -68.15,
+    });
+
+    expect(resultado.elegible).toBe(false);
+    expect(resultado.motivo_no_elegibilidad).toBe(
+      'La recoleccion no tiene ubicacion valida para iniciar vivero.',
     );
   });
 
@@ -124,6 +172,7 @@ describe('RecoleccionElegibilidadService', () => {
         estado_operativo: 'ABIERTO',
         saldo_actual: 25,
         planta_id: 55,
+        ...elegibleBase,
       },
       30,
     );
@@ -142,6 +191,7 @@ describe('RecoleccionElegibilidadService', () => {
           estado_operativo: 'ABIERTO',
           saldo_actual: 25,
           planta_id: 55,
+          ...elegibleBase,
         },
         0,
       ),
