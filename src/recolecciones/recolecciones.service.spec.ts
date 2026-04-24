@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BlockchainService } from '../blockchain/blockchain.service';
 import { UbicacionesReadService } from '../common/ubicaciones/ubicaciones-read.service';
@@ -158,6 +159,85 @@ describe('RecoleccionesService', () => {
     // Verificar que NO tenga aliases incorrectos
     expect(select).not.toContain('cantidad:cantidad_inicial_canonica');
     expect(select).not.toContain('unidad:unidad_canonica');
+  });
+
+  /**
+   * TEST 1.1: Verifica la regla RF-REC-01 sobre unidades oficiales.
+   *
+   * REQUERIMIENTO:
+   * - El frontend puede mandar "kg", "g" o "unidad".
+   * - El backend solo debe persistir "G" o "UNIDAD".
+   * - "kg" existe solo como input y debe convertirse a gramos.
+   *
+   * POR QUÉ USAMOS EL MÉTODO PRIVADO:
+   * - Esta regla vive dentro de la normalización interna del servicio.
+   * - Probarla aquí permite ver el contrato sin armar todo un flujo create()
+   *   con mocks de usuario, vivero, planta, ubicación, storage y evidencias.
+   */
+  it('normaliza kg/g/unidad a unidades canonicas persistibles', () => {
+    // Caso 1: 2.5 kg de semilla deben persistirse como 2500 G.
+    // Importante: la unidad final NO es KG, porque KG no se guarda en DB.
+    const semillaEnKg = (service as any).normalizeAndValidateCantidadYUnidad(
+      2.5,
+      'kg',
+      'SEMILLA',
+    );
+
+    expect(semillaEnKg).toEqual({
+      unidad_canonica: 'G',
+      cantidad_canonica: 2500,
+    });
+
+    // Caso 2: 125.75 g de semilla ya está en la unidad oficial de peso.
+    // La cantidad puede tener decimales porque SEMILLA por peso permite gramos.
+    const semillaEnGramos = (service as any).normalizeAndValidateCantidadYUnidad(
+      125.75,
+      'g',
+      'SEMILLA',
+    );
+
+    expect(semillaEnGramos).toEqual({
+      unidad_canonica: 'G',
+      cantidad_canonica: 125.75,
+    });
+
+    // Caso 3: 12 unidades de semilla deben persistirse como UNIDAD.
+    // Para UNIDAD la cantidad debe ser entera, porque representa conteo.
+    const semillaEnUnidades = (service as any).normalizeAndValidateCantidadYUnidad(
+      12,
+      'unidad',
+      'SEMILLA',
+    );
+
+    expect(semillaEnUnidades).toEqual({
+      unidad_canonica: 'UNIDAD',
+      cantidad_canonica: 12,
+    });
+  });
+
+  /**
+   * TEST 1.2: Verifica restricciones especiales de ESQUEJE y conteo entero.
+   *
+   * REQUERIMIENTO:
+   * - ESQUEJE solo admite UNIDAD.
+   * - Cualquier captura en UNIDAD debe ser un número entero.
+   */
+  it('rechaza esqueje por peso y cantidades decimales cuando la unidad es UNIDAD', () => {
+    // ESQUEJE no puede registrarse por peso. Si alguien manda G o KG,
+    // el servicio debe cortar antes de persistir datos inválidos.
+    expect(() =>
+      (service as any).normalizeAndValidateCantidadYUnidad(10, 'g', 'ESQUEJE'),
+    ).toThrow(BadRequestException);
+
+    // UNIDAD representa conteo. 3.5 unidades no tiene sentido inventariable,
+    // así que debe rechazarse para SEMILLA y también para ESQUEJE.
+    expect(() =>
+      (service as any).normalizeAndValidateCantidadYUnidad(
+        3.5,
+        'unidad',
+        'SEMILLA',
+      ),
+    ).toThrow(BadRequestException);
   });
 
   /**

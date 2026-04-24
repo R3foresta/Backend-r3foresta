@@ -81,7 +81,7 @@ export class RecoleccionesController {
         cantidad_inicial_canonica: { type: 'number', example: 250 },
         unidad_canonica: {
           type: 'string',
-          enum: ['G', 'UNIDAD'],
+          enum: ['KG', 'G', 'UNIDAD'],
           example: 'G',
         },
         tipo_material: {
@@ -150,7 +150,7 @@ export class RecoleccionesController {
         cantidad_inicial_canonica: { type: 'number', example: 250 },
         unidad_canonica: {
           type: 'string',
-          enum: ['G', 'UNIDAD'],
+          enum: ['KG', 'G', 'UNIDAD'],
           example: 'G',
         },
         tipo_material: {
@@ -432,6 +432,7 @@ export class RecoleccionesController {
     fotos?: any[],
   ) {
     const parsedBody = this.parseBodyRaw(bodyRaw);
+    this.applyLegacyFieldAliases(parsedBody);
 
     if (parsedBody.ubicacion) {
       this.assertNoLegacyUbicacionFields(parsedBody.ubicacion);
@@ -500,6 +501,7 @@ export class RecoleccionesController {
     bodyRaw: any,
   ): Promise<UpdateDraftDto> {
     const parsedBody = this.parseBodyRaw(bodyRaw);
+    this.applyLegacyFieldAliases(parsedBody);
     this.normalizeUpdateDraftNumericFields(parsedBody);
 
     const updateDraftDto = plainToInstance(UpdateDraftDto, parsedBody);
@@ -523,14 +525,116 @@ export class RecoleccionesController {
 
     if (typeof bodyRaw === 'string') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      return qs.parse(bodyRaw);
+      return this.parsePotentialJsonFields(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        qs.parse(bodyRaw),
+      );
     }
 
     if (typeof bodyRaw === 'object') {
-      return bodyRaw;
+      const entries = Object.entries(bodyRaw);
+      const hasBracketNotation = entries.some(([key]) => key.includes('['));
+
+      if (hasBracketNotation) {
+        const queryString = entries
+          .map(
+            ([key, value]) =>
+              `${encodeURIComponent(key)}=${encodeURIComponent(this.valueToString(value))}`,
+          )
+          .join('&');
+
+        return this.parsePotentialJsonFields(qs.parse(queryString));
+      }
+
+      return this.parsePotentialJsonFields(bodyRaw);
     }
 
     return {};
+  }
+
+  private parsePotentialJsonFields(parsedBody: any): any {
+    if (
+      parsedBody &&
+      typeof parsedBody === 'object' &&
+      typeof parsedBody.ubicacion === 'string'
+    ) {
+      const rawUbicacion = String(parsedBody.ubicacion).trim();
+      if (rawUbicacion.startsWith('{') && rawUbicacion.endsWith('}')) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          parsedBody.ubicacion = JSON.parse(rawUbicacion);
+        } catch {
+          // Si no es JSON válido, se deja tal cual para que class-validator responda.
+        }
+      }
+    }
+
+    return parsedBody;
+  }
+
+  private valueToString(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+
+    return String(value);
+  }
+
+  private applyLegacyFieldAliases(parsedBody: any): void {
+    if (!parsedBody || typeof parsedBody !== 'object') {
+      return;
+    }
+
+    if (
+      parsedBody.cantidad_inicial_canonica === undefined &&
+      parsedBody.cantidadInicialCanonica !== undefined
+    ) {
+      parsedBody.cantidad_inicial_canonica = parsedBody.cantidadInicialCanonica;
+    }
+
+    if (
+      parsedBody.unidad_canonica === undefined &&
+      parsedBody.unidadCanonica !== undefined
+    ) {
+      parsedBody.unidad_canonica = parsedBody.unidadCanonica;
+    }
+
+    if (
+      parsedBody.tipo_material === undefined &&
+      parsedBody.tipoMaterial !== undefined
+    ) {
+      parsedBody.tipo_material = parsedBody.tipoMaterial;
+    }
+
+    if (parsedBody.metodo_id === undefined && parsedBody.metodoId !== undefined) {
+      parsedBody.metodo_id = parsedBody.metodoId;
+    }
+
+    if (parsedBody.vivero_id === undefined && parsedBody.viveroId !== undefined) {
+      parsedBody.vivero_id = parsedBody.viveroId;
+    }
+
+    if (parsedBody.planta_id === undefined) {
+      if (parsedBody.plantaId !== undefined) {
+        parsedBody.planta_id = parsedBody.plantaId;
+      } else if (
+        parsedBody.planta &&
+        typeof parsedBody.planta === 'object' &&
+        parsedBody.planta.id !== undefined
+      ) {
+        parsedBody.planta_id = parsedBody.planta.id;
+      } else if (
+        parsedBody.planta !== undefined &&
+        (typeof parsedBody.planta === 'string' ||
+          typeof parsedBody.planta === 'number')
+      ) {
+        parsedBody.planta_id = parsedBody.planta;
+      }
+    }
   }
 
   private normalizeUpdateDraftNumericFields(parsedBody: any): void {

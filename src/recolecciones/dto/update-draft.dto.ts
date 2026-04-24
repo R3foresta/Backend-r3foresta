@@ -11,10 +11,10 @@ import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   TIPOS_MATERIAL_RECOLECCION_INPUT,
-  UNIDADES_CANONICAS_RECOLECCION,
+  UNIDADES_INPUT_RECOLECCION,
 } from './create-recoleccion.dto';
 import type { TipoMaterialRecoleccionInput } from './create-recoleccion.dto';
-import type { UnidadCanonicaRecoleccion } from './create-recoleccion.dto';
+import type { UnidadInputRecoleccion } from './create-recoleccion.dto';
 
 export class UpdateDraftDto {
   @ApiPropertyOptional({
@@ -35,8 +35,8 @@ export class UpdateDraftDto {
   cantidad_inicial_canonica?: number;
 
   @ApiPropertyOptional({
-    description: 'Unidad canónica inicial (G o UNIDAD)',
-    enum: UNIDADES_CANONICAS_RECOLECCION,
+    description: 'Unidad inicial. KG solo es input; se normaliza a G antes de persistir.',
+    enum: UNIDADES_INPUT_RECOLECCION,
     example: 'G',
   })
   @IsOptional()
@@ -44,10 +44,10 @@ export class UpdateDraftDto {
     typeof value === 'string' ? value.trim().toUpperCase() : value,
   )
   @IsString({ message: 'unidad_canonica debe ser texto' })
-  @IsIn(UNIDADES_CANONICAS_RECOLECCION, {
-    message: 'unidad_canonica debe ser G o UNIDAD',
+  @IsIn(UNIDADES_INPUT_RECOLECCION, {
+    message: 'unidad_canonica debe ser KG, G o UNIDAD',
   })
-  unidad_canonica?: UnidadCanonicaRecoleccion;
+  unidad_canonica?: UnidadInputRecoleccion;
 
   @ApiPropertyOptional({
     description: 'Tipo de material',

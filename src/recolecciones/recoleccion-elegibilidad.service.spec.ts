@@ -29,6 +29,37 @@ describe('RecoleccionElegibilidadService', () => {
     });
   });
 
+  it('deriva estado ABIERTO desde saldo positivo cuando estado_operativo no viene informado', () => {
+    // RF-REC-05 dice que el estado operativo depende del saldo.
+    // Si la BD o una proyección no manda estado_operativo, el servicio no debe fallar:
+    // puede resolver ABIERTO porque saldo_actual es mayor a 0.
+    const resultado = service.evaluarRecoleccionElegibleParaInicioVivero({
+      estado_registro: EstadoRegistro.VALIDADO,
+      saldo_actual: 10,
+      planta_id: 55,
+    });
+
+    expect(resultado.elegible).toBe(true);
+    expect(resultado.estado_operativo).toBe('ABIERTO');
+    expect(resultado.saldo_actual).toBe(10);
+  });
+
+  it('deriva estado CERRADO y rechaza consumo cuando el saldo disponible es cero', () => {
+    // RF-REC-05: si saldo_actual = 0, el lote origen queda CERRADO.
+    // Aunque el registro este VALIDADO, no debe ser elegible para iniciar vivero.
+    const resultado = service.evaluarRecoleccionElegibleParaInicioVivero({
+      estado_registro: EstadoRegistro.VALIDADO,
+      saldo_actual: 0,
+      planta_id: 55,
+    });
+
+    expect(resultado.elegible).toBe(false);
+    expect(resultado.estado_operativo).toBe('CERRADO');
+    expect(resultado.motivo_no_elegibilidad).toBe(
+      'La recoleccion esta cerrada para consumo hacia vivero.',
+    );
+  });
+
   it('rechaza cuando la recoleccion no esta validada', () => {
     const resultado = service.evaluarRecoleccionElegibleParaInicioVivero({
       estado_registro: EstadoRegistro.PENDIENTE_VALIDACION,

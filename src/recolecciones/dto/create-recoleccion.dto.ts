@@ -33,6 +33,11 @@ export const UNIDADES_CANONICAS_RECOLECCION = ['G', 'UNIDAD'] as const;
 
 export type UnidadCanonicaRecoleccion =
   (typeof UNIDADES_CANONICAS_RECOLECCION)[number];
+
+export const UNIDADES_INPUT_RECOLECCION = ['KG', 'G', 'UNIDAD'] as const;
+
+export type UnidadInputRecoleccion =
+  (typeof UNIDADES_INPUT_RECOLECCION)[number];
 import { TipoMaterial } from '../enums/tipo-material.enum';
 
 export class CreateRecoleccionDto {
@@ -58,16 +63,16 @@ export class CreateRecoleccionDto {
   cantidad_inicial_canonica: number;
 
   @ApiProperty({
-    description: 'Unidad canónica inicial del material (G o UNIDAD)',
+    description: 'Unidad inicial del material. KG solo es input; se normaliza a G antes de persistir.',
     example: 'G',
     type: String,
-    enum: UNIDADES_CANONICAS_RECOLECCION,
+    enum: UNIDADES_INPUT_RECOLECCION,
   })
   @Transform(({ value }) => typeof value === 'string' ? value.trim().toUpperCase() : value)
   @IsNotEmpty({ message: 'unidad_canonica es requerida' })
   @IsString({ message: 'unidad_canonica debe ser texto' })
-  @IsIn(UNIDADES_CANONICAS_RECOLECCION, { message: 'unidad_canonica debe ser G o UNIDAD' })
-  unidad_canonica: UnidadCanonicaRecoleccion;
+  @IsIn(UNIDADES_INPUT_RECOLECCION, { message: 'unidad_canonica debe ser KG, G o UNIDAD' })
+  unidad_canonica: UnidadInputRecoleccion;
 
   @ApiProperty({
     description: 'Tipo de material canónico del módulo de recolección',

@@ -15,6 +15,7 @@ import {
   CreateRecoleccionDto,
   TipoMaterialRecoleccionCanonico,
   TipoMaterialRecoleccionInput,
+  UnidadInputRecoleccion,
   UnidadCanonicaRecoleccion,
 } from './dto/create-recoleccion.dto';
 import { UpdateDraftDto } from './dto/update-draft.dto';
@@ -166,9 +167,9 @@ export class RecoleccionesService {
     const tipoMaterialCanonico = this.normalizeTipoMaterial(
       createRecoleccionDto.tipo_material,
     );
-    const canonicalInput = this.validateCanonicalCantidadYUnidad(
+    const canonicalInput = this.normalizeAndValidateCantidadYUnidad(
       createRecoleccionDto.cantidad_inicial_canonica,
-      this.normalizeUnidadCanonica(createRecoleccionDto.unidad_canonica),
+      createRecoleccionDto.unidad_canonica,
       tipoMaterialCanonico,
     );
     const ubicacionPayload = await this.validateAndNormalizeUbicacionPayload(
@@ -410,6 +411,28 @@ export class RecoleccionesService {
     );
   }
 
+  private normalizeAndValidateCantidadYUnidad(
+    cantidad: number,
+    unidadInput: string | null | undefined,
+    tipoMaterial: string,
+  ): {
+    unidad_canonica: 'G' | 'UNIDAD';
+    cantidad_canonica: number;
+  } {
+    const unidadNormalizada = this.normalizeUnidadInput(unidadInput);
+
+    // RF-REC-01: kg puede llegar desde frontend, pero nunca se guarda como kg.
+    // La persistencia oficial por peso es G, por eso convertimos la cantidad a gramos.
+    const cantidadEnUnidadCanonica =
+      unidadNormalizada === 'KG' ? Number(cantidad) * 1000 : Number(cantidad);
+
+    return this.validateCanonicalCantidadYUnidad(
+      cantidadEnUnidadCanonica,
+      unidadNormalizada === 'KG' ? 'G' : unidadNormalizada,
+      tipoMaterial,
+    );
+  }
+
   private validateCanonicalCantidadYUnidad(
     cantidad: number,
     unidadCanonica: UnidadCanonicaRecoleccion,
@@ -450,16 +473,16 @@ export class RecoleccionesService {
     };
   }
 
-  private normalizeUnidadCanonica(
+  private normalizeUnidadInput(
     unidadCanonica: string | null | undefined,
-  ): UnidadCanonicaRecoleccion {
+  ): UnidadInputRecoleccion {
     const normalized = String(unidadCanonica ?? '').trim().toUpperCase();
 
-    if (normalized === 'G' || normalized === 'UNIDAD') {
+    if (normalized === 'KG' || normalized === 'G' || normalized === 'UNIDAD') {
       return normalized;
     }
 
-    throw new BadRequestException('unidad_canonica debe ser G o UNIDAD');
+    throw new BadRequestException('unidad_canonica debe ser KG, G o UNIDAD');
   }
 
   private async generateCodigoTrazabilidad(fechaISO: string): Promise<string> {
@@ -1049,11 +1072,11 @@ export class RecoleccionesService {
       const cantidadObjetivo = Number(
         dto.cantidad_inicial_canonica ?? recoleccion.cantidad_inicial_canonica,
       );
-      const unidadCanonicaObjetivo = this.normalizeUnidadCanonica(
+      const unidadCanonicaObjetivo = this.normalizeUnidadInput(
         String(dto.unidad_canonica ?? recoleccion.unidad_canonica),
       );
 
-      const canonicalInput = this.validateCanonicalCantidadYUnidad(
+      const canonicalInput = this.normalizeAndValidateCantidadYUnidad(
         cantidadObjetivo,
         unidadCanonicaObjetivo,
         tipoMaterialObjetivo,
@@ -1757,6 +1780,11 @@ export class RecoleccionesService {
       fecha,
       created_at,
       tipo_material,
+      nombre_cientifico_snapshot,
+      nombre_comercial_snapshot,
+      variedad_snapshot,
+      nombre_comunidad_snapshot,
+      nombre_recolector_snapshot,
       especie_nueva,
       observaciones,
       usuario_id,
@@ -1776,11 +1804,6 @@ export class RecoleccionesService {
       usuario_validacion_id,
       fecha_validacion,
       blockchain_hash_validacion,
-      nombre_cientifico_snapshot,
-      nombre_comercial_snapshot,
-      variedad_snapshot,
-      nombre_comunidad_snapshot,
-      nombre_recolector_snapshot,
       usuario:usuario_id (id, nombre, apellido, username, correo),
       vivero:vivero_id (id, codigo, nombre, ubicacion_id),
       metodo:metodo_id (id, nombre, descripcion),
