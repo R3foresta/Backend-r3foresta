@@ -6,7 +6,7 @@ import { PinataModule } from '../pinata/pinata.module';
 import { BlockchainModule } from '../blockchain/blockchain.module';
 import { UbicacionesModule } from '../common/ubicaciones/ubicaciones.module';
 import { RecoleccionElegibilidadService } from './recoleccion-elegibilidad.service';
-import { PlantasModule } from 'src/plantas/plantas.module';
+import { PlantasModule } from '../plantas/plantas.module';
 import { RecoleccionHistorialService } from './recoleccion-historial.service';
 import { RecoleccionSnapshotsService } from './recoleccion-snapshots.service';
 
