@@ -28,6 +28,7 @@ export class CrearLoteViveroDto {
   @IsDateString()
   fecha_evento: string;
 
+  // TODO: Revisar junto a la DB porque estamos hablando o de UNIDADES o G, y no permitir decimales en UNIDADES y como son semillas tampoco permitimemos decimales en G. No tiene sentido tener 0.5 UNIDADES y en gramos si podemos permitir un decimal como 7.5 G pero no 7.123123, no necesitamos esa precisión.
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 6 })
   @Min(0.000001)

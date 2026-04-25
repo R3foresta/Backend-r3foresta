@@ -20,6 +20,7 @@ import { RecoleccionUbicacionService } from '../application/recoleccion-ubicacio
 import { RecoleccionValidacionService } from '../application/recoleccion-validacion.service';
 import { RecoleccionesService } from '../application/recolecciones.service';
 
+// TODO: Eliminar comentarios.
 /**
  * FUNCIÓN HELPER: Crea un mock de QueryBuilder
  * 

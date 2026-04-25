@@ -99,7 +99,9 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
               metodo_id: ref.metodoId,
               planta_id: ref.plantaId,
               codigo_trazabilidad: `QA-REC-${tag}`,
-              estado_registro: 'BORRADOR',
+              estado_registro: 'VALIDADO',
+              usuario_validacion_id: ref.userId,
+              fecha_validacion: fechaEvento,
               unidad_canonica: 'UNIDAD',
               cantidad_inicial_canonica: 10,
               nombre_cientifico_snapshot: ref.plantaNombre,
@@ -119,52 +121,26 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
         expect(recoleccion.saldo_actual).toBe(10);
         expect(recoleccion.estado_operativo).toBe('ABIERTO');
 
-        const lote = unwrap(
-          await client
-            .from('lote_vivero')
-            .insert({
-              recoleccion_id: created.recoleccionId,
-              planta_id: ref.plantaId,
-              vivero_id: ref.viveroId,
-              responsable_id: ref.userId,
-              nombre_cientifico_snapshot: ref.plantaNombre,
-              nombre_comercial_snapshot: ref.plantaNombre,
-              tipo_material_snapshot: 'SEMILLA',
-              variedad_snapshot: ref.plantaVariedad,
-              nombre_comunidad_origen_snapshot: `QA Comunidad ${tag}`,
-              nombre_responsable_snapshot: ref.userName,
-              fecha_inicio: fechaEvento,
-              cantidad_inicial_en_proceso: 10,
-              unidad_medida_inicial: 'UNIDAD',
-              codigo_trazabilidad: `QA-LOT-${tag}`,
-            })
-            .select('id')
-            .single(),
-          'crear lote con snapshots',
+        const inicio = unwrapRpcRow(
+          await client.rpc('fn_vivero_crear_lote_desde_recoleccion', {
+            p_recoleccion_id: created.recoleccionId,
+            p_vivero_id: ref.viveroId,
+            p_responsable_id: ref.userId,
+            p_fecha_inicio: fechaEvento,
+            p_fecha_evento: fechaEvento,
+            p_cantidad_inicial_en_proceso: 10,
+            p_unidad_medida_inicial: 'UNIDAD',
+            p_codigo_trazabilidad: `QA-LOT-${tag}`,
+            p_observaciones: `[${tag}] inicio`,
+          }),
+          'crear lote desde recolección con RPC atomica',
         );
-        created.loteId = lote.id;
+        created.loteId = inicio.lote_vivero_id;
 
-        // No hay RPC pública para INICIO en el esquema actual; se semilla el evento base directo.
-        unwrap(
-          await client
-            .from('evento_lote_vivero')
-            .insert({
-              lote_id: created.loteId,
-              tipo_evento: 'INICIO',
-              fecha_evento: fechaEvento,
-              responsable_id: ref.userId,
-              observaciones: `[${tag}] inicio`,
-            })
-            .select('id')
-            .single(),
-          'registrar evento INICIO',
-        );
-
-        await insertMovimientoConsumo(client, {
-          recoleccionId: created.recoleccionId,
-          loteId: created.loteId,
-          userId: ref.userId,
-          tag,
+        expect(inicio).toMatchObject({
+          codigo_trazabilidad: `QA-LOT-${tag}`,
+          saldo_recoleccion_antes: 10,
+          saldo_recoleccion_despues: 0,
         });
 
         unwrap(
@@ -229,7 +205,7 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
           await client
             .from('evento_lote_vivero')
             .select(
-              'id,tipo_evento,fecha_evento,cantidad_afectada,subetapa_destino,causa_merma,destino_tipo,destino_referencia,saldo_vivo_antes,saldo_vivo_despues,motivo_cierre_calculado,ref_evento_trigger_id',
+              'id,tipo_evento,fecha_evento,cantidad_afectada,unidad_medida_evento,subetapa_destino,causa_merma,destino_tipo,destino_referencia,saldo_vivo_antes,saldo_vivo_despues,motivo_cierre_calculado,ref_evento_trigger_id',
             )
             .eq('lote_id', created.loteId)
             .order('id', { ascending: true }),
@@ -271,6 +247,17 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
           'CIERRE_AUTOMATICO',
         ]);
 
+        const inicioEvento = eventos.find(
+          (evento) => evento.tipo_evento === 'INICIO',
+        );
+        expect(inicioEvento).toMatchObject({
+          id: inicio.evento_inicio_id,
+          cantidad_afectada: 10,
+          unidad_medida_evento: 'UNIDAD',
+          saldo_vivo_antes: null,
+          saldo_vivo_despues: null,
+        });
+
         const cierreAutomatico = eventos.find(
           (evento) => evento.tipo_evento === 'CIERRE_AUTOMATICO',
         );
@@ -288,6 +275,7 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
           lote_vivero_id: created.loteId,
           created_by: ref.userId,
         });
+        expect(movimientos[0].id).toBe(inicio.recoleccion_movimiento_id);
 
         expect(recoleccionFinal.saldo_actual).toBe(0);
         expect(recoleccionFinal.estado_operativo).toBe('CERRADO');
@@ -363,44 +351,6 @@ async function loadReferences(client: SupabaseClient): Promise<RefData> {
     divisionId: division.id,
     paisId: division.pais_id,
   };
-}
-
-async function insertMovimientoConsumo(
-  client: SupabaseClient,
-  params: {
-    recoleccionId: number;
-    loteId: number;
-    userId: number;
-    tag: string;
-  },
-): Promise<void> {
-  const result = await client
-    .from('recoleccion_movimiento')
-    .insert({
-      recoleccion_id: params.recoleccionId,
-      tipo_movimiento: 'CONSUMO_A_VIVERO',
-      delta: -10,
-      unidad_medida_evento: 'UNIDAD',
-      motivo: 'CONSUMO_PARA_VIVERO',
-      lote_vivero_id: params.loteId,
-      created_by: params.userId,
-      detalle_cambios: { tag: params.tag },
-    })
-    .select('id')
-    .single();
-
-  if (result.error?.message?.includes('unidad_operativa')) {
-    throw new Error(
-      [
-        'registrar descuento en RECOLECCION_MOVIMIENTO:',
-        formatError(result.error),
-        'La base desplegada sigue teniendo lógica legacy que referencia unidad_operativa.',
-        'Aplica la migración 016_recoleccion_movimiento_unidad_compat.sql antes de reintentar esta suite.',
-      ].join(' '),
-    );
-  }
-
-  unwrap(result, 'registrar descuento en RECOLECCION_MOVIMIENTO');
 }
 
 async function cleanup(client: SupabaseClient, created: CreatedIds): Promise<void> {
@@ -488,6 +438,18 @@ function unwrap<T>(result: QueryResult<T>, context: string): T {
   }
 
   return result.data;
+}
+
+function unwrapRpcRow<T>(result: QueryResult<T[] | T>, context: string): T {
+  const data = unwrap(result, context);
+  if (Array.isArray(data)) {
+    if (data.length === 0) {
+      throw new Error(`${context}: la RPC no devolvió filas.`);
+    }
+    return data[0] as T;
+  }
+
+  return data as T;
 }
 
 function formatError(error: DbError): string {
