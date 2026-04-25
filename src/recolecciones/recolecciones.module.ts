@@ -19,6 +19,7 @@ import { RecoleccionDraftService } from './application/recoleccion-draft.service
 import { RecoleccionEvidenciasService } from './application/recoleccion-evidencias.service';
 import { RecoleccionUbicacionService } from './application/recoleccion-ubicacion.service';
 import { RecoleccionValidacionService } from './application/recoleccion-validacion.service';
+import { RecoleccionFormDataParser } from './api/parsers/recoleccion-formdata.parser';
 
 @Module({
   imports: [SupabaseModule, PinataModule, BlockchainModule, UbicacionesModule, PlantasModule],
@@ -38,6 +39,7 @@ import { RecoleccionValidacionService } from './application/recoleccion-validaci
     RecoleccionEvidenciasService,
     RecoleccionUbicacionService,
     RecoleccionValidacionService,
+    RecoleccionFormDataParser,
   ],
   exports: [
     RecoleccionesService,
