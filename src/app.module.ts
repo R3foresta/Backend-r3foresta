@@ -15,6 +15,7 @@ import { PingrepetModule } from './pingrepet/pingrepet.module';
 import { UbicacionesModule } from './ubicaciones/ubicaciones.module';
 import { ComunidadesModule } from './comunidades/comunidades.module';
 import { EvidenciasTrazabilidadModule } from './evidencias-trazabilidad/evidencias-trazabilidad.module';
+import { LotesViveroModule } from './lotes-vivero/lotes-vivero.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { EvidenciasTrazabilidadModule } from './evidencias-trazabilidad/evidenci
     UbicacionesModule,
     ComunidadesModule,
     EvidenciasTrazabilidadModule,
+    LotesViveroModule,
   ],
   controllers: [AppController],
   providers: [AppService],

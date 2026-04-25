@@ -99,9 +99,9 @@ erDiagram
     boolean es_principal
     int orden
     timestamptz tomado_en
-    date creado_en
-    date actualizado_en
-    date eliminado_en
+    timestamptz creado_en
+    timestamptz actualizado_en
+    timestamptz eliminado_en
     bigint creado_por_usuario_id FK
     bigint actualizado_por_usuario_id FK
     bigint eliminado_por_usuario_id FK
@@ -156,10 +156,10 @@ erDiagram
     bigint vivero_id FK
     bigint metodo_id FK
     bigint planta_id FK
-    date created_at
-    date updated_at "nullable - ultima edicion de ficha en BORRADOR o RECHAZADO"
+    timestamptz created_at
+    timestamptz updated_at "nullable - ultima edicion de ficha en BORRADOR o RECHAZADO"
     bigint updated_by FK "nullable"
-    date deleted_at "nullable - soft delete solo para BORRADOR"
+    timestamptz deleted_at "nullable - soft delete solo para BORRADOR"
     bigint deleted_by FK "nullable"
     text codigo_trazabilidad "UNIQUE"
     text blockchain_url
@@ -169,7 +169,7 @@ erDiagram
     ENUM(unidad_medida) unidad_canonica
     numeric cantidad_inicial_canonica
   bigint usuario_validacion_id FK "nullable - solo cuando la solicitud fue aprobada"
-    date fecha_validacion "nullable - solo cuando pasa a VALIDADO"
+    timestamptz fecha_validacion "nullable - solo cuando pasa a VALIDADO"
     text blockchain_tx_validacion
     numeric saldo_actual
     ENUM(estado_operativo_recoleccion) estado_operativo
@@ -184,7 +184,7 @@ erDiagram
     text observaciones
     jsonb metadata
     bigint actor_user_id FK
-    date created_at
+    timestamptz created_at
   }
 
   RECOLECCION_MOVIMIENTO {
@@ -198,7 +198,7 @@ erDiagram
     bigint lote_vivero_id "FK a LOTE_VIVERO"
     jsonb detalle_cambios "nullable - solo para correcciones o ajustes tecnicos futuros"
     bigint created_by FK
-    date created_at
+    timestamptz created_at
     text blockchain_tx_hash
   }
 
@@ -212,7 +212,7 @@ erDiagram
     text nombre_comercial_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
     ENUM(tipo_material_origen) tipo_material_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
     text variedad_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
-    text nombre_comunidad_origen_snapshot "NOT NULL - congelado al crear"
+    text nombre_comunidad_origen_snapshot "NOT NULL - congelado al crear y también lo hereda"
     text nombre_responsable_snapshot "NOT NULL - congelado al crear"
     date fecha_inicio "NOT NULL"
     numeric cantidad_inicial_en_proceso "NOT NULL - lectura operativa de inicio"
@@ -223,8 +223,8 @@ erDiagram
     ENUM(estado_lote_vivero) estado_lote "NOT NULL - ACTIVO | FINALIZADO, default ACTIVO"
     ENUM(motivo_cierre_lote) motivo_cierre "nullable - DESPACHO_TOTAL | PERDIDA_TOTAL | MIXTO"
     text codigo_trazabilidad "NOT NULL - UNIQUE"
-    date created_at "NOT NULL"
-    date updated_at "NOT NULL"
+    timestamptz created_at "NOT NULL"
+    timestamptz updated_at "NOT NULL"
 }
 
 EVENTO_LOTE_VIVERO {
@@ -232,7 +232,7 @@ EVENTO_LOTE_VIVERO {
     bigint lote_id FK "NOT NULL"
     ENUM(tipo_evento_vivero) tipo_evento "NOT NULL - INICIO | EMBOLSADO | ADAPTABILIDAD | MERMA | DESPACHO | CIERRE_AUTOMATICO"
     date fecha_evento "NOT NULL"
-    date created_at "NOT NULL - inmutable, cuándo se guardó realmente"
+    timestamptz created_at "NOT NULL - inmutable, cuándo se guardó realmente"
     bigint responsable_id FK "NOT NULL"
     numeric cantidad_afectada "nullable - plantas o unidades según tipo_evento"
     ENUM(unidad_medida) unidad_medida_evento "nullable - UNIDAD | G"

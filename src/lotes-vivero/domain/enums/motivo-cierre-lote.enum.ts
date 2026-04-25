@@ -1,0 +1,5 @@
+export enum MotivoCierreLote {
+  DESPACHO_TOTAL = 'DESPACHO_TOTAL',
+  PERDIDA_TOTAL = 'PERDIDA_TOTAL',
+  MIXTO = 'MIXTO',
+}
