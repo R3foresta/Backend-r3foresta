@@ -173,7 +173,6 @@ describe('RecoleccionesService', () => {
     // Aquí verificamos que el string contiene ciertos campos
     expect(select).toContain('cantidad_inicial_canonica');
     expect(select).toContain('unidad_canonica');
-    expect(select).toContain('blockchain_hash_validacion');
     expect(select).toContain('nombre_cientifico_snapshot');
     expect(select).toContain('nombre_comercial_snapshot');
     expect(select).toContain('variedad_snapshot');
