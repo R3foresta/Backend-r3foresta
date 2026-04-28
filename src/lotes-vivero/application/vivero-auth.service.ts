@@ -28,7 +28,7 @@ export class ViveroAuthService {
 
   assertCanWrite(userRole: string): void {
     const role = String(userRole ?? '').toUpperCase();
-    if (!['ADMIN', 'GENERAL'].includes(role)) {
+    if (!['ADMIN', 'VALIDADOR', 'GENERAL'].includes(role)) {
       throw new ForbiddenException(
         'No tienes permisos para operar lotes de vivero.',
       );

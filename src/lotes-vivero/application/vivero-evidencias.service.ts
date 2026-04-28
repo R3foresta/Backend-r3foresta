@@ -250,12 +250,12 @@ export class ViveroEvidenciasService {
           `Formato ${formato || 'DESCONOCIDO'} no permitido. Solo JPG, JPEG, PNG`,
         );
       }
-
-      if (Number(file.size ?? 0) > 5242880) {
-        throw new BadRequestException(
-          `Archivo ${file.originalname || 'sin_nombre'} supera 5MB`,
-        );
-      }
+      // TODO: No podemos liminar al usuario a enviar una imagen porque bloquea al usuario, lo que tendríamos que hacer es comprirmir la imaen.
+      // if (Number(file.size ?? 0) > 5242880) {
+      //   throw new BadRequestException(
+      //     `Archivo ${file.originalname || 'sin_nombre'} supera 5MB`,
+      //   );
+      // }
     }
   }
 
