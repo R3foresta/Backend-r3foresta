@@ -171,9 +171,21 @@ export class ViveroEvidenciasService {
         );
       }
 
+      const evidencias = (data || []).map((evidencia: any) => {
+        const { data: publicUrlData } = supabase.storage
+          .from(evidencia.bucket)
+          .getPublicUrl(evidencia.ruta_archivo);
+
+        return {
+          ...evidencia,
+          public_url: publicUrlData.publicUrl,
+        };
+      });
+
       return {
         success: true,
-        data: data || [],
+        data: evidencias,
+        evidencia_ids: evidencias.map((evidencia: any) => Number(evidencia.id)),
       };
     } catch (error) {
       if (fotosSubidas.length > 0) {
@@ -238,12 +250,12 @@ export class ViveroEvidenciasService {
           `Formato ${formato || 'DESCONOCIDO'} no permitido. Solo JPG, JPEG, PNG`,
         );
       }
-
-      if (Number(file.size ?? 0) > 5242880) {
-        throw new BadRequestException(
-          `Archivo ${file.originalname || 'sin_nombre'} supera 5MB`,
-        );
-      }
+      // TODO: No podemos liminar al usuario a enviar una imagen porque bloquea al usuario, lo que tendríamos que hacer es comprirmir la imaen.
+      // if (Number(file.size ?? 0) > 5242880) {
+      //   throw new BadRequestException(
+      //     `Archivo ${file.originalname || 'sin_nombre'} supera 5MB`,
+      //   );
+      // }
     }
   }
 

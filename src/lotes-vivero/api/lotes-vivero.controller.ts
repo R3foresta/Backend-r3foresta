@@ -15,6 +15,16 @@ import {
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 import { LotesViveroService } from '../application/lotes-vivero.service';
+import {
+  ApiCrearEvidenciaPendiente,
+  ApiCrearLoteDesdeRecoleccion,
+  ApiListarLotes,
+  ApiObtenerTimeline,
+  ApiRegistrarAdaptabilidad,
+  ApiRegistrarDespacho,
+  ApiRegistrarEmbolsado,
+  ApiRegistrarMerma,
+} from './docs/lotes-vivero.swagger';
 import { CrearEvidenciaPendienteViveroDto } from './dto/crear-evidencia-pendiente-vivero.dto';
 import { CrearLoteViveroDto } from './dto/crear-lote-vivero.dto';
 import { FiltrarLotesViveroDto } from './dto/filtrar-lotes-vivero.dto';
@@ -30,6 +40,7 @@ export class LotesViveroController {
   constructor(private readonly lotesViveroService: LotesViveroService) {}
 
   @Post('evidencias-pendientes')
+  @ApiCrearEvidenciaPendiente()
   @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
   crearEvidenciaPendiente(
     @Body() dto: CrearEvidenciaPendienteViveroDto,
@@ -44,6 +55,7 @@ export class LotesViveroController {
   }
 
   @Post()
+  @ApiCrearLoteDesdeRecoleccion()
   crearDesdeRecoleccion(
     @Body() dto: CrearLoteViveroDto,
     @Headers('x-auth-id') authId?: string,
@@ -55,6 +67,7 @@ export class LotesViveroController {
   }
 
   @Post(':id/embolsado')
+  @ApiRegistrarEmbolsado()
   registrarEmbolsado(
     @Param('id', ParseIntPipe) loteId: number,
     @Body() dto: RegistrarEmbolsadoDto,
@@ -68,6 +81,7 @@ export class LotesViveroController {
   }
 
   @Post(':id/adaptabilidad')
+  @ApiRegistrarAdaptabilidad()
   registrarAdaptabilidad(
     @Param('id', ParseIntPipe) loteId: number,
     @Body() dto: RegistrarAdaptabilidadDto,
@@ -81,6 +95,7 @@ export class LotesViveroController {
   }
 
   @Post(':id/merma')
+  @ApiRegistrarMerma()
   registrarMerma(
     @Param('id', ParseIntPipe) loteId: number,
     @Body() dto: RegistrarMermaDto,
@@ -94,6 +109,7 @@ export class LotesViveroController {
   }
 
   @Post(':id/despacho')
+  @ApiRegistrarDespacho()
   registrarDespacho(
     @Param('id', ParseIntPipe) loteId: number,
     @Body() dto: RegistrarDespachoDto,
@@ -107,11 +123,13 @@ export class LotesViveroController {
   }
 
   @Get()
+  @ApiListarLotes()
   listarLotes(@Query() filters: FiltrarLotesViveroDto) {
     return this.lotesViveroService.listarLotes(filters);
   }
 
   @Get(':id/timeline')
+  @ApiObtenerTimeline()
   obtenerTimeline(
     @Param('id', ParseIntPipe) loteId: number,
     @Query() filters: FiltrarTimelineLoteDto,

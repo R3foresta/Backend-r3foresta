@@ -40,6 +40,12 @@ describe('ViveroEvidenciasService', () => {
     const storageBucket = {
       upload,
       remove,
+      getPublicUrl: jest.fn().mockReturnValue({
+        data: {
+          publicUrl:
+            'https://storage.example/recoleccion_fotos/vivero/eventos/pendientes/77/1_inicio.jpg',
+        },
+      }),
     };
 
     from = jest.fn((table: string) => {
@@ -148,7 +154,9 @@ describe('ViveroEvidenciasService', () => {
       formato: 'JPEG',
     });
     expect(result.success).toBe(true);
+    expect(result.evidencia_ids).toEqual([501]);
     expect(result.data[0].id).toBe(501);
+    expect(result.data[0].public_url).toContain('https://storage.example/');
   });
 
   it('rechaza la solicitud sin fotos', async () => {

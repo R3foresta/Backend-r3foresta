@@ -119,12 +119,13 @@ export class EvidenciasTrazabilidadService {
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (file.size > 5242880) {
-        throw new BadRequestException(
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          `Archivo ${file.originalname} supera 5MB`,
-        );
-      }
+      // TODO: No podemos liminar al usuario a enviar una imagen porque bloquea al usuario, lo que tendríamos que hacer es comprirmir la imaen.
+      // if (file.size > 5242880) {
+      //   throw new BadRequestException(
+      //     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      //     `Archivo ${file.originalname} supera 5MB`,
+      //   );
+      // }
     }
 
     const supabase = this.supabaseService.getClient();
