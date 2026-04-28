@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Post, Body } from '@nestjs/common';
+import { Controller, Get, Query, Post, Body, Param, Patch, Delete } from '@nestjs/common';
 import { PlantasService } from './plantas.service';
 import { CreatePlantaDto } from './dto/create-planta.dto';
 import { CreateTipoPlantaDto } from './dto/create-tipo-planta.dto';
@@ -30,5 +30,15 @@ export class PlantasController {
   @Post()
   async create(@Body() createPlantaDto: CreatePlantaDto) {
     return this.plantasService.create(createPlantaDto);
+  }
+
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() updatePlantaDto: any) {
+    return this.plantasService.update(+id, updatePlantaDto);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    return this.plantasService.remove(+id);
   }
 }

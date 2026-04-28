@@ -260,4 +260,76 @@ export class PlantasService {
       data,
     };
   }
+
+  /**
+   * PATCH /api/plantas/:id
+   * Actualiza una planta existente
+   */
+  async update(id: number, updatePlantaDto: any) {
+    const supabase = this.supabaseService.getClient();
+
+    // 1. Verificar si la planta existe
+    const { data: existing } = await supabase
+      .from('planta')
+      .select('id, imagen_url')
+      .eq('id', id)
+      .single();
+
+    if (!existing) {
+      throw new NotFoundException(`Planta con ID ${id} no encontrada`);
+    }
+
+    // 2. Procesar nueva imagen si viene en base64
+    let imagenUrl = updatePlantaDto.imagen_url;
+    if (imagenUrl && imagenUrl.startsWith('data:image/')) {
+      const nombreArchivo = `update_${id}_${Date.now()}`;
+      imagenUrl = await this.uploadImageToStorage(updatePlantaDto.imagen_url, nombreArchivo);
+    }
+
+    // 3. Ejecutar actualización
+    const { data, error } = await supabase
+      .from('planta')
+      .update({
+        especie: updatePlantaDto.especie,
+        nombre_cientifico: updatePlantaDto.nombre_cientifico,
+        variedad: updatePlantaDto.variedad,
+        tipo_planta_id: updatePlantaDto.tipo_planta_id,
+        nombre_comun_principal: updatePlantaDto.nombre_comun_principal,
+        nombres_comunes: updatePlantaDto.nombres_comunes,
+        imagen_url: imagenUrl,
+        notas: updatePlantaDto.notas,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new InternalServerErrorException('Error al actualizar la planta');
+    }
+
+    return { success: true, data };
+  }
+
+  /**
+   * DELETE /api/plantas/:id
+   * Elimina una planta del catálogo
+   */
+  async remove(id: number) {
+    const supabase = this.supabaseService.getClient();
+
+    const { error } = await supabase
+      .from('planta')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      // Si el error es por integridad referencial (tiene recolecciones asociadas)
+      if (error.code === '23503') {
+        throw new ConflictException('No se puede eliminar la planta porque tiene recolecciones asociadas.');
+      }
+      throw new InternalServerErrorException('Error al eliminar la planta');
+    }
+
+    return { success: true, message: 'Planta eliminada correctamente' };
+  }
 }
