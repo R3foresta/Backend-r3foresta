@@ -171,9 +171,21 @@ export class ViveroEvidenciasService {
         );
       }
 
+      const evidencias = (data || []).map((evidencia: any) => {
+        const { data: publicUrlData } = supabase.storage
+          .from(evidencia.bucket)
+          .getPublicUrl(evidencia.ruta_archivo);
+
+        return {
+          ...evidencia,
+          public_url: publicUrlData.publicUrl,
+        };
+      });
+
       return {
         success: true,
-        data: data || [],
+        data: evidencias,
+        evidencia_ids: evidencias.map((evidencia: any) => Number(evidencia.id)),
       };
     } catch (error) {
       if (fotosSubidas.length > 0) {
