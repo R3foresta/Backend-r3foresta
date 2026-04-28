@@ -7,7 +7,6 @@ import {
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CrearLoteViveroDto } from '../api/dto/crear-lote-vivero.dto';
 import { ViveroAuthService } from './vivero-auth.service';
-import { ViveroCodigosService } from './vivero-codigos.service';
 
 export type CrearLoteViveroResult = {
   lote_vivero_id: number;
@@ -16,6 +15,7 @@ export type CrearLoteViveroResult = {
   codigo_trazabilidad: string;
   saldo_recoleccion_antes: number;
   saldo_recoleccion_despues: number;
+  evidencia_inicio_ids: number[];
 };
 
 @Injectable()
@@ -25,7 +25,6 @@ export class ViveroInicioService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly authService: ViveroAuthService,
-    private readonly codigosService: ViveroCodigosService,
   ) {}
 
   async crearDesdeRecoleccion(dto: CrearLoteViveroDto, authId: string) {
@@ -36,10 +35,6 @@ export class ViveroInicioService {
     let lastError: any = null;
 
     for (let intento = 1; intento <= 5; intento++) {
-      const codigoTrazabilidad = this.codigosService.generateCodigoTrazabilidad(
-        dto.fecha_inicio,
-      );
-
       const { data, error } = await supabase.rpc(
         'fn_vivero_crear_lote_desde_recoleccion',
         {
@@ -50,8 +45,8 @@ export class ViveroInicioService {
           p_fecha_evento: dto.fecha_evento,
           p_cantidad_inicial_en_proceso: dto.cantidad_inicial_en_proceso,
           p_unidad_medida_inicial: dto.unidad_medida_inicial,
-          p_codigo_trazabilidad: codigoTrazabilidad,
           p_observaciones: dto.observaciones ?? null,
+          p_evidencia_ids: dto.evidencia_ids,
         },
       );
 
@@ -65,7 +60,7 @@ export class ViveroInicioService {
       lastError = error;
       if (this.isCodigoTrazabilidadDuplicateError(error)) {
         this.logger.warn(
-          `Colision de codigo de lote vivero (${codigoTrazabilidad}), reintentando (${intento}/5).`,
+          `Colision de codigo de lote vivero, reintentando (${intento}/5).`,
         );
         continue;
       }
@@ -103,6 +98,9 @@ export class ViveroInicioService {
       codigo_trazabilidad: String(result.codigo_trazabilidad),
       saldo_recoleccion_antes: Number(result.saldo_recoleccion_antes),
       saldo_recoleccion_despues: Number(result.saldo_recoleccion_despues),
+      evidencia_inicio_ids: Array.isArray(result.evidencia_inicio_ids)
+        ? result.evidencia_inicio_ids.map((id) => Number(id))
+        : [],
     };
   }
 

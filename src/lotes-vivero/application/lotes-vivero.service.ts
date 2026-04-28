@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { CrearEvidenciaPendienteViveroDto } from '../api/dto/crear-evidencia-pendiente-vivero.dto';
 import { CrearLoteViveroDto } from '../api/dto/crear-lote-vivero.dto';
 import { FiltrarLotesViveroDto } from '../api/dto/filtrar-lotes-vivero.dto';
 import { FiltrarTimelineLoteDto } from '../api/dto/filtrar-timeline-lote.dto';
@@ -8,6 +9,10 @@ import { RegistrarEmbolsadoDto } from '../api/dto/registrar-embolsado.dto';
 import { RegistrarMermaDto } from '../api/dto/registrar-merma.dto';
 import { ViveroConsultasService } from './vivero-consultas.service';
 import { ViveroEventosService } from './vivero-eventos.service';
+import {
+  ViveroEvidenceFileInput,
+  ViveroEvidenciasService,
+} from './vivero-evidencias.service';
 import { ViveroInicioService } from './vivero-inicio.service';
 
 @Injectable()
@@ -16,7 +21,16 @@ export class LotesViveroService {
     private readonly inicioService: ViveroInicioService,
     private readonly eventosService: ViveroEventosService,
     private readonly consultasService: ViveroConsultasService,
+    private readonly evidenciasService: ViveroEvidenciasService,
   ) {}
+
+  crearEvidenciaPendiente(
+    dto: CrearEvidenciaPendienteViveroDto,
+    authId: string,
+    files: ViveroEvidenceFileInput[] = [],
+  ) {
+    return this.evidenciasService.crearPendienteParaEvento(dto, authId, files);
+  }
 
   crearDesdeRecoleccion(dto: CrearLoteViveroDto, authId: string) {
     return this.inicioService.crearDesdeRecoleccion(dto, authId);

@@ -1,6 +1,9 @@
 import {
+  ArrayNotEmpty,
+  ArrayUnique,
   IsDateString,
   IsEnum,
+  IsArray,
   IsInt,
   IsNumber,
   IsOptional,
@@ -36,6 +39,14 @@ export class CrearLoteViveroDto {
 
   @IsEnum(UnidadMedidaVivero)
   unidad_medida_inicial: UnidadMedidaVivero;
+
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique()
+  @Type(() => Number)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  evidencia_ids: number[];
 
   @IsOptional()
   @IsString()

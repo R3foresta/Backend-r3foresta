@@ -2,7 +2,6 @@ import { BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { UnidadMedidaVivero } from '../domain/enums/unidad-medida-vivero.enum';
 import { ViveroAuthService } from '../application/vivero-auth.service';
-import { ViveroCodigosService } from '../application/vivero-codigos.service';
 import { ViveroInicioService } from '../application/vivero-inicio.service';
 
 describe('ViveroInicioService', () => {
@@ -13,13 +12,13 @@ describe('ViveroInicioService', () => {
     fecha_evento: '2026-04-20',
     cantidad_inicial_en_proceso: 8,
     unidad_medida_inicial: UnidadMedidaVivero.UNIDAD,
+    evidencia_ids: [501],
     observaciones: 'Inicio de prueba',
   };
 
   let rpc: jest.Mock;
   let service: ViveroInicioService;
   let authService: jest.Mocked<Pick<ViveroAuthService, 'getUserByAuthId' | 'assertCanWrite'>>;
-  let codigosService: jest.Mocked<Pick<ViveroCodigosService, 'generateCodigoTrazabilidad'>>;
 
   beforeEach(() => {
     // Se mockea el cliente de Supabase para controlar la respuesta de la RPC
@@ -40,16 +39,9 @@ describe('ViveroInicioService', () => {
       assertCanWrite: jest.fn(),
     };
 
-    // El codigo de trazabilidad se genera fuera del servicio principal, asi que
-    // se fija para poder verificar que se envia a la RPC.
-    codigosService = {
-      generateCodigoTrazabilidad: jest.fn().mockReturnValue('VIV-2026-ABC123'),
-    };
-
     service = new ViveroInicioService(
       supabaseService,
       authService as unknown as ViveroAuthService,
-      codigosService as unknown as ViveroCodigosService,
     );
   });
 
@@ -62,9 +54,10 @@ describe('ViveroInicioService', () => {
           lote_vivero_id: 101,
           evento_inicio_id: 202,
           recoleccion_movimiento_id: 303,
-          codigo_trazabilidad: 'VIV-2026-ABC123',
+          codigo_trazabilidad: 'VIV-000101-REC-000010',
           saldo_recoleccion_antes: 10,
           saldo_recoleccion_despues: 2,
+          evidencia_inicio_ids: [501],
         },
       ],
       error: null,
@@ -73,13 +66,10 @@ describe('ViveroInicioService', () => {
     // Act: se ejecuta el flujo completo desde una recoleccion existente.
     const result = await service.crearDesdeRecoleccion(dto, 'auth-1');
 
-    // Assert: primero se valida que el servicio autentica, autoriza y genera
-    // codigo antes de llamar la RPC con todos los parametros normalizados.
+    // Assert: primero se valida que el servicio autentica y autoriza antes de
+    // llamar la RPC con todos los parametros normalizados.
     expect(authService.getUserByAuthId).toHaveBeenCalledWith('auth-1');
     expect(authService.assertCanWrite).toHaveBeenCalledWith('GENERAL');
-    expect(codigosService.generateCodigoTrazabilidad).toHaveBeenCalledWith(
-      dto.fecha_inicio,
-    );
     expect(rpc).toHaveBeenCalledWith('fn_vivero_crear_lote_desde_recoleccion', {
       p_recoleccion_id: 10,
       p_vivero_id: 2,
@@ -88,8 +78,8 @@ describe('ViveroInicioService', () => {
       p_fecha_evento: '2026-04-20',
       p_cantidad_inicial_en_proceso: 8,
       p_unidad_medida_inicial: 'UNIDAD',
-      p_codigo_trazabilidad: 'VIV-2026-ABC123',
       p_observaciones: 'Inicio de prueba',
+      p_evidencia_ids: [501],
     });
     // Tambien se verifica que la respuesta publica conserva el resumen atomico
     // que devuelve la funcion de base de datos.
@@ -99,26 +89,22 @@ describe('ViveroInicioService', () => {
         lote_vivero_id: 101,
         evento_inicio_id: 202,
         recoleccion_movimiento_id: 303,
-        codigo_trazabilidad: 'VIV-2026-ABC123',
+        codigo_trazabilidad: 'VIV-000101-REC-000010',
         saldo_recoleccion_antes: 10,
         saldo_recoleccion_despues: 2,
+        evidencia_inicio_ids: [501],
       },
     });
   });
 
   it('reintenta si la RPC rechaza por codigo_trazabilidad duplicado', async () => {
-    // Arrange: el primer codigo generado choca con una restriccion unica y el
-    // segundo codigo representa el reintento exitoso.
-    codigosService.generateCodigoTrazabilidad
-      .mockReturnValueOnce('VIV-2026-DUP')
-      .mockReturnValueOnce('VIV-2026-OK');
     rpc
       .mockResolvedValueOnce({
         data: null,
         error: {
           code: '23505',
           message: 'duplicate key value violates unique constraint',
-          details: 'Key (codigo_trazabilidad)=(VIV-2026-DUP) already exists.',
+          details: 'Key (codigo_trazabilidad)=(VIV-000011-REC-000010) already exists.',
         },
       })
       .mockResolvedValueOnce({
@@ -126,9 +112,10 @@ describe('ViveroInicioService', () => {
           lote_vivero_id: 11,
           evento_inicio_id: 12,
           recoleccion_movimiento_id: 13,
-          codigo_trazabilidad: 'VIV-2026-OK',
+          codigo_trazabilidad: 'VIV-000012-REC-000010',
           saldo_recoleccion_antes: 20,
           saldo_recoleccion_despues: 12,
+          evidencia_inicio_ids: [501],
         },
         error: null,
       });
@@ -136,12 +123,12 @@ describe('ViveroInicioService', () => {
     // Act: el servicio debe manejar internamente el duplicado y volver a probar.
     const result = await service.crearDesdeRecoleccion(dto, 'auth-1');
 
-    // Assert: se confirma que hubo dos intentos y que cada uno uso el codigo
-    // correspondiente, terminando con el codigo valido.
+    // Assert: se confirma que hubo dos intentos y que ambos conservaron las
+    // evidencias requeridas por la RPC estricta.
     expect(rpc).toHaveBeenCalledTimes(2);
-    expect(rpc.mock.calls[0][1].p_codigo_trazabilidad).toBe('VIV-2026-DUP');
-    expect(rpc.mock.calls[1][1].p_codigo_trazabilidad).toBe('VIV-2026-OK');
-    expect(result.data.codigo_trazabilidad).toBe('VIV-2026-OK');
+    expect(rpc.mock.calls[0][1].p_evidencia_ids).toEqual([501]);
+    expect(rpc.mock.calls[1][1].p_evidencia_ids).toEqual([501]);
+    expect(result.data.codigo_trazabilidad).toBe('VIV-000012-REC-000010');
   });
 
   it('propaga errores de negocio de la RPC como BadRequestException', async () => {

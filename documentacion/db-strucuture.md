@@ -168,9 +168,8 @@ erDiagram
     ENUM(estado_registro_recoleccion) estado_registro
     ENUM(unidad_medida) unidad_canonica
     numeric cantidad_inicial_canonica
-  bigint usuario_validacion_id FK "nullable - solo cuando la solicitud fue aprobada"
+    bigint usuario_validacion_id FK "nullable - solo cuando la solicitud fue aprobada"
     timestamptz fecha_validacion "nullable - solo cuando pasa a VALIDADO"
-    text blockchain_tx_validacion
     numeric saldo_actual
     ENUM(estado_operativo_recoleccion) estado_operativo
   }
@@ -199,14 +198,14 @@ erDiagram
     jsonb detalle_cambios "nullable - solo para correcciones o ajustes tecnicos futuros"
     bigint created_by FK
     timestamptz created_at
-    text blockchain_tx_hash
+    text transaction_hash
   }
 
   LOTE_VIVERO {
     bigint id PK
     bigint recoleccion_id FK "NOT NULL - origen único por lote, sin UNIQUE"
     bigint planta_id FK "NOT NULL"
-    bigint vivero_id FK "NOT NULL"
+    bigint vivero_id FK "NOT NULL - vivero operativo seleccionado para este lote, no heredado desde Recolección"
     bigint responsable_id FK "NOT NULL"
     text nombre_cientifico_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
     text nombre_comercial_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
@@ -222,7 +221,7 @@ erDiagram
     ENUM(subetapa_adaptabilidad) subetapa_actual "nullable - SOMBRA | MEDIA_SOMBRA | SOL_DIRECTO"
     ENUM(estado_lote_vivero) estado_lote "NOT NULL - ACTIVO | FINALIZADO, default ACTIVO"
     ENUM(motivo_cierre_lote) motivo_cierre "nullable - DESPACHO_TOTAL | PERDIDA_TOTAL | MIXTO"
-    text codigo_trazabilidad "NOT NULL - UNIQUE"
+    text codigo_trazabilidad "NOT NULL - UNIQUE - formato VIV-{codigo_lote_vivero}-{RECOLECCION.codigo_trazabilidad}"
     timestamptz created_at "NOT NULL"
     timestamptz updated_at "NOT NULL"
 }

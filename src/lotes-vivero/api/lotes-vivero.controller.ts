@@ -9,9 +9,13 @@ import {
   Post,
   Query,
   UnauthorizedException,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 import { LotesViveroService } from '../application/lotes-vivero.service';
+import { CrearEvidenciaPendienteViveroDto } from './dto/crear-evidencia-pendiente-vivero.dto';
 import { CrearLoteViveroDto } from './dto/crear-lote-vivero.dto';
 import { FiltrarLotesViveroDto } from './dto/filtrar-lotes-vivero.dto';
 import { FiltrarTimelineLoteDto } from './dto/filtrar-timeline-lote.dto';
@@ -24,6 +28,20 @@ import { RegistrarMermaDto } from './dto/registrar-merma.dto';
 @Controller('lotes-vivero')
 export class LotesViveroController {
   constructor(private readonly lotesViveroService: LotesViveroService) {}
+
+  @Post('evidencias-pendientes')
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
+  crearEvidenciaPendiente(
+    @Body() dto: CrearEvidenciaPendienteViveroDto,
+    @Headers('x-auth-id') authId?: string,
+    @UploadedFiles() files?: { fotos?: any[] },
+  ) {
+    return this.lotesViveroService.crearEvidenciaPendiente(
+      dto,
+      this.requireAuthId(authId),
+      files?.fotos || [],
+    );
+  }
 
   @Post()
   crearDesdeRecoleccion(

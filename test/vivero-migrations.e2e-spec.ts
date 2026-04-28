@@ -20,6 +20,7 @@ type CreatedIds = {
   ubicacionId?: number;
   recoleccionId?: number;
   loteId?: number;
+  evidenciaIds?: number[];
 };
 
 type RefData = {
@@ -32,6 +33,11 @@ type RefData = {
   metodoId: number;
   divisionId: number;
   paisId: number;
+};
+
+type PendingInicioEvidence = {
+  id: number;
+  tipoEntidadId: number;
 };
 
 describe('Migraciones DB - flujo mínimo vivero', () => {
@@ -121,6 +127,12 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
         expect(recoleccion.saldo_actual).toBe(10);
         expect(recoleccion.estado_operativo).toBe('ABIERTO');
 
+        const evidenciaInicio = await createPendingInicioEvidence(client, {
+          userId: ref.userId,
+          tag,
+        });
+        created.evidenciaIds = [evidenciaInicio.id];
+
         const inicio = unwrapRpcRow(
           await client.rpc('fn_vivero_crear_lote_desde_recoleccion', {
             p_recoleccion_id: created.recoleccionId,
@@ -130,17 +142,20 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
             p_fecha_evento: fechaEvento,
             p_cantidad_inicial_en_proceso: 10,
             p_unidad_medida_inicial: 'UNIDAD',
-            p_codigo_trazabilidad: `QA-LOT-${tag}`,
             p_observaciones: `[${tag}] inicio`,
+            p_evidencia_ids: [evidenciaInicio.id],
           }),
           'crear lote desde recolección con RPC atomica',
         );
         created.loteId = inicio.lote_vivero_id;
 
+        expect(inicio.codigo_trazabilidad).toMatch(
+          new RegExp(`^VIV-\\d{6}-QA-REC-${tag}$`),
+        );
         expect(inicio).toMatchObject({
-          codigo_trazabilidad: `QA-LOT-${tag}`,
           saldo_recoleccion_antes: 10,
           saldo_recoleccion_despues: 0,
+          evidencia_inicio_ids: [evidenciaInicio.id],
         });
 
         unwrap(
@@ -194,7 +209,7 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
           await client
             .from('lote_vivero')
             .select(
-              'id,estado_lote,motivo_cierre,saldo_vivo_actual,subetapa_actual,plantas_vivas_iniciales',
+              'id,codigo_trazabilidad,responsable_id,nombre_responsable_snapshot,estado_lote,motivo_cierre,saldo_vivo_actual,subetapa_actual,plantas_vivas_iniciales',
             )
             .eq('id', created.loteId)
             .single(),
@@ -216,7 +231,7 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
           await client
             .from('recoleccion_movimiento')
             .select(
-              'recoleccion_id,tipo_movimiento,delta,unidad_medida_evento,motivo,lote_vivero_id,created_by',
+              'id,recoleccion_id,tipo_movimiento,delta,unidad_medida_evento,motivo,lote_vivero_id,created_by',
             )
             .eq('recoleccion_id', created.recoleccionId)
             .order('id', { ascending: true }),
@@ -232,6 +247,18 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
           'leer estado operativo final de la recolección',
         );
 
+        const evidenciaInicioFinal = unwrap(
+          await client
+            .from('evidencias_trazabilidad')
+            .select('id,tipo_entidad_id,entidad_id,codigo_trazabilidad,eliminado_en')
+            .eq('id', evidenciaInicio.id)
+            .single(),
+          'leer evidencia vinculada al evento INICIO',
+        );
+
+        expect(loteFinal.codigo_trazabilidad).toBe(inicio.codigo_trazabilidad);
+        expect(loteFinal.responsable_id).toBe(ref.userId);
+        expect(loteFinal.nombre_responsable_snapshot).toBe(ref.userName);
         expect(loteFinal.estado_lote).toBe('FINALIZADO');
         expect(loteFinal.motivo_cierre).toBe('MIXTO');
         expect(loteFinal.saldo_vivo_actual).toBe(0);
@@ -256,6 +283,14 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
           unidad_medida_evento: 'UNIDAD',
           saldo_vivo_antes: null,
           saldo_vivo_despues: null,
+        });
+
+        expect(evidenciaInicioFinal).toMatchObject({
+          id: evidenciaInicio.id,
+          tipo_entidad_id: evidenciaInicio.tipoEntidadId,
+          entidad_id: inicio.evento_inicio_id,
+          codigo_trazabilidad: inicio.codigo_trazabilidad,
+          eliminado_en: null,
         });
 
         const cierreAutomatico = eventos.find(
@@ -353,7 +388,67 @@ async function loadReferences(client: SupabaseClient): Promise<RefData> {
   };
 }
 
+async function createPendingInicioEvidence(
+  client: SupabaseClient,
+  params: {
+    userId: number;
+    tag: string;
+  },
+): Promise<PendingInicioEvidence> {
+  const tipoEntidad = unwrap(
+    await client
+      .from('tipos_entidad_evidencia')
+      .select('id,codigo,activo')
+      .ilike('codigo', 'EVENTO_LOTE_VIVERO')
+      .eq('activo', true)
+      .single(),
+    'resolver tipo_entidad_evidencia EVENTO_LOTE_VIVERO',
+  );
+
+  const evidencia = unwrap(
+    await client
+      .from('evidencias_trazabilidad')
+      .insert({
+        tipo_entidad_id: tipoEntidad.id,
+        entidad_id: 0,
+        codigo_trazabilidad: `QA-EVI-${params.tag}`,
+        bucket: 'recoleccion_fotos',
+        ruta_archivo: `qa/${params.tag}/inicio.jpg`,
+        storage_object_id: null,
+        tipo_archivo: 'FOTO',
+        mime_type: 'image/jpeg',
+        tamano_bytes: 1,
+        hash_sha256: null,
+        titulo: `[${params.tag}] evidencia inicio`,
+        descripcion: 'Evidencia QA pendiente de vincular a evento INICIO',
+        metadata: {
+          tag: params.tag,
+          estado: 'PENDIENTE_VINCULACION',
+          origen: 'QA_VIVERO_INICIO',
+        },
+        es_principal: true,
+        orden: 0,
+        creado_por_usuario_id: params.userId,
+      })
+      .select('id')
+      .single(),
+    'crear evidencia pendiente para INICIO',
+  );
+
+  return {
+    id: evidencia.id,
+    tipoEntidadId: tipoEntidad.id,
+  };
+}
+
 async function cleanup(client: SupabaseClient, created: CreatedIds): Promise<void> {
+  if (created.evidenciaIds?.length) {
+    await client
+      .from('evidencias_trazabilidad')
+      .delete()
+      .in('id', created.evidenciaIds);
+  }
+
   if (created.loteId) {
     await client.from('evento_lote_vivero').delete().eq('lote_id', created.loteId);
   }
@@ -400,9 +495,19 @@ async function cleanupByTag(client: SupabaseClient): Promise<void> {
   const { data: lotes } = await client
     .from('lote_vivero')
     .select('id')
-    .like('codigo_trazabilidad', 'QA-LOT-qa_mig_vivero_%');
+    .in('recoleccion_id', recoleccionIds.length > 0 ? recoleccionIds : [-1]);
 
   const loteIds = lotes?.map((lote) => lote.id) ?? [];
+
+  await client
+    .from('evidencias_trazabilidad')
+    .delete()
+    .or(
+      [
+        'codigo_trazabilidad.like.QA-EVI-qa_mig_vivero_%',
+        'codigo_trazabilidad.like.VIV-%-QA-REC-qa_mig_vivero_%',
+      ].join(','),
+    );
 
   if (loteIds.length > 0) {
     await client.from('evento_lote_vivero').delete().in('lote_id', loteIds);
