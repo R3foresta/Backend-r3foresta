@@ -317,7 +317,6 @@ export class RecoleccionConsultasService {
       estado_operativo,
       usuario_validacion_id,
       fecha_validacion,
-      blockchain_hash_validacion,
       usuario:usuario_id (id, nombre, apellido, username, correo),
       vivero:vivero_id (id, codigo, nombre, ubicacion_id),
       metodo:metodo_id (id, nombre, descripcion),
