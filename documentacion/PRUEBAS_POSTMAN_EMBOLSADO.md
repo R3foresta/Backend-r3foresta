@@ -9,24 +9,24 @@ Header requerido en todos los endpoints: `x-auth-id: <auth_id_del_usuario>`
 ## Flujo completo recomendado
 
 ```
-1. GET  /lotes-vivero/:id/embolsado/context         → verificar que el lote permite embolsado
-2. POST /lotes-vivero/:id/embolsado/evidencias-pendientes → subir fotos y obtener evidencia_ids
-3. POST /lotes-vivero/:id/embolsado                  → confirmar embolsado con la RPC
-4. GET  /lotes-vivero/:id/embolsado                  → verificar el resultado registrado
+1. GET  /api/lotes-vivero/:id/embolsado/context         → verificar que el lote permite embolsado
+2. POST /api/lotes-vivero/:id/embolsado/evidencias-pendientes → subir fotos y obtener evidencia_ids
+3. POST /api/lotes-vivero/:id/embolsado                  → confirmar embolsado con la RPC
+4. GET  /api/lotes-vivero/:id/embolsado                  → verificar el resultado registrado
 ```
 
 > Asegúrate de tener un lote con estado `ACTIVO` y con evento `INICIO` ya registrado antes de comenzar.
 
 ---
 
-## 1. GET /lotes-vivero/:id/embolsado/context
+## 1. GET /api/lotes-vivero/:id/embolsado/context
 
 **Objetivo:** Cargar los datos del lote para la pantalla de embolsado. Solo lectura.
 
 ### Request
 
 ```
-GET http://localhost:3000/lotes-vivero/6/embolsado/context
+GET http://localhost:3000/api/lotes-vivero/6/embolsado/context
 ```
 
 **Headers:**
@@ -102,14 +102,14 @@ x-auth-id: tu-auth-uuid-aqui
 
 ---
 
-## 2. POST /lotes-vivero/:id/embolsado/evidencias-pendientes
+## 2. POST /api/lotes-vivero/:id/embolsado/evidencias-pendientes
 
 **Objetivo:** Subir las fotos antes de confirmar el embolsado. Devuelve los `evidencia_ids` que se necesitan en el paso 3.
 
 ### Request
 
 ```
-POST http://localhost:3000/lotes-vivero/6/embolsado/evidencias-pendientes
+POST http://localhost:3000/api/lotes-vivero/6/embolsado/evidencias-pendientes
 ```
 
 **Headers:**
@@ -174,7 +174,7 @@ Content-Type: multipart/form-data
 
 ---
 
-## 3. POST /lotes-vivero/:id/embolsado
+## 3. POST /api/lotes-vivero/:id/embolsado
 
 **Objetivo:** Confirmar el embolsado. Llama la RPC `fn_vivero_registrar_embolsado` de forma atómica.
 
@@ -184,7 +184,7 @@ Content-Type: multipart/form-data
 ### Request
 
 ```
-POST http://localhost:3000/lotes-vivero/6/embolsado
+POST http://localhost:3000/api/lotes-vivero/6/embolsado
 ```
 
 **Headers:**
@@ -293,7 +293,7 @@ x-auth-id: tu-auth-uuid-aqui
 
 ---
 
-## 4. GET /lotes-vivero/:id/embolsado
+## 4. GET /api/lotes-vivero/:id/embolsado
 
 **Objetivo:** Consultar el resultado del embolsado ya registrado.
 
@@ -377,9 +377,9 @@ Crea un Environment en Postman con estas variables:
 Y reemplaza en los requests:
 
 ```
-{{base_url}}/lotes-vivero/{{lote_id}}/embolsado/context
-{{base_url}}/lotes-vivero/{{lote_id}}/embolsado/evidencias-pendientes
-{{base_url}}/lotes-vivero/{{lote_id}}/embolsado
+{{base_url}}/api/lotes-vivero/{{lote_id}}/embolsado/context
+{{base_url}}/api/lotes-vivero/{{lote_id}}/embolsado/evidencias-pendientes
+{{base_url}}/api/lotes-vivero/{{lote_id}}/embolsado
 ```
 
 Header común:
@@ -394,7 +394,7 @@ x-auth-id: {{auth_id}}
 ### Paso 1 — Verificar contexto
 
 ```
-GET {{base_url}}/lotes-vivero/{{lote_id}}/embolsado/context
+GET {{base_url}}/api/lotes-vivero/{{lote_id}}/embolsado/context
 ```
 
 Verificar que la respuesta tenga:
@@ -407,7 +407,7 @@ Verificar que la respuesta tenga:
 ### Paso 2 — Subir evidencias
 
 ```
-POST {{base_url}}/lotes-vivero/{{lote_id}}/embolsado/evidencias-pendientes
+POST {{base_url}}/api/lotes-vivero/{{lote_id}}/embolsado/evidencias-pendientes
 ```
 
 Body: `form-data` con al menos 1 foto en el campo `fotos`.
@@ -419,7 +419,7 @@ Guardar los `evidencia_ids` de la respuesta para usarlos en el paso 3.
 ### Paso 3 — Registrar embolsado
 
 ```
-POST {{base_url}}/lotes-vivero/{{lote_id}}/embolsado
+POST {{base_url}}/api/lotes-vivero/{{lote_id}}/embolsado
 ```
 
 ```json
@@ -442,7 +442,7 @@ Verificar que la respuesta tenga:
 ### Paso 4 — Confirmar resultado
 
 ```
-GET {{base_url}}/lotes-vivero/{{lote_id}}/embolsado
+GET {{base_url}}/api/lotes-vivero/{{lote_id}}/embolsado
 ```
 
 Verificar que la respuesta tenga:
