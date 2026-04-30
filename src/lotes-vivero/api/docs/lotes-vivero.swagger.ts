@@ -186,7 +186,7 @@ export function ApiRegistrarEmbolsado() {
     ApiOperation({
       summary: 'Registrar evento de embolsado',
       description:
-        'Registra el embolsado de plantas en el lote de vivero. Marca la transicion a la etapa de crecimiento en bolsa e inicia el conteo de plantas vivas.',
+        'Registra el embolsado llamando fn_vivero_registrar_embolsado. Crea el evento EMBOLSADO, materializa el saldo vivo e inica el conteo de plantas vivas en UNIDAD. El responsable_id sale del usuario autenticado (x-auth-id), nunca del body.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -198,7 +198,7 @@ export function ApiRegistrarEmbolsado() {
     ApiBody({
       schema: {
         type: 'object',
-        required: ['fecha_evento', 'plantas_vivas_iniciales'],
+        required: ['fecha_evento', 'plantas_vivas_iniciales', 'evidencia_ids'],
         properties: {
           fecha_evento: {
             type: 'string',
@@ -209,7 +209,16 @@ export function ApiRegistrarEmbolsado() {
             type: 'integer',
             minimum: 1,
             example: 120,
-            description: 'Cantidad de plantas transferidas a bolsas',
+            description:
+              'Cantidad de plantas vivas observadas. No se convierte desde gramos; es un conteo operativo del proceso.',
+          },
+          evidencia_ids: {
+            type: 'array',
+            items: { type: 'integer', minimum: 1 },
+            minItems: 1,
+            example: [137],
+            description:
+              'IDs de evidencias pendientes a vincular al evento EMBOLSADO. Obligatorio.',
           },
           observaciones: {
             type: 'string',
@@ -221,11 +230,13 @@ export function ApiRegistrarEmbolsado() {
     }),
     ApiResponse({
       status: 201,
-      description: 'Embolsado registrado exitosamente',
+      description:
+        'Embolsado registrado. Devuelve evento_embolsado_id, lote_vivero_id, codigo_trazabilidad, plantas_vivas_iniciales, saldo_vivo_antes (null), saldo_vivo_despues y evidencia_ids_vinculadas.',
     }),
     ApiResponse({
       status: 400,
-      description: 'Datos invalidos o lote en estado incorrecto',
+      description:
+        'Datos invalidos, lote sin INICIO, EMBOLSADO duplicado, evidencia ya vinculada o saldo incorrecto.',
     }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
@@ -521,6 +532,97 @@ export function ApiObtenerTimeline() {
       description: 'Timeline del lote obtenido exitosamente',
     }),
     ApiResponse({ status: 400, description: 'Parametros de filtro invalidos' }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
+export function ApiObtenerContextoEmbolsado() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Obtener contexto para pantalla de embolsado',
+      description:
+        'Devuelve datos de solo lectura del lote para cargar la pantalla de embolsado. Incluye puede_registrar_embolsado y motivo_bloqueo si aplica. No guarda nada.',
+    }),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Contexto del lote para embolsado. Incluye lote_id, codigo_trazabilidad, snapshots, cantidades, puede_registrar_embolsado y motivo_bloqueo.',
+    }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
+export function ApiCrearEvidenciasPendientesEmbolsado() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Subir evidencias pendientes para embolsado',
+      description:
+        'Sube fotos al storage y crea registros en evidencias_trazabilidad con entidad_id=0, vinculando el codigo_trazabilidad del lote. Los IDs retornados deben enviarse en POST :id/embolsado.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
+    ApiConsumes('multipart/form-data'),
+    ApiBody({
+      description: 'Fotos de evidencia para el embolsado',
+      schema: {
+        type: 'object',
+        required: ['fotos'],
+        properties: {
+          titulo: { type: 'string', maxLength: 120, example: 'Embolsado inicial' },
+          descripcion: {
+            type: 'string',
+            maxLength: 1000,
+            example: 'Plantas transferidas a bolsas',
+          },
+          fotos: {
+            type: 'array',
+            items: { type: 'string', format: 'binary' },
+            description: 'Archivos de imagen (max 5, solo JPG/JPEG/PNG)',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 201,
+      description:
+        'Evidencias pendientes creadas. Devuelve evidencia_ids y evidencias con codigo_trazabilidad del lote.',
+    }),
+    ApiResponse({ status: 400, description: 'Sin fotos o lote no ACTIVO' }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
+export function ApiObtenerResultadoEmbolsado() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Consultar resultado del embolsado registrado',
+      description:
+        'Devuelve el evento EMBOLSADO del lote si existe, con plantas_vivas_iniciales, saldo_vivo_actual y evidencias vinculadas. Si no existe, devuelve registrado: false.',
+    }),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Resultado del embolsado. registrado: true con evento, lote y evidencias si existe; registrado: false con evento: null si no.',
+    }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );

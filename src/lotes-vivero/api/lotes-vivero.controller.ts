@@ -17,8 +17,11 @@ import { ApiTags } from '@nestjs/swagger';
 import { LotesViveroService } from '../application/lotes-vivero.service';
 import {
   ApiCrearEvidenciaPendiente,
+  ApiCrearEvidenciasPendientesEmbolsado,
   ApiCrearLoteDesdeRecoleccion,
   ApiListarLotes,
+  ApiObtenerContextoEmbolsado,
+  ApiObtenerResultadoEmbolsado,
   ApiObtenerTimeline,
   ApiRegistrarAdaptabilidad,
   ApiRegistrarDespacho,
@@ -66,6 +69,31 @@ export class LotesViveroController {
     );
   }
 
+  // ---- Embolsado ----
+
+  @Get(':id/embolsado/context')
+  @ApiObtenerContextoEmbolsado()
+  obtenerContextoEmbolsado(@Param('id', ParseIntPipe) loteId: number) {
+    return this.lotesViveroService.obtenerContextoEmbolsado(loteId);
+  }
+
+  @Post(':id/embolsado/evidencias-pendientes')
+  @ApiCrearEvidenciasPendientesEmbolsado()
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
+  crearEvidenciasPendientesEmbolsado(
+    @Param('id', ParseIntPipe) loteId: number,
+    @Body() dto: CrearEvidenciaPendienteViveroDto,
+    @Headers('x-auth-id') authId?: string,
+    @UploadedFiles() files?: { fotos?: any[] },
+  ) {
+    return this.lotesViveroService.crearEvidenciasPendientesEmbolsado(
+      loteId,
+      dto,
+      this.requireAuthId(authId),
+      files?.fotos || [],
+    );
+  }
+
   @Post(':id/embolsado')
   @ApiRegistrarEmbolsado()
   registrarEmbolsado(
@@ -79,6 +107,14 @@ export class LotesViveroController {
       this.requireAuthId(authId),
     );
   }
+
+  @Get(':id/embolsado')
+  @ApiObtenerResultadoEmbolsado()
+  obtenerResultadoEmbolsado(@Param('id', ParseIntPipe) loteId: number) {
+    return this.lotesViveroService.obtenerResultadoEmbolsado(loteId);
+  }
+
+  // ---- Otros eventos ----
 
   @Post(':id/adaptabilidad')
   @ApiRegistrarAdaptabilidad()

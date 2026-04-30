@@ -1,4 +1,6 @@
 import {
+  ArrayMinSize,
+  IsArray,
   IsDateString,
   IsInt,
   IsOptional,
@@ -16,6 +18,11 @@ export class RegistrarEmbolsadoDto {
   @IsInt()
   @Min(1)
   plantas_vivas_iniciales: number;
+
+  @IsArray()
+  @ArrayMinSize(1, { message: 'Se requiere al menos una evidencia para EMBOLSADO' })
+  @IsInt({ each: true })
+  evidencia_ids: number[];
 
   @IsOptional()
   @IsString()

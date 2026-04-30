@@ -156,7 +156,7 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 
 ## 🌐 Endpoints de la API
 
-### **Base URL**: `http://localhost:3000/lotes-vivero`
+### **Base URL**: `http://localhost:3000/api/lotes-vivero`
 
 ---
 
@@ -435,10 +435,10 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 
 **Ejemplos de URL**:
 ```
-GET /lotes-vivero?page=1&limit=20
-GET /lotes-vivero?estado_lote=ACTIVO&vivero_id=2
-GET /lotes-vivero?fecha_inicio=2026-01-01&fecha_fin=2026-06-30
-GET /lotes-vivero?q=ceibo&motivo_cierre=DESPACHO_TOTAL
+GET /api/lotes-vivero?page=1&limit=20
+GET /api/lotes-vivero?estado_lote=ACTIVO&vivero_id=2
+GET /api/lotes-vivero?fecha_inicio=2026-01-01&fecha_fin=2026-06-30
+GET /api/lotes-vivero?q=ceibo&motivo_cierre=DESPACHO_TOTAL
 ```
 
 **Respuesta exitosa (200)**:
@@ -567,18 +567,34 @@ POST {{base_url}}/lotes-vivero/evidencias-pendientes
 **Headers**:
 ```
 x-auth-id: {{auth_id}}
-Content-Type: multipart/form-data
 ```
 
-**Body (form-data)**:
+> ⚠️ En Postman selecciona **Body → form-data**. No agregues `Content-Type` manualmente; Postman lo asigna automáticamente con el boundary correcto al usar form-data.
+
+**Body (form-data) — campos de texto**:
+
+| Key | Type | Value |
+|-----|------|-------|
+| `titulo` | Text | `Foto inicio lote primavera 2026` |
+| `descripcion` | Text | `Semillas en cama de germinación, primera semana` |
+| `tomado_en` | Text | `2026-04-20T08:30:00Z` |
+| `es_principal` | Text | `true` |
+| `fotos` | File | `inicio_lote_01.jpg` |
+| `fotos` | File | `inicio_lote_02.jpg` |
+
+> 📋 **Representación equivalente en JSON** (solo referencia; el envío real debe ser form-data por las imágenes):
+```json
+{
+  "titulo": "Foto inicio lote primavera 2026",
+  "descripcion": "Semillas en cama de germinación, primera semana",
+  "tomado_en": "2026-04-20T08:30:00Z",
+  "es_principal": true,
+  "fotos": ["inicio_lote_01.jpg", "inicio_lote_02.jpg"],
+  "metadata": "{\"camara\": \"iPhone 14\", \"ubicacion\": \"vivero norte\"}"
+}
 ```
-titulo          | Foto inicio lote primavera 2026
-descripcion     | Semillas en cama de germinación, primera semana
-tomado_en       | 2026-04-20T08:30:00Z
-es_principal    | true
-fotos           | [archivo: inicio_lote_01.jpg]
-fotos           | [archivo: inicio_lote_02.jpg]
-```
+
+> 💡 El campo `metadata` se envía como **string JSON serializado** (entre comillas), no como objeto anidado, tanto en form-data como en JSON.
 
 **Respuesta esperada (201)**:
 ```json
@@ -618,7 +634,9 @@ x-auth-id: {{auth_id}}
 Content-Type: application/json
 ```
 
-**Body**:
+> 💡 En Postman: pestaña **Body → raw → JSON** (desplegable a la derecha del campo de texto).
+
+**Body (raw JSON)**:
 ```json
 {
   "recoleccion_id": 10,
@@ -664,7 +682,9 @@ x-auth-id: {{auth_id}}
 Content-Type: application/json
 ```
 
-**Body**:
+> 💡 En Postman: pestaña **Body → raw → JSON**.
+
+**Body (raw JSON)**:
 ```json
 {
   "fecha_evento": "2026-04-25",
@@ -701,7 +721,9 @@ x-auth-id: {{auth_id}}
 Content-Type: application/json
 ```
 
-**Body**:
+> 💡 En Postman: pestaña **Body → raw → JSON**.
+
+**Body (raw JSON)**:
 ```json
 {
   "fecha_evento": "2026-05-01",
@@ -738,7 +760,9 @@ x-auth-id: {{auth_id}}
 Content-Type: application/json
 ```
 
-**Body**:
+> 💡 En Postman: pestaña **Body → raw → JSON**.
+
+**Body (raw JSON)**:
 ```json
 {
   "fecha_evento": "2026-05-15",
@@ -761,7 +785,9 @@ x-auth-id: {{auth_id}}
 Content-Type: application/json
 ```
 
-**Body**:
+> 💡 En Postman: pestaña **Body → raw → JSON**.
+
+**Body (raw JSON)**:
 ```json
 {
   "fecha_evento": "2026-05-10",
@@ -769,6 +795,16 @@ Content-Type: application/json
   "causa_merma": "PLAGA",
   "observaciones": "Plaga de mosca blanca detectada en sector norte del vivero. Se aplicó tratamiento."
 }
+```
+
+**Otros valores válidos para `causa_merma`**:
+```json
+{ "causa_merma": "ENFERMEDAD" }
+{ "causa_merma": "SEQUIA" }
+{ "causa_merma": "DANO_FISICO" }
+{ "causa_merma": "MUERTE_NATURAL" }
+{ "causa_merma": "DESCARTE_CALIDAD" }
+{ "causa_merma": "OTRO" }
 ```
 
 **Respuesta esperada (201)**:
@@ -802,7 +838,9 @@ x-auth-id: {{auth_id}}
 Content-Type: application/json
 ```
 
-**Body**:
+> 💡 En Postman: pestaña **Body → raw → JSON**.
+
+**Body (raw JSON)**:
 ```json
 {
   "fecha_evento": "2026-06-01",
@@ -846,7 +884,9 @@ x-auth-id: {{auth_id}}
 Content-Type: application/json
 ```
 
-**Body**:
+> 💡 En Postman: pestaña **Body → raw → JSON**. Cuando `destino_tipo` es `DONACION_COMUNIDAD`, el campo `comunidad_destino_id` es **obligatorio**.
+
+**Body (raw JSON)**:
 ```json
 {
   "fecha_evento": "2026-06-15",
@@ -858,6 +898,13 @@ Content-Type: application/json
 }
 ```
 
+**Otros valores válidos para `destino_tipo`**:
+```json
+{ "destino_tipo": "PLANTACION_PROPIA" }
+{ "destino_tipo": "VENTA" }
+{ "destino_tipo": "OTRO" }
+```
+
 ---
 
 ### Ejemplo 9 — Listar lotes activos de un vivero
@@ -865,6 +912,8 @@ Content-Type: application/json
 ```
 GET {{base_url}}/lotes-vivero?estado_lote=ACTIVO&vivero_id=2&page=1&limit=10
 ```
+
+> 💡 En Postman: los query params se pueden escribir directamente en la URL o configurarlos en la pestaña **Params**.
 
 **Headers**: (ninguno requerido)
 
@@ -903,6 +952,8 @@ GET {{base_url}}/lotes-vivero?estado_lote=ACTIVO&vivero_id=2&page=1&limit=10
 ```
 GET {{base_url}}/lotes-vivero/{{lote_id}}/timeline
 ```
+
+> 💡 En Postman: los filtros opcionales se agregan en la pestaña **Params**. No requiere body ni `Content-Type`.
 
 **Sin filtros (todos los eventos)**:
 
@@ -950,9 +1001,14 @@ GET {{base_url}}/lotes-vivero/{{lote_id}}/timeline
 }
 ```
 
-**Filtrado solo por mermas**:
+**Filtrado por responsable y rango de fechas**:
 ```
-GET {{base_url}}/lotes-vivero/{{lote_id}}/timeline?tipo_evento=MERMA
+GET {{base_url}}/lotes-vivero/{{lote_id}}/timeline?responsable_id=77&fecha_inicio=2026-04-01&fecha_fin=2026-06-30
+```
+
+**Otros valores válidos para `tipo_evento`**:
+```
+INICIO | EMBOLSADO | ADAPTABILIDAD | MERMA | DESPACHO | CIERRE_AUTOMATICO
 ```
 
 ---
