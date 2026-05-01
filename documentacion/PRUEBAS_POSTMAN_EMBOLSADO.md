@@ -30,6 +30,7 @@ GET http://localhost:3000/api/lotes-vivero/6/embolsado/context
 ```
 
 **Headers:**
+
 ```
 x-auth-id: tu-auth-uuid-aqui
 ```
@@ -38,19 +39,22 @@ x-auth-id: tu-auth-uuid-aqui
 
 ```json
 {
-  "lote_id": 6,
-  "codigo_trazabilidad": "VIV-000006-REC-2026-066",
-  "nombre_cientifico_snapshot": "Quercus robur",
-  "nombre_comercial_snapshot": "Roble europeo",
-  "tipo_material_snapshot": "ESQUEJE",
-  "cantidad_inicial_en_proceso": 50,
-  "unidad_medida_inicial": "UNIDAD",
-  "fecha_inicio": "2026-04-20",
-  "estado_lote": "ACTIVO",
-  "plantas_vivas_iniciales": null,
-  "saldo_vivo_actual": null,
-  "puede_registrar_embolsado": true,
-  "motivo_bloqueo": null
+  "success": true,
+  "data": {
+    "lote_id": 6,
+    "codigo_trazabilidad": "VIV-000006-REC-2026-066",
+    "nombre_cientifico_snapshot": "Quercus robur",
+    "nombre_comercial_snapshot": "Roble europeo",
+    "tipo_material_snapshot": "ESQUEJE",
+    "cantidad_inicial_en_proceso": 50,
+    "unidad_medida_inicial": "UNIDAD",
+    "fecha_inicio": "2026-04-20",
+    "estado_lote": "ACTIVO",
+    "plantas_vivas_iniciales": null,
+    "saldo_vivo_actual": null,
+    "puede_registrar_embolsado": true,
+    "motivo_bloqueo": null
+  }
 }
 ```
 
@@ -58,27 +62,30 @@ x-auth-id: tu-auth-uuid-aqui
 
 ```json
 {
-  "lote_id": 6,
-  "codigo_trazabilidad": "VIV-000006-REC-2026-066",
-  "nombre_cientifico_snapshot": "Quercus robur",
-  "nombre_comercial_snapshot": "Roble europeo",
-  "tipo_material_snapshot": "ESQUEJE",
-  "cantidad_inicial_en_proceso": 50,
-  "unidad_medida_inicial": "UNIDAD",
-  "fecha_inicio": "2026-04-20",
-  "estado_lote": "ACTIVO",
-  "plantas_vivas_iniciales": 100,
-  "saldo_vivo_actual": 100,
-  "puede_registrar_embolsado": false,
-  "motivo_bloqueo": "El lote ya tiene EMBOLSADO registrado. Solo se permite una vez por lote (RN-VIV-11).",
-  "evento_embolsado_existente": {
-    "id": 27,
-    "tipo_evento": "EMBOLSADO",
-    "fecha_evento": "2026-04-25",
-    "cantidad_afectada": 100,
-    "saldo_vivo_antes": null,
-    "saldo_vivo_despues": 100,
-    "created_at": "2026-04-25T12:00:00Z"
+  "success": true,
+  "data": {
+    "lote_id": 6,
+    "codigo_trazabilidad": "VIV-000006-REC-2026-066",
+    "nombre_cientifico_snapshot": "Quercus robur",
+    "nombre_comercial_snapshot": "Roble europeo",
+    "tipo_material_snapshot": "ESQUEJE",
+    "cantidad_inicial_en_proceso": 50,
+    "unidad_medida_inicial": "UNIDAD",
+    "fecha_inicio": "2026-04-20",
+    "estado_lote": "ACTIVO",
+    "plantas_vivas_iniciales": 100,
+    "saldo_vivo_actual": 100,
+    "puede_registrar_embolsado": false,
+    "motivo_bloqueo": "El lote ya tiene EMBOLSADO registrado. Solo se permite una vez por lote (RN-VIV-11).",
+    "evento_embolsado_existente": {
+      "id": 27,
+      "tipo_evento": "EMBOLSADO",
+      "fecha_evento": "2026-04-25",
+      "cantidad_afectada": 100,
+      "saldo_vivo_antes": null,
+      "saldo_vivo_despues": 100,
+      "created_at": "2026-04-25T12:00:00Z"
+    }
   }
 }
 ```
@@ -87,18 +94,21 @@ x-auth-id: tu-auth-uuid-aqui
 
 ```json
 {
-  "lote_id": 6,
-  "puede_registrar_embolsado": false,
-  "motivo_bloqueo": "El lote no tiene un evento INICIO registrado. EMBOLSADO requiere INICIO previo (RN-VIV-10)."
+  "success": true,
+  "data": {
+    "lote_id": 6,
+    "puede_registrar_embolsado": false,
+    "motivo_bloqueo": "El lote no tiene un evento INICIO registrado. EMBOLSADO requiere INICIO previo (RN-VIV-10)."
+  }
 }
 ```
 
 ### Errores comunes
 
-| Código | Causa |
-|--------|-------|
-| 404 | El lote no existe |
-| 500 | Error interno al leer el lote |
+| Código | Causa                         |
+| ------ | ----------------------------- |
+| 404    | El lote no existe             |
+| 500    | Error interno al leer el lote |
 
 ---
 
@@ -113,6 +123,7 @@ POST http://localhost:3000/api/lotes-vivero/6/embolsado/evidencias-pendientes
 ```
 
 **Headers:**
+
 ```
 x-auth-id: tu-auth-uuid-aqui
 Content-Type: multipart/form-data
@@ -120,12 +131,12 @@ Content-Type: multipart/form-data
 
 **Body (form-data):**
 
-| Key | Type | Value |
-|-----|------|-------|
-| fotos | File | foto_embolsado_1.jpg |
-| fotos | File | foto_embolsado_2.jpg *(opcional)* |
-| titulo | Text | Embolsado lote 6 |
-| descripcion | Text | Plantas transferidas a bolsas con sustrato *(opcional)* |
+| Key         | Type | Value                                                   |
+| ----------- | ---- | ------------------------------------------------------- |
+| fotos       | File | foto_embolsado_1.jpg                                    |
+| fotos       | File | foto_embolsado_2.jpg _(opcional)_                       |
+| titulo      | Text | Embolsado lote 6                                        |
+| descripcion | Text | Plantas transferidas a bolsas con sustrato _(opcional)_ |
 
 > Solo se aceptan archivos JPG, JPEG y PNG. Máximo 5 fotos.
 
@@ -140,23 +151,26 @@ Content-Type: multipart/form-data
 
 ```json
 {
-  "evidencia_ids": [137, 138],
-  "evidencias": [
-    {
-      "id": 137,
-      "codigo_trazabilidad": "VIV-000006-REC-2026-066",
-      "entidad_id": 0,
-      "ruta_archivo": "vivero/eventos/pendientes/77/1714000000000_0_foto1.jpg",
-      "tipo_archivo": "image/jpeg"
-    },
-    {
-      "id": 138,
-      "codigo_trazabilidad": "VIV-000006-REC-2026-066",
-      "entidad_id": 0,
-      "ruta_archivo": "vivero/eventos/pendientes/77/1714000000001_1_foto2.jpg",
-      "tipo_archivo": "image/jpeg"
-    }
-  ]
+  "success": true,
+  "data": {
+    "evidencia_ids": [137, 138],
+    "evidencias": [
+      {
+        "id": 137,
+        "codigo_trazabilidad": "VIV-000006-REC-2026-066",
+        "entidad_id": 0,
+        "ruta_archivo": "vivero/eventos/pendientes/77/1714000000000_0_foto1.jpg",
+        "tipo_archivo": "image/jpeg"
+      },
+      {
+        "id": 138,
+        "codigo_trazabilidad": "VIV-000006-REC-2026-066",
+        "entidad_id": 0,
+        "ruta_archivo": "vivero/eventos/pendientes/77/1714000000001_1_foto2.jpg",
+        "tipo_archivo": "image/jpeg"
+      }
+    ]
+  }
 }
 ```
 
@@ -164,13 +178,13 @@ Content-Type: multipart/form-data
 
 ### Errores comunes
 
-| Código | Causa |
-|--------|-------|
-| 400 | No se enviaron fotos |
-| 400 | El lote no está en estado ACTIVO |
-| 400 | Formato de imagen no permitido (solo JPG, JPEG, PNG) |
-| 401 | Falta el header `x-auth-id` |
-| 404 | El lote no existe |
+| Código | Causa                                                |
+| ------ | ---------------------------------------------------- |
+| 400    | No se enviaron fotos                                 |
+| 400    | El lote no está en estado ACTIVO                     |
+| 400    | Formato de imagen no permitido (solo JPG, JPEG, PNG) |
+| 401    | Falta el header `x-auth-id`                          |
+| 404    | El lote no existe                                    |
 
 ---
 
@@ -188,12 +202,14 @@ POST http://localhost:3000/api/lotes-vivero/6/embolsado
 ```
 
 **Headers:**
+
 ```
 x-auth-id: tu-auth-uuid-aqui
 (opcinal para JSON)Content-Type: application/json
 ```
 
 **Body:**
+
 ```json
 {
   "fecha_evento": "2026-04-30",
@@ -205,31 +221,35 @@ x-auth-id: tu-auth-uuid-aqui
 
 ### Campos del body
 
-| Campo | Tipo | Requerido | Descripción |
-|-------|------|-----------|-------------|
-| `fecha_evento` | string (date) | Sí | Fecha ISO 8601. No puede ser futura. Máximo 10 días en el pasado. |
-| `plantas_vivas_iniciales` | integer | Sí | Entero mayor a 0. Conteo observado, no conversión de gramos. |
-| `evidencia_ids` | number[] | Sí | Mínimo 1 ID de evidencia pendiente obtenido en el paso 2. |
-| `observaciones` | string | No | Máximo 1000 caracteres. |
+| Campo                     | Tipo          | Requerido | Descripción                                                       |
+| ------------------------- | ------------- | --------- | ----------------------------------------------------------------- |
+| `fecha_evento`            | string (date) | Sí        | Fecha ISO 8601. No puede ser futura. Máximo 10 días en el pasado. |
+| `plantas_vivas_iniciales` | integer       | Sí        | Entero mayor a 0. Conteo observado, no conversión de gramos.      |
+| `evidencia_ids`           | number[]      | Sí        | Mínimo 1 ID de evidencia pendiente obtenido en el paso 2.         |
+| `observaciones`           | string        | No        | Máximo 1000 caracteres.                                           |
 
 ### Respuesta esperada — 201 Created
 
 ```json
 {
-  "message": "Embolsado registrado correctamente.",
-  "evento_embolsado_id": 27,
-  "lote_vivero_id": 6,
-  "codigo_trazabilidad": "VIV-000006-REC-2026-066",
-  "plantas_vivas_iniciales": 100,
-  "saldo_vivo_antes": null,
-  "saldo_vivo_despues": 100,
-  "evidencia_ids_vinculadas": [137, 138]
+  "success": true,
+  "data": {
+    "message": "Embolsado registrado correctamente.",
+    "evento_embolsado_id": 27,
+    "lote_vivero_id": 6,
+    "codigo_trazabilidad": "VIV-000006-REC-2026-066",
+    "plantas_vivas_iniciales": 100,
+    "saldo_vivo_antes": null,
+    "saldo_vivo_despues": 100,
+    "evidencia_ids_vinculadas": [137, 138]
+  }
 }
 ```
 
 ### Casos de error a probar
 
 **Sin INICIO previo:**
+
 ```json
 {
   "statusCode": 400,
@@ -238,6 +258,7 @@ x-auth-id: tu-auth-uuid-aqui
 ```
 
 **EMBOLSADO duplicado (segunda vez en el mismo lote):**
+
 ```json
 {
   "statusCode": 400,
@@ -246,6 +267,7 @@ x-auth-id: tu-auth-uuid-aqui
 ```
 
 **Evidencia ya vinculada a otro evento:**
+
 ```json
 {
   "statusCode": 400,
@@ -254,26 +276,25 @@ x-auth-id: tu-auth-uuid-aqui
 ```
 
 **Sin evidencias:**
+
 ```json
 {
   "statusCode": 400,
-  "message": [
-    "Se requiere al menos una evidencia para EMBOLSADO"
-  ]
+  "message": ["Se requiere al menos una evidencia para EMBOLSADO"]
 }
 ```
 
 **plantas_vivas_iniciales menor a 1:**
+
 ```json
 {
   "statusCode": 400,
-  "message": [
-    "plantas_vivas_iniciales must not be less than 1"
-  ]
+  "message": ["plantas_vivas_iniciales must not be less than 1"]
 }
 ```
 
 **Sin header x-auth-id:**
+
 ```json
 {
   "statusCode": 401,
@@ -283,13 +304,13 @@ x-auth-id: tu-auth-uuid-aqui
 
 ### Errores comunes
 
-| Código | Causa |
-|--------|-------|
-| 400 | Lote sin INICIO, EMBOLSADO duplicado, evidencia ya usada, campos inválidos |
-| 401 | Falta o está vacío el header `x-auth-id` |
-| 403 | El rol del usuario no permite escribir |
-| 404 | El usuario del `x-auth-id` no existe |
-| 500 | Error interno o de Supabase |
+| Código | Causa                                                                      |
+| ------ | -------------------------------------------------------------------------- |
+| 400    | Lote sin INICIO, EMBOLSADO duplicado, evidencia ya usada, campos inválidos |
+| 401    | Falta o está vacío el header `x-auth-id`                                   |
+| 403    | El rol del usuario no permite escribir                                     |
+| 404    | El usuario del `x-auth-id` no existe                                       |
+| 500    | Error interno o de Supabase                                                |
 
 ---
 
@@ -304,6 +325,7 @@ GET http://localhost:3000/lotes-vivero/6/embolsado
 ```
 
 **Headers:**
+
 ```
 x-auth-id: tu-auth-uuid-aqui
 ```
@@ -312,36 +334,39 @@ x-auth-id: tu-auth-uuid-aqui
 
 ```json
 {
-  "registrado": true,
-  "evento": {
-    "id": 27,
-    "tipo_evento": "EMBOLSADO",
-    "fecha_evento": "2026-04-30",
-    "cantidad_afectada": 100,
-    "unidad_medida_evento": "UNIDAD",
-    "saldo_vivo_antes": null,
-    "saldo_vivo_despues": 100,
-    "observaciones": "Embolsado con sustrato turba y perlita.",
-    "responsable_id": 77,
-    "created_at": "2026-04-30T15:30:00Z"
-  },
-  "lote": {
-    "id": 6,
-    "codigo_trazabilidad": "VIV-000006-REC-2026-066",
-    "plantas_vivas_iniciales": 100,
-    "saldo_vivo_actual": 100
-  },
-  "evidencias": [
-    {
-      "id": 137,
-      "ruta_archivo": "vivero/eventos/pendientes/77/1714000000000_0_foto1.jpg",
-      "mime_type": "image/jpeg",
-      "tipo_archivo": "FOTO",
-      "es_principal": true,
-      "orden": 0,
-      "public_url": "https://tu-proyecto.supabase.co/storage/v1/object/public/recoleccion_fotos/vivero/eventos/pendientes/77/1714000000000_0_foto1.jpg"
-    }
-  ]
+  "success": true,
+  "data": {
+    "registrado": true,
+    "evento": {
+      "id": 27,
+      "tipo_evento": "EMBOLSADO",
+      "fecha_evento": "2026-04-30",
+      "cantidad_afectada": 100,
+      "unidad_medida_evento": "UNIDAD",
+      "saldo_vivo_antes": null,
+      "saldo_vivo_despues": 100,
+      "observaciones": "Embolsado con sustrato turba y perlita.",
+      "responsable_id": 77,
+      "created_at": "2026-04-30T15:30:00Z"
+    },
+    "lote": {
+      "id": 6,
+      "codigo_trazabilidad": "VIV-000006-REC-2026-066",
+      "plantas_vivas_iniciales": 100,
+      "saldo_vivo_actual": 100
+    },
+    "evidencias": [
+      {
+        "id": 137,
+        "ruta_archivo": "vivero/eventos/pendientes/77/1714000000000_0_foto1.jpg",
+        "mime_type": "image/jpeg",
+        "tipo_archivo": "FOTO",
+        "es_principal": true,
+        "orden": 0,
+        "public_url": "https://tu-proyecto.supabase.co/storage/v1/object/public/recoleccion_fotos/vivero/eventos/pendientes/77/1714000000000_0_foto1.jpg"
+      }
+    ]
+  }
 }
 ```
 
@@ -349,17 +374,20 @@ x-auth-id: tu-auth-uuid-aqui
 
 ```json
 {
-  "registrado": false,
-  "evento": null
+  "success": true,
+  "data": {
+    "registrado": false,
+    "evento": null
+  }
 }
 ```
 
 ### Errores comunes
 
-| Código | Causa |
-|--------|-------|
-| 404 | El lote no existe |
-| 500 | Error interno |
+| Código | Causa             |
+| ------ | ----------------- |
+| 404    | El lote no existe |
+| 500    | Error interno     |
 
 ---
 
@@ -367,12 +395,12 @@ x-auth-id: tu-auth-uuid-aqui
 
 Crea un Environment en Postman con estas variables:
 
-| Variable | Valor de ejemplo |
-|----------|-----------------|
-| `base_url` | `http://localhost:3000` |
-| `auth_id` | `tu-auth-uuid-de-supabase` |
-| `lote_id` | `6` |
-| `evidencia_ids` | `[137]` *(actualizar después del paso 2)* |
+| Variable        | Valor de ejemplo                          |
+| --------------- | ----------------------------------------- |
+| `base_url`      | `http://localhost:3000`                   |
+| `auth_id`       | `tu-auth-uuid-de-supabase`                |
+| `lote_id`       | `6`                                       |
+| `evidencia_ids` | `[137]` _(actualizar después del paso 2)_ |
 
 Y reemplaza en los requests:
 
@@ -383,6 +411,7 @@ Y reemplaza en los requests:
 ```
 
 Header común:
+
 ```
 x-auth-id: {{auth_id}}
 ```
@@ -398,9 +427,10 @@ GET {{base_url}}/api/lotes-vivero/{{lote_id}}/embolsado/context
 ```
 
 Verificar que la respuesta tenga:
-- `"estado_lote": "ACTIVO"`
-- `"puede_registrar_embolsado": true`
-- `"motivo_bloqueo": null`
+
+- `"data.estado_lote": "ACTIVO"`
+- `"data.puede_registrar_embolsado": true`
+- `"data.motivo_bloqueo": null`
 
 ---
 
@@ -432,10 +462,11 @@ POST {{base_url}}/api/lotes-vivero/{{lote_id}}/embolsado
 ```
 
 Verificar que la respuesta tenga:
-- `"message": "Embolsado registrado correctamente."`
-- `"saldo_vivo_antes": null`
-- `"saldo_vivo_despues": 100`
-- `"evidencia_ids_vinculadas": [137]`
+
+- `"data.message": "Embolsado registrado correctamente."`
+- `"data.saldo_vivo_antes": null`
+- `"data.saldo_vivo_despues": 100`
+- `"data.evidencia_ids_vinculadas": [137]`
 
 ---
 
@@ -446,11 +477,12 @@ GET {{base_url}}/api/lotes-vivero/{{lote_id}}/embolsado
 ```
 
 Verificar que la respuesta tenga:
-- `"registrado": true`
-- `"evento"` con los datos del embolsado
-- `"lote.plantas_vivas_iniciales": 100`
-- `"lote.saldo_vivo_actual": 100`
-- `"evidencias"` con las fotos vinculadas
+
+- `"data.registrado": true`
+- `"data.evento"` con los datos del embolsado
+- `"data.lote.plantas_vivas_iniciales": 100`
+- `"data.lote.saldo_vivo_actual": 100`
+- `"data.evidencias"` con las fotos vinculadas
 
 ---
 

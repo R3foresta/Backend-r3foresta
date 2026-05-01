@@ -32,8 +32,12 @@ describe('ViveroEmbolsadoService', () => {
   let service: ViveroEmbolsadoService;
   let rpcMock: jest.Mock;
   let fromMock: jest.Mock;
-  let authService: jest.Mocked<Pick<ViveroAuthService, 'getUserByAuthId' | 'assertCanWrite'>>;
-  let evidenciasService: jest.Mocked<Pick<ViveroEvidenciasService, 'crearPendienteParaEvento'>>;
+  let authService: jest.Mocked<
+    Pick<ViveroAuthService, 'getUserByAuthId' | 'assertCanWrite'>
+  >;
+  let evidenciasService: jest.Mocked<
+    Pick<ViveroEvidenciasService, 'crearPendienteParaEvento'>
+  >;
 
   const AUTH_ID = 'auth-uuid-test';
   const LOTE_ID = 6;
@@ -53,7 +57,12 @@ describe('ViveroEmbolsadoService', () => {
     saldo_vivo_actual: null,
   };
 
-  const eventoInicio = { id: 10, tipo_evento: 'INICIO', fecha_evento: '2026-04-20', created_at: '2026-04-20T10:00:00Z' };
+  const eventoInicio = {
+    id: 10,
+    tipo_evento: 'INICIO',
+    fecha_evento: '2026-04-20',
+    created_at: '2026-04-20T10:00:00Z',
+  };
   const eventoEmbolsado = {
     id: 27,
     tipo_evento: 'EMBOLSADO',
@@ -86,7 +95,13 @@ describe('ViveroEmbolsadoService', () => {
     } as unknown as SupabaseService;
 
     authService = {
-      getUserByAuthId: jest.fn().mockResolvedValue({ id: USUARIO_ID, nombre: 'Responsable', rol: 'GENERAL' }),
+      getUserByAuthId: jest
+        .fn()
+        .mockResolvedValue({
+          id: USUARIO_ID,
+          nombre: 'Responsable',
+          rol: 'GENERAL',
+        }),
       assertCanWrite: jest.fn(),
     };
 
@@ -106,8 +121,16 @@ describe('ViveroEmbolsadoService', () => {
   // -------------------------------------------------------------------------
   describe('obtenerContexto', () => {
     it('devuelve contexto con puede_registrar_embolsado=true cuando el lote esta ACTIVO, tiene INICIO y no tiene EMBOLSADO', async () => {
-      const loteChain = buildChain({ maybeSingle: jest.fn().mockResolvedValue({ data: loteActivo, error: null }) });
-      const eventosChain = buildChain({ order: jest.fn().mockResolvedValue({ data: [eventoInicio], error: null }) });
+      const loteChain = buildChain({
+        maybeSingle: jest
+          .fn()
+          .mockResolvedValue({ data: loteActivo, error: null }),
+      });
+      const eventosChain = buildChain({
+        order: jest
+          .fn()
+          .mockResolvedValue({ data: [eventoInicio], error: null }),
+      });
 
       fromMock = jest.fn().mockImplementation((tabla: string) => {
         if (tabla === 'lote_vivero') return loteChain;
@@ -118,8 +141,10 @@ describe('ViveroEmbolsadoService', () => {
       rpcMock = jest.fn();
       service = buildService(fromMock, rpcMock);
 
-      const resultado = await service.obtenerContexto(LOTE_ID);
+      const response = await service.obtenerContexto(LOTE_ID);
+      const resultado = response.data;
 
+      expect(response.success).toBe(true);
       expect(resultado.lote_id).toBe(LOTE_ID);
       expect(resultado.codigo_trazabilidad).toBe('VIV-000006-REC-2026-066');
       expect(resultado.estado_lote).toBe('ACTIVO');
@@ -129,8 +154,26 @@ describe('ViveroEmbolsadoService', () => {
     });
 
     it('devuelve puede_registrar_embolsado=false con motivo cuando el lote ya tiene EMBOLSADO', async () => {
-      const loteChain = buildChain({ maybeSingle: jest.fn().mockResolvedValue({ data: { ...loteActivo, plantas_vivas_iniciales: 100, saldo_vivo_actual: 100 }, error: null }) });
-      const eventosChain = buildChain({ order: jest.fn().mockResolvedValue({ data: [eventoInicio, eventoEmbolsado], error: null }) });
+      const loteChain = buildChain({
+        maybeSingle: jest
+          .fn()
+          .mockResolvedValue({
+            data: {
+              ...loteActivo,
+              plantas_vivas_iniciales: 100,
+              saldo_vivo_actual: 100,
+            },
+            error: null,
+          }),
+      });
+      const eventosChain = buildChain({
+        order: jest
+          .fn()
+          .mockResolvedValue({
+            data: [eventoInicio, eventoEmbolsado],
+            error: null,
+          }),
+      });
 
       fromMock = jest.fn().mockImplementation((tabla: string) => {
         if (tabla === 'lote_vivero') return loteChain;
@@ -140,16 +183,24 @@ describe('ViveroEmbolsadoService', () => {
 
       service = buildService(fromMock, jest.fn());
 
-      const resultado = await service.obtenerContexto(LOTE_ID);
+      const response = await service.obtenerContexto(LOTE_ID);
+      const resultado = response.data;
 
+      expect(response.success).toBe(true);
       expect(resultado.puede_registrar_embolsado).toBe(false);
       expect(resultado.motivo_bloqueo).toContain('ya tiene EMBOLSADO');
       expect(resultado).toHaveProperty('evento_embolsado_existente');
     });
 
     it('devuelve puede_registrar_embolsado=false cuando el lote no tiene evento INICIO', async () => {
-      const loteChain = buildChain({ maybeSingle: jest.fn().mockResolvedValue({ data: loteActivo, error: null }) });
-      const eventosChain = buildChain({ order: jest.fn().mockResolvedValue({ data: [], error: null }) });
+      const loteChain = buildChain({
+        maybeSingle: jest
+          .fn()
+          .mockResolvedValue({ data: loteActivo, error: null }),
+      });
+      const eventosChain = buildChain({
+        order: jest.fn().mockResolvedValue({ data: [], error: null }),
+      });
 
       fromMock = jest.fn().mockImplementation((tabla: string) => {
         if (tabla === 'lote_vivero') return loteChain;
@@ -159,15 +210,21 @@ describe('ViveroEmbolsadoService', () => {
 
       service = buildService(fromMock, jest.fn());
 
-      const resultado = await service.obtenerContexto(LOTE_ID);
+      const response = await service.obtenerContexto(LOTE_ID);
+      const resultado = response.data;
 
+      expect(response.success).toBe(true);
       expect(resultado.puede_registrar_embolsado).toBe(false);
       expect(resultado.motivo_bloqueo).toContain('INICIO');
     });
 
     it('lanza NotFoundException si el lote no existe', async () => {
-      const loteChain = buildChain({ maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }) });
-      const eventosChain = buildChain({ order: jest.fn().mockResolvedValue({ data: [], error: null }) });
+      const loteChain = buildChain({
+        maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+      });
+      const eventosChain = buildChain({
+        order: jest.fn().mockResolvedValue({ data: [], error: null }),
+      });
 
       fromMock = jest.fn().mockImplementation((tabla: string) => {
         if (tabla === 'lote_vivero') return loteChain;
@@ -176,7 +233,9 @@ describe('ViveroEmbolsadoService', () => {
 
       service = buildService(fromMock, jest.fn());
 
-      await expect(service.obtenerContexto(LOTE_ID)).rejects.toThrow(NotFoundException);
+      await expect(service.obtenerContexto(LOTE_ID)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -194,12 +253,15 @@ describe('ViveroEmbolsadoService', () => {
 
     it('llama la RPC con responsable autenticado y retorna el resultado', async () => {
       rpcMock = jest.fn().mockReturnValue({
-        single: jest.fn().mockResolvedValue({ data: rpcResultadoEmbolsado, error: null }),
+        single: jest
+          .fn()
+          .mockResolvedValue({ data: rpcResultadoEmbolsado, error: null }),
       });
 
       service = buildService(jest.fn(), rpcMock);
 
-      const resultado = await service.registrar(LOTE_ID, dto, AUTH_ID);
+      const response = await service.registrar(LOTE_ID, dto, AUTH_ID);
+      const resultado = response.data;
 
       // Test 10: responsable_id viene del usuario autenticado, no del body
       expect(authService.getUserByAuthId).toHaveBeenCalledWith(AUTH_ID);
@@ -207,12 +269,13 @@ describe('ViveroEmbolsadoService', () => {
       expect(rpcMock).toHaveBeenCalledWith('fn_vivero_registrar_embolsado', {
         p_lote_id: LOTE_ID,
         p_fecha_evento: dto.fecha_evento,
-        p_responsable_id: USUARIO_ID,   // <-- sale de getUserByAuthId, no del body
+        p_responsable_id: USUARIO_ID, // <-- sale de getUserByAuthId, no del body
         p_plantas_vivas_iniciales: dto.plantas_vivas_iniciales,
         p_observaciones: dto.observaciones,
         p_evidencia_ids: dto.evidencia_ids,
       });
 
+      expect(response.success).toBe(true);
       expect(resultado.message).toBe('Embolsado registrado correctamente.');
       expect(resultado.evento_embolsado_id).toBe(27);
       expect(resultado.lote_vivero_id).toBe(LOTE_ID);
@@ -227,7 +290,9 @@ describe('ViveroEmbolsadoService', () => {
     // ni saldo_vivo_despues; la RPC los calcula y el DTO no los acepta
     it('no acepta campos de saldo ni unidad_medida_evento en el body (los calcula la RPC)', async () => {
       rpcMock = jest.fn().mockReturnValue({
-        single: jest.fn().mockResolvedValue({ data: rpcResultadoEmbolsado, error: null }),
+        single: jest
+          .fn()
+          .mockResolvedValue({ data: rpcResultadoEmbolsado, error: null }),
       });
       service = buildService(jest.fn(), rpcMock);
 
@@ -250,9 +315,13 @@ describe('ViveroEmbolsadoService', () => {
     it('propaga NotFoundException si el usuario autenticado no existe', async () => {
       rpcMock = jest.fn();
       service = buildService(jest.fn(), rpcMock);
-      authService.getUserByAuthId.mockRejectedValue(new NotFoundException('Usuario no encontrado'));
+      authService.getUserByAuthId.mockRejectedValue(
+        new NotFoundException('Usuario no encontrado'),
+      );
 
-      await expect(service.registrar(LOTE_ID, dto, AUTH_ID)).rejects.toThrow(NotFoundException);
+      await expect(service.registrar(LOTE_ID, dto, AUTH_ID)).rejects.toThrow(
+        NotFoundException,
+      );
       expect(rpcMock).not.toHaveBeenCalled();
     });
 
@@ -261,13 +330,18 @@ describe('ViveroEmbolsadoService', () => {
       rpcMock = jest.fn().mockReturnValue({
         single: jest.fn().mockResolvedValue({
           data: null,
-          error: { message: 'plantas_vivas_iniciales debe ser un entero mayor o igual a 1.' },
+          error: {
+            message:
+              'plantas_vivas_iniciales debe ser un entero mayor o igual a 1.',
+          },
         }),
       });
       service = buildService(jest.fn(), rpcMock);
 
       const dtoInvalido = { ...dto, plantas_vivas_iniciales: 0 };
-      await expect(service.registrar(LOTE_ID, dtoInvalido as any, AUTH_ID)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.registrar(LOTE_ID, dtoInvalido as any, AUTH_ID),
+      ).rejects.toThrow(BadRequestException);
     });
 
     // Test 4: rechaza evidencia_ids vacio o ausente — la RPC devuelve error
@@ -275,13 +349,18 @@ describe('ViveroEmbolsadoService', () => {
       rpcMock = jest.fn().mockReturnValue({
         single: jest.fn().mockResolvedValue({
           data: null,
-          error: { message: 'EMBOLSADO requiere al menos una evidencia obligatoria (RN-VIV-26).' },
+          error: {
+            message:
+              'EMBOLSADO requiere al menos una evidencia obligatoria (RN-VIV-26).',
+          },
         }),
       });
       service = buildService(jest.fn(), rpcMock);
 
       const dtoSinEvidencia = { ...dto, evidencia_ids: [] };
-      await expect(service.registrar(LOTE_ID, dtoSinEvidencia as any, AUTH_ID)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.registrar(LOTE_ID, dtoSinEvidencia as any, AUTH_ID),
+      ).rejects.toThrow(BadRequestException);
     });
 
     // Test 6: propaga error si la RPC rechaza lote sin INICIO previo
@@ -289,12 +368,17 @@ describe('ViveroEmbolsadoService', () => {
       rpcMock = jest.fn().mockReturnValue({
         single: jest.fn().mockResolvedValue({
           data: null,
-          error: { message: 'El lote 6 no tiene un evento INICIO registrado. EMBOLSADO requiere INICIO previo (RN-VIV-10).' },
+          error: {
+            message:
+              'El lote 6 no tiene un evento INICIO registrado. EMBOLSADO requiere INICIO previo (RN-VIV-10).',
+          },
         }),
       });
       service = buildService(jest.fn(), rpcMock);
 
-      await expect(service.registrar(LOTE_ID, dto, AUTH_ID)).rejects.toThrow(BadRequestException);
+      await expect(service.registrar(LOTE_ID, dto, AUTH_ID)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     // Test 7: propaga error si la RPC rechaza EMBOLSADO duplicado
@@ -302,12 +386,17 @@ describe('ViveroEmbolsadoService', () => {
       rpcMock = jest.fn().mockReturnValue({
         single: jest.fn().mockResolvedValue({
           data: null,
-          error: { message: 'El lote 6 ya tiene un evento EMBOLSADO registrado. No se puede registrar dos veces (RN-VIV-11).' },
+          error: {
+            message:
+              'El lote 6 ya tiene un evento EMBOLSADO registrado. No se puede registrar dos veces (RN-VIV-11).',
+          },
         }),
       });
       service = buildService(jest.fn(), rpcMock);
 
-      await expect(service.registrar(LOTE_ID, dto, AUTH_ID)).rejects.toThrow(BadRequestException);
+      await expect(service.registrar(LOTE_ID, dto, AUTH_ID)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     // Test 8: propaga error si la RPC rechaza evidencia ya vinculada
@@ -323,7 +412,9 @@ describe('ViveroEmbolsadoService', () => {
       });
       service = buildService(jest.fn(), rpcMock);
 
-      await expect(service.registrar(LOTE_ID, dto, AUTH_ID)).rejects.toThrow(BadRequestException);
+      await expect(service.registrar(LOTE_ID, dto, AUTH_ID)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -334,7 +425,12 @@ describe('ViveroEmbolsadoService', () => {
     it('devuelve registrado: false cuando el lote no tiene evento EMBOLSADO', async () => {
       const loteChain = buildChain({
         maybeSingle: jest.fn().mockResolvedValue({
-          data: { id: LOTE_ID, codigo_trazabilidad: 'VIV-000006-REC-2026-066', plantas_vivas_iniciales: null, saldo_vivo_actual: null },
+          data: {
+            id: LOTE_ID,
+            codigo_trazabilidad: 'VIV-000006-REC-2026-066',
+            plantas_vivas_iniciales: null,
+            saldo_vivo_actual: null,
+          },
           error: null,
         }),
       });
@@ -350,8 +446,10 @@ describe('ViveroEmbolsadoService', () => {
 
       service = buildService(fromMock, jest.fn());
 
-      const resultado = await service.obtenerResultado(LOTE_ID);
+      const response = await service.obtenerResultado(LOTE_ID);
+      const resultado = response.data;
 
+      expect(response.success).toBe(true);
       expect(resultado.registrado).toBe(false);
       expect(resultado.evento).toBeNull();
     });
@@ -359,15 +457,24 @@ describe('ViveroEmbolsadoService', () => {
     it('devuelve registrado: true con evento cuando EMBOLSADO existe', async () => {
       const loteChain = buildChain({
         maybeSingle: jest.fn().mockResolvedValue({
-          data: { id: LOTE_ID, codigo_trazabilidad: 'VIV-000006-REC-2026-066', plantas_vivas_iniciales: 100, saldo_vivo_actual: 100 },
+          data: {
+            id: LOTE_ID,
+            codigo_trazabilidad: 'VIV-000006-REC-2026-066',
+            plantas_vivas_iniciales: 100,
+            saldo_vivo_actual: 100,
+          },
           error: null,
         }),
       });
       const eventoChain = buildChain({
-        maybeSingle: jest.fn().mockResolvedValue({ data: eventoEmbolsado, error: null }),
+        maybeSingle: jest
+          .fn()
+          .mockResolvedValue({ data: eventoEmbolsado, error: null }),
       });
       const tipoEntidadChain = buildChain({
-        maybeSingle: jest.fn().mockResolvedValue({ data: { id: 5 }, error: null }),
+        maybeSingle: jest
+          .fn()
+          .mockResolvedValue({ data: { id: 5 }, error: null }),
       });
       const evidenciasChain = buildChain({
         is: jest.fn().mockResolvedValue({ data: [], error: null }),
@@ -387,7 +494,11 @@ describe('ViveroEmbolsadoService', () => {
           rpc: jest.fn(),
           storage: {
             from: jest.fn().mockReturnValue({
-              getPublicUrl: jest.fn().mockReturnValue({ data: { publicUrl: 'https://storage/foto.jpg' } }),
+              getPublicUrl: jest
+                .fn()
+                .mockReturnValue({
+                  data: { publicUrl: 'https://storage/foto.jpg' },
+                }),
             }),
           },
         }),
@@ -399,8 +510,10 @@ describe('ViveroEmbolsadoService', () => {
         evidenciasService as unknown as ViveroEvidenciasService,
       );
 
-      const resultado = await service.obtenerResultado(LOTE_ID);
+      const response = await service.obtenerResultado(LOTE_ID);
+      const resultado = response.data;
 
+      expect(response.success).toBe(true);
       expect(resultado.registrado).toBe(true);
       expect(resultado.evento).not.toBeNull();
       expect(resultado.evento!.id).toBe(27);

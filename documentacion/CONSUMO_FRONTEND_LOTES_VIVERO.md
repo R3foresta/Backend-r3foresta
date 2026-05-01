@@ -16,19 +16,22 @@ Endpoints listos para consumo:
 POST /api/lotes-vivero/evidencias-pendientes
 POST /api/lotes-vivero
 GET  /api/lotes-vivero
+GET  /api/lotes-vivero/:id/embolsado/context
+POST /api/lotes-vivero/:id/embolsado/evidencias-pendientes
+POST /api/lotes-vivero/:id/embolsado
+GET  /api/lotes-vivero/:id/embolsado
 ```
 
 Endpoints expuestos pero NO listos todavia:
 
 ```txt
-POST /api/lotes-vivero/:id/embolsado       -> 501 Not Implemented
 POST /api/lotes-vivero/:id/adaptabilidad  -> 501 Not Implemented
 POST /api/lotes-vivero/:id/merma          -> 501 Not Implemented
 POST /api/lotes-vivero/:id/despacho       -> 501 Not Implemented
 GET  /api/lotes-vivero/:id/timeline       -> 501 Not Implemented
 ```
 
-Para la fase actual del frontend, implementar el flujo de inicio y el listado de lotes creados.
+Para la fase actual del frontend, implementar inicio, listado y embolsado.
 
 ## Regla de autenticacion
 
@@ -315,6 +318,180 @@ Respuesta esperada:
 
 Nota para UI: despues del evento `INICIO`, `saldo_vivo_actual` puede venir `null` hasta que se implemente/registre `EMBOLSADO`. Para mostrar cantidad inicial usar `cantidad_inicial_en_proceso`; para plantas vivas usar `saldo_vivo_actual` solo cuando no sea `null`.
 
+## 4. Embolsado
+
+Flujo obligatorio:
+
+```txt
+1. GET  /api/lotes-vivero/:id/embolsado/context
+2. POST /api/lotes-vivero/:id/embolsado/evidencias-pendientes
+3. POST /api/lotes-vivero/:id/embolsado
+4. GET  /api/lotes-vivero/:id/embolsado
+```
+
+### 4.1 Contexto de embolsado
+
+```txt
+GET /api/lotes-vivero/:id/embolsado/context
+```
+
+Respuesta:
+
+```ts
+type EmbolsadoContextResponse = {
+  success: true;
+  data: {
+    lote_id: number;
+    codigo_trazabilidad: string;
+    nombre_cientifico_snapshot: string;
+    nombre_comercial_snapshot: string;
+    tipo_material_snapshot: string;
+    cantidad_inicial_en_proceso: number;
+    unidad_medida_inicial: 'UNIDAD' | 'G';
+    fecha_inicio: string;
+    estado_lote: 'ACTIVO' | 'FINALIZADO';
+    plantas_vivas_iniciales: number | null;
+    saldo_vivo_actual: number | null;
+    puede_registrar_embolsado: boolean;
+    motivo_bloqueo: string | null;
+    evento_embolsado_existente?: {
+      id: number;
+      tipo_evento: 'EMBOLSADO';
+      fecha_evento: string;
+      cantidad_afectada: number;
+      saldo_vivo_antes: number | null;
+      saldo_vivo_despues: number;
+      created_at: string;
+    };
+  };
+};
+```
+
+Si `data.puede_registrar_embolsado` es `false`, no mostrar el submit del formulario y usar `data.motivo_bloqueo`.
+
+### 4.2 Evidencias pendientes de embolsado
+
+```txt
+POST /api/lotes-vivero/:id/embolsado/evidencias-pendientes
+Content-Type: multipart/form-data
+x-auth-id: <auth_id_de_supabase>
+```
+
+Usa el mismo FormData de evidencias: `fotos`, `titulo`, `descripcion`, `metadata`, `tomado_en`, `es_principal`.
+
+Respuesta:
+
+```ts
+type EvidenciasPendientesEmbolsadoResponse = {
+  success: true;
+  data: {
+    evidencia_ids: number[];
+    evidencias: Array<{
+      id: number;
+      codigo_trazabilidad: string;
+      entidad_id: 0;
+      ruta_archivo: string;
+      tipo_archivo: string;
+    }>;
+  };
+};
+```
+
+### 4.3 Registrar embolsado
+
+```txt
+POST /api/lotes-vivero/:id/embolsado
+Content-Type: application/json
+x-auth-id: <auth_id_de_supabase>
+```
+
+Body:
+
+```ts
+type RegistrarEmbolsadoRequest = {
+  fecha_evento: string; // YYYY-MM-DD
+  plantas_vivas_iniciales: number; // entero >= 1
+  evidencia_ids: number[]; // minimo 1, enteros >= 1, sin duplicados
+  observaciones?: string; // max 1000
+};
+```
+
+No enviar `responsable_id`, `unidad_medida_evento`, `saldo_vivo_antes` ni `saldo_vivo_despues`.
+
+Respuesta:
+
+```ts
+type RegistrarEmbolsadoResponse = {
+  success: true;
+  data: {
+    message: 'Embolsado registrado correctamente.';
+    evento_embolsado_id: number;
+    lote_vivero_id: number;
+    codigo_trazabilidad: string;
+    plantas_vivas_iniciales: number;
+    saldo_vivo_antes: number | null;
+    saldo_vivo_despues: number;
+    evidencia_ids_vinculadas: number[];
+  };
+};
+```
+
+### 4.4 Consultar resultado de embolsado
+
+```txt
+GET /api/lotes-vivero/:id/embolsado
+```
+
+Respuesta si existe:
+
+```ts
+type ResultadoEmbolsadoResponse = {
+  success: true;
+  data: {
+    registrado: true;
+    evento: {
+      id: number;
+      tipo_evento: 'EMBOLSADO';
+      fecha_evento: string;
+      cantidad_afectada: number;
+      unidad_medida_evento: 'UNIDAD';
+      saldo_vivo_antes: number | null;
+      saldo_vivo_despues: number;
+      observaciones: string | null;
+      responsable_id: number;
+      created_at: string;
+    };
+    lote: {
+      id: number;
+      codigo_trazabilidad: string;
+      plantas_vivas_iniciales: number | null;
+      saldo_vivo_actual: number | null;
+    };
+    evidencias: Array<{
+      id: number;
+      ruta_archivo: string;
+      mime_type: string;
+      tipo_archivo: string;
+      es_principal: boolean;
+      orden: number;
+      public_url: string;
+    }>;
+  };
+};
+```
+
+Respuesta si no existe:
+
+```ts
+type ResultadoEmbolsadoNoRegistradoResponse = {
+  success: true;
+  data: {
+    registrado: false;
+    evento: null;
+  };
+};
+```
+
 ## Validaciones que debe respetar el frontend
 
 Antes de llamar `POST /api/lotes-vivero`, el frontend debe seleccionar una recoleccion que cumpla:
@@ -408,7 +585,7 @@ Para implementar inicio de lote:
 7. Llamar POST /api/lotes-vivero con JSON y esos evidencia_ids.
 8. Guardar lote_vivero_id, evento_inicio_id y codigo_trazabilidad retornados.
 9. Refrescar listado con GET /api/lotes-vivero.
-10. No llamar todavia endpoints de embolsado/adaptabilidad/merma/despacho/timeline desde UI productiva.
+10. No llamar todavia endpoints de adaptabilidad/merma/despacho/timeline desde UI productiva.
 ```
 
 ## Referencias de codigo
@@ -431,10 +608,12 @@ Servicios implementados:
 src/lotes-vivero/application/vivero-evidencias.service.ts
 src/lotes-vivero/application/vivero-inicio.service.ts
 src/lotes-vivero/application/vivero-consultas.service.ts
+src/lotes-vivero/application/vivero-embolsado.service.ts
 ```
 
 Migracion RPC vigente:
 
 ```txt
 migrations/018_fix_vivero_inicio_lote_rpc_trazabilidad_evidencia.sql
+migrations/019_vivero_embolsado_rpc.sql
 ```

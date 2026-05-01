@@ -105,19 +105,24 @@ export class ViveroEmbolsadoService {
 
     const { data: eventos, error: eventosError } = await supabase
       .from('evento_lote_vivero')
-      .select('id, tipo_evento, fecha_evento, cantidad_afectada, saldo_vivo_antes, saldo_vivo_despues, created_at')
+      .select(
+        'id, tipo_evento, fecha_evento, cantidad_afectada, saldo_vivo_antes, saldo_vivo_despues, created_at',
+      )
       .eq('lote_id', loteId)
       .in('tipo_evento', ['INICIO', 'EMBOLSADO'])
       .order('created_at', { ascending: true });
 
     if (eventosError) {
       this.logger.error('Error al obtener eventos del lote:', eventosError);
-      throw new InternalServerErrorException('Error al verificar eventos del lote');
+      throw new InternalServerErrorException(
+        'Error al verificar eventos del lote',
+      );
     }
 
     const eventosList = (eventos || []) as EventoLoteRow[];
     const tieneInicio = eventosList.some((e) => e.tipo_evento === 'INICIO');
-    const eventoEmbolsado = eventosList.find((e) => e.tipo_evento === 'EMBOLSADO') ?? null;
+    const eventoEmbolsado =
+      eventosList.find((e) => e.tipo_evento === 'EMBOLSADO') ?? null;
     const tieneEmbolsado = !!eventoEmbolsado;
 
     let puedeRegistrarEmbolsado = true;
@@ -128,33 +133,40 @@ export class ViveroEmbolsadoService {
       motivoBloqueo = `El lote esta en estado ${lote.estado_lote}. Solo lotes ACTIVOS permiten registrar EMBOLSADO.`;
     } else if (!tieneInicio) {
       puedeRegistrarEmbolsado = false;
-      motivoBloqueo = 'El lote no tiene un evento INICIO registrado. EMBOLSADO requiere INICIO previo (RN-VIV-10).';
+      motivoBloqueo =
+        'El lote no tiene un evento INICIO registrado. EMBOLSADO requiere INICIO previo (RN-VIV-10).';
     } else if (tieneEmbolsado) {
       puedeRegistrarEmbolsado = false;
-      motivoBloqueo = 'El lote ya tiene EMBOLSADO registrado. Solo se permite una vez por lote (RN-VIV-11).';
+      motivoBloqueo =
+        'El lote ya tiene EMBOLSADO registrado. Solo se permite una vez por lote (RN-VIV-11).';
     }
 
     return {
-      lote_id: Number(lote.id),
-      codigo_trazabilidad: lote.codigo_trazabilidad,
-      nombre_cientifico_snapshot: lote.nombre_cientifico_snapshot,
-      nombre_comercial_snapshot: lote.nombre_comercial_snapshot,
-      tipo_material_snapshot: lote.tipo_material_snapshot,
-      cantidad_inicial_en_proceso: Number(lote.cantidad_inicial_en_proceso),
-      unidad_medida_inicial: lote.unidad_medida_inicial,
-      fecha_inicio: lote.fecha_inicio,
-      estado_lote: lote.estado_lote,
-      plantas_vivas_iniciales:
-        lote.plantas_vivas_iniciales !== null && lote.plantas_vivas_iniciales !== undefined
-          ? Number(lote.plantas_vivas_iniciales)
-          : null,
-      saldo_vivo_actual:
-        lote.saldo_vivo_actual !== null && lote.saldo_vivo_actual !== undefined
-          ? Number(lote.saldo_vivo_actual)
-          : null,
-      puede_registrar_embolsado: puedeRegistrarEmbolsado,
-      motivo_bloqueo: motivoBloqueo,
-      ...(tieneEmbolsado && { evento_embolsado_existente: eventoEmbolsado }),
+      success: true,
+      data: {
+        lote_id: Number(lote.id),
+        codigo_trazabilidad: lote.codigo_trazabilidad,
+        nombre_cientifico_snapshot: lote.nombre_cientifico_snapshot,
+        nombre_comercial_snapshot: lote.nombre_comercial_snapshot,
+        tipo_material_snapshot: lote.tipo_material_snapshot,
+        cantidad_inicial_en_proceso: Number(lote.cantidad_inicial_en_proceso),
+        unidad_medida_inicial: lote.unidad_medida_inicial,
+        fecha_inicio: lote.fecha_inicio,
+        estado_lote: lote.estado_lote,
+        plantas_vivas_iniciales:
+          lote.plantas_vivas_iniciales !== null &&
+          lote.plantas_vivas_iniciales !== undefined
+            ? Number(lote.plantas_vivas_iniciales)
+            : null,
+        saldo_vivo_actual:
+          lote.saldo_vivo_actual !== null &&
+          lote.saldo_vivo_actual !== undefined
+            ? Number(lote.saldo_vivo_actual)
+            : null,
+        puede_registrar_embolsado: puedeRegistrarEmbolsado,
+        motivo_bloqueo: motivoBloqueo,
+        ...(tieneEmbolsado && { evento_embolsado_existente: eventoEmbolsado }),
+      },
     };
   }
 
@@ -178,7 +190,10 @@ export class ViveroEmbolsadoService {
       .maybeSingle();
 
     if (loteError) {
-      this.logger.error('Error al verificar lote para evidencias de embolsado:', loteError);
+      this.logger.error(
+        'Error al verificar lote para evidencias de embolsado:',
+        loteError,
+      );
       throw new InternalServerErrorException('Error al verificar el lote');
     }
 
@@ -193,7 +208,11 @@ export class ViveroEmbolsadoService {
     }
 
     // Delegar subida y creacion al servicio de evidencias existente
-    const resultado = await this.evidenciasService.crearPendienteParaEvento(dto, authId, files);
+    const resultado = await this.evidenciasService.crearPendienteParaEvento(
+      dto,
+      authId,
+      files,
+    );
 
     const evidenciaIds: number[] = resultado.evidencia_ids;
 
@@ -214,17 +233,22 @@ export class ViveroEmbolsadoService {
       }
     }
 
-    const evidencias = (resultado.data as EvidenciaPendienteRow[]).map((ev) => ({
-      id: Number(ev.id),
-      codigo_trazabilidad: lote.codigo_trazabilidad,
-      entidad_id: ev.entidad_id ?? 0,
-      ruta_archivo: ev.ruta_archivo,
-      tipo_archivo: ev.mime_type,
-    }));
+    const evidencias = (resultado.data as EvidenciaPendienteRow[]).map(
+      (ev) => ({
+        id: Number(ev.id),
+        codigo_trazabilidad: lote.codigo_trazabilidad,
+        entidad_id: ev.entidad_id ?? 0,
+        ruta_archivo: ev.ruta_archivo,
+        tipo_archivo: ev.mime_type,
+      }),
+    );
 
     return {
-      evidencia_ids: evidenciaIds,
-      evidencias,
+      success: true,
+      data: {
+        evidencia_ids: evidenciaIds,
+        evidencias,
+      },
     };
   }
 
@@ -260,14 +284,20 @@ export class ViveroEmbolsadoService {
     const row = data as RpcEmbolsadoResult;
 
     return {
-      message: 'Embolsado registrado correctamente.',
-      evento_embolsado_id: Number(row.evento_embolsado_id),
-      lote_vivero_id: Number(row.lote_vivero_id),
-      codigo_trazabilidad: row.codigo_trazabilidad,
-      plantas_vivas_iniciales: Number(row.plantas_vivas_iniciales),
-      saldo_vivo_antes: row.saldo_vivo_antes !== null ? Number(row.saldo_vivo_antes) : null,
-      saldo_vivo_despues: Number(row.saldo_vivo_despues),
-      evidencia_ids_vinculadas: (row.evidencia_ids_vinculadas ?? []).map(Number),
+      success: true,
+      data: {
+        message: 'Embolsado registrado correctamente.',
+        evento_embolsado_id: Number(row.evento_embolsado_id),
+        lote_vivero_id: Number(row.lote_vivero_id),
+        codigo_trazabilidad: row.codigo_trazabilidad,
+        plantas_vivas_iniciales: Number(row.plantas_vivas_iniciales),
+        saldo_vivo_antes:
+          row.saldo_vivo_antes !== null ? Number(row.saldo_vivo_antes) : null,
+        saldo_vivo_despues: Number(row.saldo_vivo_despues),
+        evidencia_ids_vinculadas: (row.evidencia_ids_vinculadas ?? []).map(
+          Number,
+        ),
+      },
     };
   }
 
@@ -280,7 +310,9 @@ export class ViveroEmbolsadoService {
 
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')
-      .select('id, codigo_trazabilidad, plantas_vivas_iniciales, saldo_vivo_actual')
+      .select(
+        'id, codigo_trazabilidad, plantas_vivas_iniciales, saldo_vivo_actual',
+      )
       .eq('id', loteId)
       .maybeSingle();
 
@@ -315,52 +347,68 @@ export class ViveroEmbolsadoService {
 
     if (eventoError) {
       this.logger.error('Error al obtener evento EMBOLSADO:', eventoError);
-      throw new InternalServerErrorException('Error al obtener el evento de embolsado');
+      throw new InternalServerErrorException(
+        'Error al obtener el evento de embolsado',
+      );
     }
 
     if (!evento) {
-      return { registrado: false, evento: null };
+      return {
+        success: true,
+        data: { registrado: false, evento: null },
+      };
     }
 
     const eventoTyped = evento as EventoEmbolsadoRow;
     const eventoId = Number(eventoTyped.id);
-    const evidencias = await this.obtenerEvidenciasDelEvento(supabase, eventoId);
+    const evidencias = await this.obtenerEvidenciasDelEvento(
+      supabase,
+      eventoId,
+    );
 
     return {
-      registrado: true,
-      evento: {
-        id: eventoId,
-        tipo_evento: eventoTyped.tipo_evento,
-        fecha_evento: eventoTyped.fecha_evento,
-        cantidad_afectada: Number(eventoTyped.cantidad_afectada),
-        unidad_medida_evento: eventoTyped.unidad_medida_evento,
-        saldo_vivo_antes:
-          eventoTyped.saldo_vivo_antes !== null
-            ? Number(eventoTyped.saldo_vivo_antes)
-            : null,
-        saldo_vivo_despues: Number(eventoTyped.saldo_vivo_despues),
-        observaciones: eventoTyped.observaciones ?? null,
-        responsable_id: Number(eventoTyped.responsable_id),
-        created_at: eventoTyped.created_at,
+      success: true,
+      data: {
+        registrado: true,
+        evento: {
+          id: eventoId,
+          tipo_evento: eventoTyped.tipo_evento,
+          fecha_evento: eventoTyped.fecha_evento,
+          cantidad_afectada: Number(eventoTyped.cantidad_afectada),
+          unidad_medida_evento: eventoTyped.unidad_medida_evento,
+          saldo_vivo_antes:
+            eventoTyped.saldo_vivo_antes !== null
+              ? Number(eventoTyped.saldo_vivo_antes)
+              : null,
+          saldo_vivo_despues: Number(eventoTyped.saldo_vivo_despues),
+          observaciones: eventoTyped.observaciones ?? null,
+          responsable_id: Number(eventoTyped.responsable_id),
+          created_at: eventoTyped.created_at,
+        },
+        lote: {
+          id: Number(lote.id),
+          codigo_trazabilidad: lote.codigo_trazabilidad,
+          plantas_vivas_iniciales:
+            lote.plantas_vivas_iniciales !== null
+              ? Number(lote.plantas_vivas_iniciales)
+              : null,
+          saldo_vivo_actual:
+            lote.saldo_vivo_actual !== null
+              ? Number(lote.saldo_vivo_actual)
+              : null,
+        },
+        evidencias,
       },
-      lote: {
-        id: Number(lote.id),
-        codigo_trazabilidad: lote.codigo_trazabilidad,
-        plantas_vivas_iniciales:
-          lote.plantas_vivas_iniciales !== null
-            ? Number(lote.plantas_vivas_iniciales)
-            : null,
-        saldo_vivo_actual:
-          lote.saldo_vivo_actual !== null ? Number(lote.saldo_vivo_actual) : null,
-      },
-      evidencias,
     };
   }
 
   // ---------------------------------------------------------------------------
   // Privado: obtiene evidencias vinculadas a un evento de vivero
   // ---------------------------------------------------------------------------
-  private async obtenerEvidenciasDelEvento(supabase: SupabaseClient, eventoId: number): Promise<(EvidenciaRow & { public_url: string })[]> {
+  private async obtenerEvidenciasDelEvento(
+    supabase: SupabaseClient,
+    eventoId: number,
+  ): Promise<(EvidenciaRow & { public_url: string })[]> {
     const { data: tipoEntidadData } = await supabase
       .from('tipos_entidad_evidencia')
       .select('id')
@@ -382,7 +430,10 @@ export class ViveroEmbolsadoService {
       .is('eliminado_en', null);
 
     if (evError) {
-      this.logger.warn('Error al obtener evidencias del evento EMBOLSADO:', evError);
+      this.logger.warn(
+        'Error al obtener evidencias del evento EMBOLSADO:',
+        evError,
+      );
       return [];
     }
 
