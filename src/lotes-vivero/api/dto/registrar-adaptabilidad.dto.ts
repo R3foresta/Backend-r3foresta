@@ -1,6 +1,8 @@
 import {
+  IsArray,
   IsDateString,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
   MaxLength,
@@ -13,6 +15,11 @@ export class RegistrarAdaptabilidadDto {
 
   @IsEnum(SubetapaAdaptabilidad)
   subetapa_destino: SubetapaAdaptabilidad;
+
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  evidencia_ids?: number[];
 
   @IsOptional()
   @IsString()

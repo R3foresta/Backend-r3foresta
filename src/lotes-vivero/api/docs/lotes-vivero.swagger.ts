@@ -249,7 +249,7 @@ export function ApiRegistrarAdaptabilidad() {
     ApiOperation({
       summary: 'Registrar evento de adaptabilidad',
       description:
-        'Avanza la subetapa de adaptabilidad del lote (SOMBRA -> MEDIA_SOMBRA -> SOL_DIRECTO). Cada transicion queda registrada en el timeline del lote.',
+        'Registra un evento ADAPTABILIDAD via RPC fn_vivero_registrar_adaptabilidad. Actualiza subetapa_actual del lote sin modificar el saldo vivo. Permite multiples registros y secuencia flexible de subetapas. La evidencia es opcional.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -272,7 +272,14 @@ export function ApiRegistrarAdaptabilidad() {
             type: 'string',
             enum: Object.values(SubetapaAdaptabilidad),
             example: SubetapaAdaptabilidad.MEDIA_SOMBRA,
-            description: 'Subetapa a la que avanza el lote',
+            description: 'Subetapa a la que avanza el lote. Sin orden obligatorio.',
+          },
+          evidencia_ids: {
+            type: 'array',
+            items: { type: 'integer', minimum: 1 },
+            example: [310, 311],
+            description:
+              'IDs de evidencias pendientes obtenidos en POST :id/adaptabilidad/evidencias-pendientes. Opcional: puede omitirse o enviarse vacio.',
           },
           observaciones: {
             type: 'string',
@@ -284,13 +291,16 @@ export function ApiRegistrarAdaptabilidad() {
     }),
     ApiResponse({
       status: 201,
-      description: 'Adaptabilidad registrada exitosamente',
+      description:
+        'Adaptabilidad registrada. Devuelve { success: true, message, data } con evento_adaptabilidad_id, subetapa_destino, saldo_vivo_actual y evidencia_ids_vinculadas.',
     }),
     ApiResponse({
       status: 400,
-      description: 'Datos invalidos o transicion de subetapa no permitida',
+      description:
+        'Datos invalidos, lote sin EMBOLSADO previo, lote FINALIZADO, fecha invalida o evidencia ya vinculada.',
     }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({ status: 403, description: 'Rol del usuario sin permiso de escritura' }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
@@ -715,6 +725,79 @@ export function ApiObtenerMermas() {
       status: 200,
       description:
         'Devuelve { success: true, data } con lote_id, saldo_vivo_actual, total_mermas y mermas con evidencias.',
+    }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
+export function ApiCrearEvidenciasPendientesAdaptabilidad() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Subir evidencias pendientes para adaptabilidad',
+      description:
+        'Sube fotos al storage y crea registros en evidencias_trazabilidad con entidad_id=0, vinculando el codigo_trazabilidad del lote. Los IDs retornados pueden enviarse en POST :id/adaptabilidad. Este paso es opcional: adaptabilidad no requiere evidencia obligatoria.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
+    ApiConsumes('multipart/form-data'),
+    ApiBody({
+      description: 'Fotos de evidencia para la adaptabilidad (opcional)',
+      schema: {
+        type: 'object',
+        required: ['fotos'],
+        properties: {
+          titulo: {
+            type: 'string',
+            maxLength: 120,
+            example: 'Subetapa media sombra',
+          },
+          descripcion: {
+            type: 'string',
+            maxLength: 1000,
+            example: 'Plantas en fase de aclimatacion a media sombra',
+          },
+          fotos: {
+            type: 'array',
+            items: { type: 'string', format: 'binary' },
+            description: 'Archivos de imagen (max 5, solo JPG/JPEG/PNG)',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 201,
+      description:
+        'Evidencias pendientes creadas. Devuelve { success: true, data } con evidencia_ids y evidencias con codigo_trazabilidad del lote.',
+    }),
+    ApiResponse({ status: 400, description: 'Sin fotos o lote no ACTIVO' }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
+export function ApiObtenerAdaptabilidades() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Consultar adaptabilidades registradas del lote',
+      description:
+        'Devuelve todos los eventos ADAPTABILIDAD del lote ordenados por fecha descendente con sus evidencias vinculadas, subetapa_actual y saldo vivo actual.',
+    }),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Devuelve { success: true, data } con lote_id, saldo_vivo_actual, subetapa_actual, total_adaptabilidades y adaptabilidades con evidencias.',
     }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),

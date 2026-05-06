@@ -17,10 +17,12 @@ import { ApiTags } from '@nestjs/swagger';
 import { LotesViveroService } from '../application/lotes-vivero.service';
 import {
   ApiCrearEvidenciaPendiente,
+  ApiCrearEvidenciasPendientesAdaptabilidad,
   ApiCrearEvidenciasPendientesEmbolsado,
   ApiCrearEvidenciasPendientesMerma,
   ApiCrearLoteDesdeRecoleccion,
   ApiListarLotes,
+  ApiObtenerAdaptabilidades,
   ApiObtenerContextoEmbolsado,
   ApiObtenerMermas,
   ApiObtenerResultadoEmbolsado,
@@ -116,7 +118,24 @@ export class LotesViveroController {
     return this.lotesViveroService.obtenerResultadoEmbolsado(loteId);
   }
 
-  // ---- Otros eventos ----
+  // ---- Adaptabilidad ----
+
+  @Post(':id/adaptabilidad/evidencias-pendientes')
+  @ApiCrearEvidenciasPendientesAdaptabilidad()
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
+  crearEvidenciasPendientesAdaptabilidad(
+    @Param('id', ParseIntPipe) loteId: number,
+    @Body() dto: CrearEvidenciaPendienteViveroDto,
+    @Headers('x-auth-id') authId?: string,
+    @UploadedFiles() files?: { fotos?: any[] },
+  ) {
+    return this.lotesViveroService.crearEvidenciasPendientesAdaptabilidad(
+      loteId,
+      dto,
+      this.requireAuthId(authId),
+      files?.fotos || [],
+    );
+  }
 
   @Post(':id/adaptabilidad')
   @ApiRegistrarAdaptabilidad()
@@ -130,6 +149,12 @@ export class LotesViveroController {
       dto,
       this.requireAuthId(authId),
     );
+  }
+
+  @Get(':id/adaptabilidad')
+  @ApiObtenerAdaptabilidades()
+  obtenerAdaptabilidades(@Param('id', ParseIntPipe) loteId: number) {
+    return this.lotesViveroService.obtenerAdaptabilidades(loteId);
   }
 
   @Post(':id/merma/evidencias-pendientes')

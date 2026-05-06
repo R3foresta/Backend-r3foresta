@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { LotesViveroController } from './api/lotes-vivero.controller';
 import { LotesViveroService } from './application/lotes-vivero.service';
+import { ViveroAdaptabilidadService } from './application/vivero-adaptabilidad.service';
 import { ViveroAuthService } from './application/vivero-auth.service';
 import { ViveroCodigosService } from './application/vivero-codigos.service';
 import { ViveroConsultasService } from './application/vivero-consultas.service';
@@ -17,6 +18,7 @@ import { ViveroSnapshotsService } from './application/vivero-snapshots.service';
   controllers: [LotesViveroController],
   providers: [
     LotesViveroService,
+    ViveroAdaptabilidadService,
     ViveroAuthService,
     ViveroCodigosService,
     ViveroConsultasService,

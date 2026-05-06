@@ -3,6 +3,7 @@ import { RegistrarAdaptabilidadDto } from '../api/dto/registrar-adaptabilidad.dt
 import { RegistrarDespachoDto } from '../api/dto/registrar-despacho.dto';
 import { RegistrarEmbolsadoDto } from '../api/dto/registrar-embolsado.dto';
 import { RegistrarMermaDto } from '../api/dto/registrar-merma.dto';
+import { ViveroAdaptabilidadService } from './vivero-adaptabilidad.service';
 import { ViveroAuthService } from './vivero-auth.service';
 import { ViveroEmbolsadoService } from './vivero-embolsado.service';
 import { ViveroMermaService } from './vivero-merma.service';
@@ -12,6 +13,7 @@ export class ViveroEventosService {
   constructor(
     private readonly authService: ViveroAuthService,
     private readonly embolsadoService: ViveroEmbolsadoService,
+    private readonly adaptabilidadService: ViveroAdaptabilidadService,
     private readonly mermaService: ViveroMermaService,
   ) {}
 
@@ -19,16 +21,12 @@ export class ViveroEventosService {
     return this.embolsadoService.registrar(loteId, dto, authId);
   }
 
-  async registrarAdaptabilidad(
+  registrarAdaptabilidad(
     loteId: number,
     dto: RegistrarAdaptabilidadDto,
     authId: string,
   ) {
-    await this.assertCanWrite(authId);
-
-    throw new NotImplementedException(
-      'Pendiente: registrar ADAPTABILIDAD usando fn_vivero_registrar_adaptabilidad.',
-    );
+    return this.adaptabilidadService.registrar(loteId, dto, authId);
   }
 
   registrarMerma(loteId: number, dto: RegistrarMermaDto, authId: string) {

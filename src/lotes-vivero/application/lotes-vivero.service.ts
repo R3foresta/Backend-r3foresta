@@ -7,6 +7,7 @@ import { RegistrarAdaptabilidadDto } from '../api/dto/registrar-adaptabilidad.dt
 import { RegistrarDespachoDto } from '../api/dto/registrar-despacho.dto';
 import { RegistrarEmbolsadoDto } from '../api/dto/registrar-embolsado.dto';
 import { RegistrarMermaDto } from '../api/dto/registrar-merma.dto';
+import { ViveroAdaptabilidadService } from './vivero-adaptabilidad.service';
 import { ViveroConsultasService } from './vivero-consultas.service';
 import { ViveroEmbolsadoService } from './vivero-embolsado.service';
 import { ViveroEventosService } from './vivero-eventos.service';
@@ -25,6 +26,7 @@ export class LotesViveroService {
     private readonly consultasService: ViveroConsultasService,
     private readonly evidenciasService: ViveroEvidenciasService,
     private readonly embolsadoService: ViveroEmbolsadoService,
+    private readonly adaptabilidadService: ViveroAdaptabilidadService,
     private readonly mermaService: ViveroMermaService,
   ) {}
 
@@ -71,6 +73,24 @@ export class LotesViveroService {
     authId: string,
   ) {
     return this.eventosService.registrarAdaptabilidad(loteId, dto, authId);
+  }
+
+  crearEvidenciasPendientesAdaptabilidad(
+    loteId: number,
+    dto: CrearEvidenciaPendienteViveroDto,
+    authId: string,
+    files: ViveroEvidenceFileInput[],
+  ) {
+    return this.adaptabilidadService.crearEvidenciasPendientes(
+      loteId,
+      dto,
+      authId,
+      files,
+    );
+  }
+
+  obtenerAdaptabilidades(loteId: number) {
+    return this.adaptabilidadService.obtenerAdaptabilidades(loteId);
   }
 
   registrarMerma(loteId: number, dto: RegistrarMermaDto, authId: string) {
