@@ -18,9 +18,11 @@ import { LotesViveroService } from '../application/lotes-vivero.service';
 import {
   ApiCrearEvidenciaPendiente,
   ApiCrearEvidenciasPendientesEmbolsado,
+  ApiCrearEvidenciasPendientesMerma,
   ApiCrearLoteDesdeRecoleccion,
   ApiListarLotes,
   ApiObtenerContextoEmbolsado,
+  ApiObtenerMermas,
   ApiObtenerResultadoEmbolsado,
   ApiObtenerTimeline,
   ApiRegistrarAdaptabilidad,
@@ -130,6 +132,23 @@ export class LotesViveroController {
     );
   }
 
+  @Post(':id/merma/evidencias-pendientes')
+  @ApiCrearEvidenciasPendientesMerma()
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
+  crearEvidenciasPendientesMerma(
+    @Param('id', ParseIntPipe) loteId: number,
+    @Body() dto: CrearEvidenciaPendienteViveroDto,
+    @Headers('x-auth-id') authId?: string,
+    @UploadedFiles() files?: { fotos?: any[] },
+  ) {
+    return this.lotesViveroService.crearEvidenciasPendientesMerma(
+      loteId,
+      dto,
+      this.requireAuthId(authId),
+      files?.fotos || [],
+    );
+  }
+
   @Post(':id/merma')
   @ApiRegistrarMerma()
   registrarMerma(
@@ -156,6 +175,12 @@ export class LotesViveroController {
       dto,
       this.requireAuthId(authId),
     );
+  }
+
+  @Get(':id/merma')
+  @ApiObtenerMermas()
+  obtenerMermas(@Param('id', ParseIntPipe) loteId: number) {
+    return this.lotesViveroService.obtenerMermas(loteId);
   }
 
   @Get()

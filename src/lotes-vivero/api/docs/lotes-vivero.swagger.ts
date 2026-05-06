@@ -301,7 +301,7 @@ export function ApiRegistrarMerma() {
     ApiOperation({
       summary: 'Registrar merma de plantas',
       description:
-        'Registra la perdida de plantas por una causa identificada. El stock vivo del lote se reduce en la cantidad afectada.',
+        'Registra la perdida de plantas via RPC fn_vivero_registrar_merma. Reduce el saldo vivo del lote, vincula evidencias y activa cierre automatico si el saldo llega a 0. El responsable_id sale del usuario autenticado (x-auth-id), nunca del body.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -313,7 +313,7 @@ export function ApiRegistrarMerma() {
     ApiBody({
       schema: {
         type: 'object',
-        required: ['fecha_evento', 'cantidad_afectada', 'causa_merma'],
+        required: ['fecha_evento', 'cantidad_afectada', 'causa_merma', 'evidencia_ids'],
         properties: {
           fecha_evento: {
             type: 'string',
@@ -324,12 +324,20 @@ export function ApiRegistrarMerma() {
             type: 'integer',
             minimum: 1,
             example: 5,
-            description: 'Numero de plantas perdidas',
+            description: 'Numero de plantas perdidas. No puede superar el saldo vivo disponible.',
           },
           causa_merma: {
             type: 'string',
             enum: Object.values(CausaMermaVivero),
             example: CausaMermaVivero.PLAGA,
+          },
+          evidencia_ids: {
+            type: 'array',
+            items: { type: 'integer', minimum: 1 },
+            minItems: 1,
+            example: [201, 202],
+            description:
+              'IDs de evidencias pendientes obtenidos en POST :id/merma/evidencias-pendientes. Obligatorio.',
           },
           observaciones: {
             type: 'string',
@@ -339,12 +347,18 @@ export function ApiRegistrarMerma() {
         },
       },
     }),
-    ApiResponse({ status: 201, description: 'Merma registrada exitosamente' }),
+    ApiResponse({
+      status: 201,
+      description:
+        'Merma registrada. Devuelve { success: true, data } con evento_merma_id, saldo_vivo_antes, saldo_vivo_despues, lote_finalizado y motivo_cierre.',
+    }),
     ApiResponse({
       status: 400,
-      description: 'Datos invalidos o cantidad supera el stock vivo actual',
+      description:
+        'Datos invalidos, lote sin EMBOLSADO previo, cantidad supera saldo, evidencia ya vinculada o eliminada.',
     }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({ status: 403, description: 'Rol del usuario sin permiso de escritura' }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
@@ -626,6 +640,81 @@ export function ApiObtenerResultadoEmbolsado() {
       status: 200,
       description:
         'Devuelve { success: true, data }. data.registrado: true con evento, lote y evidencias si existe; registrado: false con evento: null si no.',
+    }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
+export function ApiCrearEvidenciasPendientesMerma() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Subir evidencias pendientes para merma',
+      description:
+        'Sube fotos al storage y crea registros en evidencias_trazabilidad con entidad_id=0, vinculando el codigo_trazabilidad del lote. Los IDs retornados deben enviarse en POST :id/merma.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
+    ApiConsumes('multipart/form-data'),
+    ApiBody({
+      description: 'Fotos de evidencia para la merma',
+      schema: {
+        type: 'object',
+        required: ['fotos'],
+        properties: {
+          titulo: {
+            type: 'string',
+            maxLength: 120,
+            example: 'Evidencia de merma por plaga',
+          },
+          descripcion: {
+            type: 'string',
+            maxLength: 1000,
+            example: 'Fotos de plantas afectadas por plaga',
+          },
+          fotos: {
+            type: 'array',
+            items: { type: 'string', format: 'binary' },
+            description: 'Archivos de imagen (max 5, solo JPG/JPEG/PNG)',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 201,
+      description:
+        'Evidencias pendientes creadas. Devuelve { success: true, data } con evidencia_ids y evidencias con codigo_trazabilidad del lote.',
+    }),
+    ApiResponse({ status: 400, description: 'Sin fotos o lote no ACTIVO' }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
+export function ApiObtenerMermas() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Consultar mermas registradas del lote',
+      description:
+        'Devuelve todos los eventos MERMA del lote en orden cronologico con sus evidencias vinculadas y el saldo vivo actual.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Devuelve { success: true, data } con lote_id, saldo_vivo_actual, total_mermas y mermas con evidencias.',
     }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),

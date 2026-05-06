@@ -9,6 +9,7 @@ import { ViveroEmbolsadoService } from './application/vivero-embolsado.service';
 import { ViveroEventosService } from './application/vivero-eventos.service';
 import { ViveroEvidenciasService } from './application/vivero-evidencias.service';
 import { ViveroInicioService } from './application/vivero-inicio.service';
+import { ViveroMermaService } from './application/vivero-merma.service';
 import { ViveroSnapshotsService } from './application/vivero-snapshots.service';
 
 @Module({
@@ -23,6 +24,7 @@ import { ViveroSnapshotsService } from './application/vivero-snapshots.service';
     ViveroEventosService,
     ViveroEvidenciasService,
     ViveroInicioService,
+    ViveroMermaService,
     ViveroSnapshotsService,
   ],
   exports: [LotesViveroService],

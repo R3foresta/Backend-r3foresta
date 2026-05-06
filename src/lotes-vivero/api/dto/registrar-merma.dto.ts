@@ -1,4 +1,6 @@
 import {
+  ArrayMinSize,
+  IsArray,
   IsDateString,
   IsEnum,
   IsInt,
@@ -21,6 +23,11 @@ export class RegistrarMermaDto {
 
   @IsEnum(CausaMermaVivero)
   causa_merma: CausaMermaVivero;
+
+  @IsArray()
+  @ArrayMinSize(1, { message: 'Se requiere al menos una evidencia para MERMA' })
+  @IsInt({ each: true })
+  evidencia_ids: number[];
 
   @IsOptional()
   @IsString()

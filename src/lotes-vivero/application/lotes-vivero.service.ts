@@ -15,6 +15,7 @@ import {
   ViveroEvidenciasService,
 } from './vivero-evidencias.service';
 import { ViveroInicioService } from './vivero-inicio.service';
+import { ViveroMermaService } from './vivero-merma.service';
 
 @Injectable()
 export class LotesViveroService {
@@ -24,6 +25,7 @@ export class LotesViveroService {
     private readonly consultasService: ViveroConsultasService,
     private readonly evidenciasService: ViveroEvidenciasService,
     private readonly embolsadoService: ViveroEmbolsadoService,
+    private readonly mermaService: ViveroMermaService,
   ) {}
 
   crearEvidenciaPendiente(
@@ -73,6 +75,19 @@ export class LotesViveroService {
 
   registrarMerma(loteId: number, dto: RegistrarMermaDto, authId: string) {
     return this.eventosService.registrarMerma(loteId, dto, authId);
+  }
+
+  crearEvidenciasPendientesMerma(
+    loteId: number,
+    dto: CrearEvidenciaPendienteViveroDto,
+    authId: string,
+    files: ViveroEvidenceFileInput[],
+  ) {
+    return this.mermaService.crearEvidenciasPendientes(loteId, dto, authId, files);
+  }
+
+  obtenerMermas(loteId: number) {
+    return this.mermaService.obtenerMermas(loteId);
   }
 
   registrarDespacho(loteId: number, dto: RegistrarDespachoDto, authId: string) {

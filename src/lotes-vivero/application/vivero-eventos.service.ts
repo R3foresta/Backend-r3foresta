@@ -5,12 +5,14 @@ import { RegistrarEmbolsadoDto } from '../api/dto/registrar-embolsado.dto';
 import { RegistrarMermaDto } from '../api/dto/registrar-merma.dto';
 import { ViveroAuthService } from './vivero-auth.service';
 import { ViveroEmbolsadoService } from './vivero-embolsado.service';
+import { ViveroMermaService } from './vivero-merma.service';
 
 @Injectable()
 export class ViveroEventosService {
   constructor(
     private readonly authService: ViveroAuthService,
     private readonly embolsadoService: ViveroEmbolsadoService,
+    private readonly mermaService: ViveroMermaService,
   ) {}
 
   registrarEmbolsado(loteId: number, dto: RegistrarEmbolsadoDto, authId: string) {
@@ -29,12 +31,8 @@ export class ViveroEventosService {
     );
   }
 
-  async registrarMerma(loteId: number, dto: RegistrarMermaDto, authId: string) {
-    await this.assertCanWrite(authId);
-
-    throw new NotImplementedException(
-      'Pendiente: registrar MERMA usando fn_vivero_registrar_merma.',
-    );
+  registrarMerma(loteId: number, dto: RegistrarMermaDto, authId: string) {
+    return this.mermaService.registrar(loteId, dto, authId);
   }
 
   async registrarDespacho(
