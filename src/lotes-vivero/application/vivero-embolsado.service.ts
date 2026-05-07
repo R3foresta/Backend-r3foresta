@@ -263,6 +263,30 @@ export class ViveroEmbolsadoService {
 
     const supabase = this.supabaseService.getClient();
 
+    // Validar que plantas_vivas_iniciales no supere la cantidad de material
+    // disponible (cantidad_inicial_en_proceso) del lote (RN-VIV-EMB-01).
+    const { data: lote, error: loteError } = await supabase
+      .from('lote_vivero')
+      .select('cantidad_inicial_en_proceso, unidad_medida_inicial')
+      .eq('id', loteId)
+      .maybeSingle();
+
+    if (loteError) {
+      this.logger.error('Error al verificar lote para embolsado:', loteError);
+      throw new InternalServerErrorException('Error al verificar el lote');
+    }
+
+    if (!lote) {
+      throw new NotFoundException(`Lote de vivero ${loteId} no encontrado`);
+    }
+
+    const cantidadDisponible = Number(lote.cantidad_inicial_en_proceso);
+    if (dto.plantas_vivas_iniciales > cantidadDisponible) {
+      throw new BadRequestException(
+        `Las plantas vivas iniciales (${dto.plantas_vivas_iniciales}) no pueden superar la cantidad de material en proceso del lote (${cantidadDisponible} ${lote.unidad_medida_inicial ?? 'unidades'}). Ajusta el valor antes de registrar el embolsado.`,
+      );
+    }
+
     const { data, error } = await supabase
       .rpc('fn_vivero_registrar_embolsado', {
         p_lote_id: loteId,
