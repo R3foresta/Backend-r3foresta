@@ -1,18 +1,17 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  NotImplementedException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { FiltrarLotesViveroDto } from '../api/dto/filtrar-lotes-vivero.dto';
 import { FiltrarTimelineLoteDto } from '../api/dto/filtrar-timeline-lote.dto';
+import { ViveroTimelineService } from './vivero-timeline.service';
 
 @Injectable()
 export class ViveroConsultasService {
   private readonly logger = new Logger(ViveroConsultasService.name);
 
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly timelineService: ViveroTimelineService,
+  ) {}
 
   async listarLotes(filters: FiltrarLotesViveroDto) {
     const supabase = this.supabaseService.getClient();
@@ -55,11 +54,7 @@ export class ViveroConsultasService {
   }
 
   async obtenerTimeline(loteId: number, filters: FiltrarTimelineLoteDto) {
-    void loteId;
-    void filters;
-    throw new NotImplementedException(
-      'Pendiente: obtener timeline auditable del lote de vivero.',
-    );
+    return this.timelineService.obtenerTimeline(loteId, filters);
   }
 
   private applyListFilters(query: any, filters: FiltrarLotesViveroDto) {

@@ -12,6 +12,7 @@ import { ViveroEvidenciasService } from './application/vivero-evidencias.service
 import { ViveroInicioService } from './application/vivero-inicio.service';
 import { ViveroMermaService } from './application/vivero-merma.service';
 import { ViveroSnapshotsService } from './application/vivero-snapshots.service';
+import { ViveroTimelineService } from './application/vivero-timeline.service';
 
 @Module({
   imports: [SupabaseModule],
@@ -28,6 +29,7 @@ import { ViveroSnapshotsService } from './application/vivero-snapshots.service';
     ViveroInicioService,
     ViveroMermaService,
     ViveroSnapshotsService,
+    ViveroTimelineService,
   ],
   exports: [LotesViveroService],
 })
