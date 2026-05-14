@@ -317,6 +317,8 @@ export class ViveroMermaService {
     }
 
     return ((evidenciasData ?? []) as EvidenciaRow[]).map((ev) => {
+      // TODO(vivero-mvp): bucket hardcoded. Ver decisión pendiente en
+      //   vivero-evidencias.service.ts. Si se migra a bucket dedicado, sincronizar.
       const { data: publicUrlData } = supabase.storage
         .from('recoleccion_fotos')
         .getPublicUrl(ev.ruta_archivo);

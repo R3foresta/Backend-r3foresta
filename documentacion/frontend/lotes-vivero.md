@@ -20,18 +20,22 @@ GET  /api/lotes-vivero/:id/embolsado/context
 POST /api/lotes-vivero/:id/embolsado/evidencias-pendientes
 POST /api/lotes-vivero/:id/embolsado
 GET  /api/lotes-vivero/:id/embolsado
+POST /api/lotes-vivero/:id/adaptabilidad/evidencias-pendientes
+POST /api/lotes-vivero/:id/adaptabilidad
+GET  /api/lotes-vivero/:id/adaptabilidad
+POST /api/lotes-vivero/:id/merma/evidencias-pendientes
+POST /api/lotes-vivero/:id/merma
+GET  /api/lotes-vivero/:id/merma
+GET  /api/lotes-vivero/:id/timeline
 ```
 
-Endpoints expuestos pero NO listos todavia:
+Endpoint expuesto pero NO listo todavia:
 
 ```txt
-POST /api/lotes-vivero/:id/adaptabilidad  -> 501 Not Implemented
-POST /api/lotes-vivero/:id/merma          -> 501 Not Implemented
-POST /api/lotes-vivero/:id/despacho       -> 501 Not Implemented
-GET  /api/lotes-vivero/:id/timeline       -> 501 Not Implemented
+POST /api/lotes-vivero/:id/despacho  -> 501 Not Implemented
 ```
 
-Para la fase actual del frontend, implementar inicio, listado y embolsado.
+El resto del ciclo (inicio, embolsado, adaptabilidad, merma, timeline) ya esta operativo. Solo el despacho queda pendiente de implementar en backend.
 
 ## Regla de autenticacion
 

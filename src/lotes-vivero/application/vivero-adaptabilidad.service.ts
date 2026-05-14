@@ -147,6 +147,15 @@ export class ViveroAdaptabilidadService {
   // Llama la RPC fn_vivero_registrar_adaptabilidad en una sola transaccion.
   // La evidencia es opcional: se puede enviar evidencia_ids vacio o nulo.
   // ---------------------------------------------------------------------------
+  //
+  // TODO(vivero-mvp): revisar con documentación interna.
+  //   Spec: RN-VIV-09 dice "permite secuencia flexible entre subetapas, sin
+  //   permanencia mínima, sin secuencia rígida". La RPC (migración 021) NO valida
+  //   secuencia ni bloquea retrocesos (correcto vs. spec).
+  //   Sin embargo, nuestro documentacion/modulos/lotes-vivero.md y
+  //   documentacion/arquitectura/flujo-end-to-end.md sugieren secuencia lineal
+  //   `SOMBRA → MEDIA_SOMBRA → SOL_DIRECTO`. Contradicción con el spec — corregir
+  //   los docs (no el código). Confirmar con equipo de producto.
   async registrar(
     loteId: number,
     dto: RegistrarAdaptabilidadDto,
@@ -323,6 +332,8 @@ export class ViveroAdaptabilidadService {
     }
 
     return ((evidenciasData ?? []) as EvidenciaRow[]).map((ev) => {
+      // TODO(vivero-mvp): bucket hardcoded. Ver decisión pendiente en
+      //   vivero-evidencias.service.ts. Si se migra a bucket dedicado, sincronizar.
       const { data: publicUrlData } = supabase.storage
         .from('recoleccion_fotos')
         .getPublicUrl(ev.ruta_archivo);

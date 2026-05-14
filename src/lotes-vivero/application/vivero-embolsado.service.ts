@@ -462,6 +462,9 @@ export class ViveroEmbolsadoService {
     }
 
     return ((evidenciasData ?? []) as EvidenciaRow[]).map((ev) => {
+      // TODO(vivero-mvp): bucket hardcoded. Ver decisión pendiente en
+      //   vivero-evidencias.service.ts (la subida hoy va a `recoleccion_fotos`
+      //   namespaceada por path). Si el bucket cambia, sincronizar aquí.
       const { data: publicUrlData } = supabase.storage
         .from('recoleccion_fotos')
         .getPublicUrl(ev.ruta_archivo);

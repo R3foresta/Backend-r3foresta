@@ -1,127 +1,101 @@
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
-  ConflictException,
-  BadRequestException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreatePlantaDto } from './dto/create-planta.dto';
 import { CreateTipoPlantaDto } from './dto/create-tipo-planta.dto';
+import { ListPlantasQueryDto } from './dto/list-plantas-query.dto';
+import { UpdatePlantaDto } from './dto/update-planta.dto';
+
+const BUCKET_FOTOS_PLANTAS = 'fotos_plantas';
+const EXTENSIONES_VALIDAS = ['png', 'jpg', 'jpeg', 'webp'];
 
 @Injectable()
 export class PlantasService {
+  private readonly logger = new Logger(PlantasService.name);
+
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  /**
-   * Convierte base64 a Buffer y extrae el tipo de archivo
-   */
-  private parseBase64Image(base64String: string): {
-    buffer: Buffer;
-    mimeType: string;
-    extension: string;
-  } {
-    // Formato esperado: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-    const matches = base64String.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
-    
-    if (!matches) {
-      throw new BadRequestException(
-        'Formato de imagen inválido. Debe ser base64 con formato: data:image/[tipo];base64,[datos]'
-      );
-    }
-
-    const extension = matches[1]; // png, jpeg, jpg, webp, etc.
-    const base64Data = matches[2];
-    const buffer = Buffer.from(base64Data, 'base64');
-
-    const mimeType = `image/${extension}`;
-
-    return { buffer, mimeType, extension };
-  }
-
-  /**
-   * Sube una imagen al bucket de Supabase Storage
-   */
-  private async uploadImageToStorage(
-    base64Image: string,
-    fileName: string,
-  ): Promise<string> {
+  async listar(query: ListPlantasQueryDto) {
     const supabase = this.supabaseService.getClient();
-    const { buffer, mimeType, extension } = this.parseBase64Image(base64Image);
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const incluirInactivas = query.incluir_inactivas ?? false;
+    const search = (query.q ?? '').trim();
 
-    // Crear nombre único para el archivo
-    const timestamp = Date.now();
-    const uniqueFileName = `${fileName}_${timestamp}.${extension}`;
-    const filePath = `${uniqueFileName}`;
-
-    // Subir imagen al bucket
-    const { data, error } = await supabase.storage
-      .from('fotos_plantas')
-      .upload(filePath, buffer, {
-        contentType: mimeType,
-        upsert: false,
-      });
-
-    if (error) {
-      console.error('❌ Error al subir imagen a Storage:', error);
-      throw new InternalServerErrorException('Error al subir imagen al storage');
-    }
-
-    // Obtener URL pública de la imagen
-    const { data: publicUrlData } = supabase.storage
-      .from('fotos_plantas')
-      .getPublicUrl(filePath);
-
-    console.log('✅ Imagen subida exitosamente:', publicUrlData.publicUrl);
-    
-    return publicUrlData.publicUrl;
-  }
-
-  /**
-   * GET /api/plantas
-   * Lista todas las plantas
-   */
-  async findAll(search?: string) {
-    const supabase = this.supabaseService.getClient();
-
-    let query = supabase
+    let dbQuery = supabase
       .from('planta')
-      .select('*')
+      .select('*', { count: 'exact' })
       .order('especie', { ascending: true });
 
-    // Si hay búsqueda, filtrar por nombre científico o especie
+    if (!incluirInactivas) {
+      dbQuery = dbQuery.eq('activo', true);
+    }
+
+    if (query.tipo_planta_id) {
+      dbQuery = dbQuery.eq('tipo_planta_id', query.tipo_planta_id);
+    }
+
     if (search) {
-      query = query.or(
-        `especie.ilike.%${search}%,nombre_cientifico.ilike.%${search}%`,
+      dbQuery = dbQuery.or(
+        `especie.ilike.%${search}%,nombre_cientifico.ilike.%${search}%,nombre_comun_principal.ilike.%${search}%,nombres_comunes.ilike.%${search}%`,
       );
     }
 
-    const { data, error } = await query;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error, count } = await dbQuery.range(from, to);
 
     if (error) {
-      console.error('❌ Error al obtener plantas:', error);
-      throw new InternalServerErrorException('Error al obtener plantas');
+      this.logger.error('Error al listar plantas', error);
+      throw new InternalServerErrorException('Error al listar plantas');
     }
+
+    const total = count || 0;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
 
     return {
       success: true,
       data: data || [],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
     };
   }
 
-  /**
-   * GET /api/plantas/search?q=caoba
-   * Busca plantas por término
-   */
-  async search(term: string) {
-    return this.findAll(term);
+  async obtenerPorId(id: number) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data, error } = await supabase
+      .from('planta')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) {
+      this.logger.error(`Error al obtener planta ${id}`, error);
+      throw new InternalServerErrorException('Error al obtener planta');
+    }
+
+    if (!data) {
+      throw new NotFoundException(`Planta con ID ${id} no encontrada`);
+    }
+
+    return { success: true, data };
   }
 
-  /**
-   * GET /api/plantas/tipos-planta
-   * Lista todos los tipos de planta disponibles
-   */
-  async findAllTiposPlanta() {
+  async listarTiposPlanta() {
     const supabase = this.supabaseService.getClient();
 
     const { data, error } = await supabase
@@ -130,45 +104,36 @@ export class PlantasService {
       .order('nombre', { ascending: true });
 
     if (error) {
-      console.error('❌ Error al obtener tipos de planta:', error);
-      throw new InternalServerErrorException('Error al obtener tipos de planta');
+      this.logger.error('Error al listar tipos de planta', error);
+      throw new InternalServerErrorException('Error al listar tipos de planta');
     }
 
-    return {
-      success: true,
-      data: data || [],
-    };
+    return { success: true, data: data || [] };
   }
 
-  /**
-   * POST /api/plantas/tipos-planta
-   * Crea un nuevo tipo de planta
-   */
-  async createTipoPlanta(createTipoPlantaDto: CreateTipoPlantaDto) {
+  async crearTipoPlanta(dto: CreateTipoPlantaDto) {
     const supabase = this.supabaseService.getClient();
 
-    // Verificar si ya existe un tipo de planta con el mismo nombre (case-insensitive)
-    const { data: existing } = await supabase
+    const { data: existente } = await supabase
       .from('tipo_planta')
       .select('id, nombre')
-      .ilike('nombre', createTipoPlantaDto.nombre)
+      .ilike('nombre', dto.nombre)
       .maybeSingle();
 
-    if (existing) {
+    if (existente) {
       throw new ConflictException(
-        `Ya existe un tipo de planta con el nombre "${existing.nombre}".`,
+        `Ya existe un tipo de planta con el nombre "${existente.nombre}"`,
       );
     }
 
-    // Insertar nuevo tipo de planta
     const { data, error } = await supabase
       .from('tipo_planta')
-      .insert([{ nombre: createTipoPlantaDto.nombre }])
+      .insert([{ nombre: dto.nombre }])
       .select()
       .single();
 
     if (error) {
-      console.error('❌ Error al crear tipo de planta:', error);
+      this.logger.error('Error al crear tipo de planta', error);
       throw new InternalServerErrorException('Error al crear tipo de planta');
     }
 
@@ -179,78 +144,41 @@ export class PlantasService {
     };
   }
 
-  /**
-   * POST /api/plantas
-   * Crea una nueva planta en el catálogo
-   */
-  async create(createPlantaDto: CreatePlantaDto) {
+  async crear(dto: CreatePlantaDto, imagen?: Express.Multer.File) {
     const supabase = this.supabaseService.getClient();
 
-    // Verificar que el tipo_planta_id existe
-    const { data: tipoPlanta, error: tipoError } = await supabase
-      .from('tipo_planta')
-      .select('id')
-      .eq('id', createPlantaDto.tipo_planta_id)
-      .maybeSingle();
+    await this.assertTipoPlantaExiste(dto.tipo_planta_id);
+    await this.assertNoDuplicado(dto.nombre_cientifico, dto.variedad);
 
-    if (tipoError || !tipoPlanta) {
-      throw new NotFoundException(
-        `No existe un tipo de planta con ID ${createPlantaDto.tipo_planta_id}. Use GET /api/plantas/tipos-planta para ver los tipos disponibles.`,
-      );
+    let imagenUrl: string | null = null;
+    if (imagen) {
+      imagenUrl = await this.subirImagen(imagen, dto.nombre_cientifico);
     }
 
-    // Verificar duplicado por nombre científico y variedad (case-insensitive)
-    const { data: existing } = await supabase
-      .from('planta')
-      .select('id, nombre_cientifico, variedad')
-      .ilike('nombre_cientifico', createPlantaDto.nombre_cientifico)
-      .ilike('variedad', createPlantaDto.variedad)
-      .maybeSingle();
-
-    if (existing) {
-      throw new ConflictException(
-        `Ya existe una planta con nombre científico "${existing.nombre_cientifico}" y variedad "${existing.variedad}". No se pueden crear plantas duplicadas.`,
-      );
-    }
-
-    // Procesar imagen si viene en base64
-    let imagenUrl = createPlantaDto.imagen_url || null;
-    
-    if (createPlantaDto.imagen_url && createPlantaDto.imagen_url.startsWith('data:image/')) {
-      // Es una imagen en base64, subirla a Supabase Storage
-      const nombreArchivo = createPlantaDto.nombre_cientifico
-        .toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_]/g, '');
-      
-      imagenUrl = await this.uploadImageToStorage(
-        createPlantaDto.imagen_url,
-        nombreArchivo,
-      );
-      
-      console.log('✅ URL de imagen guardada:', imagenUrl);
-    }
-
-    // Insertar nueva planta
     const { data, error } = await supabase
       .from('planta')
       .insert([
         {
-          especie: createPlantaDto.especie,
-          nombre_cientifico: createPlantaDto.nombre_cientifico,
-          variedad: createPlantaDto.variedad,
-          tipo_planta_id: createPlantaDto.tipo_planta_id,
-          nombre_comun_principal: createPlantaDto.nombre_comun_principal || null,
-          nombres_comunes: createPlantaDto.nombres_comunes || null,
+          especie: dto.especie,
+          nombre_cientifico: dto.nombre_cientifico,
+          variedad: dto.variedad,
+          tipo_planta_id: dto.tipo_planta_id,
+          nombre_comun_principal: dto.nombre_comun_principal ?? null,
+          nombres_comunes: dto.nombres_comunes ?? null,
           imagen_url: imagenUrl,
-          notas: createPlantaDto.notas || null,
+          notas: dto.notas ?? null,
         },
       ])
       .select()
       .single();
 
     if (error) {
-      console.error('❌ Error al crear planta:', error);
+      if (this.isUniqueViolation(error)) {
+        throw new ConflictException(
+          'Ya existe una planta con ese nombre cientifico y variedad',
+        );
+      }
+      this.logger.error('Error al crear planta', error);
       throw new InternalServerErrorException('Error al crear planta');
     }
 
@@ -261,75 +189,210 @@ export class PlantasService {
     };
   }
 
-  /**
-   * PATCH /api/plantas/:id
-   * Actualiza una planta existente
-   */
-  async update(id: number, updatePlantaDto: any) {
+  async actualizar(
+    id: number,
+    dto: UpdatePlantaDto,
+    imagen?: Express.Multer.File,
+  ) {
     const supabase = this.supabaseService.getClient();
-
-    // 1. Verificar si la planta existe
-    const { data: existing } = await supabase
+    const { data: actual } = await supabase
       .from('planta')
-      .select('id, imagen_url')
+      .select('id, nombre_cientifico, variedad')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
-    if (!existing) {
+    if (!actual) {
       throw new NotFoundException(`Planta con ID ${id} no encontrada`);
     }
 
-    // 2. Procesar nueva imagen si viene en base64
-    let imagenUrl = updatePlantaDto.imagen_url;
-    if (imagenUrl && imagenUrl.startsWith('data:image/')) {
-      const nombreArchivo = `update_${id}_${Date.now()}`;
-      imagenUrl = await this.uploadImageToStorage(updatePlantaDto.imagen_url, nombreArchivo);
+    if (dto.tipo_planta_id !== undefined) {
+      await this.assertTipoPlantaExiste(dto.tipo_planta_id);
     }
 
-    // 3. Ejecutar actualización
-    const { data, error } = await supabase
-      .from('planta')
-      .update({
-        especie: updatePlantaDto.especie,
-        nombre_cientifico: updatePlantaDto.nombre_cientifico,
-        variedad: updatePlantaDto.variedad,
-        tipo_planta_id: updatePlantaDto.tipo_planta_id,
-        nombre_comun_principal: updatePlantaDto.nombre_comun_principal,
-        nombres_comunes: updatePlantaDto.nombres_comunes,
-        imagen_url: imagenUrl,
-        notas: updatePlantaDto.notas,
-      })
-      .eq('id', id)
-      .select()
-      .single();
+    const nuevoCientifico = dto.nombre_cientifico ?? actual.nombre_cientifico;
+    const nuevaVariedad = dto.variedad ?? actual.variedad;
+    const cambiaIdentidad =
+      dto.nombre_cientifico !== undefined || dto.variedad !== undefined;
 
-    if (error) {
-      throw new InternalServerErrorException('Error al actualizar la planta');
+    if (cambiaIdentidad) {
+      await this.assertNoDuplicado(nuevoCientifico, nuevaVariedad, id);
     }
 
-    return { success: true, data };
-  }
+    const updatePayload: Record<string, unknown> = {};
 
-  /**
-   * DELETE /api/plantas/:id
-   * Elimina una planta del catálogo
-   */
-  async remove(id: number) {
-    const supabase = this.supabaseService.getClient();
+    if (dto.especie !== undefined) updatePayload.especie = dto.especie;
+    if (dto.nombre_cientifico !== undefined)
+      updatePayload.nombre_cientifico = dto.nombre_cientifico;
+    if (dto.variedad !== undefined) updatePayload.variedad = dto.variedad;
+    if (dto.tipo_planta_id !== undefined)
+      updatePayload.tipo_planta_id = dto.tipo_planta_id;
+    if (dto.nombre_comun_principal !== undefined)
+      updatePayload.nombre_comun_principal = dto.nombre_comun_principal;
+    if (dto.nombres_comunes !== undefined)
+      updatePayload.nombres_comunes = dto.nombres_comunes;
+    if (dto.notas !== undefined) updatePayload.notas = dto.notas;
+    if (dto.activo !== undefined) updatePayload.activo = dto.activo;
+
+    if (imagen) {
+      updatePayload.imagen_url = await this.subirImagen(
+        imagen,
+        nuevoCientifico,
+      );
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
+      return this.obtenerPorId(id);
+    }
 
     const { error } = await supabase
       .from('planta')
-      .delete()
+      .update(updatePayload)
       .eq('id', id);
 
     if (error) {
-      // Si el error es por integridad referencial (tiene recolecciones asociadas)
-      if (error.code === '23503') {
-        throw new ConflictException('No se puede eliminar la planta porque tiene recolecciones asociadas.');
+      if (this.isUniqueViolation(error)) {
+        throw new ConflictException(
+          'Ya existe una planta con ese nombre cientifico y variedad',
+        );
       }
-      throw new InternalServerErrorException('Error al eliminar la planta');
+      this.logger.error(`Error al actualizar planta ${id}`, error);
+      throw new InternalServerErrorException('Error al actualizar planta');
     }
 
-    return { success: true, message: 'Planta eliminada correctamente' };
+    return this.obtenerPorId(id);
+  }
+
+  async desactivar(id: number) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: actual } = await supabase
+      .from('planta')
+      .select('id, activo')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (!actual) {
+      throw new NotFoundException(`Planta con ID ${id} no encontrada`);
+    }
+
+    if (actual.activo === false) {
+      return this.obtenerPorId(id);
+    }
+
+    const { error } = await supabase
+      .from('planta')
+      .update({ activo: false })
+      .eq('id', id);
+
+    if (error) {
+      this.logger.error(`Error al desactivar planta ${id}`, error);
+      throw new InternalServerErrorException('Error al desactivar planta');
+    }
+
+    return this.obtenerPorId(id);
+  }
+
+  private async assertTipoPlantaExiste(tipoPlantaId: number) {
+    const supabase = this.supabaseService.getClient();
+    const { data, error } = await supabase
+      .from('tipo_planta')
+      .select('id')
+      .eq('id', tipoPlantaId)
+      .maybeSingle();
+
+    if (error) {
+      this.logger.error('Error al validar tipo_planta', error);
+      throw new InternalServerErrorException('Error al validar tipo de planta');
+    }
+
+    if (!data) {
+      throw new NotFoundException(
+        `No existe un tipo de planta con ID ${tipoPlantaId}. Use GET /api/plantas/tipos-planta para ver los disponibles.`,
+      );
+    }
+  }
+
+  private async assertNoDuplicado(
+    nombreCientifico: string,
+    variedad: string,
+    excludeId?: number,
+  ) {
+    const supabase = this.supabaseService.getClient();
+    const { data, error } = await supabase
+      .from('planta')
+      .select('id')
+      .ilike('nombre_cientifico', nombreCientifico)
+      .ilike('variedad', variedad);
+
+    if (error) {
+      this.logger.error('Error al validar duplicado de planta', error);
+      throw new InternalServerErrorException('Error al validar planta');
+    }
+
+    const colision = (data || []).find(
+      (row) => !excludeId || Number(row.id) !== excludeId,
+    );
+
+    if (colision) {
+      throw new ConflictException(
+        `Ya existe una planta con nombre cientifico "${nombreCientifico}" y variedad "${variedad}"`,
+      );
+    }
+  }
+
+  private async subirImagen(
+    file: Express.Multer.File,
+    nombreCientifico: string,
+  ): Promise<string> {
+    const extension = this.resolveExtension(file);
+    const supabase = this.supabaseService.getClient();
+
+    const slug = nombreCientifico
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/g, '');
+
+    const filePath = `${slug || 'planta'}_${Date.now()}.${extension}`;
+
+    const { error } = await supabase.storage
+      .from(BUCKET_FOTOS_PLANTAS)
+      .upload(filePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+      });
+
+    if (error) {
+      this.logger.error('Error al subir imagen a Storage', error);
+      throw new InternalServerErrorException(
+        'Error al subir imagen de planta al storage',
+      );
+    }
+
+    const { data: publicUrl } = supabase.storage
+      .from(BUCKET_FOTOS_PLANTAS)
+      .getPublicUrl(filePath);
+
+    return publicUrl.publicUrl;
+  }
+
+  private resolveExtension(file: Express.Multer.File): string {
+    const mimePart = (file.mimetype || '').split('/')[1]?.toLowerCase();
+    if (mimePart && EXTENSIONES_VALIDAS.includes(mimePart)) {
+      return mimePart;
+    }
+    const nameParts = (file.originalname || '').split('.');
+    const fromName = nameParts.length > 1 ? nameParts.pop()?.toLowerCase() : '';
+    if (fromName && EXTENSIONES_VALIDAS.includes(fromName)) {
+      return fromName;
+    }
+    throw new BadRequestException(
+      `Extension de imagen no soportada. Permitidas: ${EXTENSIONES_VALIDAS.join(', ')}`,
+    );
+  }
+
+  private isUniqueViolation(error: { code?: string } | null): boolean {
+    return error?.code === '23505';
   }
 }
