@@ -118,7 +118,6 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 | `SEQUIA` | Falta de agua |
 | `DANO_FISICO` | Daño mecánico |
 | `MUERTE_NATURAL` | Muerte sin causa identificada |
-| `DESCARTE_CALIDAD` | Descartada por no cumplir estándares |
 | `OTRO` | Causa no categorizada |
 
 ### `DestinoTipoVivero`
@@ -803,7 +802,6 @@ Content-Type: application/json
 { "causa_merma": "SEQUIA" }
 { "causa_merma": "DANO_FISICO" }
 { "causa_merma": "MUERTE_NATURAL" }
-{ "causa_merma": "DESCARTE_CALIDAD" }
 { "causa_merma": "OTRO" }
 ```
 

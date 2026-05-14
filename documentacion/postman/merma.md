@@ -252,7 +252,7 @@ URL:     {{base_url}}/lotes-vivero/{{lote_id}}/merma
 | Fecha antes del embolsado | Fecha anterior al evento EMBOLSADO | 400 |
 | Lote sin embolsado | Lote solo con INICIO | 400 |
 | Lote FINALIZADO | Lote en estado FINALIZADO | 400 |
-| `causa_merma` invalida | `"causa_merma": "DESCARTE_CALIDAD"` | 400 |
+| `causa_merma` invalida | `"causa_merma": "VALOR_INEXISTENTE"` | 400 |
 | Sin header `x-auth-id` | Omitir el header | 401 |
 | Multiples mermas parciales | Repetir paso 1 y 2 varias veces | Cada merma descuenta del saldo acumulado |
 

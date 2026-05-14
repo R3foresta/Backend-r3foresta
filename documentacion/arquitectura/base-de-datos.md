@@ -70,24 +70,26 @@ CREATE INDEX idx_usuario_credencial_credential_id ON usuario_credencial(credenti
 ---
 
 ### 3. 📍 `ubicacion`
-Almacena coordenadas geográficas y detalles de ubicación.
+Almacena coordenadas geográficas y referencia a catálogos de país y división administrativa.
 
 | Campo | Tipo | Restricciones | Descripción |
 |-------|------|---------------|-------------|
 | `id` | `bigint` | PK, AUTO | Identificador único |
-| `pais` | `text` | - | País |
-| `departamento` | `text` | - | Departamento/Estado |
-| `provincia` | `text` | - | Provincia/Municipio |
-| `comunidad` | `text` | - | Comunidad |
-| `zona` | `text` | - | Zona específica |
+| `pais_id` | `bigint` | FK → `pais(id)`, opcional | País por catálogo |
+| `division_id` | `bigint` | FK → `division(id)`, opcional | División administrativa más específica conocida |
+| `nombre` | `text` | opcional | Nombre del sitio físico |
+| `referencia` | `text` | opcional | Referencia textual |
 | `latitud` | `numeric` | NOT NULL, -90 a 90 | Coordenada latitud |
 | `longitud` | `numeric` | NOT NULL, -180 a 180 | Coordenada longitud |
+| `precision_m` | `numeric` | opcional, > 0 | Precisión en metros del punto capturado |
+| `fuente` | `text` | opcional | `GPS_MOVIL`, `MAPA`, `MANUAL`, `LEGACY` |
 | `created_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Fecha de registro |
 
 **Relaciones:**
+- `pais_id` → `pais(id)` (catálogo)
+- `division_id` → `division(id)` (catálogo jerárquico de divisiones administrativas)
 - Una ubicación puede tener un vivero (1:1)
 - Una ubicación puede tener múltiples recolecciones
-- Una ubicación puede tener múltiples plantaciones
 
 ---
 
@@ -639,17 +641,134 @@ CREATE INDEX idx_usuario_credencial_credential_id ON usuario_credencial(credenti
 
 ---
 
-## 📝 Notas Finales
+## 🆕 Esquema vigente — agregados por migraciones
 
-Este sistema permite:
-- ✅ Trazabilidad completa desde recolección hasta plantación
-- ✅ Control de calidad en cada etapa
-- ✅ Auditoría de cambios
-- ✅ Geolocalización precisa
-- ✅ Gestión de múltiples viveros
-- ✅ Reportes y estadísticas
-- ✅ Autenticación biométrica sin contraseña (WebAuthn)
+Esta sección complementa el esquema descrito arriba con los cambios introducidos en `migrations/` (006 al 021). En caso de discrepancia con secciones anteriores, **prevalece esta sección**.
 
-**Base de Datos:** PostgreSQL en Supabase  
-**Total de Tablas:** Pendiente de consolidar tras la migración del modelo de vivero
-**Última actualización:** Alineada con `db-strucuture.md` (vFinal + Módulo Plantación)
+### Enum `EstadoRegistro` (recolección) — migración 014
+
+```
+BORRADOR | PENDIENTE_VALIDACION | VALIDADO | RECHAZADO
+```
+
+Columna `recoleccion.estado_registro` controla el flujo de validación. Solo el estado `VALIDADO` materializa saldo y dispara IPFS + mint NFT. Ver [ADR 001](./adr/001-saldo-operativo-recoleccion.md).
+
+### Saldo operativo en `recoleccion` — migración 011
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `saldo_actual` | `numeric` | Cantidad canónica disponible (descontando consumo a lotes) |
+| `estado_operativo` | `estado_operativo_recoleccion` | Enum: `DISPONIBLE`, `PARCIAL`, `AGOTADO`, `BLOQUEADO` |
+| `cantidad_inicial_canonica` | `numeric` | Cantidad original en unidad canónica |
+| `unidad_canonica` | `unidad_recoleccion` | Enum (migración 012): `G`, `UNIDAD` |
+| `usuario_validacion_id` | `bigint` | FK al validador |
+| `fecha_validacion` | `timestamptz` | Fecha de aprobación |
+
+Trigger `fn_recoleccion_recalcular_saldo_operativo` mantiene `saldo_actual` y `estado_operativo` ante cambios en `recoleccion_movimiento`.
+
+### Tabla `recoleccion_movimiento` — migración 011
+
+Registra cada descuento/reposición del saldo de una recolección (ej.: creación de lote consume saldo). Migración 016 añade compatibilidad con columnas de unidad.
+
+### Tabla `recoleccion_historial` — migración 014
+
+Audit log inmutable de cambios de estado. Trigger `fn_recoleccion_historial_prevent_mutation` bloquea UPDATE/DELETE.
+
+### Tabla `evidencias_trazabilidad` — migración 018 (RPC referenciada)
+
+Tabla polimórfica de evidencias (fotos) que sirve tanto a recolecciones como a eventos de vivero.
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `id` | `bigint` | PK |
+| `tipo_entidad_id` | `bigint` | FK a catálogo de tipos de entidad (`RECOLECCION`, `EVENTO_LOTE_VIVERO`, etc.) |
+| `entidad_id` | `bigint` | ID de la entidad concreta |
+| `codigo_trazabilidad` | `text` | Código heredado de la entidad para búsqueda rápida |
+| `ruta_archivo` | `text` | Path en Supabase Storage |
+| `url_publica` | `text` | URL pública del archivo |
+| `titulo`, `descripcion`, `metadata` | text/jsonb | Opcionales |
+| `tomado_en` | `timestamptz` | Cuándo se tomó la foto |
+| `es_principal` | `boolean` | Foto destacada del evento |
+| `created_at` | `timestamptz` | |
+
+Las **evidencias pendientes** se crean sin `entidad_id` y se vinculan al crear el evento/lote definitivo.
+
+### Tabla `lote_vivero` — migración 007
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `id` | `bigint` | PK |
+| `codigo` | `text` | Código de trazabilidad del lote |
+| `vivero_id` | `bigint` | FK → `vivero(id)` |
+| `recoleccion_id` | `bigint` | FK → `recoleccion(id)` |
+| `fecha_inicio` | `date` | Fecha en la que se inició el lote |
+| `cantidad_inicial_en_proceso` | `numeric` | Material recibido de la recolección |
+| `unidad_medida_inicial` | `unidad_medida_vivero` | `UNIDAD` o `G` |
+| `plantas_vivas_actuales` | `int` | Stock vivo (se actualiza con embolsado/merma/despacho) |
+| `estado_lote` | `estado_lote_vivero` | `ACTIVO`, `FINALIZADO` |
+| `motivo_cierre` | `motivo_cierre_lote` | `DESPACHO_TOTAL`, `PERDIDA_TOTAL`, `MIXTO` |
+| `subetapa_adaptabilidad_actual` | `subetapa_adaptabilidad` | `SOMBRA`, `MEDIA_SOMBRA`, `SOL_DIRECTO` |
+| `observaciones` | `text` | |
+| `created_at`, `updated_at` | `timestamptz` | |
+
+Trigger `fn_lote_vivero_set_updated_at` mantiene `updated_at`.
+
+### Tabla `evento_lote_vivero` — migración 007
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `id` | `bigint` | PK |
+| `lote_vivero_id` | `bigint` | FK |
+| `tipo_evento` | `tipo_evento_vivero` | `INICIO`, `EMBOLSADO`, `ADAPTABILIDAD`, `MERMA`, `DESPACHO`, `CIERRE_AUTOMATICO` |
+| `fecha_evento` | `date` | |
+| `responsable_id` | `bigint` | FK → `usuario(id)` |
+| `cantidad_afectada` | `numeric` | Cantidad o número de plantas según evento |
+| `causa_merma` | `causa_merma_vivero` | Solo en eventos `MERMA` |
+| `subetapa_destino` | `subetapa_adaptabilidad` | Solo en eventos `ADAPTABILIDAD` |
+| `destino_tipo` | `destino_tipo_vivero` | Solo en eventos `DESPACHO` |
+| `destino_referencia` | `text` | Solo en `DESPACHO` |
+| `comunidad_destino_id` | `bigint` | Solo en `DESPACHO` |
+| `payload_snapshot` | `jsonb` | Snapshot del estado del lote post-evento |
+| `observaciones` | `text` | |
+| `created_at` | `timestamptz` | |
+
+### Enums del módulo vivero — migración 006
+
+| Tipo PG | Valores |
+|---|---|
+| `unidad_medida_vivero` | `UNIDAD`, `G` |
+| `estado_lote_vivero` | `ACTIVO`, `FINALIZADO` |
+| `motivo_cierre_lote` | `DESPACHO_TOTAL`, `PERDIDA_TOTAL`, `MIXTO` |
+| `causa_merma_vivero` | `PLAGA`, `ENFERMEDAD`, `SEQUIA`, `DANO_FISICO`, `MUERTE_NATURAL`, `OTRO` |
+| `tipo_evento_vivero` | `INICIO`, `EMBOLSADO`, `ADAPTABILIDAD`, `MERMA`, `DESPACHO`, `CIERRE_AUTOMATICO` |
+| `subetapa_adaptabilidad` | `SOMBRA`, `MEDIA_SOMBRA`, `SOL_DIRECTO` |
+| `destino_tipo_vivero` | `PLANTACION_PROPIA`, `DONACION_COMUNIDAD`, `VENTA`, `OTRO` |
+
+### RPCs (funciones almacenadas) en uso
+
+| RPC | Migración | Llamada por |
+|---|---|---|
+| `fn_vivero_crear_lote_desde_recoleccion` | 017, 018 | `ViveroInicioService` |
+| `fn_vivero_registrar_embolsado` | 019 | `ViveroEmbolsadoService` |
+| `fn_vivero_registrar_adaptabilidad` | 021 | `ViveroAdaptabilidadService` |
+| `fn_vivero_registrar_merma` | 020 | `ViveroMermaService` |
+| `fn_vivero_registrar_despacho` | 020 (definida pero **no llamada**: backend lanza `NotImplementedException`) | — |
+| `fn_recoleccion_recalcular_saldo_operativo` | 011 | Trigger interno |
+| `fn_recoleccion_historial_prevent_mutation` | 014 | Trigger interno |
+| `fn_lote_vivero_set_updated_at` | 007 | Trigger interno |
+
+### Storage buckets — migraciones 002, 003, 004
+
+| Bucket | Uso |
+|---|---|
+| `fotos_plantas` | Imágenes del catálogo de plantas |
+| `recoleccion_fotos` | Fotos vinculadas a recolecciones |
+| `vivero` | Fotos de eventos de lote (incluye carpeta `eventos/pendientes/`) |
+
+---
+
+## 📝 Notas finales
+
+- **BD:** PostgreSQL en Supabase.
+- **Aplicar migraciones en orden numérico** desde `migrations/` (001 → 021). Las RPCs son redefinidas en migraciones posteriores (p.ej. `fn_vivero_crear_lote_desde_recoleccion` en 017 → 018), por lo que la última aplicada gana.
+- **RLS:** Las políticas describen el modelo deseado; la implementación efectiva debe verificarse en Supabase.
