@@ -29,6 +29,14 @@ type FotoSubidaVivero = {
 @Injectable()
 export class ViveroEvidenciasService {
   private readonly logger = new Logger(ViveroEvidenciasService.name);
+  // TODO(vivero-mvp): revisar política de buckets de storage.
+  //   Las migraciones 003 y 004 crean buckets dedicados (`recoleccion_fotos`, `vivero`,
+  //   `fotos_plantas`). Hoy las fotos de eventos de vivero se suben al bucket
+  //   `recoleccion_fotos`, namespaceadas por path `vivero/eventos/pendientes/...`.
+  //   Esto mezcla almacenamiento entre módulos y dificulta políticas RLS por bucket.
+  //   Sensible: cambiar este valor también requiere migrar las rutas existentes y
+  //   actualizar `getPublicUrl` en TODOS los servicios que leen evidencias de vivero
+  //   (vivero-embolsado, vivero-adaptabilidad, vivero-merma, vivero-timeline).
   private readonly bucketEvidencias = 'recoleccion_fotos';
 
   constructor(

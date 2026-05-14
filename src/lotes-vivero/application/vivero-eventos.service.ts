@@ -33,6 +33,17 @@ export class ViveroEventosService {
     return this.mermaService.registrar(loteId, dto, authId);
   }
 
+  // TODO(vivero-mvp): implementar DESPACHO — requisito BLOQUEANTE del MVP.
+  //   Spec: RF-VIV-05, RN-VIV-08, RN-VIV-20, RN-VIV-23, doc operativo §4.5.
+  //   La RPC `fn_vivero_registrar_despacho` ya existe en migración 020 con la firma
+  //   esperada (p_lote_id, p_fecha_evento, p_responsable_id, p_cantidad_despachada,
+  //   p_destino_tipo, p_destino_referencia, p_comunidad_destino_id, p_observaciones,
+  //   p_evidencia_ids). Falta conectarla desde aquí (o desde un ViveroDespachoService
+  //   nuevo, siguiendo el patrón de embolsado/merma/adaptabilidad).
+  //   Sensible: el enum `DestinoTipoVivero` actual diverge del spec — ver TODO en
+  //   domain/enums/destino-tipo-vivero.enum.ts antes de implementar.
+  //   Cierre automático: la RPC debe llamar `fn_vivero_cerrar_lote_si_corresponde`
+  //   cuando saldo_vivo llegue a 0 (igual que merma — ver migración 020 línea 286).
   async registrarDespacho(
     loteId: number,
     dto: RegistrarDespachoDto,

@@ -339,6 +339,11 @@ BEGIN
     RAISE EXCEPTION 'fecha_evento (%) no puede ser futura.', p_fecha_evento;
   END IF;
 
+  -- TODO(vivero-mvp): ventana retroactiva hardcoded a 10 dias.
+  --   Spec: RN-VIV-33 dice "Este valor debe ser configurable por el sistema".
+  --   Opciones: (a) tabla `vivero_config` con clave `ventana_retroactiva_dias`,
+  --   (b) parametro de la funcion con default 10. Revisar con docs antes de cambiar
+  --   porque toca las 4 RPCs (INICIO 017/018, EMBOLSADO 019, MERMA 020, ADAPTABILIDAD 021).
   IF p_fecha_evento < (CURRENT_DATE - 10) THEN
     RAISE EXCEPTION
       'fecha_evento (%) no puede exceder la ventana retroactiva de 10 dias.',

@@ -41,6 +41,14 @@ import { RegistrarDespachoDto } from './dto/registrar-despacho.dto';
 import { RegistrarEmbolsadoDto } from './dto/registrar-embolsado.dto';
 import { RegistrarMermaDto } from './dto/registrar-merma.dto';
 
+// TODO(vivero-mvp): revisar política de autenticación para endpoints GET.
+//   Spec: RF-VIV-07 (timeline / cadena de custodia) y RF-VIV-09 (listado operativo)
+//   indican "control de acceso por rol". Hoy todos los GET de este controller son
+//   públicos (no exigen `x-auth-id`), mientras que los POST sí lo exigen.
+//   Esto es una inconsistencia y un posible problema de privacidad de datos
+//   operativos. Confirmar con producto si los GET deben ir tras `x-auth-id`
+//   (y eventualmente rol), o si quedan abiertos por diseño. Sincronizar también
+//   con la doc del módulo (modulos/lotes-vivero.md sección "Autenticación").
 @ApiTags('lotes-vivero')
 @Controller('lotes-vivero')
 export class LotesViveroController {

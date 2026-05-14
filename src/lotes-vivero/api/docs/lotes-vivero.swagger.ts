@@ -707,6 +707,15 @@ export function ApiCrearEvidenciasPendientesMerma() {
   );
 }
 
+// TODO(vivero-mvp): este decorador marca x-auth-id como requerido, pero el endpoint
+//   GET /lotes-vivero/:id/merma del controller no valida el header. Swagger queda
+//   engañando al consumidor. Decidir cuál es la verdad:
+//     a) si el endpoint debe exigir auth (alinear con RF-VIV-07 "control de acceso
+//        por rol"), agregar la validación `x-auth-id` en el controller, o
+//     b) si seguirá siendo público, quitar ApiSecurity/ApiHeader aquí.
+//   La misma duda aplica a los otros GET (ApiListarLotes, ApiObtenerTimeline,
+//   ApiObtenerAdaptabilidades, ApiObtenerResultadoEmbolsado,
+//   ApiObtenerContextoEmbolsado): revisar consistencia global.
 export function ApiObtenerMermas() {
   return applyDecorators(
     ApiOperation({
