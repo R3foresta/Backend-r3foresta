@@ -1,6 +1,8 @@
-# Pruebas Postman — Lotes de Vivero
+# Pruebas Postman
 
-Cookbooks operativos para probar el ciclo de vida de un lote de vivero contra el backend local o de staging. Cada documento describe pre-condiciones, payload, respuesta esperada y casos de error.
+Cookbooks operativos para probar el backend contra entorno local o staging. Cada documento describe pre-condiciones, payload, respuesta esperada y casos de error.
+
+## Lotes de Vivero
 
 | Evento | Documento | Endpoint principal |
 |---|---|---|
@@ -8,6 +10,12 @@ Cookbooks operativos para probar el ciclo de vida de un lote de vivero contra el
 | Adaptabilidad | [adaptabilidad.md](./adaptabilidad.md) | `POST /api/lotes-vivero/:id/adaptabilidad` |
 | Merma | [merma.md](./merma.md) | `POST /api/lotes-vivero/:id/merma` |
 | Timeline | [timeline.md](./timeline.md) | `GET /api/lotes-vivero/:id/timeline` |
+
+## Catalogos
+
+| Modulo | Documento | Endpoints |
+|---|---|---|
+| Plantas | [plantas.md](./plantas.md) | CRUD `/api/plantas` y `/api/plantas/tipos-planta` |
 
 Para una visión completa de los endpoints del módulo, ver [../modulos/lotes-vivero.md](../modulos/lotes-vivero.md). Para guía de consumo desde el frontend, ver [../frontend/lotes-vivero.md](../frontend/lotes-vivero.md).
 

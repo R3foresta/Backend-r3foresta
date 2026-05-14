@@ -90,12 +90,27 @@ These two are the heart of the system and follow a deliberate split. **When addi
 
 SQL migrations in `migrations/` are numbered and must be applied to Supabase in order. Several flows are implemented as Supabase **RPC functions** (e.g. `017_vivero_inicio_lote_rpc.sql`, `019_vivero_embolsado_rpc.sql`, `020_vivero_merma_rpc.sql`, `021_vivero_adaptabilidad_rpc.sql`) — the corresponding service calls `supabase.rpc('...')` for atomicity. When changing one of these flows, update both the SQL migration and the calling service.
 
-Storage buckets are also provisioned via migrations (002–004). Image uploads must go through Supabase Storage; do not send base64 in the JSON body (main.ts caps body at 5 MB and comments warn against it).
+Storage buckets are also provisioned via migrations (002–004). Image uploads must go through Supabase Storage using `multipart/form-data` — never base64 in the JSON body. main.ts caps body at 5 MB; multipart bypasses that limit and is the pattern used across `recolecciones`, `lotes-vivero`, `users/profile/photo` and `plantas`.
+
+#### Known migration drift
+
+- `planta.tipo_planta` / `tipo_planta_otro` (defined in `005`) are no longer used. The live Supabase schema has `planta.tipo_planta_id BIGINT REFERENCES tipo_planta(id)` and a separate `tipo_planta` table that **do not exist in this repo's migrations** — the ALTER was applied directly. A `023_tipo_planta_table_alignment.sql` is pending to restore reproducibility (see TODO at the bottom of `022_planta_soft_delete.sql`). Confirm the live schema before writing it.
 
 ### Authentication contract
 
 - Registration/login go through `auth/auth.service.ts` using `@passwordless-id/webauthn`. Challenges are kept in an **in-memory Map** with a 5-min TTL — not safe for multi-instance deploys; replace with Redis before horizontal scaling.
 - All other endpoints expect the `x-auth-id` header. Each layered module has its own `*-auth.service.ts` that converts that header into user + role + permissions; controllers throw `UnauthorizedException` if it's missing (see `LotesViveroController.requireAuthId`).
+
+### Documentation
+
+The `documentacion/` folder is the canonical narrative reference and is kept in sync with the code:
+- `documentacion/README.md` — entry point with the end-to-end flow diagram
+- `documentacion/arquitectura/` — cross-cutting architecture (auth, blockchain, evidencias, flujo end-to-end)
+- `documentacion/modulos/<modulo>.md` — per-module spec (recolecciones, lotes-vivero, plantas, auth-webauthn, blockchain, pinata, plantas-storage)
+- `documentacion/postman/<evento>.md` — request/response examples for each lote-vivero event (embolsado, adaptabilidad, merma, timeline)
+- `documentacion/frontend/` — contract notes for PWA consumers
+
+When changing a flow, update both the module spec under `documentacion/modulos/` and the Postman recipe if the request shape changes.
 
 ### Conventions to preserve
 
