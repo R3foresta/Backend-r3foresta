@@ -16,6 +16,7 @@
    - [POST /lotes-vivero/:id/despacho](#6️⃣-post-lotes-viveroidespacho)
    - [GET /lotes-vivero](#7️⃣-get-lotes-vivero)
    - [GET /lotes-vivero/:id/timeline](#8️⃣-get-lotes-viveroidtimeline)
+   - [GET /lotes-vivero/:id](#9️⃣-get-lotes-viveroid)
 7. [Ejemplos Completos con Postman](#ejemplos-completos-con-postman)
 8. [Flujo de Trabajo Típico](#flujo-de-trabajo-típico)
 9. [Manejo de Errores](#manejo-de-errores)
@@ -539,6 +540,115 @@ GET /api/lotes-vivero?q=ceibo&motivo_cierre=DESPACHO_TOTAL
     }
   ]
 }
+```
+
+---
+
+### 9️⃣ GET /lotes-vivero/:id
+
+**Descripción**: Devuelve el detalle completo del lote con sus relaciones (vivero, recolección, planta, responsable) y un **snapshot del último evento por tipo**. Pensado para que los formularios de eventos validen fechas contra el evento previo sin disparar N+1 calls.
+
+Reglas de fecha relevantes a las que sirve este endpoint:
+- `EMBOLSADO` requiere `INICIO` previo y `fecha_evento` ≥ `fecha_inicio` del lote (RN-VIV-10).
+- `ADAPTABILIDAD`, `MERMA` y `DESPACHO` requieren `EMBOLSADO` previo y `fecha_evento` ≥ `fecha_evento` del `EMBOLSADO` (RN-VIV-10, validado en `fn_vivero_assert_fecha_operativa`).
+- Todos los eventos respetan la ventana retroactiva de 10 días (RN-VIV-33).
+
+**Autenticación**: No requerida. Ver TODO en el controller sobre alinear los GET con `RF-VIV-07` (control de acceso por rol).
+
+**Path Parameter**:
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `id` | integer | ID del lote de vivero |
+
+**Respuesta 200**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 101,
+    "codigo_trazabilidad": "VIV-000101-REC-000010",
+    "estado_lote": "ACTIVO",
+    "motivo_cierre": null,
+    "recoleccion_id": 10,
+    "planta_id": 5,
+    "vivero_id": 2,
+    "responsable_id": 77,
+    "nombre_cientifico_snapshot": "Cedrela odorata",
+    "nombre_comercial_snapshot": "Cedro",
+    "tipo_material_snapshot": "SEMILLA",
+    "variedad_snapshot": "Local",
+    "nombre_comunidad_origen_snapshot": "Comunidad A",
+    "nombre_responsable_snapshot": "Responsable Vivero",
+    "fecha_inicio": "2026-04-20",
+    "cantidad_inicial_en_proceso": 8,
+    "unidad_medida_inicial": "UNIDAD",
+    "plantas_vivas_iniciales": 200,
+    "saldo_vivo_actual": 180,
+    "stock_vivo_actual": 180,
+    "subetapa_actual": "MEDIA_SOMBRA",
+    "created_at": "2026-04-20T10:00:00Z",
+    "updated_at": "2026-05-08T11:00:00Z",
+    "vivero": { "id": 2, "codigo": "VIV-CENTRAL", "nombre": "Vivero Central" },
+    "recoleccion": { "id": 10, "codigo_trazabilidad": "REC-000010", ... },
+    "planta": { "id": 5, "especie": "Cedrela odorata", ... },
+    "responsable": { "id": 77, "nombre": "Responsable", ... },
+    "ultimo_evento_por_tipo": {
+      "INICIO": {
+        "id": 900,
+        "fecha_evento": "2026-04-20",
+        "created_at": "2026-04-20T10:00:00Z",
+        "responsable_id": 77,
+        "cantidad_afectada": 8,
+        "unidad_medida_evento": "UNIDAD",
+        "saldo_vivo_antes": null,
+        "saldo_vivo_despues": null,
+        "subetapa_destino": null,
+        "causa_merma": null,
+        "destino_tipo": null,
+        "destino_referencia": null,
+        "motivo_cierre_calculado": null
+      },
+      "EMBOLSADO": {
+        "id": 901,
+        "fecha_evento": "2026-04-25",
+        "saldo_vivo_antes": null,
+        "saldo_vivo_despues": 200,
+        "cantidad_afectada": 200,
+        "...": "..."
+      },
+      "ADAPTABILIDAD": {
+        "id": 902,
+        "fecha_evento": "2026-05-01",
+        "subetapa_destino": "MEDIA_SOMBRA",
+        "saldo_vivo_antes": 200,
+        "saldo_vivo_despues": 200,
+        "...": "..."
+      },
+      "MERMA": {
+        "id": 904,
+        "fecha_evento": "2026-05-08",
+        "cantidad_afectada": 5,
+        "causa_merma": "PLAGA",
+        "saldo_vivo_antes": 185,
+        "saldo_vivo_despues": 180,
+        "...": "..."
+      },
+      "DESPACHO": null,
+      "CIERRE_AUTOMATICO": null
+    }
+  }
+}
+```
+
+**Notas**:
+- Cada entrada de `ultimo_evento_por_tipo` es el evento **más reciente** de ese tipo (orden por `fecha_evento DESC, created_at DESC, id DESC`).
+- `EMBOLSADO` solo puede existir una vez por lote (RN-VIV-11). `ADAPTABILIDAD`, `MERMA` y `DESPACHO` pueden tener N eventos; el snapshot expone el último.
+- Cuando un tipo de evento todavía no ocurrió en el lote, su valor es `null`.
+- Todos los campos del evento son los mismos para los 6 tipos; los que no aplican al tipo (p.ej. `causa_merma` en `INICIO`) vienen `null`.
+
+**Respuesta 404**:
+```json
+{ "statusCode": 404, "message": "Lote de vivero 999 no encontrado", "error": "Not Found" }
 ```
 
 ---
@@ -1076,13 +1186,8 @@ Todos los errores siguen el formato estándar de NestJS:
 
 ### Nota sobre endpoints en desarrollo
 
-Los siguientes endpoints están definidos y validados pero su lógica de base de datos está pendiente de implementación:
+Endpoint pendiente de implementación (la RPC `fn_vivero_registrar_despacho` ya existe en migración 020 pero el servicio aún lanza `NotImplementedException`):
 
-- `POST /lotes-vivero/:id/embolsado`
-- `POST /lotes-vivero/:id/adaptabilidad`
-- `POST /lotes-vivero/:id/merma`
-- `POST /lotes-vivero/:id/despacho`
-- `GET /lotes-vivero`
-- `GET /lotes-vivero/:id/timeline`
+- `POST /lotes-vivero/:id/despacho` → hoy retorna `501 Not Implemented`.
 
-Actualmente retornan `501 Not Implemented` hasta que se implementen las funciones RPC en Supabase.
+El resto del ciclo (INICIO, EMBOLSADO, ADAPTABILIDAD, MERMA, listado, detalle por `:id`, timeline, sub-GET por evento) está implementado y operativo.

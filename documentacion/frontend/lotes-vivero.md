@@ -16,6 +16,7 @@ Endpoints listos para consumo:
 POST /api/lotes-vivero/evidencias-pendientes
 POST /api/lotes-vivero
 GET  /api/lotes-vivero
+GET  /api/lotes-vivero/:id                              ← detalle con ultimo_evento_por_tipo
 GET  /api/lotes-vivero/:id/embolsado/context
 POST /api/lotes-vivero/:id/embolsado/evidencias-pendientes
 POST /api/lotes-vivero/:id/embolsado
@@ -34,6 +35,70 @@ Endpoint expuesto pero NO listo todavia:
 ```txt
 POST /api/lotes-vivero/:id/despacho  -> 501 Not Implemented
 ```
+
+## Detalle del lote (`GET /api/lotes-vivero/:id`)
+
+Endpoint **único** para el detalle del lote. Reemplaza el patrón viejo de "list con filtro `lote_vivero_id`" y evita disparar N+1 calls a los GET por evento para conseguir fechas previas.
+
+La respuesta combina el lote + relaciones + un **snapshot del último evento por tipo**:
+
+```ts
+{
+  success: true,
+  data: {
+    // todos los campos del lote (snapshots, saldo_vivo_actual, subetapa_actual, ...)
+    // relaciones: vivero, recoleccion, planta, responsable
+    ultimo_evento_por_tipo: {
+      INICIO:             EventoSnapshot | null,
+      EMBOLSADO:          EventoSnapshot | null,
+      ADAPTABILIDAD:      EventoSnapshot | null,
+      MERMA:              EventoSnapshot | null,
+      DESPACHO:           EventoSnapshot | null,
+      CIERRE_AUTOMATICO:  EventoSnapshot | null,
+    }
+  }
+}
+
+type EventoSnapshot = {
+  id: number,
+  fecha_evento: string,            // ISO date
+  created_at: string,              // ISO timestamp
+  responsable_id: number,
+  cantidad_afectada: number | null,
+  unidad_medida_evento: 'UNIDAD' | 'G' | null,
+  saldo_vivo_antes: number | null,
+  saldo_vivo_despues: number | null,
+  subetapa_destino: 'SOMBRA' | 'MEDIA_SOMBRA' | 'SOL_DIRECTO' | null,
+  causa_merma: 'PLAGA' | 'ENFERMEDAD' | 'SEQUIA' | 'DANO_FISICO' | 'MUERTE_NATURAL' | 'OTRO' | null,
+  destino_tipo: 'PLANTACION_PROPIA' | 'DONACION_COMUNIDAD' | 'VENTA' | 'OTRO' | null,
+  destino_referencia: string | null,
+  motivo_cierre_calculado: 'DESPACHO_TOTAL' | 'PERDIDA_TOTAL' | 'MIXTO' | null,
+}
+```
+
+### Para qué sirve `ultimo_evento_por_tipo`
+
+Para que los forms de eventos calculen `fechaMin` sin N+1:
+
+| Form | `fechaMin` correcto |
+|---|---|
+| EMBOLSADO | `lote.fecha_inicio` (no requiere mirar el snapshot — INICIO siempre existe si el lote existe) |
+| ADAPTABILIDAD | `ultimo_evento_por_tipo.EMBOLSADO?.fecha_evento` |
+| MERMA | `ultimo_evento_por_tipo.EMBOLSADO?.fecha_evento` |
+| DESPACHO | `ultimo_evento_por_tipo.EMBOLSADO?.fecha_evento` |
+
+Todos los eventos también respetan la **ventana retroactiva de 10 días** (backend rechaza si `fecha_evento < hoy - 10 días`).
+
+### Reglas a recordar al consumirlo
+
+- `EMBOLSADO` solo puede existir una vez por lote. Si el form de embolsado ve `ultimo_evento_por_tipo.EMBOLSADO !== null`, no debe permitir registrar otro.
+- `ADAPTABILIDAD`, `MERMA` y `DESPACHO` pueden tener N eventos; el snapshot expone el **último**. Si necesitan la lista completa de un tipo, usar el GET dedicado del evento (`/:id/merma`, `/:id/adaptabilidad`).
+- Cada tipo de evento tiene su propio `EventoSnapshot` con la misma forma; los campos que no aplican vienen `null` (p.ej. `causa_merma` en `INICIO`).
+- `EMBOLSADO` no requiere `ADAPTABILIDAD` previo para registrar MERMA o DESPACHO. ADAPTABILIDAD es solo seguimiento operativo (RN-VIV-09).
+
+### Autenticación
+
+No requiere `x-auth-id` por ahora (consistente con el resto de GET). Esto está bajo revisión — ver TODO en el controller y `documentacion/README.md` sección Pendientes.
 
 El resto del ciclo (inicio, embolsado, adaptabilidad, merma, timeline) ya esta operativo. Solo el despacho queda pendiente de implementar en backend.
 

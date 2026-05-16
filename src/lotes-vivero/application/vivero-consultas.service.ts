@@ -1,8 +1,56 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { FiltrarLotesViveroDto } from '../api/dto/filtrar-lotes-vivero.dto';
 import { FiltrarTimelineLoteDto } from '../api/dto/filtrar-timeline-lote.dto';
+import { CausaMermaVivero } from '../domain/enums/causa-merma-vivero.enum';
+import { DestinoTipoVivero } from '../domain/enums/destino-tipo-vivero.enum';
+import { MotivoCierreLote } from '../domain/enums/motivo-cierre-lote.enum';
+import { SubetapaAdaptabilidad } from '../domain/enums/subetapa-adaptabilidad.enum';
+import { TipoEventoVivero } from '../domain/enums/tipo-evento-vivero.enum';
+import { UnidadMedidaVivero } from '../domain/enums/unidad-medida-vivero.enum';
 import { ViveroTimelineService } from './vivero-timeline.service';
+
+type EventoSnapshot = {
+  id: number;
+  fecha_evento: string;
+  created_at: string;
+  responsable_id: number;
+  cantidad_afectada: number | null;
+  unidad_medida_evento: UnidadMedidaVivero | null;
+  saldo_vivo_antes: number | null;
+  saldo_vivo_despues: number | null;
+  subetapa_destino: SubetapaAdaptabilidad | null;
+  causa_merma: CausaMermaVivero | null;
+  destino_tipo: DestinoTipoVivero | null;
+  destino_referencia: string | null;
+  motivo_cierre_calculado: MotivoCierreLote | null;
+};
+
+type UltimoEventoPorTipo = {
+  [K in TipoEventoVivero]: EventoSnapshot | null;
+};
+
+type EventoSnapshotRow = {
+  id: number | string;
+  tipo_evento: TipoEventoVivero;
+  fecha_evento: string;
+  created_at: string;
+  responsable_id: number | string;
+  cantidad_afectada: number | string | null;
+  unidad_medida_evento: UnidadMedidaVivero | null;
+  saldo_vivo_antes: number | string | null;
+  saldo_vivo_despues: number | string | null;
+  subetapa_destino: SubetapaAdaptabilidad | null;
+  causa_merma: CausaMermaVivero | null;
+  destino_tipo: DestinoTipoVivero | null;
+  destino_referencia: string | null;
+  motivo_cierre_calculado: MotivoCierreLote | null;
+};
 
 @Injectable()
 export class ViveroConsultasService {
@@ -55,6 +103,122 @@ export class ViveroConsultasService {
 
   async obtenerTimeline(loteId: number, filters: FiltrarTimelineLoteDto) {
     return this.timelineService.obtenerTimeline(loteId, filters);
+  }
+
+  // ---------------------------------------------------------------------------
+  // GET /lotes-vivero/:id
+  // Detalle del lote + snapshot del último evento por tipo. Evita N+1 calls
+  // desde el frontend para validaciones de fecha contra eventos previos
+  // (RN-VIV-10/RN-VIV-33).
+  // ---------------------------------------------------------------------------
+  async obtenerDetalle(loteId: number) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: loteRow, error: loteError } = await supabase
+      .from('lote_vivero')
+      .select(this.getLoteViveroSelect())
+      .eq('id', loteId)
+      .maybeSingle();
+
+    if (loteError) {
+      this.logger.error(`Error al obtener detalle del lote ${loteId}:`, loteError);
+      throw new InternalServerErrorException('Error al obtener detalle del lote');
+    }
+
+    if (!loteRow) {
+      throw new NotFoundException(`Lote de vivero ${loteId} no encontrado`);
+    }
+
+    const { data: eventosRaw, error: eventosError } = await supabase
+      .from('evento_lote_vivero')
+      .select(
+        [
+          'id',
+          'tipo_evento',
+          'fecha_evento',
+          'created_at',
+          'responsable_id',
+          'cantidad_afectada',
+          'unidad_medida_evento',
+          'saldo_vivo_antes',
+          'saldo_vivo_despues',
+          'subetapa_destino',
+          'causa_merma',
+          'destino_tipo',
+          'destino_referencia',
+          'motivo_cierre_calculado',
+        ].join(', '),
+      )
+      .eq('lote_id', loteId)
+      .order('fecha_evento', { ascending: false })
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
+
+    if (eventosError) {
+      this.logger.error(
+        `Error al obtener eventos del lote ${loteId}:`,
+        eventosError,
+      );
+      throw new InternalServerErrorException(
+        'Error al obtener eventos del lote',
+      );
+    }
+
+    const ultimoEventoPorTipo = this.buildUltimoEventoPorTipo(
+      (eventosRaw ?? []) as unknown as EventoSnapshotRow[],
+    );
+
+    return {
+      success: true,
+      data: {
+        ...this.mapLoteRow(loteRow),
+        ultimo_evento_por_tipo: ultimoEventoPorTipo,
+      },
+    };
+  }
+
+  private buildUltimoEventoPorTipo(
+    eventos: EventoSnapshotRow[],
+  ): UltimoEventoPorTipo {
+    const result: UltimoEventoPorTipo = {
+      [TipoEventoVivero.INICIO]: null,
+      [TipoEventoVivero.EMBOLSADO]: null,
+      [TipoEventoVivero.ADAPTABILIDAD]: null,
+      [TipoEventoVivero.MERMA]: null,
+      [TipoEventoVivero.DESPACHO]: null,
+      [TipoEventoVivero.CIERRE_AUTOMATICO]: null,
+    };
+
+    // Eventos vienen ordenados DESC por (fecha_evento, created_at, id), así que
+    // el primer match por tipo es el más reciente.
+    for (const ev of eventos) {
+      if (result[ev.tipo_evento] === null) {
+        result[ev.tipo_evento] = this.mapEventoSnapshot(ev);
+      }
+    }
+
+    return result;
+  }
+
+  private mapEventoSnapshot(ev: EventoSnapshotRow): EventoSnapshot {
+    const num = (v: number | string | null): number | null =>
+      v === null || v === undefined ? null : Number(v);
+
+    return {
+      id: Number(ev.id),
+      fecha_evento: ev.fecha_evento,
+      created_at: ev.created_at,
+      responsable_id: Number(ev.responsable_id),
+      cantidad_afectada: num(ev.cantidad_afectada),
+      unidad_medida_evento: ev.unidad_medida_evento ?? null,
+      saldo_vivo_antes: num(ev.saldo_vivo_antes),
+      saldo_vivo_despues: num(ev.saldo_vivo_despues),
+      subetapa_destino: ev.subetapa_destino ?? null,
+      causa_merma: ev.causa_merma ?? null,
+      destino_tipo: ev.destino_tipo ?? null,
+      destino_referencia: ev.destino_referencia ?? null,
+      motivo_cierre_calculado: ev.motivo_cierre_calculado ?? null,
+    };
   }
 
   private applyListFilters(query: any, filters: FiltrarLotesViveroDto) {

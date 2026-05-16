@@ -449,6 +449,28 @@ export function ApiRegistrarDespacho() {
   );
 }
 
+export function ApiObtenerDetalleLote() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Detalle del lote con snapshot del ultimo evento por tipo',
+      description:
+        'Devuelve los campos del lote, sus relaciones (vivero, recoleccion, planta, responsable) y un mapa ultimo_evento_por_tipo con el evento mas reciente de cada tipo (INICIO, EMBOLSADO, ADAPTABILIDAD, MERMA, DESPACHO, CIERRE_AUTOMATICO). Pensado para que los formularios de eventos validen fechas contra el evento previo (RN-VIV-10/RN-VIV-33) sin disparar N+1 calls.',
+    }),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Devuelve { success: true, data } con el lote, sus relaciones y ultimo_evento_por_tipo (null por tipo si todavia no ocurrio).',
+    }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
 export function ApiListarLotes() {
   return applyDecorators(
     ApiOperation({

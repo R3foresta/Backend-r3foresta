@@ -24,6 +24,7 @@ import {
   ApiListarLotes,
   ApiObtenerAdaptabilidades,
   ApiObtenerContextoEmbolsado,
+  ApiObtenerDetalleLote,
   ApiObtenerMermas,
   ApiObtenerResultadoEmbolsado,
   ApiObtenerTimeline,
@@ -229,6 +230,12 @@ export class LotesViveroController {
     @Query() filters: FiltrarTimelineLoteDto,
   ) {
     return this.lotesViveroService.obtenerTimeline(loteId, filters);
+  }
+
+  @Get(':id')
+  @ApiObtenerDetalleLote()
+  obtenerDetalle(@Param('id', ParseIntPipe) loteId: number) {
+    return this.lotesViveroService.obtenerDetalle(loteId);
   }
 
   private requireAuthId(authId?: string): string {

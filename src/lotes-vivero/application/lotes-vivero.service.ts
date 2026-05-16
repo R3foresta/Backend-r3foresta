@@ -118,6 +118,10 @@ export class LotesViveroService {
     return this.consultasService.listarLotes(filters);
   }
 
+  obtenerDetalle(loteId: number) {
+    return this.consultasService.obtenerDetalle(loteId);
+  }
+
   obtenerTimeline(loteId: number, filters: FiltrarTimelineLoteDto) {
     return this.consultasService.obtenerTimeline(loteId, filters);
   }
