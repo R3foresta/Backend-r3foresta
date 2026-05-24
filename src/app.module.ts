@@ -16,6 +16,7 @@ import { UbicacionesModule } from './ubicaciones/ubicaciones.module';
 import { ComunidadesModule } from './comunidades/comunidades.module';
 import { EvidenciasTrazabilidadModule } from './evidencias-trazabilidad/evidencias-trazabilidad.module';
 import { LotesViveroModule } from './lotes-vivero/lotes-vivero.module';
+import { PlantacionesModule } from './plantaciones/plantaciones.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { LotesViveroModule } from './lotes-vivero/lotes-vivero.module';
     ComunidadesModule,
     EvidenciasTrazabilidadModule,
     LotesViveroModule,
+    PlantacionesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
