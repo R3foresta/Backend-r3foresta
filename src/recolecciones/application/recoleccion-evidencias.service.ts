@@ -176,7 +176,7 @@ export class RecoleccionEvidenciasService {
 
     for (const [index, file] of files.entries()) {
       const mimeType = String(file.mimetype ?? '').trim();
-      const formato = mimeType.split('/')[1]!.toUpperCase();
+      const formato = mimeType.split('/')[1].toUpperCase();
       const safeOriginalName = String(file.originalname || `foto_${index + 1}`)
         .trim()
         .replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -295,9 +295,7 @@ export class RecoleccionEvidenciasService {
     const map = new Map<number, any[]>();
     const ids = Array.from(
       new Set(
-        recoleccionIds.filter(
-          (id) => Number.isInteger(id) && Number(id) > 0,
-        ),
+        recoleccionIds.filter((id) => Number.isInteger(id) && Number(id) > 0),
       ),
     );
 
@@ -340,7 +338,10 @@ export class RecoleccionEvidenciasService {
       .order('id', { ascending: true });
 
     if (error) {
-      this.logger.error('❌ Error al obtener evidencias de recolecciones:', error);
+      this.logger.error(
+        '❌ Error al obtener evidencias de recolecciones:',
+        error,
+      );
       throw new InternalServerErrorException(
         'Error al obtener evidencias de recolecciones',
       );

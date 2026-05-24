@@ -18,4 +18,3 @@ export class CreateFlexDivisionDto {
   @MaxLength(120, { message: 'nombre no puede superar 120 caracteres' })
   nombre: string;
 }
-

@@ -53,10 +53,7 @@ export class BlockchainController {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      throw new HttpException(
-        errorMessage,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -75,10 +72,7 @@ export class BlockchainController {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      throw new HttpException(
-        errorMessage,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -97,10 +91,7 @@ export class BlockchainController {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      throw new HttpException(
-        errorMessage,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -115,10 +106,7 @@ export class BlockchainController {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      throw new HttpException(
-        errorMessage,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -133,10 +121,7 @@ export class BlockchainController {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      throw new HttpException(
-        errorMessage,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

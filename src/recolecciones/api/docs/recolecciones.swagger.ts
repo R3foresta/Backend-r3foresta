@@ -123,12 +123,18 @@ export function ApiCreateRecoleccion() {
       status: 201,
       description: 'Recolección creada exitosamente en estado BORRADOR',
     }),
-    ApiResponse({ status: 400, description: 'Error de validación en los datos' }),
+    ApiResponse({
+      status: 400,
+      description: 'Error de validación en los datos',
+    }),
     ApiResponse({
       status: 401,
       description: 'No autorizado - falta header x-auth-id',
     }),
-    ApiResponse({ status: 403, description: 'Prohibido - usuario sin permisos' }),
+    ApiResponse({
+      status: 403,
+      description: 'Prohibido - usuario sin permisos',
+    }),
     ApiResponse({ status: 404, description: 'Recurso no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
@@ -142,7 +148,10 @@ export function ApiUpdateDraftRecoleccion() {
         'Permite editar una recolección en BORRADOR o RECHAZADO. Si estaba RECHAZADO, vuelve a BORRADOR.',
     }),
     ApiSecurity('x-auth-id'),
-    ApiHeader({ ...AUTH_ID_HEADER, description: 'ID de autenticación del usuario' }),
+    ApiHeader({
+      ...AUTH_ID_HEADER,
+      description: 'ID de autenticación del usuario',
+    }),
     ApiHeader(USER_ROLE_HEADER),
     ApiConsumes('application/json', 'multipart/form-data'),
     ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
@@ -173,7 +182,10 @@ export function ApiUpdateDraftRecoleccion() {
         },
       },
     }),
-    ApiResponse({ status: 200, description: 'Borrador actualizado exitosamente' }),
+    ApiResponse({
+      status: 200,
+      description: 'Borrador actualizado exitosamente',
+    }),
     ApiResponse({ status: 400, description: 'Estado no permite edición' }),
     ApiResponse({ status: 403, description: 'Sin permisos para editar' }),
     ApiResponse({ status: 404, description: 'Recolección no encontrada' }),
@@ -188,15 +200,24 @@ export function ApiSubmitRecoleccionValidation() {
         'Cambia el estado de BORRADOR a PENDIENTE_VALIDACION. Solo el creador o ADMIN.',
     }),
     ApiSecurity('x-auth-id'),
-    ApiHeader({ ...AUTH_ID_HEADER, description: 'ID de autenticación del usuario' }),
+    ApiHeader({
+      ...AUTH_ID_HEADER,
+      description: 'ID de autenticación del usuario',
+    }),
     ApiHeader({
       name: 'x-user-role',
       description: 'Rol del usuario',
       required: true,
     }),
     ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
-    ApiResponse({ status: 200, description: 'Recolección enviada a validación' }),
-    ApiResponse({ status: 400, description: 'Estado no permite envío a validación' }),
+    ApiResponse({
+      status: 200,
+      description: 'Recolección enviada a validación',
+    }),
+    ApiResponse({
+      status: 400,
+      description: 'Estado no permite envío a validación',
+    }),
     ApiResponse({ status: 403, description: 'Sin permisos' }),
     ApiResponse({ status: 404, description: 'Recolección no encontrada' }),
   );
@@ -210,7 +231,10 @@ export function ApiApproveRecoleccionValidation() {
         'Cambia PENDIENTE_VALIDACION -> VALIDADO. Solo VALIDADOR o ADMIN. Ejecuta Pinata + Blockchain.',
     }),
     ApiSecurity('x-auth-id'),
-    ApiHeader({ ...AUTH_ID_HEADER, description: 'ID de autenticación del usuario' }),
+    ApiHeader({
+      ...AUTH_ID_HEADER,
+      description: 'ID de autenticación del usuario',
+    }),
     ApiHeader(VALIDATOR_ROLE_HEADER),
     ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
     ApiResponse({
@@ -231,7 +255,10 @@ export function ApiRejectRecoleccionValidation() {
         'Cambia PENDIENTE_VALIDACION -> RECHAZADO. Solo VALIDADOR o ADMIN. Requiere motivo.',
     }),
     ApiSecurity('x-auth-id'),
-    ApiHeader({ ...AUTH_ID_HEADER, description: 'ID de autenticación del usuario' }),
+    ApiHeader({
+      ...AUTH_ID_HEADER,
+      description: 'ID de autenticación del usuario',
+    }),
     ApiHeader(VALIDATOR_ROLE_HEADER),
     ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
     ApiBody({ type: RejectValidationDto }),
@@ -250,7 +277,10 @@ export function ApiFindPendingValidationRecolecciones() {
         'Devuelve recolecciones en estado PENDIENTE_VALIDACION con filtros y paginación. Usuarios con rol VALIDADOR o ADMIN ven TODAS las recolecciones pendientes, otros roles solo ven las suyas.',
     }),
     ApiSecurity('x-auth-id'),
-    ApiHeader({ ...AUTH_ID_HEADER, description: 'ID de autenticación del usuario' }),
+    ApiHeader({
+      ...AUTH_ID_HEADER,
+      description: 'ID de autenticación del usuario',
+    }),
     ApiHeader(USER_ROLE_HEADER),
     ...commonListQueries,
     cantidadSolicitadaViveroQuery,
@@ -258,7 +288,10 @@ export function ApiFindPendingValidationRecolecciones() {
       status: 200,
       description: 'Lista de recolecciones pendientes de validación',
     }),
-    ApiResponse({ status: 400, description: 'Header x-user-role es requerido' }),
+    ApiResponse({
+      status: 400,
+      description: 'Header x-user-role es requerido',
+    }),
     ApiResponse({ status: 401, description: 'Header x-auth-id es requerido' }),
   );
 }

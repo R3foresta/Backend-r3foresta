@@ -37,19 +37,28 @@ describe('Supabase Connection', () => {
 
     // Intentar hacer una operación simple para verificar la conexión
     // Esto verificará si podemos conectarnos a Supabase
-    const { data: healthCheck, error } = await client.from('profiles')
+    const { data: healthCheck, error } = await client
+      .from('profiles')
       .select('*')
       .limit(1);
 
     if (error) {
       console.log('Error al conectar con Supabase:', error.message);
     } else {
-      console.log('Conexión con Supabase exitosa, datos recibidos:', healthCheck);
+      console.log(
+        'Conexión con Supabase exitosa, datos recibidos:',
+        healthCheck,
+      );
     }
 
     // La prueba pasa si no hay error de conexión (el error de tabla no existe es diferente)
     // En este caso, solo verificamos que no haya error de autenticación o conexión
-    if (error && (error.message.includes('JWT') || error.message.includes('invalid') || error.message.includes('unauthorized'))) {
+    if (
+      error &&
+      (error.message.includes('JWT') ||
+        error.message.includes('invalid') ||
+        error.message.includes('unauthorized'))
+    ) {
       fail(`Error de autenticación o autorización: ${error.message}`);
     }
   }, 10000); // Aumentamos el timeout a 10 segundos

@@ -56,9 +56,7 @@ export class PinataService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-          `Pinata API error: ${response.status} - ${errorText}`,
-        );
+        throw new Error(`Pinata API error: ${response.status} - ${errorText}`);
       }
 
       const upload = await response.json();

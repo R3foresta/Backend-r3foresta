@@ -37,10 +37,7 @@ export class PinataController {
       // Manejo de errores
       const errorMessage =
         error instanceof Error ? error.message : 'Error al subir el JSON';
-      throw new HttpException(
-        errorMessage,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

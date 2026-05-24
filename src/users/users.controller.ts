@@ -5,12 +5,12 @@ import {
   Body,
   Req,
   UnauthorizedException,
-  UseInterceptors,      // <--- Agregado para la foto de perfil
-  Patch,                // <--- Agregado para la foto de perfil
-  UploadedFile,         // <--- Agregado para la foto de perfil
-  ParseFilePipe,        // <--- Agregado para la foto de perfil
+  UseInterceptors, // <--- Agregado para la foto de perfil
+  Patch, // <--- Agregado para la foto de perfil
+  UploadedFile, // <--- Agregado para la foto de perfil
+  ParseFilePipe, // <--- Agregado para la foto de perfil
   MaxFileSizeValidator, // <--- Agregado para la foto de perfil
-  FileTypeValidator     // <--- Agregado para la foto de perfil
+  FileTypeValidator, // <--- Agregado para la foto de perfil
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from './users.service';
@@ -52,7 +52,6 @@ export class UsersController {
     // Verificar token
     let authId: string;
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       const payload = this.jwtService.verify(token);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       authId = payload.sub;
@@ -90,7 +89,6 @@ export class UsersController {
       const token = authHeader.split(' ')[1];
 
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         const payload = this.jwtService.verify(token);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         authId = payload.sub;
@@ -114,7 +112,8 @@ export class UsersController {
           new FileTypeValidator({ fileType: '.(png|jpeg|jpg|webp)' }), // Solo imágenes
         ],
       }),
-    ) file: Express.Multer.File,
+    )
+    file: Express.Multer.File,
   ) {
     let authId: string;
     const authIdHeader = req.headers['x-auth-id'] as string;

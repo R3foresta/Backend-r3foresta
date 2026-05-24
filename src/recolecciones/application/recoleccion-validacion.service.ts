@@ -36,7 +36,9 @@ export class RecoleccionValidacionService {
     const supabase = this.supabaseService.getClient();
     const usuario = await this.authService.getUserByAuthId(authId);
     const recoleccion = await this.consultasService.getRawRecoleccion(id);
-    const estadoActual = String(recoleccion.estado_registro ?? '').toUpperCase();
+    const estadoActual = String(
+      recoleccion.estado_registro ?? '',
+    ).toUpperCase();
 
     if (estadoActual !== EstadoRegistro.BORRADOR) {
       throw new BadRequestException(
@@ -94,7 +96,9 @@ export class RecoleccionValidacionService {
     this.authService.assertReviewerRole(usuario.rol);
 
     const recoleccion = await this.consultasService.getRawRecoleccion(id);
-    const estadoActual = String(recoleccion.estado_registro ?? '').toUpperCase();
+    const estadoActual = String(
+      recoleccion.estado_registro ?? '',
+    ).toUpperCase();
 
     if (estadoActual !== EstadoRegistro.PENDIENTE_VALIDACION) {
       throw new BadRequestException(
@@ -175,7 +179,9 @@ export class RecoleccionValidacionService {
     this.authService.assertReviewerRole(usuario.rol);
 
     const recoleccion = await this.consultasService.getRawRecoleccion(id);
-    const estadoActual = String(recoleccion.estado_registro ?? '').toUpperCase();
+    const estadoActual = String(
+      recoleccion.estado_registro ?? '',
+    ).toUpperCase();
 
     if (estadoActual !== EstadoRegistro.PENDIENTE_VALIDACION) {
       throw new BadRequestException(

@@ -61,7 +61,9 @@ export class ViveroEvidenciasService {
 
     try {
       for (const [index, file] of files.entries()) {
-        const safeOriginalName = String(file.originalname || `evidencia_${index + 1}`)
+        const safeOriginalName = String(
+          file.originalname || `evidencia_${index + 1}`,
+        )
           .trim()
           .replace(/[^a-zA-Z0-9._-]/g, '_');
         const rutaStorage = [
@@ -90,7 +92,7 @@ export class ViveroEvidenciasService {
         }
 
         const mimeType = String(file.mimetype ?? '');
-        const formato = mimeType.split('/')[1]!.toUpperCase();
+        const formato = mimeType.split('/')[1].toUpperCase();
         const storageObjectId =
           typeof uploadData?.id === 'string' ? uploadData.id : null;
         const hashSha256 = file.buffer
@@ -251,7 +253,9 @@ export class ViveroEvidenciasService {
         );
       }
 
-      const mimeType = String(file.mimetype ?? '').trim().toLowerCase();
+      const mimeType = String(file.mimetype ?? '')
+        .trim()
+        .toLowerCase();
       const formato = mimeType.split('/')[1]?.toUpperCase();
       if (!formato || !['JPG', 'JPEG', 'PNG'].includes(formato)) {
         throw new BadRequestException(

@@ -1,4 +1,7 @@
-import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { ViveroConsultasService } from '../application/vivero-consultas.service';
 import { EstadoLoteVivero } from '../domain/enums/estado-lote-vivero.enum';
@@ -343,9 +346,13 @@ describe('ViveroConsultasService.obtenerDetalle', () => {
     expect(from).toHaveBeenCalledWith('evento_lote_vivero');
     expect(mocks.loteQuery.eq).toHaveBeenCalledWith('id', 101);
     expect(mocks.eventosQuery.eq).toHaveBeenCalledWith('lote_id', 101);
-    expect(mocks.eventosQuery.order).toHaveBeenNthCalledWith(1, 'fecha_evento', {
-      ascending: false,
-    });
+    expect(mocks.eventosQuery.order).toHaveBeenNthCalledWith(
+      1,
+      'fecha_evento',
+      {
+        ascending: false,
+      },
+    );
     expect(mocks.eventosQuery.order).toHaveBeenNthCalledWith(2, 'created_at', {
       ascending: false,
     });
@@ -380,10 +387,7 @@ describe('ViveroConsultasService.obtenerDetalle', () => {
   });
 
   it('devuelve null en todos los tipos cuando el lote no tiene eventos', async () => {
-    buildService(
-      { data: baseLoteRow, error: null },
-      { data: [], error: null },
-    );
+    buildService({ data: baseLoteRow, error: null }, { data: [], error: null });
 
     const result = await service.obtenerDetalle(101);
 
@@ -400,7 +404,9 @@ describe('ViveroConsultasService.obtenerDetalle', () => {
   it('lanza NotFoundException cuando el lote no existe', async () => {
     buildService({ data: null, error: null }, { data: [], error: null });
 
-    await expect(service.obtenerDetalle(999)).rejects.toThrow(NotFoundException);
+    await expect(service.obtenerDetalle(999)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('lanza InternalServerErrorException si Supabase falla leyendo el lote', async () => {

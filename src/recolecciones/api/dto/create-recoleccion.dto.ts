@@ -31,7 +31,8 @@ import {
 
 export class CreateRecoleccionDto {
   @ApiProperty({
-    description: 'Fecha de recolección (no puede ser futura ni mayor a 45 días atrás)',
+    description:
+      'Fecha de recolección (no puede ser futura ni mayor a 45 días atrás)',
     example: '2026-03-04',
     type: String,
     format: 'date',
@@ -52,15 +53,20 @@ export class CreateRecoleccionDto {
   cantidad_inicial_canonica: number;
 
   @ApiProperty({
-    description: 'Unidad inicial del material. KG solo es input; se normaliza a G antes de persistir.',
+    description:
+      'Unidad inicial del material. KG solo es input; se normaliza a G antes de persistir.',
     example: 'G',
     type: String,
     enum: UNIDADES_INPUT_RECOLECCION,
   })
-  @Transform(({ value }) => typeof value === 'string' ? value.trim().toUpperCase() : value)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
   @IsNotEmpty({ message: 'unidad_canonica es requerida' })
   @IsString({ message: 'unidad_canonica debe ser texto' })
-  @IsIn(UNIDADES_INPUT_RECOLECCION, { message: 'unidad_canonica debe ser KG, G o UNIDAD' })
+  @IsIn(UNIDADES_INPUT_RECOLECCION, {
+    message: 'unidad_canonica debe ser KG, G o UNIDAD',
+  })
   unidad_canonica: UnidadInputRecoleccion;
 
   @ApiProperty({
@@ -68,13 +74,18 @@ export class CreateRecoleccionDto {
     enum: TIPOS_MATERIAL_RECOLECCION_INPUT,
     example: 'SEMILLA',
   })
-  @Transform(({ value }) => typeof value === 'string' ? value.trim().toUpperCase() : value)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
   @IsNotEmpty({ message: 'El tipo de material es requerido' })
-  @IsIn(TIPOS_MATERIAL_RECOLECCION_INPUT, { message: 'tipo_material debe ser SEMILLA o ESQUEJE' })
+  @IsIn(TIPOS_MATERIAL_RECOLECCION_INPUT, {
+    message: 'tipo_material debe ser SEMILLA o ESQUEJE',
+  })
   tipo_material: TipoMaterialRecoleccionInput;
 
   @ApiProperty({
-    description: 'ID de planta existente. Obligatorio para asegurar integridad botánica.',
+    description:
+      'ID de planta existente. Obligatorio para asegurar integridad botánica.',
     example: 10,
     type: Number,
   })
@@ -89,7 +100,9 @@ export class CreateRecoleccionDto {
   })
   @IsOptional()
   @IsString()
-  @MaxLength(1000, { message: 'Las observaciones no pueden superar 1000 caracteres' })
+  @MaxLength(1000, {
+    message: 'Las observaciones no pueden superar 1000 caracteres',
+  })
   observaciones?: string;
 
   @ApiProperty({

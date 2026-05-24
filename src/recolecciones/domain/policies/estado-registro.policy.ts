@@ -9,7 +9,9 @@ export type RecoleccionEstadoFlags = {
 
 export class EstadoRegistroPolicy {
   static normalizar(estadoRegistro: unknown): string {
-    return String(estadoRegistro ?? '').trim().toUpperCase();
+    return String(estadoRegistro ?? '')
+      .trim()
+      .toUpperCase();
   }
 
   static getFlags(estadoRegistro: unknown): RecoleccionEstadoFlags {

@@ -123,4 +123,3 @@ export class ListEvidenciasTrazabilidadDto {
   @Max(100, { message: 'limit debe ser menor o igual a 100' })
   limit?: number = 20;
 }
-

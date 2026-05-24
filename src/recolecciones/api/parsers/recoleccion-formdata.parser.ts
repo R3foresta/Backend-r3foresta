@@ -131,11 +131,17 @@ export class RecoleccionFormDataParser {
       parsedBody.tipo_material = parsedBody.tipoMaterial;
     }
 
-    if (parsedBody.metodo_id === undefined && parsedBody.metodoId !== undefined) {
+    if (
+      parsedBody.metodo_id === undefined &&
+      parsedBody.metodoId !== undefined
+    ) {
       parsedBody.metodo_id = parsedBody.metodoId;
     }
 
-    if (parsedBody.vivero_id === undefined && parsedBody.viveroId !== undefined) {
+    if (
+      parsedBody.vivero_id === undefined &&
+      parsedBody.viveroId !== undefined
+    ) {
       parsedBody.vivero_id = parsedBody.viveroId;
     }
 
@@ -201,7 +207,9 @@ export class RecoleccionFormDataParser {
     }
   }
 
-  private assertNoLegacyUbicacionFields(ubicacion: Record<string, unknown>): void {
+  private assertNoLegacyUbicacionFields(
+    ubicacion: Record<string, unknown>,
+  ): void {
     const legacyFields = [
       'pais',
       'departamento',

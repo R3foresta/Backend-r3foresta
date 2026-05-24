@@ -107,8 +107,8 @@ export class EvidenciasTrazabilidadService {
     }
 
     // Validación previa de archivos antes de comenzar uploads.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const file of files as any[]) {
+
+    for (const file of files) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       const formato = file.mimetype.split('/')[1].toUpperCase();
 
@@ -118,7 +118,6 @@ export class EvidenciasTrazabilidadService {
         );
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       // TODO: No podemos liminar al usuario a enviar una imagen porque bloquea al usuario, lo que tendríamos que hacer es comprirmir la imaen.
       // if (file.size > 5242880) {
       //   throw new BadRequestException(
@@ -139,7 +138,9 @@ export class EvidenciasTrazabilidadService {
       .single();
 
     if (usuarioError || !usuarioData) {
-      throw new NotFoundException(`Usuario con auth_id ${authId} no encontrado`);
+      throw new NotFoundException(
+        `Usuario con auth_id ${authId} no encontrado`,
+      );
     }
 
     const userId = Number(usuarioData.id);
@@ -151,7 +152,9 @@ export class EvidenciasTrazabilidadService {
       .single();
 
     if (recoleccionError || !recoleccionData) {
-      throw new NotFoundException(`Recolección con id ${recoleccionId} no encontrada`);
+      throw new NotFoundException(
+        `Recolección con id ${recoleccionId} no encontrada`,
+      );
     }
 
     const { data: tipoEntidadData, error: tipoEntidadError } = await supabase
@@ -234,14 +237,16 @@ export class EvidenciasTrazabilidadService {
           });
 
         if (uploadError) {
-          this.logger.error('❌ Error al subir evidencia a storage:', uploadError);
+          this.logger.error(
+            '❌ Error al subir evidencia a storage:',
+            uploadError,
+          );
           throw new InternalServerErrorException('Error al subir evidencias');
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
         const formato = file.mimetype.split('/')[1].toUpperCase();
         const storageObjectId =
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           typeof uploadData?.id === 'string' ? uploadData.id : null;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         const hashSha256 = file.buffer
@@ -353,7 +358,9 @@ export class EvidenciasTrazabilidadService {
 
       return {
         success: true,
-        data: (inserted || []).map((row) => this.mapEvidencia(row as EvidenciaRow)),
+        data: (inserted || []).map((row) =>
+          this.mapEvidencia(row as EvidenciaRow),
+        ),
       };
     } catch (error) {
       if (fotosSubidas.length > 0) {
@@ -436,7 +443,10 @@ export class EvidenciasTrazabilidadService {
     }
 
     if (filters.tipo_archivo) {
-      query = query.eq('tipo_archivo', filters.tipo_archivo.trim().toUpperCase());
+      query = query.eq(
+        'tipo_archivo',
+        filters.tipo_archivo.trim().toUpperCase(),
+      );
     }
 
     if (filters.es_principal !== undefined) {
@@ -632,9 +642,7 @@ export class EvidenciasTrazabilidadService {
     };
   }
 
-  private parseMetadata(
-    metadataRaw?: string,
-  ): Record<string, unknown> | null {
+  private parseMetadata(metadataRaw?: string): Record<string, unknown> | null {
     if (!metadataRaw || !metadataRaw.trim()) {
       return null;
     }

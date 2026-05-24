@@ -10,4 +10,3 @@ import { UbicacionesService } from './ubicaciones.service';
   exports: [UbicacionesService],
 })
 export class UbicacionesModule {}
-

@@ -9,6 +9,7 @@ import { RegistrarEmbolsadoDto } from '../api/dto/registrar-embolsado.dto';
 import { RegistrarMermaDto } from '../api/dto/registrar-merma.dto';
 import { ViveroAdaptabilidadService } from './vivero-adaptabilidad.service';
 import { ViveroConsultasService } from './vivero-consultas.service';
+import { ViveroDespachoService } from './vivero-despacho.service';
 import { ViveroEmbolsadoService } from './vivero-embolsado.service';
 import { ViveroEventosService } from './vivero-eventos.service';
 import {
@@ -28,6 +29,7 @@ export class LotesViveroService {
     private readonly embolsadoService: ViveroEmbolsadoService,
     private readonly adaptabilidadService: ViveroAdaptabilidadService,
     private readonly mermaService: ViveroMermaService,
+    private readonly despachoService: ViveroDespachoService,
   ) {}
 
   crearEvidenciaPendiente(
@@ -60,7 +62,12 @@ export class LotesViveroService {
     authId: string,
     files: ViveroEvidenceFileInput[],
   ) {
-    return this.embolsadoService.crearEvidenciasPendientes(loteId, dto, authId, files);
+    return this.embolsadoService.crearEvidenciasPendientes(
+      loteId,
+      dto,
+      authId,
+      files,
+    );
   }
 
   obtenerResultadoEmbolsado(loteId: number) {
@@ -103,7 +110,12 @@ export class LotesViveroService {
     authId: string,
     files: ViveroEvidenceFileInput[],
   ) {
-    return this.mermaService.crearEvidenciasPendientes(loteId, dto, authId, files);
+    return this.mermaService.crearEvidenciasPendientes(
+      loteId,
+      dto,
+      authId,
+      files,
+    );
   }
 
   obtenerMermas(loteId: number) {
@@ -112,6 +124,24 @@ export class LotesViveroService {
 
   registrarDespacho(loteId: number, dto: RegistrarDespachoDto, authId: string) {
     return this.eventosService.registrarDespacho(loteId, dto, authId);
+  }
+
+  crearEvidenciasPendientesDespacho(
+    loteId: number,
+    dto: CrearEvidenciaPendienteViveroDto,
+    authId: string,
+    files: ViveroEvidenceFileInput[],
+  ) {
+    return this.despachoService.crearEvidenciasPendientes(
+      loteId,
+      dto,
+      authId,
+      files,
+    );
+  }
+
+  obtenerDespachos(loteId: number) {
+    return this.despachoService.obtenerDespachos(loteId);
   }
 
   listarLotes(filters: FiltrarLotesViveroDto) {

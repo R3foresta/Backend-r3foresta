@@ -18,7 +18,9 @@ describe('ViveroInicioService', () => {
 
   let rpc: jest.Mock;
   let service: ViveroInicioService;
-  let authService: jest.Mocked<Pick<ViveroAuthService, 'getUserByAuthId' | 'assertCanWrite'>>;
+  let authService: jest.Mocked<
+    Pick<ViveroAuthService, 'getUserByAuthId' | 'assertCanWrite'>
+  >;
 
   beforeEach(() => {
     // Se mockea el cliente de Supabase para controlar la respuesta de la RPC
@@ -104,7 +106,8 @@ describe('ViveroInicioService', () => {
         error: {
           code: '23505',
           message: 'duplicate key value violates unique constraint',
-          details: 'Key (codigo_trazabilidad)=(VIV-000011-REC-000010) already exists.',
+          details:
+            'Key (codigo_trazabilidad)=(VIV-000011-REC-000010) already exists.',
         },
       })
       .mockResolvedValueOnce({

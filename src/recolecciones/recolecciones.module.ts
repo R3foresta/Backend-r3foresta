@@ -22,7 +22,13 @@ import { RecoleccionValidacionService } from './application/recoleccion-validaci
 import { RecoleccionFormDataParser } from './api/parsers/recoleccion-formdata.parser';
 
 @Module({
-  imports: [SupabaseModule, PinataModule, BlockchainModule, UbicacionesModule, PlantasModule],
+  imports: [
+    SupabaseModule,
+    PinataModule,
+    BlockchainModule,
+    UbicacionesModule,
+    PlantasModule,
+  ],
   controllers: [RecoleccionesController],
   providers: [
     RecoleccionesService,

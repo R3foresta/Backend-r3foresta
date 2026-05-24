@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 
 export type RecoleccionUsuario = {
@@ -20,7 +24,9 @@ export class RecoleccionAuthService {
       .single();
 
     if (error || !data) {
-      throw new NotFoundException(`Usuario con auth_id ${authId} no encontrado`);
+      throw new NotFoundException(
+        `Usuario con auth_id ${authId} no encontrado`,
+      );
     }
 
     return data as RecoleccionUsuario;
@@ -58,6 +64,8 @@ export class RecoleccionAuthService {
   }
 
   isGlobalReviewer(userRole: string): boolean {
-    return ['VALIDADOR', 'ADMIN'].includes(String(userRole ?? '').toUpperCase());
+    return ['VALIDADOR', 'ADMIN'].includes(
+      String(userRole ?? '').toUpperCase(),
+    );
   }
 }

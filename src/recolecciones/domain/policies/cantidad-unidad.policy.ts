@@ -1,9 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 
-export const TIPOS_MATERIAL_RECOLECCION_INPUT = [
-  'SEMILLA',
-  'ESQUEJE',
-] as const;
+export const TIPOS_MATERIAL_RECOLECCION_INPUT = ['SEMILLA', 'ESQUEJE'] as const;
 
 export type TipoMaterialRecoleccionInput =
   (typeof TIPOS_MATERIAL_RECOLECCION_INPUT)[number];
@@ -35,7 +32,9 @@ export class CantidadUnidadPolicy {
   static normalizarTipoMaterial(
     tipoMaterial: unknown,
   ): TipoMaterialRecoleccionCanonico {
-    const tipoNormalizado = String(tipoMaterial ?? '').trim().toUpperCase();
+    const tipoNormalizado = String(tipoMaterial ?? '')
+      .trim()
+      .toUpperCase();
 
     if (tipoNormalizado === 'SEMILLA' || tipoNormalizado === 'ESQUEJE') {
       return tipoNormalizado;
@@ -46,8 +45,12 @@ export class CantidadUnidadPolicy {
     );
   }
 
-  static normalizarUnidadInput(unidadCanonica: unknown): UnidadInputRecoleccion {
-    const normalized = String(unidadCanonica ?? '').trim().toUpperCase();
+  static normalizarUnidadInput(
+    unidadCanonica: unknown,
+  ): UnidadInputRecoleccion {
+    const normalized = String(unidadCanonica ?? '')
+      .trim()
+      .toUpperCase();
 
     if (normalized === 'KG' || normalized === 'G' || normalized === 'UNIDAD') {
       return normalized;

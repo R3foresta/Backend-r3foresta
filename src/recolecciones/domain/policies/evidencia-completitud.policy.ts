@@ -45,7 +45,9 @@ export class EvidenciaCompletitudPolicy {
         );
       }
 
-      const mimeType = String(file.mimetype ?? '').trim().toLowerCase();
+      const mimeType = String(file.mimetype ?? '')
+        .trim()
+        .toLowerCase();
       const formato = mimeType.split('/')[1]?.toUpperCase();
 
       if (!formato || !['JPG', 'JPEG', 'PNG'].includes(formato)) {
@@ -103,7 +105,10 @@ export class EvidenciaCompletitudPolicy {
     }
   }
 
-  private static assertPositiveInteger(value: unknown, fieldName: string): void {
+  private static assertPositiveInteger(
+    value: unknown,
+    fieldName: string,
+  ): void {
     const parsed = Number(value);
     if (!Number.isInteger(parsed) || parsed <= 0) {
       throw new BadRequestException(`${fieldName} es requerido para validar.`);

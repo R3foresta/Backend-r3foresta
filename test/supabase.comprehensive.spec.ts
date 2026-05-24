@@ -38,10 +38,10 @@ describe('Supabase Service Tests', () => {
     // Realizar una operación simple para verificar la conexión
     // Usaremos una tabla que sabemos que existe o una operación de salud
     const client = supabaseService.getClient();
-    
+
     // Intentar acceder a la información de la sesión o hacer un ping
     const { data, error } = await client.rpc('version');
-    
+
     if (error) {
       console.log(`⚠️  No se pudo ejecutar RPC 'version': ${error.message}`);
       // Si no se puede usar RPC, intentamos otra operación
@@ -50,13 +50,15 @@ describe('Supabase Service Tests', () => {
         .from('information_schema.tables')
         .select('table_name')
         .limit(1);
-        
+
       if (tablesError) {
         console.log(`ℹ️  Información: ${tablesError.message}`);
         // Solo fallar si es un error de autenticación o conexión
-        if (tablesError.message.toLowerCase().includes('auth') || 
-            tablesError.message.toLowerCase().includes('jwt') ||
-            tablesError.message.toLowerCase().includes('unauthorized')) {
+        if (
+          tablesError.message.toLowerCase().includes('auth') ||
+          tablesError.message.toLowerCase().includes('jwt') ||
+          tablesError.message.toLowerCase().includes('unauthorized')
+        ) {
           fail(`Error crítico de autenticación: ${tablesError.message}`);
         }
       } else {
@@ -69,13 +71,13 @@ describe('Supabase Service Tests', () => {
 
   it('should handle non-existent table gracefully', async () => {
     const client = supabaseService.getClient();
-    
+
     // Intentar acceder a una tabla que probablemente no exista
     const { data, error } = await client
       .from('non_existent_table_for_test')
       .select('*')
       .limit(1);
-    
+
     // La prueba pasa si hay un error esperado (tabla no existe) pero no un error de conexión
     if (error) {
       console.log(`ℹ️  Error esperado (tabla no existe): ${error.message}`);
@@ -86,7 +88,9 @@ describe('Supabase Service Tests', () => {
       expect(error.message.toLowerCase()).not.toContain('connection');
     } else {
       // Si no hay error, significa que la tabla sí existe
-      console.log('ℹ️  La tabla no_existent_table_for_test existe (inesperado)');
+      console.log(
+        'ℹ️  La tabla no_existent_table_for_test existe (inesperado)',
+      );
     }
   }, 10000);
 });

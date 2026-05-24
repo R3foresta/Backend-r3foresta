@@ -35,7 +35,8 @@ export class UpdateDraftDto {
   cantidad_inicial_canonica?: number;
 
   @ApiPropertyOptional({
-    description: 'Unidad inicial. KG solo es input; se normaliza a G antes de persistir.',
+    description:
+      'Unidad inicial. KG solo es input; se normaliza a G antes de persistir.',
     enum: UNIDADES_INPUT_RECOLECCION,
     example: 'G',
   })

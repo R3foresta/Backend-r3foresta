@@ -60,7 +60,10 @@ export class EvidenciasTrazabilidadController {
       required: ['fotos'],
       properties: {
         titulo: { type: 'string', example: 'Seguimiento de lote' },
-        descripcion: { type: 'string', example: 'Registro posterior a la recolección' },
+        descripcion: {
+          type: 'string',
+          example: 'Registro posterior a la recolección',
+        },
         metadata: {
           type: 'string',
           example: '{"fuente":"app-mobile","dispositivo":"android"}',
@@ -137,7 +140,10 @@ export class EvidenciasTrazabilidadController {
     type: Boolean,
     example: false,
   })
-  @ApiResponse({ status: 200, description: 'Evidencias de la entidad obtenidas' })
+  @ApiResponse({
+    status: 200,
+    description: 'Evidencias de la entidad obtenidas',
+  })
   @ApiResponse({ status: 404, description: 'Tipo de entidad no encontrado' })
   async findByEntidad(
     @Param('tipoEntidadCodigo') tipoEntidadCodigo: string,

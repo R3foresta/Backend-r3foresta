@@ -61,265 +61,263 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
     await cleanupByTag(client);
   });
 
-  it(
-    'ejecuta el flujo mínimo completo sin inconsistencias',
-    async () => {
-      const tag = `qa_mig_vivero_${Date.now()}`;
-      const fechaEvento = new Date(
-        Date.now() - 24 * 60 * 60 * 1000,
-      ).toISOString().slice(0, 10);
-      const created: CreatedIds = {};
-      const ref = await loadReferences(client);
+  it('ejecuta el flujo mínimo completo sin inconsistencias', async () => {
+    const tag = `qa_mig_vivero_${Date.now()}`;
+    const fechaEvento = new Date(Date.now() - 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const created: CreatedIds = {};
+    const ref = await loadReferences(client);
 
-      try {
-        const ubicacion = unwrap(
-          await client
-            .from('ubicacion')
-            .insert({
-              latitud: -16.541587,
-              longitud: -68.060916,
-              pais_id: ref.paisId,
-              division_id: ref.divisionId,
-              nombre: `[${tag}]`,
-              precision_m: 35,
-              fuente: 'GPS_MOVIL',
-              referencia: `[${tag}] referencia de prueba`,
-            })
-            .select('id')
-            .single(),
-          'crear ubicación de integración',
-        );
-        created.ubicacionId = ubicacion.id;
+    try {
+      const ubicacion = unwrap(
+        await client
+          .from('ubicacion')
+          .insert({
+            latitud: -16.541587,
+            longitud: -68.060916,
+            pais_id: ref.paisId,
+            division_id: ref.divisionId,
+            nombre: `[${tag}]`,
+            precision_m: 35,
+            fuente: 'GPS_MOVIL',
+            referencia: `[${tag}] referencia de prueba`,
+          })
+          .select('id')
+          .single(),
+        'crear ubicación de integración',
+      );
+      created.ubicacionId = ubicacion.id;
 
-        const recoleccion = unwrap(
-          await client
-            .from('recoleccion')
-            .insert({
-              fecha: fechaEvento,
-              tipo_material: 'SEMILLA',
-              especie_nueva: false,
-              observaciones: `[${tag}]`,
-              usuario_id: ref.userId,
-              ubicacion_id: created.ubicacionId,
-              vivero_id: ref.viveroId,
-              metodo_id: ref.metodoId,
-              planta_id: ref.plantaId,
-              codigo_trazabilidad: `QA-REC-${tag}`,
-              estado_registro: 'VALIDADO',
-              usuario_validacion_id: ref.userId,
-              fecha_validacion: fechaEvento,
-              unidad_canonica: 'UNIDAD',
-              cantidad_inicial_canonica: 10,
-              nombre_cientifico_snapshot: ref.plantaNombre,
-              nombre_comercial_snapshot: ref.plantaNombre,
-              variedad_snapshot: ref.plantaVariedad,
-              nombre_comunidad_snapshot: `QA Comunidad ${tag}`,
-              nombre_recolector_snapshot: ref.userName,
-            })
-            .select(
-              'id,saldo_actual,estado_operativo,nombre_cientifico_snapshot,variedad_snapshot',
-            )
-            .single(),
-          'crear recolección válida',
-        );
-        created.recoleccionId = recoleccion.id;
+      const recoleccion = unwrap(
+        await client
+          .from('recoleccion')
+          .insert({
+            fecha: fechaEvento,
+            tipo_material: 'SEMILLA',
+            especie_nueva: false,
+            observaciones: `[${tag}]`,
+            usuario_id: ref.userId,
+            ubicacion_id: created.ubicacionId,
+            vivero_id: ref.viveroId,
+            metodo_id: ref.metodoId,
+            planta_id: ref.plantaId,
+            codigo_trazabilidad: `QA-REC-${tag}`,
+            estado_registro: 'VALIDADO',
+            usuario_validacion_id: ref.userId,
+            fecha_validacion: fechaEvento,
+            unidad_canonica: 'UNIDAD',
+            cantidad_inicial_canonica: 10,
+            nombre_cientifico_snapshot: ref.plantaNombre,
+            nombre_comercial_snapshot: ref.plantaNombre,
+            variedad_snapshot: ref.plantaVariedad,
+            nombre_comunidad_snapshot: `QA Comunidad ${tag}`,
+            nombre_recolector_snapshot: ref.userName,
+          })
+          .select(
+            'id,saldo_actual,estado_operativo,nombre_cientifico_snapshot,variedad_snapshot',
+          )
+          .single(),
+        'crear recolección válida',
+      );
+      created.recoleccionId = recoleccion.id;
 
-        expect(recoleccion.saldo_actual).toBe(10);
-        expect(recoleccion.estado_operativo).toBe('ABIERTO');
+      expect(recoleccion.saldo_actual).toBe(10);
+      expect(recoleccion.estado_operativo).toBe('ABIERTO');
 
-        const evidenciaInicio = await createPendingInicioEvidence(client, {
-          userId: ref.userId,
-          tag,
-        });
-        created.evidenciaIds = [evidenciaInicio.id];
+      const evidenciaInicio = await createPendingInicioEvidence(client, {
+        userId: ref.userId,
+        tag,
+      });
+      created.evidenciaIds = [evidenciaInicio.id];
 
-        const inicio = unwrapRpcRow(
-          await client.rpc('fn_vivero_crear_lote_desde_recoleccion', {
-            p_recoleccion_id: created.recoleccionId,
-            p_vivero_id: ref.viveroId,
-            p_responsable_id: ref.userId,
-            p_fecha_inicio: fechaEvento,
-            p_fecha_evento: fechaEvento,
-            p_cantidad_inicial_en_proceso: 10,
-            p_unidad_medida_inicial: 'UNIDAD',
-            p_observaciones: `[${tag}] inicio`,
-            p_evidencia_ids: [evidenciaInicio.id],
-          }),
-          'crear lote desde recolección con RPC atomica',
-        );
-        created.loteId = inicio.lote_vivero_id;
+      const inicio = unwrapRpcRow(
+        await client.rpc('fn_vivero_crear_lote_desde_recoleccion', {
+          p_recoleccion_id: created.recoleccionId,
+          p_vivero_id: ref.viveroId,
+          p_responsable_id: ref.userId,
+          p_fecha_inicio: fechaEvento,
+          p_fecha_evento: fechaEvento,
+          p_cantidad_inicial_en_proceso: 10,
+          p_unidad_medida_inicial: 'UNIDAD',
+          p_observaciones: `[${tag}] inicio`,
+          p_evidencia_ids: [evidenciaInicio.id],
+        }),
+        'crear lote desde recolección con RPC atomica',
+      );
+      created.loteId = inicio.lote_vivero_id;
 
-        expect(inicio.codigo_trazabilidad).toMatch(
-          new RegExp(`^VIV-\\d{6}-QA-REC-${tag}$`),
-        );
-        expect(inicio).toMatchObject({
-          saldo_recoleccion_antes: 10,
-          saldo_recoleccion_despues: 0,
-          evidencia_inicio_ids: [evidenciaInicio.id],
-        });
+      expect(inicio.codigo_trazabilidad).toMatch(
+        new RegExp(`^VIV-\\d{6}-QA-REC-${tag}$`),
+      );
+      expect(inicio).toMatchObject({
+        saldo_recoleccion_antes: 10,
+        saldo_recoleccion_despues: 0,
+        evidencia_inicio_ids: [evidenciaInicio.id],
+      });
 
-        unwrap(
-          await client.rpc('fn_vivero_registrar_embolsado', {
-            p_lote_id: created.loteId,
-            p_fecha_evento: fechaEvento,
-            p_responsable_id: ref.userId,
-            p_plantas_vivas_iniciales: 10,
-            p_observaciones: `[${tag}] embolsado`,
-          }),
-          'registrar EMBOLSADO',
-        );
+      unwrap(
+        await client.rpc('fn_vivero_registrar_embolsado', {
+          p_lote_id: created.loteId,
+          p_fecha_evento: fechaEvento,
+          p_responsable_id: ref.userId,
+          p_plantas_vivas_iniciales: 10,
+          p_observaciones: `[${tag}] embolsado`,
+        }),
+        'registrar EMBOLSADO',
+      );
 
-        unwrap(
-          await client.rpc('fn_vivero_registrar_adaptabilidad', {
-            p_lote_id: created.loteId,
-            p_fecha_evento: fechaEvento,
-            p_responsable_id: ref.userId,
-            p_subetapa_destino: 'SOMBRA',
-            p_observaciones: `[${tag}] adaptabilidad`,
-          }),
-          'registrar ADAPTABILIDAD',
-        );
+      unwrap(
+        await client.rpc('fn_vivero_registrar_adaptabilidad', {
+          p_lote_id: created.loteId,
+          p_fecha_evento: fechaEvento,
+          p_responsable_id: ref.userId,
+          p_subetapa_destino: 'SOMBRA',
+          p_observaciones: `[${tag}] adaptabilidad`,
+        }),
+        'registrar ADAPTABILIDAD',
+      );
 
-        unwrap(
-          await client.rpc('fn_vivero_registrar_merma', {
-            p_lote_id: created.loteId,
-            p_fecha_evento: fechaEvento,
-            p_responsable_id: ref.userId,
-            p_cantidad_perdida: 3,
-            p_causa_merma: 'OTRO',
-            p_observaciones: `[${tag}] merma`,
-          }),
-          'registrar MERMA',
-        );
+      unwrap(
+        await client.rpc('fn_vivero_registrar_merma', {
+          p_lote_id: created.loteId,
+          p_fecha_evento: fechaEvento,
+          p_responsable_id: ref.userId,
+          p_cantidad_perdida: 3,
+          p_causa_merma: 'OTRO',
+          p_observaciones: `[${tag}] merma`,
+        }),
+        'registrar MERMA',
+      );
 
-        const despachoId = unwrap(
-          await client.rpc('fn_vivero_registrar_despacho', {
-            p_lote_id: created.loteId,
-            p_fecha_evento: fechaEvento,
-            p_responsable_id: ref.userId,
-            p_cantidad_despachada: 7,
-            p_destino_tipo: 'OTRO',
-            p_destino_referencia: `[${tag}] destino`,
-            p_observaciones: `[${tag}] despacho`,
-          }),
-          'registrar DESPACHO',
-        );
+      const despachoId = unwrap(
+        await client.rpc('fn_vivero_registrar_despacho', {
+          p_lote_id: created.loteId,
+          p_fecha_evento: fechaEvento,
+          p_responsable_id: ref.userId,
+          p_cantidad_despachada: 7,
+          p_destino_tipo: 'OTRO',
+          p_destino_referencia: `[${tag}] destino`,
+          p_observaciones: `[${tag}] despacho`,
+        }),
+        'registrar DESPACHO',
+      );
 
-        const loteFinal = unwrap(
-          await client
-            .from('lote_vivero')
-            .select(
-              'id,codigo_trazabilidad,responsable_id,nombre_responsable_snapshot,estado_lote,motivo_cierre,saldo_vivo_actual,subetapa_actual,plantas_vivas_iniciales',
-            )
-            .eq('id', created.loteId)
-            .single(),
-          'leer estado final del lote',
-        );
+      const loteFinal = unwrap(
+        await client
+          .from('lote_vivero')
+          .select(
+            'id,codigo_trazabilidad,responsable_id,nombre_responsable_snapshot,estado_lote,motivo_cierre,saldo_vivo_actual,subetapa_actual,plantas_vivas_iniciales',
+          )
+          .eq('id', created.loteId)
+          .single(),
+        'leer estado final del lote',
+      );
 
-        const eventos = unwrap(
-          await client
-            .from('evento_lote_vivero')
-            .select(
-              'id,tipo_evento,fecha_evento,cantidad_afectada,unidad_medida_evento,subetapa_destino,causa_merma,destino_tipo,destino_referencia,saldo_vivo_antes,saldo_vivo_despues,motivo_cierre_calculado,ref_evento_trigger_id',
-            )
-            .eq('lote_id', created.loteId)
-            .order('id', { ascending: true }),
-          'leer historial de EVENTO_LOTE_VIVERO',
-        );
+      const eventos = unwrap(
+        await client
+          .from('evento_lote_vivero')
+          .select(
+            'id,tipo_evento,fecha_evento,cantidad_afectada,unidad_medida_evento,subetapa_destino,causa_merma,destino_tipo,destino_referencia,saldo_vivo_antes,saldo_vivo_despues,motivo_cierre_calculado,ref_evento_trigger_id',
+          )
+          .eq('lote_id', created.loteId)
+          .order('id', { ascending: true }),
+        'leer historial de EVENTO_LOTE_VIVERO',
+      );
 
-        const movimientos = unwrap(
-          await client
-            .from('recoleccion_movimiento')
-            .select(
-              'id,recoleccion_id,tipo_movimiento,delta,unidad_medida_evento,motivo,lote_vivero_id,created_by',
-            )
-            .eq('recoleccion_id', created.recoleccionId)
-            .order('id', { ascending: true }),
-          'leer descuento en RECOLECCION_MOVIMIENTO',
-        );
+      const movimientos = unwrap(
+        await client
+          .from('recoleccion_movimiento')
+          .select(
+            'id,recoleccion_id,tipo_movimiento,delta,unidad_medida_evento,motivo,lote_vivero_id,created_by',
+          )
+          .eq('recoleccion_id', created.recoleccionId)
+          .order('id', { ascending: true }),
+        'leer descuento en RECOLECCION_MOVIMIENTO',
+      );
 
-        const recoleccionFinal = unwrap(
-          await client
-            .from('recoleccion')
-            .select('id,saldo_actual,estado_operativo')
-            .eq('id', created.recoleccionId)
-            .single(),
-          'leer estado operativo final de la recolección',
-        );
+      const recoleccionFinal = unwrap(
+        await client
+          .from('recoleccion')
+          .select('id,saldo_actual,estado_operativo')
+          .eq('id', created.recoleccionId)
+          .single(),
+        'leer estado operativo final de la recolección',
+      );
 
-        const evidenciaInicioFinal = unwrap(
-          await client
-            .from('evidencias_trazabilidad')
-            .select('id,tipo_entidad_id,entidad_id,codigo_trazabilidad,eliminado_en')
-            .eq('id', evidenciaInicio.id)
-            .single(),
-          'leer evidencia vinculada al evento INICIO',
-        );
+      const evidenciaInicioFinal = unwrap(
+        await client
+          .from('evidencias_trazabilidad')
+          .select(
+            'id,tipo_entidad_id,entidad_id,codigo_trazabilidad,eliminado_en',
+          )
+          .eq('id', evidenciaInicio.id)
+          .single(),
+        'leer evidencia vinculada al evento INICIO',
+      );
 
-        expect(loteFinal.codigo_trazabilidad).toBe(inicio.codigo_trazabilidad);
-        expect(loteFinal.responsable_id).toBe(ref.userId);
-        expect(loteFinal.nombre_responsable_snapshot).toBe(ref.userName);
-        expect(loteFinal.estado_lote).toBe('FINALIZADO');
-        expect(loteFinal.motivo_cierre).toBe('MIXTO');
-        expect(loteFinal.saldo_vivo_actual).toBe(0);
-        expect(loteFinal.subetapa_actual).toBe('SOMBRA');
-        expect(loteFinal.plantas_vivas_iniciales).toBe(10);
+      expect(loteFinal.codigo_trazabilidad).toBe(inicio.codigo_trazabilidad);
+      expect(loteFinal.responsable_id).toBe(ref.userId);
+      expect(loteFinal.nombre_responsable_snapshot).toBe(ref.userName);
+      expect(loteFinal.estado_lote).toBe('FINALIZADO');
+      expect(loteFinal.motivo_cierre).toBe('MIXTO');
+      expect(loteFinal.saldo_vivo_actual).toBe(0);
+      expect(loteFinal.subetapa_actual).toBe('SOMBRA');
+      expect(loteFinal.plantas_vivas_iniciales).toBe(10);
 
-        expect(eventos.map((evento) => evento.tipo_evento)).toEqual([
-          'INICIO',
-          'EMBOLSADO',
-          'ADAPTABILIDAD',
-          'MERMA',
-          'DESPACHO',
-          'CIERRE_AUTOMATICO',
-        ]);
+      expect(eventos.map((evento) => evento.tipo_evento)).toEqual([
+        'INICIO',
+        'EMBOLSADO',
+        'ADAPTABILIDAD',
+        'MERMA',
+        'DESPACHO',
+        'CIERRE_AUTOMATICO',
+      ]);
 
-        const inicioEvento = eventos.find(
-          (evento) => evento.tipo_evento === 'INICIO',
-        );
-        expect(inicioEvento).toMatchObject({
-          id: inicio.evento_inicio_id,
-          cantidad_afectada: 10,
-          unidad_medida_evento: 'UNIDAD',
-          saldo_vivo_antes: null,
-          saldo_vivo_despues: null,
-        });
+      const inicioEvento = eventos.find(
+        (evento) => evento.tipo_evento === 'INICIO',
+      );
+      expect(inicioEvento).toMatchObject({
+        id: inicio.evento_inicio_id,
+        cantidad_afectada: 10,
+        unidad_medida_evento: 'UNIDAD',
+        saldo_vivo_antes: null,
+        saldo_vivo_despues: null,
+      });
 
-        expect(evidenciaInicioFinal).toMatchObject({
-          id: evidenciaInicio.id,
-          tipo_entidad_id: evidenciaInicio.tipoEntidadId,
-          entidad_id: inicio.evento_inicio_id,
-          codigo_trazabilidad: inicio.codigo_trazabilidad,
-          eliminado_en: null,
-        });
+      expect(evidenciaInicioFinal).toMatchObject({
+        id: evidenciaInicio.id,
+        tipo_entidad_id: evidenciaInicio.tipoEntidadId,
+        entidad_id: inicio.evento_inicio_id,
+        codigo_trazabilidad: inicio.codigo_trazabilidad,
+        eliminado_en: null,
+      });
 
-        const cierreAutomatico = eventos.find(
-          (evento) => evento.tipo_evento === 'CIERRE_AUTOMATICO',
-        );
-        expect(cierreAutomatico).toBeDefined();
-        expect(cierreAutomatico?.ref_evento_trigger_id).toBe(despachoId);
-        expect(cierreAutomatico?.motivo_cierre_calculado).toBe('MIXTO');
+      const cierreAutomatico = eventos.find(
+        (evento) => evento.tipo_evento === 'CIERRE_AUTOMATICO',
+      );
+      expect(cierreAutomatico).toBeDefined();
+      expect(cierreAutomatico?.ref_evento_trigger_id).toBe(despachoId);
+      expect(cierreAutomatico?.motivo_cierre_calculado).toBe('MIXTO');
 
-        expect(movimientos).toHaveLength(1);
-        expect(movimientos[0]).toMatchObject({
-          recoleccion_id: created.recoleccionId,
-          tipo_movimiento: 'CONSUMO_A_VIVERO',
-          delta: -10,
-          unidad_medida_evento: 'UNIDAD',
-          motivo: 'CONSUMO_PARA_VIVERO',
-          lote_vivero_id: created.loteId,
-          created_by: ref.userId,
-        });
-        expect(movimientos[0].id).toBe(inicio.recoleccion_movimiento_id);
+      expect(movimientos).toHaveLength(1);
+      expect(movimientos[0]).toMatchObject({
+        recoleccion_id: created.recoleccionId,
+        tipo_movimiento: 'CONSUMO_A_VIVERO',
+        delta: -10,
+        unidad_medida_evento: 'UNIDAD',
+        motivo: 'CONSUMO_PARA_VIVERO',
+        lote_vivero_id: created.loteId,
+        created_by: ref.userId,
+      });
+      expect(movimientos[0].id).toBe(inicio.recoleccion_movimiento_id);
 
-        expect(recoleccionFinal.saldo_actual).toBe(0);
-        expect(recoleccionFinal.estado_operativo).toBe('CERRADO');
-      } finally {
-        await cleanup(client, created);
-      }
-    },
-    30000,
-  );
+      expect(recoleccionFinal.saldo_actual).toBe(0);
+      expect(recoleccionFinal.estado_operativo).toBe('CERRADO');
+    } finally {
+      await cleanup(client, created);
+    }
+  }, 30000);
 });
 
 async function loadReferences(client: SupabaseClient): Promise<RefData> {
@@ -441,7 +439,10 @@ async function createPendingInicioEvidence(
   };
 }
 
-async function cleanup(client: SupabaseClient, created: CreatedIds): Promise<void> {
+async function cleanup(
+  client: SupabaseClient,
+  created: CreatedIds,
+): Promise<void> {
   if (created.evidenciaIds?.length) {
     await client
       .from('evidencias_trazabilidad')
@@ -450,7 +451,10 @@ async function cleanup(client: SupabaseClient, created: CreatedIds): Promise<voi
   }
 
   if (created.loteId) {
-    await client.from('evento_lote_vivero').delete().eq('lote_id', created.loteId);
+    await client
+      .from('evento_lote_vivero')
+      .delete()
+      .eq('lote_id', created.loteId);
   }
 
   if (created.recoleccionId) {
@@ -490,7 +494,8 @@ async function cleanupByTag(client: SupabaseClient): Promise<void> {
     .select('id')
     .like('codigo_trazabilidad', 'QA-REC-qa_mig_vivero_%');
 
-  const recoleccionIds = recolecciones?.map((recoleccion) => recoleccion.id) ?? [];
+  const recoleccionIds =
+    recolecciones?.map((recoleccion) => recoleccion.id) ?? [];
 
   const { data: lotes } = await client
     .from('lote_vivero')
@@ -551,10 +556,10 @@ function unwrapRpcRow<T>(result: QueryResult<T[] | T>, context: string): T {
     if (data.length === 0) {
       throw new Error(`${context}: la RPC no devolvió filas.`);
     }
-    return data[0] as T;
+    return data[0];
   }
 
-  return data as T;
+  return data;
 }
 
 function formatError(error: DbError): string {

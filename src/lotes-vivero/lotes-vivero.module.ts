@@ -6,6 +6,7 @@ import { ViveroAdaptabilidadService } from './application/vivero-adaptabilidad.s
 import { ViveroAuthService } from './application/vivero-auth.service';
 import { ViveroCodigosService } from './application/vivero-codigos.service';
 import { ViveroConsultasService } from './application/vivero-consultas.service';
+import { ViveroDespachoService } from './application/vivero-despacho.service';
 import { ViveroEmbolsadoService } from './application/vivero-embolsado.service';
 import { ViveroEventosService } from './application/vivero-eventos.service';
 import { ViveroEvidenciasService } from './application/vivero-evidencias.service';
@@ -23,6 +24,7 @@ import { ViveroTimelineService } from './application/vivero-timeline.service';
     ViveroAuthService,
     ViveroCodigosService,
     ViveroConsultasService,
+    ViveroDespachoService,
     ViveroEmbolsadoService,
     ViveroEventosService,
     ViveroEvidenciasService,

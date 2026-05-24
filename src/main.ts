@@ -30,7 +30,7 @@ async function bootstrap() {
     origin: (origin, callback) => {
       // Permitir requests sin origin (como Postman)
       if (!origin) return callback(null, true);
-      
+
       // Verificar si el origin está en la lista o es un subdominio de Vercel
       if (allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
         callback(null, true);
@@ -41,7 +41,13 @@ async function bootstrap() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-id', 'x-user-role', 'Accept'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-auth-id',
+      'x-user-role',
+      'Accept',
+    ],
     exposedHeaders: ['Content-Type', 'Authorization'],
     preflightContinue: false,
     optionsSuccessStatus: 204,
@@ -62,14 +68,25 @@ async function bootstrap() {
   // Configuración de Swagger
   const config = new DocumentBuilder()
     .setTitle('Reforesta API')
-    .setDescription('API REST para el sistema de gestión de recolecciones y viveros forestales')
+    .setDescription(
+      'API REST para el sistema de gestión de recolecciones y viveros forestales',
+    )
     .setVersion('1.0')
-    .addTag('recolecciones', 'Endpoints para gestión de recolecciones de material vegetal')
+    .addTag(
+      'recolecciones',
+      'Endpoints para gestión de recolecciones de material vegetal',
+    )
     .addTag('plantas', 'Endpoints para gestión de plantas y especies')
     .addTag('viveros', 'Endpoints para gestión de viveros')
     .addTag('auth', 'Endpoints de autenticación y autorización')
-    .addTag('comunidades', 'Endpoints CRUD de comunidades administrativas (nivel 4)')
-    .addTag('evidencias-trazabilidad', 'Endpoints para consultar evidencias de trazabilidad')
+    .addTag(
+      'comunidades',
+      'Endpoints CRUD de comunidades administrativas (nivel 4)',
+    )
+    .addTag(
+      'evidencias-trazabilidad',
+      'Endpoints para consultar evidencias de trazabilidad',
+    )
     .addTag('blockchain', 'Endpoints para integración con blockchain')
     .addTag('pinata', 'Endpoints para gestión de IPFS/Pinata')
     .addApiKey(
@@ -95,7 +112,9 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`🚀 Backend NestJS corriendo en http://localhost:${port}`);
-  console.log(`📚 Documentación Swagger disponible en http://localhost:${port}/api/docs`);
+  console.log(
+    `📚 Documentación Swagger disponible en http://localhost:${port}/api/docs`,
+  );
 }
 
 void bootstrap();

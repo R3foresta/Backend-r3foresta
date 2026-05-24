@@ -23,17 +23,17 @@ import { RecoleccionesService } from '../application/recolecciones.service';
 // TODO: Eliminar comentarios.
 /**
  * FUNCIÓN HELPER: Crea un mock de QueryBuilder
- * 
+ *
  * En Supabase/PostgreSQL, los query builders son objetos que tienen métodos encadenables
  * (patrón builder pattern). Este helper simula ese comportamiento con Jest mocks.
- * 
+ *
  * Por ejemplo, en el código real harías:
  *   supabase
  *     .from('recoleccion')
  *     .select('*')           <- select() devuelve this (chainable)
  *     .eq('id', 9)           <- eq() devuelve this (chainable)
  *     .single()              <- single() devuelve una Promise
- * 
+ *
  * Cada método que termina en () y devuelve this() permite encadenar.
  */
 function createQueryBuilder(result: {
@@ -43,23 +43,23 @@ function createQueryBuilder(result: {
 }) {
   const builder: any = {
     // Métodos que devuelven 'this' (permitir encadenamiento)
-    select: jest.fn().mockReturnThis(),        // .select('*')
-    eq: jest.fn().mockReturnThis(),            // .eq('id', 9)
-    gte: jest.fn().mockReturnThis(),           // .gte('fecha', '2024-01-01') - mayor o igual
-    lte: jest.fn().mockReturnThis(),           // .lte('fecha', '2024-12-31') - menor o igual
-    in: jest.fn().mockReturnThis(),            // .in('estado', ['ABIERTO', 'CERRADO'])
-    is: jest.fn().mockReturnThis(),            // .is('campo', null)
-    not: jest.fn().mockReturnThis(),           // .not('estado', 'eq', 'BORRADOR')
-    or: jest.fn().mockReturnThis(),            // .or('id.eq.1,id.eq.2')
-    order: jest.fn().mockReturnThis(),         // .order('fecha', { ascending: false })
-    range: jest.fn().mockReturnThis(),         // .range(0, 9) - para paginación
-    update: jest.fn().mockReturnThis(),        // .update({ campo: valor })
-    insert: jest.fn().mockReturnThis(),        // .insert({ campo: valor })
-    delete: jest.fn().mockReturnThis(),        // .delete()
-    
+    select: jest.fn().mockReturnThis(), // .select('*')
+    eq: jest.fn().mockReturnThis(), // .eq('id', 9)
+    gte: jest.fn().mockReturnThis(), // .gte('fecha', '2024-01-01') - mayor o igual
+    lte: jest.fn().mockReturnThis(), // .lte('fecha', '2024-12-31') - menor o igual
+    in: jest.fn().mockReturnThis(), // .in('estado', ['ABIERTO', 'CERRADO'])
+    is: jest.fn().mockReturnThis(), // .is('campo', null)
+    not: jest.fn().mockReturnThis(), // .not('estado', 'eq', 'BORRADOR')
+    or: jest.fn().mockReturnThis(), // .or('id.eq.1,id.eq.2')
+    order: jest.fn().mockReturnThis(), // .order('fecha', { ascending: false })
+    range: jest.fn().mockReturnThis(), // .range(0, 9) - para paginación
+    update: jest.fn().mockReturnThis(), // .update({ campo: valor })
+    insert: jest.fn().mockReturnThis(), // .insert({ campo: valor })
+    delete: jest.fn().mockReturnThis(), // .delete()
+
     // Métodos que devuelven Promise (terminan la cadena)
-    single: jest.fn().mockResolvedValue(result),  // Espera UN resultado
-    
+    single: jest.fn().mockResolvedValue(result), // Espera UN resultado
+
     // Implementar la interface thenable/Promise para compatibilidad
     then: (resolve: any, reject: any) =>
       Promise.resolve(result).then(resolve, reject),
@@ -89,13 +89,13 @@ describe('RecoleccionesService', () => {
   beforeEach(async () => {
     // 1. CREAR MOCKS de las dependencias
     // Un mock es un doble de una clase real que controlas en los tests
-    
+
     supabaseService = {
       // jest.fn() crea una función que puedes monitorear
       // .mockReturnValue() establece qué devuelve cuando se llama
       getClient: jest.fn(),
     };
-    
+
     ubicacionesReadService = {
       // .mockResolvedValue() devuelve una Promise resuelta (para funciones async)
       getUbicacionesByIds: jest.fn().mockResolvedValue(new Map()),
@@ -103,7 +103,7 @@ describe('RecoleccionesService', () => {
 
     /**
      * 2. CREAR EL MÓDULO DE TESTING (como un módulo NestJS minimizado)
-     * 
+     *
      * Test.createTestingModule() es el equivalente a NestModule para tests
      * Aquí declaramos:
      * - providers: servicios que el test necesita
@@ -126,20 +126,20 @@ describe('RecoleccionesService', () => {
         RecoleccionEvidenciasService,
         RecoleccionUbicacionService,
         RecoleccionValidacionService,
-        
+
         // MOCKS de dependencias externas
         // Formato: { provide: ClaseReal, useValue: MockObject }
         {
           provide: SupabaseService,
-          useValue: supabaseService,  // Usa nuestro mock en lugar del real
+          useValue: supabaseService, // Usa nuestro mock en lugar del real
         },
         {
           provide: PinataService,
-          useValue: {},               // Mock vacío, no se usa en estos tests
+          useValue: {}, // Mock vacío, no se usa en estos tests
         },
         {
           provide: BlockchainService,
-          useValue: {},               // Mock vacío, no se usa en estos tests
+          useValue: {}, // Mock vacío, no se usa en estos tests
         },
         {
           provide: UbicacionesReadService,
@@ -150,7 +150,7 @@ describe('RecoleccionesService', () => {
           useValue: {},
         },
       ],
-    }).compile();  // .compile() crea la instancia del módulo
+    }).compile(); // .compile() crea la instancia del módulo
 
     // 3. OBTENER la instancia del servicio que queremos probar
     service = module.get(RecoleccionesService);
@@ -158,11 +158,11 @@ describe('RecoleccionesService', () => {
 
   /**
    * TEST 1: Verifica que el SELECT SQL incluya campos canónicos sin aliases incorrectos
-   * 
+   *
    * QUÉ PRUEBA:
    * - Que el método getCanonicalRecoleccionSelect() genere un SQL correcto
    * - Que NO tenga aliases legacy (como 'cantidad:cantidad_inicial_canonica')
-   * 
+   *
    * PATRÓN: Test SIN mocks de Supabase (solo verifica lógica interna)
    */
   it('proyecta columnas canonicas sin aliases legacy de cantidad/unidad', () => {
@@ -178,7 +178,7 @@ describe('RecoleccionesService', () => {
     expect(select).toContain('variedad_snapshot');
     expect(select).toContain('nombre_comunidad_snapshot');
     expect(select).toContain('nombre_recolector_snapshot');
-    
+
     // Verificar que NO tenga aliases incorrectos
     expect(select).not.toContain('cantidad:cantidad_inicial_canonica');
     expect(select).not.toContain('unidad:unidad_canonica');
@@ -213,11 +213,9 @@ describe('RecoleccionesService', () => {
 
     // Caso 2: 125.75 g de semilla ya está en la unidad oficial de peso.
     // La cantidad puede tener decimales porque SEMILLA por peso permite gramos.
-    const semillaEnGramos = (service as any).normalizeAndValidateCantidadYUnidad(
-      125.75,
-      'g',
-      'SEMILLA',
-    );
+    const semillaEnGramos = (
+      service as any
+    ).normalizeAndValidateCantidadYUnidad(125.75, 'g', 'SEMILLA');
 
     expect(semillaEnGramos).toEqual({
       unidad_canonica: 'G',
@@ -226,11 +224,9 @@ describe('RecoleccionesService', () => {
 
     // Caso 3: 12 unidades de semilla deben persistirse como UNIDAD.
     // Para UNIDAD la cantidad debe ser entera, porque representa conteo.
-    const semillaEnUnidades = (service as any).normalizeAndValidateCantidadYUnidad(
-      12,
-      'unidad',
-      'SEMILLA',
-    );
+    const semillaEnUnidades = (
+      service as any
+    ).normalizeAndValidateCantidadYUnidad(12, 'unidad', 'SEMILLA');
 
     expect(semillaEnUnidades).toEqual({
       unidad_canonica: 'UNIDAD',
@@ -265,47 +261,47 @@ describe('RecoleccionesService', () => {
 
   /**
    * TEST 2: Verifica que findOne() retorna recolección con elegibilidad evaluada
-   * 
+   *
    * QUÉ PRUEBA:
    * - Que el método findOne(id, cantidadSolicitada) devuelve datos completos
    * - Que prioriza snapshots sobre datos base de la tabla planta
    * - Que calcula elegibilidad (false porque no hay saldo suficiente)
-   * 
+   *
    * PATRÓN: Test CON mocks de Supabase (integración con BD)
    */
   it('incluye elegibilidad y prioriza snapshots en el detalle de recoleccion', async () => {
     // 1. PREPARAR MOCKS (Arrange)
-    
+
     // Mock del query a la tabla 'recoleccion'
     // Este es el objeto que Supabase devolvería cuando haces:
     //   supabase.from('recoleccion').select(...).eq('id', 9).single()
     const recoleccionQuery = createQueryBuilder({
       data: {
         id: 9,
-        estado_registro: 'VALIDADO',      // Recolección está validada
-        estado_operativo: 'ABIERTO',      // Todavía abierta para operaciones
-        saldo_actual: 40,                 // Pero solo quedan 40 unidades
-        cantidad_inicial_canonica: 50,    // Se recolectaron 50 inicialmente
+        estado_registro: 'VALIDADO', // Recolección está validada
+        estado_operativo: 'ABIERTO', // Todavía abierta para operaciones
+        saldo_actual: 40, // Pero solo quedan 40 unidades
+        cantidad_inicial_canonica: 50, // Se recolectaron 50 inicialmente
         tipo_material: 'SEMILLA',
         ubicacion_id: 100,
         planta_id: 12,
-        
+
         // SNAPSHOTS (datos congelados en el momento de la recolección)
         // El servicio PRIORIZA estos sobre los datos base
         nombre_cientifico_snapshot: 'Swietenia macrophylla snapshot',
         nombre_comercial_snapshot: 'Mara snapshot',
         variedad_snapshot: 'Tardía',
-        
+
         // Datos BASE (podrían estar desactualizados)
         planta: {
           nombre_cientifico: 'Swietenia macrophylla',
           nombre_comun_principal: 'Mara',
-          variedad: 'Común',  // Diferente del snapshot!
+          variedad: 'Común', // Diferente del snapshot!
         },
       },
       error: null,
     });
-    
+
     // Mock del query a la tabla 'evidencias_trazabilidad'
     const evidenciasQuery = createQueryBuilder({
       data: [
@@ -359,7 +355,7 @@ describe('RecoleccionesService', () => {
 
         throw new Error(`Tabla no esperada en test: ${table}`);
       }),
-      
+
       // Mock del storage de Supabase (para obtener URLs de imágenes)
       storage: {
         from: jest.fn(() => ({
@@ -378,18 +374,18 @@ describe('RecoleccionesService', () => {
     const response = await service.findOne(9, 45);
 
     // 4. VERIFICAR (Assert)
-    
+
     // Verificar que devuelve los datos correctos
     expect(response.data.saldo_actual).toBe(40);
     expect(response.data.estado_operativo).toBe('ABIERTO');
-    
+
     // Verificar que PRIORIZA snapshots (no usa datos de la tabla planta)
     expect(response.data.nombre_cientifico).toBe(
-      'Swietenia macrophylla snapshot',  // Viene del snapshot, no del planta.nombre_cientifico
+      'Swietenia macrophylla snapshot', // Viene del snapshot, no del planta.nombre_cientifico
     );
     expect(response.data.nombre_comercial).toBe('Mara snapshot');
-    expect(response.data.variedad).toBe('Tardía');  // Del snapshot, no 'Común'
-    
+    expect(response.data.variedad).toBe('Tardía'); // Del snapshot, no 'Común'
+
     // Verificar elegibilidad: NO ES ELEGIBLE porque pidió 45 pero solo hay 40
     expect(response.data.elegible_para_vivero).toBe(false);
     expect(response.data.motivo_no_elegibilidad_para_vivero).toBe(
@@ -400,31 +396,31 @@ describe('RecoleccionesService', () => {
 
   /**
    * TEST 3: Verifica que findByVivero() lista recolecciones sin filtros estrictos
-   * 
+   *
    * QUÉ PRUEBA:
    * - Que el método lista recolecciones para un vivero específico
    * - Que NO filtra obligatoriamente por estado_registro='VALIDADO'
    *   (solo filtra en elegibilidad, no en la query)
    * - Que calcula elegibilidad para cada recolección
-   * 
+   *
    * PATRÓN: Test con paginación y múltiples resultados
    */
   it('lista recolecciones por vivero sin depender de token_id y expone elegibilidad operativa', async () => {
     // 1. PREPARAR MOCKS (Arrange)
-    
+
     // Mock del query a 'vivero' (para verificar que existe)
     const viveroQuery = createQueryBuilder({
       data: { id: 3 },
       error: null,
     });
-    
+
     // Mock del query a 'recoleccion' (devuelve 2 recolecciones)
     const recoleccionesQuery = createQueryBuilder({
       data: [
         {
           id: 1,
           vivero_id: 3,
-          estado_registro: 'BORRADOR',      // ⚠️ NO VALIDADA
+          estado_registro: 'BORRADOR', // ⚠️ NO VALIDADA
           estado_operativo: 'ABIERTO',
           saldo_actual: 20,
           cantidad_inicial_canonica: 20,
@@ -439,7 +435,7 @@ describe('RecoleccionesService', () => {
         {
           id: 2,
           vivero_id: 3,
-          estado_registro: 'VALIDADO',      // ✅ VALIDADA
+          estado_registro: 'VALIDADO', // ✅ VALIDADA
           estado_operativo: 'ABIERTO',
           saldo_actual: 20,
           cantidad_inicial_canonica: 20,
@@ -453,9 +449,9 @@ describe('RecoleccionesService', () => {
         },
       ],
       error: null,
-      count: 2,  // Para paginación (total de resultados)
+      count: 2, // Para paginación (total de resultados)
     });
-    
+
     const evidenciasQuery = createQueryBuilder({
       data: [
         {
@@ -559,7 +555,7 @@ describe('RecoleccionesService', () => {
     });
 
     // 4. VERIFICAR (Assert)
-    
+
     // Verificar que NO filtra por estado_registro en el query
     // (el filtro es DESPUÉS en la evaluación de elegibilidad)
     expect(recoleccionesQuery.not).not.toHaveBeenCalled();
@@ -567,16 +563,16 @@ describe('RecoleccionesService', () => {
       'estado_registro',
       'VALIDADO',
     );
-    
+
     // Verificar que devuelve ambas recolecciones
     expect(response.data).toHaveLength(2);
-    
+
     // RECOLECCIÓN 1: NO ELEGIBLE (estado BORRADOR)
     expect(response.data[0].elegible_para_vivero).toBe(false);
     expect(response.data[0].motivo_no_elegibilidad_para_vivero).toBe(
-      'La recoleccion no esta validada.',  // Motivo: no está validada aún
+      'La recoleccion no esta validada.', // Motivo: no está validada aún
     );
-    
+
     // RECOLECCIÓN 2: ELEGIBLE (estado VALIDADO + saldo suficiente)
     expect(response.data[1].elegible_para_vivero).toBe(true);
     expect(response.data[1].cantidad_solicitada_vivero_evaluada).toBe(10);

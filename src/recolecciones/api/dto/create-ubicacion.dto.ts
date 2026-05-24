@@ -11,7 +11,12 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export const FUENTES_UBICACION = ['GPS_MOVIL', 'MAPA', 'MANUAL', 'LEGACY'] as const;
+export const FUENTES_UBICACION = [
+  'GPS_MOVIL',
+  'MAPA',
+  'MANUAL',
+  'LEGACY',
+] as const;
 export type FuenteUbicacion = (typeof FUENTES_UBICACION)[number];
 
 export class CreateUbicacionDto {

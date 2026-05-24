@@ -80,7 +80,13 @@ export class RecoleccionConsultasService {
       );
     }
 
-    return this.buildPaginatedResponse(data || [], count || 0, page, limit, filters);
+    return this.buildPaginatedResponse(
+      data || [],
+      count || 0,
+      page,
+      limit,
+      filters,
+    );
   }
 
   async findAll(authId: string, filters: FiltersRecoleccionDto) {
@@ -131,7 +137,13 @@ export class RecoleccionConsultasService {
       throw new InternalServerErrorException('Error al obtener recolecciones');
     }
 
-    return this.buildPaginatedResponse(data || [], count || 0, page, limit, filters);
+    return this.buildPaginatedResponse(
+      data || [],
+      count || 0,
+      page,
+      limit,
+      filters,
+    );
   }
 
   async findByVivero(viveroId: number, filters: FiltersRecoleccionDto) {
@@ -174,7 +186,13 @@ export class RecoleccionConsultasService {
       );
     }
 
-    return this.buildPaginatedResponse(data || [], count || 0, page, limit, filters);
+    return this.buildPaginatedResponse(
+      data || [],
+      count || 0,
+      page,
+      limit,
+      filters,
+    );
   }
 
   async findOne(id: number, cantidadSolicitadaVivero?: number) {
@@ -193,7 +211,8 @@ export class RecoleccionConsultasService {
       throw new NotFoundException('Recolección no encontrada');
     }
 
-    const enrichedData = await this.ubicacionService.enrichSingleRecoleccion(data);
+    const enrichedData =
+      await this.ubicacionService.enrichSingleRecoleccion(data);
     const evidencias =
       await this.evidenciasService.getEvidenciasByRecoleccionId(id);
     const canonicalData = this.mapRecoleccionToCanonicalResponse(
@@ -356,7 +375,9 @@ export class RecoleccionConsultasService {
     return orConditions;
   }
 
-  private async findPlantIdsBySearchTerm(searchTerm: string): Promise<number[]> {
+  private async findPlantIdsBySearchTerm(
+    searchTerm: string,
+  ): Promise<number[]> {
     const supabase = this.supabaseService.getClient();
     const { data, error } = await supabase
       .from('planta')
@@ -366,7 +387,10 @@ export class RecoleccionConsultasService {
       );
 
     if (error) {
-      this.logger.error('❌ Error al buscar plantas para filtro search:', error);
+      this.logger.error(
+        '❌ Error al buscar plantas para filtro search:',
+        error,
+      );
       throw new InternalServerErrorException('Error al filtrar recolecciones');
     }
 

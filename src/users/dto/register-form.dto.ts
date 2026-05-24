@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, MaxLength, Matches } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  MaxLength,
+  Matches,
+} from 'class-validator';
 
 export class RegisterFormDto {
   @IsString()
@@ -17,7 +23,8 @@ export class RegisterFormDto {
   @IsOptional()
   @IsString()
   @Matches(/^0x[0-9a-fA-F]{40}$/, {
-    message: 'El wallet_address debe tener formato Ethereum (0x seguido de 40 carácteres hex)',
+    message:
+      'El wallet_address debe tener formato Ethereum (0x seguido de 40 carácteres hex)',
   })
   wallet_address?: string;
 

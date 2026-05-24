@@ -28,7 +28,9 @@ export class RecoleccionBlockchainService {
 
       const findResult = await this.consultasService.findOne(recoleccionId);
       if (!findResult?.data) {
-        this.logger.error('⚠️  No se pudo obtener la recolección para metadata');
+        this.logger.error(
+          '⚠️  No se pudo obtener la recolección para metadata',
+        );
         return;
       }
 

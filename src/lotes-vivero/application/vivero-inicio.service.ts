@@ -65,7 +65,10 @@ export class ViveroInicioService {
         continue;
       }
 
-      this.logger.error('Error al crear lote de vivero desde recoleccion:', error);
+      this.logger.error(
+        'Error al crear lote de vivero desde recoleccion:',
+        error,
+      );
       throw new BadRequestException(
         error.message || 'No se pudo crear el lote de vivero.',
       );

@@ -71,7 +71,11 @@ export class RecoleccionesService {
     authId: string,
     userRole: string,
   ) {
-    return this.consultasService.findPendingValidation(filters, authId, userRole);
+    return this.consultasService.findPendingValidation(
+      filters,
+      authId,
+      userRole,
+    );
   }
 
   findAll(authId: string, filters: FiltersRecoleccionDto) {

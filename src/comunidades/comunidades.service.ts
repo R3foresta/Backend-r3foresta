@@ -284,8 +284,12 @@ export class ComunidadesService {
     return this.mapDivisionRow(data);
   }
 
-  private async getDivisionesByIds(ids: number[]): Promise<Map<number, DivisionRow>> {
-    const validIds = [...new Set(ids)].filter((id) => Number.isInteger(id) && id > 0);
+  private async getDivisionesByIds(
+    ids: number[],
+  ): Promise<Map<number, DivisionRow>> {
+    const validIds = [...new Set(ids)].filter(
+      (id) => Number.isInteger(id) && id > 0,
+    );
     const map = new Map<number, DivisionRow>();
 
     if (validIds.length === 0) {
@@ -470,7 +474,9 @@ export class ComunidadesService {
 
     return comunidades.map((comunidad) => {
       const nivel3 =
-        comunidad.parent_id === null ? undefined : nivel3Map.get(comunidad.parent_id);
+        comunidad.parent_id === null
+          ? undefined
+          : nivel3Map.get(comunidad.parent_id);
       const nivel2 =
         nivel3?.parent_id === null || nivel3?.parent_id === undefined
           ? undefined

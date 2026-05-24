@@ -46,8 +46,7 @@ export function mapRecoleccionToCanonicalResponse(
     elegible_para_vivero: elegibilidadVivero.elegible,
     motivo_no_elegibilidad_para_vivero:
       elegibilidadVivero.motivo_no_elegibilidad,
-    cantidad_solicitada_vivero_evaluada:
-      elegibilidadVivero.cantidad_solicitada,
+    cantidad_solicitada_vivero_evaluada: elegibilidadVivero.cantidad_solicitada,
     evidencias,
     fotos,
     ...EstadoRegistroPolicy.getFlags(recoleccion.estado_registro),

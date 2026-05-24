@@ -121,8 +121,13 @@ export class ViveroConsultasService {
       .maybeSingle();
 
     if (loteError) {
-      this.logger.error(`Error al obtener detalle del lote ${loteId}:`, loteError);
-      throw new InternalServerErrorException('Error al obtener detalle del lote');
+      this.logger.error(
+        `Error al obtener detalle del lote ${loteId}:`,
+        loteError,
+      );
+      throw new InternalServerErrorException(
+        'Error al obtener detalle del lote',
+      );
     }
 
     if (!loteRow) {

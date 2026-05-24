@@ -174,7 +174,10 @@ export class RecoleccionSnapshotsService {
     return trimmed.length > 0 ? trimmed : null;
   }
 
-  private toRequiredTrimmedString(value: unknown, errorMessage: string): string {
+  private toRequiredTrimmedString(
+    value: unknown,
+    errorMessage: string,
+  ): string {
     const trimmed = this.toTrimmedString(value);
     if (!trimmed) {
       throw new BadRequestException(errorMessage);

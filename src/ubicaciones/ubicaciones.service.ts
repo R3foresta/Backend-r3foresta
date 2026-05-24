@@ -205,7 +205,9 @@ export class UbicacionesService {
 
     if (tiposByOrdenError) {
       console.error('❌ Error al obtener tipo flexible:', tiposByOrdenError);
-      throw new InternalServerErrorException('Error al obtener tipo de división');
+      throw new InternalServerErrorException(
+        'Error al obtener tipo de división',
+      );
     }
 
     const flexibleNames = new Set([
@@ -253,7 +255,10 @@ export class UbicacionesService {
       .single();
 
     if (divisionCreadaError || !divisionCreada) {
-      console.error('❌ Error al crear división flexible:', divisionCreadaError);
+      console.error(
+        '❌ Error al crear división flexible:',
+        divisionCreadaError,
+      );
       throw new InternalServerErrorException(
         'Error al crear división administrativa flexible',
       );
@@ -265,7 +270,9 @@ export class UbicacionesService {
         id: Number(divisionCreada.id),
         pais_id: Number(divisionCreada.pais_id),
         parent_id:
-          divisionCreada.parent_id === null ? null : Number(divisionCreada.parent_id),
+          divisionCreada.parent_id === null
+            ? null
+            : Number(divisionCreada.parent_id),
         tipo_id: Number(divisionCreada.tipo_id),
         nombre: divisionCreada.nombre,
       },
@@ -273,4 +280,3 @@ export class UbicacionesService {
     };
   }
 }
-

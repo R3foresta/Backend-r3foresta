@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../../supabase/supabase.service';
 
@@ -37,7 +41,9 @@ export class UbicacionesReadService {
     private readonly configService: ConfigService,
   ) {}
 
-  async getUbicacionesByIds(ids: number[]): Promise<Map<number, UbicacionApiDto>> {
+  async getUbicacionesByIds(
+    ids: number[],
+  ): Promise<Map<number, UbicacionApiDto>> {
     const uniqueIds = [...new Set(ids)].filter(
       (id): id is number => Number.isInteger(id) && id > 0,
     );
@@ -64,7 +70,7 @@ export class UbicacionesReadService {
     if (query.error) {
       this.logger.error(
         `Error consultando vista de ubicación ${viewName}`,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
         query.error.message,
       );
 
@@ -186,7 +192,10 @@ export class UbicacionesReadService {
     return null;
   }
 
-  private isRelationMissingError(error: { code?: string; message?: string }): boolean {
+  private isRelationMissingError(error: {
+    code?: string;
+    message?: string;
+  }): boolean {
     const message = (error.message || '').toLowerCase();
 
     return (
@@ -197,7 +206,10 @@ export class UbicacionesReadService {
     );
   }
 
-  private isColumnMissingError(error: { code?: string; message?: string }): boolean {
+  private isColumnMissingError(error: {
+    code?: string;
+    message?: string;
+  }): boolean {
     return error.code === '42703';
   }
 }

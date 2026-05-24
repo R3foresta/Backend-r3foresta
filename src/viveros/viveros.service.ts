@@ -35,13 +35,12 @@ export class ViverosService {
 
     const viveros = data || [];
     const ubicacionIds = viveros
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       .map((vivero: any) => vivero.ubicacion_id)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       .filter((id: any) => Number.isInteger(id) && id > 0);
-    const ubicaciones = await this.ubicacionesReadService.getUbicacionesByIds(
-      ubicacionIds,
-    );
+    const ubicaciones =
+      await this.ubicacionesReadService.getUbicacionesByIds(ubicacionIds);
 
     const dataMapped = viveros.map((vivero: any) => ({
       id: vivero.id,

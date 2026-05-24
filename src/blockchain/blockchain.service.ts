@@ -251,7 +251,10 @@ export class BlockchainService {
 
       this.logger.log(`✅ Verificación de ownership exitosa`);
     } catch (error: unknown) {
-      if (error instanceof Error && error.message.includes('PERMISO DENEGADO')) {
+      if (
+        error instanceof Error &&
+        error.message.includes('PERMISO DENEGADO')
+      ) {
         throw error; // Re-lanzar el error de ownership
       }
       // Si falla la verificación por otro motivo, continuar (tal vez el contrato no tiene owner())

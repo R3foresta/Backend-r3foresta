@@ -215,25 +215,23 @@ export class ViveroTimelineService {
     const eventosMapeados = eventos.map((evento) => {
       const eventoId = Number(evento.id);
 
-      const evidencias = (evidenciasPorEvento.get(eventoId) ?? []).map(
-        (ev) => {
-          // TODO(vivero-mvp): bucket hardcoded. Ver decisión pendiente en
-          //   vivero-evidencias.service.ts. Si se migra a bucket dedicado, sincronizar.
-          const { data: urlData } = supabase.storage
-            .from('recoleccion_fotos')
-            .getPublicUrl(ev.ruta_archivo);
+      const evidencias = (evidenciasPorEvento.get(eventoId) ?? []).map((ev) => {
+        // TODO(vivero-mvp): bucket hardcoded. Ver decisión pendiente en
+        //   vivero-evidencias.service.ts. Si se migra a bucket dedicado, sincronizar.
+        const { data: urlData } = supabase.storage
+          .from('recoleccion_fotos')
+          .getPublicUrl(ev.ruta_archivo);
 
-          return {
-            id: ev.id,
-            ruta_archivo: ev.ruta_archivo,
-            mime_type: ev.mime_type,
-            tipo_archivo: ev.tipo_archivo,
-            es_principal: ev.es_principal,
-            orden: ev.orden,
-            public_url: urlData.publicUrl,
-          };
-        },
-      );
+        return {
+          id: ev.id,
+          ruta_archivo: ev.ruta_archivo,
+          mime_type: ev.mime_type,
+          tipo_archivo: ev.tipo_archivo,
+          es_principal: ev.es_principal,
+          orden: ev.orden,
+          public_url: urlData.publicUrl,
+        };
+      });
 
       const responsable_nombre = this.buildNombreResponsable(evento.usuario);
 

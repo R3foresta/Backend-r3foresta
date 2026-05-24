@@ -8,8 +8,8 @@ import {
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CrearEvidenciaPendienteViveroDto } from '../api/dto/crear-evidencia-pendiente-vivero.dto';
-import { RegistrarMermaDto } from '../api/dto/registrar-merma.dto';
-import { CausaMermaVivero } from '../domain/enums/causa-merma-vivero.enum';
+import { RegistrarDespachoDto } from '../api/dto/registrar-despacho.dto';
+import { DestinoTipoVivero } from '../domain/enums/destino-tipo-vivero.enum';
 import { MotivoCierreLote } from '../domain/enums/motivo-cierre-lote.enum';
 import { ViveroAuthService } from './vivero-auth.service';
 import {
@@ -17,12 +17,14 @@ import {
   ViveroEvidenciasService,
 } from './vivero-evidencias.service';
 
-type RpcMermaResult = {
-  evento_merma_id: number;
+type RpcDespachoResult = {
+  evento_despacho_id: number;
   lote_vivero_id: number;
   codigo_trazabilidad: string;
-  cantidad_perdida: number;
-  causa_merma: CausaMermaVivero;
+  cantidad_despachada: number;
+  destino_tipo: DestinoTipoVivero;
+  destino_referencia: string;
+  comunidad_destino_id: number | null;
   saldo_vivo_antes: number;
   saldo_vivo_despues: number;
   evidencia_ids_vinculadas: number[];
@@ -30,12 +32,15 @@ type RpcMermaResult = {
   motivo_cierre: MotivoCierreLote | null;
 };
 
-type EventoMermaRow = {
+type EventoDespachoRow = {
   id: number;
   tipo_evento: string;
   fecha_evento: string;
   cantidad_afectada: number;
-  causa_merma: string;
+  destino_tipo: string | null;
+  destino_referencia: string | null;
+  comunidad_destino_id: number | null;
+  origen_despacho: string | null;
   saldo_vivo_antes: number | null;
   saldo_vivo_despues: number | null;
   observaciones: string | null;
@@ -60,8 +65,8 @@ type EvidenciaRow = {
 };
 
 @Injectable()
-export class ViveroMermaService {
-  private readonly logger = new Logger(ViveroMermaService.name);
+export class ViveroDespachoService {
+  private readonly logger = new Logger(ViveroDespachoService.name);
 
   constructor(
     private readonly supabaseService: SupabaseService,
@@ -70,8 +75,8 @@ export class ViveroMermaService {
   ) {}
 
   // ---------------------------------------------------------------------------
-  // POST :id/merma/evidencias-pendientes
-  // Sube fotos al storage antes de confirmar la merma.
+  // POST :id/despacho/evidencias-pendientes
+  // Sube fotos al storage antes de confirmar el despacho.
   // ---------------------------------------------------------------------------
   async crearEvidenciasPendientes(
     loteId: number,
@@ -89,7 +94,7 @@ export class ViveroMermaService {
 
     if (loteError) {
       this.logger.error(
-        'Error al verificar lote para evidencias de merma:',
+        'Error al verificar lote para evidencias de despacho:',
         loteError,
       );
       throw new InternalServerErrorException('Error al verificar el lote');
@@ -101,7 +106,7 @@ export class ViveroMermaService {
 
     if (lote.estado_lote !== 'ACTIVO') {
       throw new BadRequestException(
-        `El lote ${loteId} esta en estado ${lote.estado_lote}. No se pueden subir evidencias para merma.`,
+        `El lote ${loteId} esta en estado ${lote.estado_lote}. No se pueden subir evidencias para despacho.`,
       );
     }
 
@@ -121,7 +126,7 @@ export class ViveroMermaService {
 
       if (updateError) {
         this.logger.warn(
-          'No se pudo actualizar codigo_trazabilidad en evidencias pendientes de merma:',
+          'No se pudo actualizar codigo_trazabilidad en evidencias pendientes de despacho:',
           updateError,
         );
       }
@@ -147,49 +152,66 @@ export class ViveroMermaService {
   }
 
   // ---------------------------------------------------------------------------
-  // POST :id/merma
-  // Llama la RPC fn_vivero_registrar_merma en una sola transaccion.
+  // POST :id/despacho
+  // Llama la RPC fn_vivero_registrar_despacho en una sola transaccion.
+  // La RPC ya rechaza destino_tipo = 'PLANTACION_CAMPANIA'; aca lo bloqueamos
+  // tambien a nivel API por defensa en profundidad (y porque el enum publico
+  // DestinoTipoVivero no lo expone, asi que la validacion del DTO lo deberia
+  // haber filtrado antes de llegar aca).
   // ---------------------------------------------------------------------------
-  async registrar(loteId: number, dto: RegistrarMermaDto, authId: string) {
+  async registrar(loteId: number, dto: RegistrarDespachoDto, authId: string) {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertCanWrite(usuario.rol);
+
+    if ((dto.destino_tipo as string) === 'PLANTACION_CAMPANIA') {
+      throw new BadRequestException(
+        'destino_tipo PLANTACION_CAMPANIA esta reservado para despachos automaticos generados desde Modulo 3.',
+      );
+    }
 
     const supabase = this.supabaseService.getClient();
 
     const { data, error } = await supabase
-      .rpc('fn_vivero_registrar_merma', {
+      .rpc('fn_vivero_registrar_despacho', {
         p_lote_id: loteId,
         p_fecha_evento: dto.fecha_evento,
         p_responsable_id: usuario.id,
-        p_cantidad_perdida: dto.cantidad_afectada,
-        p_causa_merma: dto.causa_merma,
+        p_cantidad_despachada: dto.cantidad_afectada,
+        p_destino_tipo: dto.destino_tipo,
+        p_destino_referencia: dto.destino_referencia,
+        p_comunidad_destino_id: dto.comunidad_destino_id ?? null,
         p_observaciones: dto.observaciones ?? null,
         p_evidencia_ids: dto.evidencia_ids,
       })
       .single();
 
     if (error) {
-      this.logger.error('Error al registrar merma:', error);
+      this.logger.error('Error al registrar despacho:', error);
       throw new BadRequestException(
-        error.message || 'No se pudo registrar la merma.',
+        error.message || 'No se pudo registrar el despacho.',
       );
     }
 
-    const row = data as RpcMermaResult;
+    const row = data as RpcDespachoResult;
 
     const message = row.lote_finalizado
-      ? 'Merma registrada correctamente. El lote ha sido cerrado automaticamente por saldo en 0.'
-      : 'Merma registrada correctamente.';
+      ? 'Despacho registrado correctamente. El lote ha sido cerrado automaticamente por saldo en 0.'
+      : 'Despacho registrado correctamente.';
 
     return {
       success: true,
       data: {
         message,
-        evento_merma_id: Number(row.evento_merma_id),
+        evento_despacho_id: Number(row.evento_despacho_id),
         lote_vivero_id: Number(row.lote_vivero_id),
         codigo_trazabilidad: row.codigo_trazabilidad,
-        cantidad_perdida: Number(row.cantidad_perdida),
-        causa_merma: row.causa_merma,
+        cantidad_despachada: Number(row.cantidad_despachada),
+        destino_tipo: row.destino_tipo,
+        destino_referencia: row.destino_referencia,
+        comunidad_destino_id:
+          row.comunidad_destino_id !== null
+            ? Number(row.comunidad_destino_id)
+            : null,
         saldo_vivo_antes: Number(row.saldo_vivo_antes),
         saldo_vivo_despues: Number(row.saldo_vivo_despues),
         evidencia_ids_vinculadas: (row.evidencia_ids_vinculadas ?? []).map(
@@ -202,46 +224,53 @@ export class ViveroMermaService {
   }
 
   // ---------------------------------------------------------------------------
-  // GET :id/merma
-  // Devuelve todos los eventos MERMA del lote con sus evidencias.
+  // GET :id/despacho
+  // Devuelve todos los eventos DESPACHO del lote con sus evidencias.
   // ---------------------------------------------------------------------------
-  async obtenerMermas(loteId: number) {
+  async obtenerDespachos(loteId: number) {
     const supabase = this.supabaseService.getClient();
 
-    const { data: lote, error: loteError } = await supabase
+    const { data: loteData, error: loteError } = await supabase
       .from('lote_vivero')
-      .select('id, saldo_vivo_actual')
+      .select('id, saldo_vivo_actual, estado_lote, motivo_cierre')
       .eq('id', loteId)
       .maybeSingle();
 
     if (loteError) {
-      this.logger.error('Error al obtener lote para mermas:', loteError);
+      this.logger.error('Error al obtener lote para despachos:', loteError);
       throw new InternalServerErrorException('Error al obtener datos del lote');
     }
 
-    if (!lote) {
+    if (!loteData) {
       throw new NotFoundException(`Lote de vivero ${loteId} no encontrado`);
     }
+
+    const lote = loteData as {
+      id: number;
+      saldo_vivo_actual: number | null;
+      estado_lote: string;
+      motivo_cierre: MotivoCierreLote | null;
+    };
 
     const { data: eventos, error: eventosError } = await supabase
       .from('evento_lote_vivero')
       .select(
-        'id, tipo_evento, fecha_evento, cantidad_afectada, causa_merma, saldo_vivo_antes, saldo_vivo_despues, observaciones, responsable_id, created_at',
+        'id, tipo_evento, fecha_evento, cantidad_afectada, destino_tipo, destino_referencia, comunidad_destino_id, origen_despacho, saldo_vivo_antes, saldo_vivo_despues, observaciones, responsable_id, created_at',
       )
       .eq('lote_id', loteId)
-      .eq('tipo_evento', 'MERMA')
+      .eq('tipo_evento', 'DESPACHO')
       .order('created_at', { ascending: true });
 
     if (eventosError) {
-      this.logger.error('Error al obtener eventos MERMA:', eventosError);
+      this.logger.error('Error al obtener eventos DESPACHO:', eventosError);
       throw new InternalServerErrorException(
-        'Error al obtener los eventos de merma',
+        'Error al obtener los eventos de despacho',
       );
     }
 
-    const eventosList = (eventos ?? []) as EventoMermaRow[];
+    const eventosList = (eventos ?? []) as EventoDespachoRow[];
 
-    const mermasConEvidencias = await Promise.all(
+    const despachosConEvidencias = await Promise.all(
       eventosList.map(async (evento) => {
         const eventoId = Number(evento.id);
         const evidencias = await this.obtenerEvidenciasDelEvento(
@@ -253,7 +282,13 @@ export class ViveroMermaService {
           id: eventoId,
           fecha_evento: evento.fecha_evento,
           cantidad_afectada: Number(evento.cantidad_afectada),
-          causa_merma: evento.causa_merma,
+          destino_tipo: evento.destino_tipo,
+          destino_referencia: evento.destino_referencia,
+          comunidad_destino_id:
+            evento.comunidad_destino_id !== null
+              ? Number(evento.comunidad_destino_id)
+              : null,
+          origen_despacho: evento.origen_despacho,
           saldo_vivo_antes:
             evento.saldo_vivo_antes !== null
               ? Number(evento.saldo_vivo_antes)
@@ -274,12 +309,14 @@ export class ViveroMermaService {
       success: true,
       data: {
         lote_id: loteId,
+        estado_lote: lote.estado_lote,
+        motivo_cierre: lote.motivo_cierre ?? null,
         saldo_vivo_actual:
           lote.saldo_vivo_actual !== null
             ? Number(lote.saldo_vivo_actual)
             : null,
-        total_mermas: mermasConEvidencias.length,
-        mermas: mermasConEvidencias,
+        total_despachos: despachosConEvidencias.length,
+        despachos: despachosConEvidencias,
       },
     };
   }
@@ -313,15 +350,13 @@ export class ViveroMermaService {
 
     if (evError) {
       this.logger.warn(
-        'Error al obtener evidencias del evento MERMA:',
+        'Error al obtener evidencias del evento DESPACHO:',
         evError,
       );
       return [];
     }
 
     return ((evidenciasData ?? []) as EvidenciaRow[]).map((ev) => {
-      // TODO(vivero-mvp): bucket hardcoded. Ver decisión pendiente en
-      //   vivero-evidencias.service.ts. Si se migra a bucket dedicado, sincronizar.
       const { data: publicUrlData } = supabase.storage
         .from('recoleccion_fotos')
         .getPublicUrl(ev.ruta_archivo);

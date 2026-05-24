@@ -79,7 +79,8 @@ export class FiltersRecoleccionDto {
   q?: string;
 
   @ApiPropertyOptional({
-    description: 'Buscar por código de trazabilidad, observaciones o datos de planta (científico/común)',
+    description:
+      'Buscar por código de trazabilidad, observaciones o datos de planta (científico/común)',
     example: 'ceibo',
   })
   @IsOptional()

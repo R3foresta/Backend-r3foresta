@@ -63,7 +63,9 @@ function applyMethodDecorator(decorator: MethodDecorator): Function {
 }
 
 function getOperation(fn: Function) {
-  return Reflect.getMetadata(SWAGGER_OPERATION, fn) as Record<string, any> | undefined;
+  return Reflect.getMetadata(SWAGGER_OPERATION, fn) as
+    | Record<string, any>
+    | undefined;
 }
 
 /**
@@ -78,9 +80,12 @@ function getResponsesObj(fn: Function): Record<string, any> {
  * Parametros: ApiParam, ApiQuery y ApiHeader los almacena createParamDecorator
  * como un array en descriptor.value.
  */
-function getParameters(
-  fn: Function,
-): Array<{ in: string; name?: string; description?: string; schema?: { enum?: any[] } }> {
+function getParameters(fn: Function): Array<{
+  in: string;
+  name?: string;
+  description?: string;
+  schema?: { enum?: any[] };
+}> {
   return Reflect.getMetadata(SWAGGER_PARAMETERS, fn) ?? [];
 }
 
@@ -143,7 +148,9 @@ describe('ApiCrearEvidenciaPendiente', () => {
 
   it('incluye el header x-auth-id en los parametros', () => {
     const params = getParameters(fn);
-    const header = params.find((p) => p.in === 'header' && p.name === 'x-auth-id');
+    const header = params.find(
+      (p) => p.in === 'header' && p.name === 'x-auth-id',
+    );
     expect(header).toBeDefined();
   });
 
@@ -153,7 +160,9 @@ describe('ApiCrearEvidenciaPendiente', () => {
   });
 
   it('expone los codigos de respuesta 201, 400, 401 y 500', () => {
-    expect(getStatusCodes(fn)).toEqual(expect.arrayContaining([201, 400, 401, 500]));
+    expect(getStatusCodes(fn)).toEqual(
+      expect.arrayContaining([201, 400, 401, 500]),
+    );
   });
 });
 
@@ -175,12 +184,16 @@ describe('ApiCrearLoteDesdeRecoleccion', () => {
 
   it('incluye el header x-auth-id', () => {
     const params = getParameters(fn);
-    const header = params.find((p) => p.in === 'header' && p.name === 'x-auth-id');
+    const header = params.find(
+      (p) => p.in === 'header' && p.name === 'x-auth-id',
+    );
     expect(header).toBeDefined();
   });
 
   it('expone los codigos de respuesta 201, 400, 401, 404 y 500', () => {
-    expect(getStatusCodes(fn)).toEqual(expect.arrayContaining([201, 400, 401, 404, 500]));
+    expect(getStatusCodes(fn)).toEqual(
+      expect.arrayContaining([201, 400, 401, 404, 500]),
+    );
   });
 
   it('el esquema del body incluye todos los valores del enum UnidadMedidaVivero', () => {
@@ -188,7 +201,9 @@ describe('ApiCrearLoteDesdeRecoleccion', () => {
     const bodyParam = params.find((p) => p.in === 'body');
     const enumValues =
       bodyParam?.schema?.properties?.unidad_medida_inicial?.enum ?? [];
-    expect(enumValues).toEqual(expect.arrayContaining(Object.values(UnidadMedidaVivero)));
+    expect(enumValues).toEqual(
+      expect.arrayContaining(Object.values(UnidadMedidaVivero)),
+    );
   });
 });
 
@@ -210,7 +225,9 @@ describe('ApiRegistrarEmbolsado', () => {
 
   it('incluye el header x-auth-id', () => {
     const params = getParameters(fn);
-    expect(params.find((p) => p.in === 'header' && p.name === 'x-auth-id')).toBeDefined();
+    expect(
+      params.find((p) => p.in === 'header' && p.name === 'x-auth-id'),
+    ).toBeDefined();
   });
 
   it('declara el parametro de ruta :id', () => {
@@ -220,7 +237,9 @@ describe('ApiRegistrarEmbolsado', () => {
   });
 
   it('expone los codigos de respuesta 201, 400, 401, 404 y 500', () => {
-    expect(getStatusCodes(fn)).toEqual(expect.arrayContaining([201, 400, 401, 404, 500]));
+    expect(getStatusCodes(fn)).toEqual(
+      expect.arrayContaining([201, 400, 401, 404, 500]),
+    );
   });
 });
 
@@ -242,7 +261,9 @@ describe('ApiRegistrarAdaptabilidad', () => {
 
   it('declara el parametro de ruta :id', () => {
     const params = getParameters(fn);
-    expect(params.find((p) => p.in === 'path' && p.name === 'id')).toBeDefined();
+    expect(
+      params.find((p) => p.in === 'path' && p.name === 'id'),
+    ).toBeDefined();
   });
 
   it('el esquema del body incluye todos los valores del enum SubetapaAdaptabilidad', () => {
@@ -250,11 +271,15 @@ describe('ApiRegistrarAdaptabilidad', () => {
     const bodyParam = params.find((p) => p.in === 'body');
     const enumValues =
       bodyParam?.schema?.properties?.subetapa_destino?.enum ?? [];
-    expect(enumValues).toEqual(expect.arrayContaining(Object.values(SubetapaAdaptabilidad)));
+    expect(enumValues).toEqual(
+      expect.arrayContaining(Object.values(SubetapaAdaptabilidad)),
+    );
   });
 
   it('expone los codigos de respuesta 201, 400, 401, 404 y 500', () => {
-    expect(getStatusCodes(fn)).toEqual(expect.arrayContaining([201, 400, 401, 404, 500]));
+    expect(getStatusCodes(fn)).toEqual(
+      expect.arrayContaining([201, 400, 401, 404, 500]),
+    );
   });
 });
 
@@ -276,18 +301,24 @@ describe('ApiRegistrarMerma', () => {
 
   it('declara el parametro de ruta :id', () => {
     const params = getParameters(fn);
-    expect(params.find((p) => p.in === 'path' && p.name === 'id')).toBeDefined();
+    expect(
+      params.find((p) => p.in === 'path' && p.name === 'id'),
+    ).toBeDefined();
   });
 
   it('el esquema del body incluye todos los valores del enum CausaMermaVivero', () => {
     const params = getParameters(fn);
     const bodyParam = params.find((p) => p.in === 'body');
     const enumValues = bodyParam?.schema?.properties?.causa_merma?.enum ?? [];
-    expect(enumValues).toEqual(expect.arrayContaining(Object.values(CausaMermaVivero)));
+    expect(enumValues).toEqual(
+      expect.arrayContaining(Object.values(CausaMermaVivero)),
+    );
   });
 
   it('expone los codigos de respuesta 201, 400, 401, 404 y 500', () => {
-    expect(getStatusCodes(fn)).toEqual(expect.arrayContaining([201, 400, 401, 404, 500]));
+    expect(getStatusCodes(fn)).toEqual(
+      expect.arrayContaining([201, 400, 401, 404, 500]),
+    );
   });
 });
 
@@ -304,23 +335,29 @@ describe('ApiRegistrarDespacho', () => {
 
   it('define summary correcto en ApiOperation', () => {
     const op = getOperation(fn);
-    expect(op?.summary).toBe('Registrar despacho de plantas');
+    expect(op?.summary).toBe('Registrar despacho manual de plantas');
   });
 
   it('declara el parametro de ruta :id', () => {
     const params = getParameters(fn);
-    expect(params.find((p) => p.in === 'path' && p.name === 'id')).toBeDefined();
+    expect(
+      params.find((p) => p.in === 'path' && p.name === 'id'),
+    ).toBeDefined();
   });
 
   it('el esquema del body incluye todos los valores del enum DestinoTipoVivero', () => {
     const params = getParameters(fn);
     const bodyParam = params.find((p) => p.in === 'body');
     const enumValues = bodyParam?.schema?.properties?.destino_tipo?.enum ?? [];
-    expect(enumValues).toEqual(expect.arrayContaining(Object.values(DestinoTipoVivero)));
+    expect(enumValues).toEqual(
+      expect.arrayContaining(Object.values(DestinoTipoVivero)),
+    );
   });
 
   it('expone los codigos de respuesta 201, 400, 401, 404 y 500', () => {
-    expect(getStatusCodes(fn)).toEqual(expect.arrayContaining([201, 400, 401, 404, 500]));
+    expect(getStatusCodes(fn)).toEqual(
+      expect.arrayContaining([201, 400, 401, 404, 500]),
+    );
   });
 });
 
@@ -342,29 +379,41 @@ describe('ApiListarLotes', () => {
 
   it('declara los query params de paginacion (page, limit)', () => {
     const params = getParameters(fn);
-    const queryNames = params.filter((p) => p.in === 'query').map((p) => p.name);
+    const queryNames = params
+      .filter((p) => p.in === 'query')
+      .map((p) => p.name);
     expect(queryNames).toContain('page');
     expect(queryNames).toContain('limit');
   });
 
   it('declara el query param estado_lote con el enum EstadoLoteVivero', () => {
     const params = getParameters(fn);
-    const estadoParam = params.find((p) => p.in === 'query' && p.name === 'estado_lote');
+    const estadoParam = params.find(
+      (p) => p.in === 'query' && p.name === 'estado_lote',
+    );
     expect(estadoParam).toBeDefined();
     // ApiQuery con enum almacena los valores en schema.enum (via addEnumSchema)
-    expect(estadoParam?.schema?.enum).toEqual(expect.arrayContaining(Object.values(EstadoLoteVivero)));
+    expect(estadoParam?.schema?.enum).toEqual(
+      expect.arrayContaining(Object.values(EstadoLoteVivero)),
+    );
   });
 
   it('declara el query param motivo_cierre con el enum MotivoCierreLote', () => {
     const params = getParameters(fn);
-    const motivoParam = params.find((p) => p.in === 'query' && p.name === 'motivo_cierre');
+    const motivoParam = params.find(
+      (p) => p.in === 'query' && p.name === 'motivo_cierre',
+    );
     expect(motivoParam).toBeDefined();
-    expect(motivoParam?.schema?.enum).toEqual(expect.arrayContaining(Object.values(MotivoCierreLote)));
+    expect(motivoParam?.schema?.enum).toEqual(
+      expect.arrayContaining(Object.values(MotivoCierreLote)),
+    );
   });
 
   it('declara los query params de filtro: vivero_id, recoleccion_id, lote_vivero_id, fecha_inicio, fecha_fin, q', () => {
     const params = getParameters(fn);
-    const queryNames = params.filter((p) => p.in === 'query').map((p) => p.name);
+    const queryNames = params
+      .filter((p) => p.in === 'query')
+      .map((p) => p.name);
     expect(queryNames).toEqual(
       expect.arrayContaining([
         'vivero_id',
@@ -400,26 +449,36 @@ describe('ApiObtenerTimeline', () => {
 
   it('declara el parametro de ruta :id', () => {
     const params = getParameters(fn);
-    expect(params.find((p) => p.in === 'path' && p.name === 'id')).toBeDefined();
+    expect(
+      params.find((p) => p.in === 'path' && p.name === 'id'),
+    ).toBeDefined();
   });
 
   it('declara el query param tipo_evento con el enum TipoEventoVivero', () => {
     const params = getParameters(fn);
-    const tipoParam = params.find((p) => p.in === 'query' && p.name === 'tipo_evento');
+    const tipoParam = params.find(
+      (p) => p.in === 'query' && p.name === 'tipo_evento',
+    );
     expect(tipoParam).toBeDefined();
     // ApiQuery con enum almacena los valores en schema.enum (via addEnumSchema)
-    expect(tipoParam?.schema?.enum).toEqual(expect.arrayContaining(Object.values(TipoEventoVivero)));
+    expect(tipoParam?.schema?.enum).toEqual(
+      expect.arrayContaining(Object.values(TipoEventoVivero)),
+    );
   });
 
   it('declara los query params de filtro: responsable_id, fecha_inicio, fecha_fin', () => {
     const params = getParameters(fn);
-    const queryNames = params.filter((p) => p.in === 'query').map((p) => p.name);
+    const queryNames = params
+      .filter((p) => p.in === 'query')
+      .map((p) => p.name);
     expect(queryNames).toEqual(
       expect.arrayContaining(['responsable_id', 'fecha_inicio', 'fecha_fin']),
     );
   });
 
   it('expone los codigos de respuesta 200, 400, 404 y 500', () => {
-    expect(getStatusCodes(fn)).toEqual(expect.arrayContaining([200, 400, 404, 500]));
+    expect(getStatusCodes(fn)).toEqual(
+      expect.arrayContaining([200, 400, 404, 500]),
+    );
   });
 });

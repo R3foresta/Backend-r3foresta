@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUbicacionDto } from '../api/dto/create-ubicacion.dto';
 import { UbicacionesReadService } from '../../common/ubicaciones/ubicaciones-read.service';
 import { SupabaseService } from '../../supabase/supabase.service';

@@ -133,7 +133,9 @@ export class RecoleccionCreationService {
 
       for (let intento = 1; intento <= 5; intento++) {
         codigoTrazabilidad =
-          await this.codigosService.generateCodigoTrazabilidad(fechaRecoleccion);
+          await this.codigosService.generateCodigoTrazabilidad(
+            fechaRecoleccion,
+          );
 
         const result = await supabase
           .from('recoleccion')
@@ -165,7 +167,11 @@ export class RecoleccionCreationService {
           break;
         }
 
-        if (this.codigosService.isCodigoTrazabilidadDuplicateError(recoleccionError)) {
+        if (
+          this.codigosService.isCodigoTrazabilidadDuplicateError(
+            recoleccionError,
+          )
+        ) {
           this.logger.warn(
             `⚠️ Colisión de código de trazabilidad (${codigoTrazabilidad}), reintentando (${intento}/5)...`,
           );

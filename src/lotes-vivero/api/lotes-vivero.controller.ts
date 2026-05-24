@@ -18,12 +18,14 @@ import { LotesViveroService } from '../application/lotes-vivero.service';
 import {
   ApiCrearEvidenciaPendiente,
   ApiCrearEvidenciasPendientesAdaptabilidad,
+  ApiCrearEvidenciasPendientesDespacho,
   ApiCrearEvidenciasPendientesEmbolsado,
   ApiCrearEvidenciasPendientesMerma,
   ApiCrearLoteDesdeRecoleccion,
   ApiListarLotes,
   ApiObtenerAdaptabilidades,
   ApiObtenerContextoEmbolsado,
+  ApiObtenerDespachos,
   ApiObtenerDetalleLote,
   ApiObtenerMermas,
   ApiObtenerResultadoEmbolsado,
@@ -197,6 +199,23 @@ export class LotesViveroController {
     );
   }
 
+  @Post(':id/despacho/evidencias-pendientes')
+  @ApiCrearEvidenciasPendientesDespacho()
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
+  crearEvidenciasPendientesDespacho(
+    @Param('id', ParseIntPipe) loteId: number,
+    @Body() dto: CrearEvidenciaPendienteViveroDto,
+    @Headers('x-auth-id') authId?: string,
+    @UploadedFiles() files?: { fotos?: any[] },
+  ) {
+    return this.lotesViveroService.crearEvidenciasPendientesDespacho(
+      loteId,
+      dto,
+      this.requireAuthId(authId),
+      files?.fotos || [],
+    );
+  }
+
   @Post(':id/despacho')
   @ApiRegistrarDespacho()
   registrarDespacho(
@@ -209,6 +228,12 @@ export class LotesViveroController {
       dto,
       this.requireAuthId(authId),
     );
+  }
+
+  @Get(':id/despacho')
+  @ApiObtenerDespachos()
+  obtenerDespachos(@Param('id', ParseIntPipe) loteId: number) {
+    return this.lotesViveroService.obtenerDespachos(loteId);
   }
 
   @Get(':id/merma')

@@ -10,4 +10,3 @@ import { EvidenciasTrazabilidadService } from './evidencias-trazabilidad.service
   exports: [EvidenciasTrazabilidadService],
 })
 export class EvidenciasTrazabilidadModule {}
-

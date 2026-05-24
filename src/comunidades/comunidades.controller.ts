@@ -81,8 +81,14 @@ export class ComunidadesController {
   @ApiBody({ type: CreateComunidadDto })
   @ApiResponse({ status: 201, description: 'Comunidad creada correctamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 404, description: 'País, municipio o tipos no encontrados' })
-  @ApiResponse({ status: 409, description: 'Comunidad duplicada en el municipio' })
+  @ApiResponse({
+    status: 404,
+    description: 'País, municipio o tipos no encontrados',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Comunidad duplicada en el municipio',
+  })
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   async crear(@Body() payload: CreateComunidadDto) {
     return this.comunidadesService.crear(payload);
@@ -91,14 +97,24 @@ export class ComunidadesController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Actualizar comunidad',
-    description: 'Permite actualizar nombre, municipio padre y/o estado activo.',
+    description:
+      'Permite actualizar nombre, municipio padre y/o estado activo.',
   })
   @ApiParam({ name: 'id', type: Number, description: 'ID de la comunidad' })
   @ApiBody({ type: UpdateComunidadDto })
-  @ApiResponse({ status: 200, description: 'Comunidad actualizada correctamente' })
+  @ApiResponse({
+    status: 200,
+    description: 'Comunidad actualizada correctamente',
+  })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 404, description: 'Comunidad o municipio no encontrados' })
-  @ApiResponse({ status: 409, description: 'Comunidad duplicada en el municipio' })
+  @ApiResponse({
+    status: 404,
+    description: 'Comunidad o municipio no encontrados',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Comunidad duplicada en el municipio',
+  })
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   async actualizar(
     @Param('id', ParseIntPipe) id: number,
@@ -113,7 +129,10 @@ export class ComunidadesController {
     description: 'Realiza soft delete estableciendo activo=false.',
   })
   @ApiParam({ name: 'id', type: Number, description: 'ID de la comunidad' })
-  @ApiResponse({ status: 200, description: 'Comunidad desactivada correctamente' })
+  @ApiResponse({
+    status: 200,
+    description: 'Comunidad desactivada correctamente',
+  })
   @ApiResponse({ status: 404, description: 'Comunidad no encontrada' })
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   async desactivar(@Param('id', ParseIntPipe) id: number) {

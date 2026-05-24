@@ -18,7 +18,9 @@ function createQueryBuilder(result: { data: any; error: any }) {
 
 describe('ViveroEvidenciasService', () => {
   let service: ViveroEvidenciasService;
-  let authService: jest.Mocked<Pick<ViveroAuthService, 'getUserByAuthId' | 'assertCanWrite'>>;
+  let authService: jest.Mocked<
+    Pick<ViveroAuthService, 'getUserByAuthId' | 'assertCanWrite'>
+  >;
   let from: jest.Mock;
   let upload: jest.Mock;
   let remove: jest.Mock;

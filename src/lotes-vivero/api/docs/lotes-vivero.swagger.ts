@@ -272,7 +272,8 @@ export function ApiRegistrarAdaptabilidad() {
             type: 'string',
             enum: Object.values(SubetapaAdaptabilidad),
             example: SubetapaAdaptabilidad.MEDIA_SOMBRA,
-            description: 'Subetapa a la que avanza el lote. Sin orden obligatorio.',
+            description:
+              'Subetapa a la que avanza el lote. Sin orden obligatorio.',
           },
           evidencia_ids: {
             type: 'array',
@@ -300,7 +301,10 @@ export function ApiRegistrarAdaptabilidad() {
         'Datos invalidos, lote sin EMBOLSADO previo, lote FINALIZADO, fecha invalida o evidencia ya vinculada.',
     }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
-    ApiResponse({ status: 403, description: 'Rol del usuario sin permiso de escritura' }),
+    ApiResponse({
+      status: 403,
+      description: 'Rol del usuario sin permiso de escritura',
+    }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
@@ -323,7 +327,12 @@ export function ApiRegistrarMerma() {
     ApiBody({
       schema: {
         type: 'object',
-        required: ['fecha_evento', 'cantidad_afectada', 'causa_merma', 'evidencia_ids'],
+        required: [
+          'fecha_evento',
+          'cantidad_afectada',
+          'causa_merma',
+          'evidencia_ids',
+        ],
         properties: {
           fecha_evento: {
             type: 'string',
@@ -334,7 +343,8 @@ export function ApiRegistrarMerma() {
             type: 'integer',
             minimum: 1,
             example: 5,
-            description: 'Numero de plantas perdidas. No puede superar el saldo vivo disponible.',
+            description:
+              'Numero de plantas perdidas. No puede superar el saldo vivo disponible.',
           },
           causa_merma: {
             type: 'string',
@@ -368,7 +378,10 @@ export function ApiRegistrarMerma() {
         'Datos invalidos, lote sin EMBOLSADO previo, cantidad supera saldo, evidencia ya vinculada o eliminada.',
     }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
-    ApiResponse({ status: 403, description: 'Rol del usuario sin permiso de escritura' }),
+    ApiResponse({
+      status: 403,
+      description: 'Rol del usuario sin permiso de escritura',
+    }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
@@ -377,9 +390,9 @@ export function ApiRegistrarMerma() {
 export function ApiRegistrarDespacho() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Registrar despacho de plantas',
+      summary: 'Registrar despacho manual de plantas',
       description:
-        'Registra la salida de plantas del vivero hacia un destino. Si el stock llega a cero, el lote se cierra automaticamente.',
+        'Registra la salida de plantas del vivero hacia un destino llamando la RPC fn_vivero_registrar_despacho en una sola transaccion. El responsable_id sale del usuario autenticado (x-auth-id), nunca del body. Requiere EMBOLSADO previo y al menos una evidencia. Si el stock llega a cero, el lote se cierra automaticamente. El destino PLANTACION_CAMPANIA esta reservado para despachos automaticos del Modulo 3 y se rechaza en este endpoint.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -396,6 +409,7 @@ export function ApiRegistrarDespacho() {
           'cantidad_afectada',
           'destino_tipo',
           'destino_referencia',
+          'evidencia_ids',
         ],
         properties: {
           fecha_evento: {
@@ -407,12 +421,15 @@ export function ApiRegistrarDespacho() {
             type: 'integer',
             minimum: 1,
             example: 50,
-            description: 'Numero de plantas despachadas',
+            description:
+              'Numero de plantas despachadas. No puede superar el saldo vivo disponible.',
           },
           destino_tipo: {
             type: 'string',
             enum: Object.values(DestinoTipoVivero),
             example: DestinoTipoVivero.PLANTACION_PROPIA,
+            description:
+              'Destino del despacho. PLANTACION_CAMPANIA NO esta permitido aqui (es exclusivo de M3).',
           },
           destino_referencia: {
             type: 'string',
@@ -425,7 +442,15 @@ export function ApiRegistrarDespacho() {
             minimum: 1,
             example: 3,
             description:
-              'ID de la comunidad destino (requerido si destino_tipo es DONACION_COMUNIDAD)',
+              'ID de la comunidad destino (opcional). Recomendado cuando destino_tipo refiere a una comunidad (PLANTACION_COMUNIDAD, DONACION).',
+          },
+          evidencia_ids: {
+            type: 'array',
+            items: { type: 'integer', minimum: 1 },
+            minItems: 1,
+            example: [305, 306],
+            description:
+              'IDs de evidencias pendientes obtenidos en POST :id/despacho/evidencias-pendientes. Obligatorio (RN-VIV-23).',
           },
           observaciones: {
             type: 'string',
@@ -437,13 +462,92 @@ export function ApiRegistrarDespacho() {
     }),
     ApiResponse({
       status: 201,
-      description: 'Despacho registrado exitosamente',
+      description:
+        'Despacho registrado. Devuelve { success: true, data } con evento_despacho_id, saldo_vivo_antes, saldo_vivo_despues, evidencia_ids_vinculadas, lote_finalizado y motivo_cierre.',
     }),
     ApiResponse({
       status: 400,
-      description: 'Datos invalidos o cantidad supera el stock disponible',
+      description:
+        'Datos invalidos, lote sin EMBOLSADO previo, cantidad supera saldo, destino PLANTACION_CAMPANIA usado, evidencia ya vinculada o eliminada.',
     }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 403,
+      description: 'Rol del usuario sin permiso de escritura',
+    }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
+export function ApiCrearEvidenciasPendientesDespacho() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Subir evidencias pendientes para despacho',
+      description:
+        'Sube fotos al storage y crea registros en evidencias_trazabilidad con entidad_id=0, vinculando el codigo_trazabilidad del lote. Los IDs retornados deben enviarse en POST :id/despacho.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
+    ApiConsumes('multipart/form-data'),
+    ApiBody({
+      description: 'Fotos de evidencia para el despacho',
+      schema: {
+        type: 'object',
+        required: ['fotos'],
+        properties: {
+          titulo: {
+            type: 'string',
+            maxLength: 120,
+            example: 'Despacho a comunidad',
+          },
+          descripcion: {
+            type: 'string',
+            maxLength: 1000,
+            example: 'Carga de plantas en camion para entrega',
+          },
+          fotos: {
+            type: 'array',
+            items: { type: 'string', format: 'binary' },
+            description: 'Archivos de imagen (max 5, solo JPG/JPEG/PNG)',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 201,
+      description:
+        'Evidencias pendientes creadas. Devuelve { success: true, data } con evidencia_ids y evidencias con codigo_trazabilidad del lote.',
+    }),
+    ApiResponse({ status: 400, description: 'Sin fotos o lote no ACTIVO' }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
+export function ApiObtenerDespachos() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Consultar despachos registrados del lote',
+      description:
+        'Devuelve todos los eventos DESPACHO del lote en orden cronologico con sus evidencias vinculadas, origen_despacho (MANUAL / AUTOMATICO_PLANTACION) y el saldo vivo actual.',
+    }),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Devuelve { success: true, data } con lote_id, estado_lote, motivo_cierre, saldo_vivo_actual, total_despachos y despachos con evidencias.',
+    }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );

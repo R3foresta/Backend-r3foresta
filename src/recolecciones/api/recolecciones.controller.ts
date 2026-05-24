@@ -117,7 +117,9 @@ export class RecoleccionesController {
     }
 
     if (!userRole) {
-      throw new BadRequestException('Header x-user-role es requerido para validar');
+      throw new BadRequestException(
+        'Header x-user-role es requerido para validar',
+      );
     }
 
     return this.recoleccionesService.approveValidation(id, authId, userRole);
@@ -136,10 +138,17 @@ export class RecoleccionesController {
     }
 
     if (!userRole) {
-      throw new BadRequestException('Header x-user-role es requerido para rechazar');
+      throw new BadRequestException(
+        'Header x-user-role es requerido para rechazar',
+      );
     }
 
-    return this.recoleccionesService.rejectValidation(id, authId, userRole, dto);
+    return this.recoleccionesService.rejectValidation(
+      id,
+      authId,
+      userRole,
+      dto,
+    );
   }
 
   @Get('pending-validation')

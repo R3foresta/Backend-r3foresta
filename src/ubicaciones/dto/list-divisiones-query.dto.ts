@@ -13,4 +13,3 @@ export class ListDivisionesQueryDto {
   @Min(1, { message: 'parent_id debe ser mayor a 0' })
   parent_id?: number;
 }
-

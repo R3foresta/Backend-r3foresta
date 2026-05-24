@@ -11,7 +11,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly supabaseService: SupabaseService) { }
+  constructor(private readonly supabaseService: SupabaseService) {}
 
   /**
    * Crea un nuevo usuario en Supabase
@@ -268,7 +268,9 @@ export class UsersService {
       .maybeSingle();
 
     if (existingDoc) {
-      throw new ConflictException('El documento de identidad ya está registrado');
+      throw new ConflictException(
+        'El documento de identidad ya está registrado',
+      );
     }
 
     // Check wallet_address if present
@@ -280,7 +282,9 @@ export class UsersService {
         .neq('auth_id', authId)
         .maybeSingle();
       if (existingWallet) {
-        throw new ConflictException('La dirección de wallet ya está registrada');
+        throw new ConflictException(
+          'La dirección de wallet ya está registrada',
+        );
       }
     }
 
@@ -315,7 +319,10 @@ export class UsersService {
   }
 
   // Método para actualizar la foto de perfil
-  async updateProfilePhoto(authId: string, file: Express.Multer.File): Promise<any> {
+  async updateProfilePhoto(
+    authId: string,
+    file: Express.Multer.File,
+  ): Promise<any> {
     const supabaseAdmin = this.supabaseService.getAdminClient();
 
     const fileExt = file.originalname.split('.').pop();
@@ -325,18 +332,15 @@ export class UsersService {
 
     // 🧹 PASO 1: Eliminar cualquier foto anterior en la carpeta del usuario
     // Listamos los archivos en la carpeta del usuario
-    const { data: existingFiles, error: listError } = await supabaseAdmin.storage
-      .from('imagenes-perfil')
-      .list(folderPath);
+    const { data: existingFiles, error: listError } =
+      await supabaseAdmin.storage.from('imagenes-perfil').list(folderPath);
 
     if (!listError && existingFiles && existingFiles.length > 0) {
       // Creamos un array con las rutas completas de los archivos a eliminar
       const filesToRemove = existingFiles.map((f) => `${folderPath}/${f.name}`);
 
       // Los eliminamos
-      await supabaseAdmin.storage
-        .from('imagenes-perfil')
-        .remove(filesToRemove);
+      await supabaseAdmin.storage.from('imagenes-perfil').remove(filesToRemove);
     }
 
     // 🚀 PASO 2: Subida al bucket usando el cliente Admin (bypasa RLS)
@@ -349,14 +353,16 @@ export class UsersService {
       });
 
     if (uploadError) {
-      throw new BadRequestException(`Error al subir imagen: ${uploadError.message}`);
+      throw new BadRequestException(
+        `Error al subir imagen: ${uploadError.message}`,
+      );
     }
 
     // Obtener URL (puede ser del cliente normal porque es público)
     const supabase = this.supabaseService.getClient();
-    const { data: { publicUrl } } = supabase.storage
-      .from('imagenes-perfil')
-      .getPublicUrl(filePath);
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from('imagenes-perfil').getPublicUrl(filePath);
 
     // 👇 Añadimos un query param "?v=timestamp" para obligar al navegador a recargar y no usar de su caché local
     const finalUrl = `${publicUrl}?v=${new Date().getTime()}`;

@@ -95,13 +95,11 @@ describe('ViveroEmbolsadoService', () => {
     } as unknown as SupabaseService;
 
     authService = {
-      getUserByAuthId: jest
-        .fn()
-        .mockResolvedValue({
-          id: USUARIO_ID,
-          nombre: 'Responsable',
-          rol: 'GENERAL',
-        }),
+      getUserByAuthId: jest.fn().mockResolvedValue({
+        id: USUARIO_ID,
+        nombre: 'Responsable',
+        rol: 'GENERAL',
+      }),
       assertCanWrite: jest.fn(),
     };
 
@@ -155,24 +153,20 @@ describe('ViveroEmbolsadoService', () => {
 
     it('devuelve puede_registrar_embolsado=false con motivo cuando el lote ya tiene EMBOLSADO', async () => {
       const loteChain = buildChain({
-        maybeSingle: jest
-          .fn()
-          .mockResolvedValue({
-            data: {
-              ...loteActivo,
-              plantas_vivas_iniciales: 100,
-              saldo_vivo_actual: 100,
-            },
-            error: null,
-          }),
+        maybeSingle: jest.fn().mockResolvedValue({
+          data: {
+            ...loteActivo,
+            plantas_vivas_iniciales: 100,
+            saldo_vivo_actual: 100,
+          },
+          error: null,
+        }),
       });
       const eventosChain = buildChain({
-        order: jest
-          .fn()
-          .mockResolvedValue({
-            data: [eventoInicio, eventoEmbolsado],
-            error: null,
-          }),
+        order: jest.fn().mockResolvedValue({
+          data: [eventoInicio, eventoEmbolsado],
+          error: null,
+        }),
       });
 
       fromMock = jest.fn().mockImplementation((tabla: string) => {
@@ -494,11 +488,9 @@ describe('ViveroEmbolsadoService', () => {
           rpc: jest.fn(),
           storage: {
             from: jest.fn().mockReturnValue({
-              getPublicUrl: jest
-                .fn()
-                .mockReturnValue({
-                  data: { publicUrl: 'https://storage/foto.jpg' },
-                }),
+              getPublicUrl: jest.fn().mockReturnValue({
+                data: { publicUrl: 'https://storage/foto.jpg' },
+              }),
             }),
           },
         }),

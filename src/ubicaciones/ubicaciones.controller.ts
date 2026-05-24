@@ -74,7 +74,10 @@ export class UbicacionesController {
     description: 'División creada correctamente o recuperada si ya existía',
   })
   @ApiResponse({ status: 400, description: 'Datos de entrada inválidos' })
-  @ApiResponse({ status: 404, description: 'División padre o tipo no encontrado' })
+  @ApiResponse({
+    status: 404,
+    description: 'División padre o tipo no encontrado',
+  })
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   async ensureFlexibleDivision(@Body() body: CreateFlexDivisionDto) {
     return this.ubicacionesService.ensureFlexibleDivision(body);

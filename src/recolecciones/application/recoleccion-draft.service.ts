@@ -40,7 +40,9 @@ export class RecoleccionDraftService {
     const supabase = this.supabaseService.getClient();
     const usuario = await this.authService.getUserByAuthId(authId);
     const recoleccion = await this.consultasService.getRawRecoleccion(id);
-    const estadoActual = String(recoleccion.estado_registro ?? '').toUpperCase();
+    const estadoActual = String(
+      recoleccion.estado_registro ?? '',
+    ).toUpperCase();
 
     if (
       estadoActual !== EstadoRegistro.BORRADOR &&
@@ -64,8 +66,10 @@ export class RecoleccionDraftService {
       updatePayload.fecha =
         FechaRecoleccionPolicy.assertFechaRecoleccionPermitida(dto.fecha);
     }
-    if (dto.tipo_material !== undefined) updatePayload.tipo_material = dto.tipo_material;
-    if (dto.observaciones !== undefined) updatePayload.observaciones = dto.observaciones;
+    if (dto.tipo_material !== undefined)
+      updatePayload.tipo_material = dto.tipo_material;
+    if (dto.observaciones !== undefined)
+      updatePayload.observaciones = dto.observaciones;
     if (dto.vivero_id !== undefined) updatePayload.vivero_id = dto.vivero_id;
     if (dto.metodo_id !== undefined) updatePayload.metodo_id = dto.metodo_id;
     if (dto.planta_id !== undefined) updatePayload.planta_id = dto.planta_id;
@@ -100,7 +104,8 @@ export class RecoleccionDraftService {
         tipoMaterialObjetivo,
       );
 
-      updatePayload.cantidad_inicial_canonica = canonicalInput.cantidad_canonica;
+      updatePayload.cantidad_inicial_canonica =
+        canonicalInput.cantidad_canonica;
       updatePayload.unidad_canonica = canonicalInput.unidad_canonica;
     }
 
@@ -149,7 +154,9 @@ export class RecoleccionDraftService {
 
         if (updateError) {
           this.logger.error('❌ Error al actualizar borrador:', updateError);
-          throw new InternalServerErrorException('Error al actualizar borrador');
+          throw new InternalServerErrorException(
+            'Error al actualizar borrador',
+          );
         }
 
         recoleccionActualizada = true;

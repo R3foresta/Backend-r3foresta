@@ -1,5 +1,13 @@
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 function transformOptionalBoolean(value: unknown): boolean | unknown {
   if (value === undefined || value === null || value === '') {

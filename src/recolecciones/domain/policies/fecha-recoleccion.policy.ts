@@ -1,4 +1,7 @@
-import { BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 
 const BUSINESS_TIME_ZONE = 'America/La_Paz';
 
@@ -47,7 +50,9 @@ export class FechaRecoleccionPolicy {
     const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
 
     if (!isoDatePattern.test(normalized)) {
-      throw new BadRequestException(`${fieldName} debe tener formato YYYY-MM-DD`);
+      throw new BadRequestException(
+        `${fieldName} debe tener formato YYYY-MM-DD`,
+      );
     }
 
     const parsed = new Date(`${normalized}T00:00:00Z`);
