@@ -29,6 +29,7 @@ import {
   ApiObtenerDetalleLote,
   ApiObtenerMermas,
   ApiObtenerResultadoEmbolsado,
+  ApiObtenerSaldos,
   ApiObtenerTimeline,
   ApiRegistrarAdaptabilidad,
   ApiRegistrarDespacho,
@@ -246,6 +247,12 @@ export class LotesViveroController {
   @ApiListarLotes()
   listarLotes(@Query() filters: FiltrarLotesViveroDto) {
     return this.lotesViveroService.listarLotes(filters);
+  }
+
+  @Get(':id/saldos')
+  @ApiObtenerSaldos()
+  obtenerSaldos(@Param('id', ParseIntPipe) loteId: number) {
+    return this.lotesViveroService.obtenerSaldos(loteId);
   }
 
   @Get(':id/timeline')

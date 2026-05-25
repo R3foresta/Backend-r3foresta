@@ -16,6 +16,7 @@ import {
   ViveroEvidenceFileInput,
   ViveroEvidenciasService,
 } from './vivero-evidencias.service';
+import { ViveroSaldosService } from './vivero-saldos.service';
 
 type RpcDespachoResult = {
   evento_despacho_id: number;
@@ -72,6 +73,7 @@ export class ViveroDespachoService {
     private readonly supabaseService: SupabaseService,
     private readonly authService: ViveroAuthService,
     private readonly evidenciasService: ViveroEvidenciasService,
+    private readonly saldosService: ViveroSaldosService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -168,6 +170,15 @@ export class ViveroDespachoService {
         'destino_tipo PLANTACION_CAMPANIA esta reservado para despachos automaticos generados desde Modulo 3.',
       );
     }
+
+    // Valida contra saldo_vivo_disponible_asignacion (saldo_vivo_actual menos reservas
+    // activas de subcampanas). Un DESPACHO MANUAL no puede tocar stock reservado.
+    const saldoDisponible = await this.saldosService.leerSaldoDisponible(loteId);
+    this.saldosService.assertCantidadNoExcedeSaldo(
+      dto.cantidad_afectada,
+      saldoDisponible,
+      loteId,
+    );
 
     const supabase = this.supabaseService.getClient();
 

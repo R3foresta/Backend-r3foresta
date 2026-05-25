@@ -18,6 +18,7 @@ import {
 } from './vivero-evidencias.service';
 import { ViveroInicioService } from './vivero-inicio.service';
 import { ViveroMermaService } from './vivero-merma.service';
+import { ViveroSaldosService } from './vivero-saldos.service';
 
 @Injectable()
 export class LotesViveroService {
@@ -30,6 +31,7 @@ export class LotesViveroService {
     private readonly adaptabilidadService: ViveroAdaptabilidadService,
     private readonly mermaService: ViveroMermaService,
     private readonly despachoService: ViveroDespachoService,
+    private readonly saldosService: ViveroSaldosService,
   ) {}
 
   crearEvidenciaPendiente(
@@ -154,5 +156,9 @@ export class LotesViveroService {
 
   obtenerTimeline(loteId: number, filters: FiltrarTimelineLoteDto) {
     return this.consultasService.obtenerTimeline(loteId, filters);
+  }
+
+  obtenerSaldos(loteId: number) {
+    return this.saldosService.obtenerSaldos(loteId);
   }
 }

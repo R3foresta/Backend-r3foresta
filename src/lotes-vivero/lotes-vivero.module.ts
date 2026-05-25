@@ -12,6 +12,7 @@ import { ViveroEventosService } from './application/vivero-eventos.service';
 import { ViveroEvidenciasService } from './application/vivero-evidencias.service';
 import { ViveroInicioService } from './application/vivero-inicio.service';
 import { ViveroMermaService } from './application/vivero-merma.service';
+import { ViveroSaldosService } from './application/vivero-saldos.service';
 import { ViveroSnapshotsService } from './application/vivero-snapshots.service';
 import { ViveroTimelineService } from './application/vivero-timeline.service';
 
@@ -30,6 +31,7 @@ import { ViveroTimelineService } from './application/vivero-timeline.service';
     ViveroEvidenciasService,
     ViveroInicioService,
     ViveroMermaService,
+    ViveroSaldosService,
     ViveroSnapshotsService,
     ViveroTimelineService,
   ],

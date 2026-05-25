@@ -917,6 +917,28 @@ export function ApiCrearEvidenciasPendientesAdaptabilidad() {
   );
 }
 
+export function ApiObtenerSaldos() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Consultar saldos derivados del lote',
+      description:
+        'Devuelve saldo_vivo_actual, saldo_asignado_total (suma de reservas activas para subcampanas) y saldo_vivo_disponible_asignacion (lo que puede despachar manualmente un operario). Incluye el detalle de cada asignacion ACTIVA con su saldo individual.',
+    }),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Devuelve { success: true, data } con lote_id, saldo_vivo_actual, saldo_asignado_total, saldo_vivo_disponible_asignacion y asignaciones_activas.',
+    }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
 export function ApiObtenerAdaptabilidades() {
   return applyDecorators(
     ApiOperation({
