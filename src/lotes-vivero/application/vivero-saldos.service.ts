@@ -1,9 +1,9 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
   NotFoundException,
-  UnprocessableEntityException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 
@@ -114,7 +114,7 @@ export class ViveroSaldosService {
     loteId: number,
   ): void {
     if (cantidad > saldoDisponible) {
-      throw new UnprocessableEntityException(
+      throw new BadRequestException(
         `La cantidad solicitada (${cantidad}) excede el saldo vivo disponible para asignacion del lote ${loteId} (${saldoDisponible}). Para despachar mas, primero devuelva las reservas activas.`,
       );
     }
