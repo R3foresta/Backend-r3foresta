@@ -173,7 +173,8 @@ export class ViveroDespachoService {
 
     // Valida contra saldo_vivo_disponible_asignacion (saldo_vivo_actual menos reservas
     // activas de subcampanas). Un DESPACHO MANUAL no puede tocar stock reservado.
-    const saldoDisponible = await this.saldosService.leerSaldoDisponible(loteId);
+    const saldoDisponible =
+      await this.saldosService.leerSaldoDisponible(loteId);
     this.saldosService.assertCantidadNoExcedeSaldo(
       dto.cantidad_afectada,
       saldoDisponible,

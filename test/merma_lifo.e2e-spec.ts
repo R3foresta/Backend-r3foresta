@@ -70,7 +70,13 @@ describe('MERMA LIFO - fn_vivero_registrar_merma', () => {
       const loteObj = await createLote(client, ref, tag, 100, 3);
       Object.assign(created, loteObj);
 
-      const subcampania = await createSubcampania(client, ref, tag, 'Cercana', 10);
+      const subcampania = await createSubcampania(
+        client,
+        ref,
+        tag,
+        'Cercana',
+        10,
+      );
       created.campaniaId = subcampania.campaniaId;
       created.subcampaniaIds.push(subcampania.subcampaniaId);
 
@@ -109,7 +115,9 @@ describe('MERMA LIFO - fn_vivero_registrar_merma', () => {
       const asigFinal = unwrap(
         await client
           .from('asignacion_vivero_subcampania')
-          .select('cantidad_asignada, cantidad_mermada, saldo_asignado_disponible')
+          .select(
+            'cantidad_asignada, cantidad_mermada, saldo_asignado_disponible',
+          )
           .eq('id', asig.id)
           .single(),
         'leer asignación simple',
@@ -151,11 +159,32 @@ describe('MERMA LIFO - fn_vivero_registrar_merma', () => {
       created.campaniaId = campania.id;
 
       // Sub1 cercana (10d) — protegida
-      const sub1 = await insertSubcampania(client, ref, tag, campania.id, 'Cercana', 10);
+      const sub1 = await insertSubcampania(
+        client,
+        ref,
+        tag,
+        campania.id,
+        'Cercana',
+        10,
+      );
       // Sub2 lejana (100d) — absorbe después de NULL
-      const sub2 = await insertSubcampania(client, ref, tag, campania.id, 'Lejana', 100);
+      const sub2 = await insertSubcampania(
+        client,
+        ref,
+        tag,
+        campania.id,
+        'Lejana',
+        100,
+      );
       // Sub3 sin fecha — absorbe primero
-      const sub3 = await insertSubcampania(client, ref, tag, campania.id, 'Nula', null);
+      const sub3 = await insertSubcampania(
+        client,
+        ref,
+        tag,
+        campania.id,
+        'Nula',
+        null,
+      );
       created.subcampaniaIds.push(sub1, sub2, sub3);
 
       // 20 cercana, 30 lejana, 10 nula → asignado total = 60, libre = 40
@@ -163,9 +192,27 @@ describe('MERMA LIFO - fn_vivero_registrar_merma', () => {
         await client
           .from('asignacion_vivero_subcampania')
           .insert([
-            { subcampania_id: sub1, lote_vivero_id: created.loteId, proposito: 'PLANTACION_INICIAL', cantidad_asignada: 20, usuario_asignacion_id: ref.userId },
-            { subcampania_id: sub2, lote_vivero_id: created.loteId, proposito: 'PLANTACION_INICIAL', cantidad_asignada: 30, usuario_asignacion_id: ref.userId },
-            { subcampania_id: sub3, lote_vivero_id: created.loteId, proposito: 'PLANTACION_INICIAL', cantidad_asignada: 10, usuario_asignacion_id: ref.userId },
+            {
+              subcampania_id: sub1,
+              lote_vivero_id: created.loteId,
+              proposito: 'PLANTACION_INICIAL',
+              cantidad_asignada: 20,
+              usuario_asignacion_id: ref.userId,
+            },
+            {
+              subcampania_id: sub2,
+              lote_vivero_id: created.loteId,
+              proposito: 'PLANTACION_INICIAL',
+              cantidad_asignada: 30,
+              usuario_asignacion_id: ref.userId,
+            },
+            {
+              subcampania_id: sub3,
+              lote_vivero_id: created.loteId,
+              proposito: 'PLANTACION_INICIAL',
+              cantidad_asignada: 10,
+              usuario_asignacion_id: ref.userId,
+            },
           ])
           .select('id, subcampania_id'),
         'crear asignaciones complejo',
@@ -189,22 +236,30 @@ describe('MERMA LIFO - fn_vivero_registrar_merma', () => {
       const asignacionesFinal = unwrap(
         await client
           .from('asignacion_vivero_subcampania')
-          .select('subcampania_id, cantidad_asignada, cantidad_mermada, saldo_asignado_disponible')
+          .select(
+            'subcampania_id, cantidad_asignada, cantidad_mermada, saldo_asignado_disponible',
+          )
           .eq('lote_vivero_id', created.loteId),
         'leer asignaciones',
       );
 
-      const asigCercana = asignacionesFinal.find((a) => a.subcampania_id === sub1)!;
+      const asigCercana = asignacionesFinal.find(
+        (a) => a.subcampania_id === sub1,
+      )!;
       expect(asigCercana.cantidad_asignada).toBe(20);
       expect(asigCercana.cantidad_mermada).toBe(0);
       expect(asigCercana.saldo_asignado_disponible).toBe(20);
 
-      const asigLejana = asignacionesFinal.find((a) => a.subcampania_id === sub2)!;
+      const asigLejana = asignacionesFinal.find(
+        (a) => a.subcampania_id === sub2,
+      )!;
       expect(asigLejana.cantidad_asignada).toBe(30);
       expect(asigLejana.cantidad_mermada).toBe(15);
       expect(asigLejana.saldo_asignado_disponible).toBe(15);
 
-      const asigNula = asignacionesFinal.find((a) => a.subcampania_id === sub3)!;
+      const asigNula = asignacionesFinal.find(
+        (a) => a.subcampania_id === sub3,
+      )!;
       expect(asigNula.cantidad_asignada).toBe(10);
       expect(asigNula.cantidad_mermada).toBe(10);
       expect(asigNula.saldo_asignado_disponible).toBe(0);
@@ -218,10 +273,20 @@ describe('MERMA LIFO - fn_vivero_registrar_merma', () => {
           .single(),
         'leer metadata',
       );
-      const metadata = eventoMerma.metadata as { afectacion_asignaciones: Array<{ subcampania_id: number; cantidad: number }> };
+      const metadata = eventoMerma.metadata as {
+        afectacion_asignaciones: Array<{
+          subcampania_id: number;
+          cantidad: number;
+        }>;
+      };
       expect(metadata.afectacion_asignaciones).toHaveLength(2);
 
-      const porSub = new Map(metadata.afectacion_asignaciones.map((x) => [x.subcampania_id, x.cantidad]));
+      const porSub = new Map(
+        metadata.afectacion_asignaciones.map((x) => [
+          x.subcampania_id,
+          x.cantidad,
+        ]),
+      );
       expect(porSub.get(sub3)).toBe(10);
       expect(porSub.get(sub2)).toBe(15);
 
@@ -271,7 +336,9 @@ describe('MERMA LIFO - fn_vivero_registrar_merma', () => {
         p_evidencia_ids: [created.evidenciaIds[2]],
       });
       expect(result.error).not.toBeNull();
-      expect(result.error?.message ?? '').toMatch(/no puede exceder el saldo vivo total/);
+      expect(result.error?.message ?? '').toMatch(
+        /no puede exceder el saldo vivo total/,
+      );
 
       // El saldo del lote permanece igual
       const lote = unwrap(
@@ -322,7 +389,11 @@ async function assertInvariante(
   saldoEsperado: number,
 ): Promise<void> {
   const lote = unwrap(
-    await client.from('lote_vivero').select('saldo_vivo_actual').eq('id', loteId).single(),
+    await client
+      .from('lote_vivero')
+      .select('saldo_vivo_actual')
+      .eq('id', loteId)
+      .single(),
     'leer lote invariante',
   );
   const asigs = unwrap(
@@ -343,7 +414,11 @@ async function assertInvariante(
   expect(sumaAsignaciones).toBeLessThanOrEqual(lote.saldo_vivo_actual);
 }
 
-async function createCampania(client: SupabaseClient, ref: RefData, tag: string) {
+async function createCampania(
+  client: SupabaseClient,
+  ref: RefData,
+  tag: string,
+) {
   const hoy = new Date().toISOString().slice(0, 10);
   return unwrap(
     await client
@@ -375,7 +450,9 @@ async function insertSubcampania(
 ): Promise<number> {
   const fechaInicio =
     diasOffset !== null
-      ? new Date(Date.now() + diasOffset * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+      ? new Date(Date.now() + diasOffset * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10)
       : null;
   const row = unwrap(
     await client
@@ -406,7 +483,14 @@ async function createSubcampania(
   diasOffset: number | null,
 ): Promise<{ campaniaId: number; subcampaniaId: number }> {
   const campania = await createCampania(client, ref, tag);
-  const subcampaniaId = await insertSubcampania(client, ref, tag, campania.id, etiqueta, diasOffset);
+  const subcampaniaId = await insertSubcampania(
+    client,
+    ref,
+    tag,
+    campania.id,
+    etiqueta,
+    diasOffset,
+  );
   return { campaniaId: campania.id, subcampaniaId };
 }
 
@@ -416,7 +500,12 @@ async function createLote(
   tag: string,
   cantidad: number,
   nEvidencias: number,
-): Promise<{ ubicacionId: number; recoleccionId: number; loteId: number; evidenciaIds: number[] }> {
+): Promise<{
+  ubicacionId: number;
+  recoleccionId: number;
+  loteId: number;
+  evidenciaIds: number[];
+}> {
   const fechaEvento = new Date().toISOString().slice(0, 10);
 
   const ubicacion = unwrap(
@@ -541,15 +630,30 @@ async function createLote(
 
 async function loadReferences(client: SupabaseClient): Promise<RefData> {
   const usuario = unwrap(
-    await client.from('usuario').select('id,nombre').in('rol', ['ADMIN', 'GENERAL']).limit(1).single(),
+    await client
+      .from('usuario')
+      .select('id,nombre')
+      .in('rol', ['ADMIN', 'GENERAL'])
+      .limit(1)
+      .single(),
     'user',
   );
   const planta = unwrap(
-    await client.from('planta').select('id,nombre_cientifico,variedad').limit(1).single(),
+    await client
+      .from('planta')
+      .select('id,nombre_cientifico,variedad')
+      .limit(1)
+      .single(),
     'planta',
   );
-  const vivero = unwrap(await client.from('vivero').select('id').limit(1).single(), 'vivero');
-  const metodo = unwrap(await client.from('metodo_recoleccion').select('id').limit(1).single(), 'metodo');
+  const vivero = unwrap(
+    await client.from('vivero').select('id').limit(1).single(),
+    'vivero',
+  );
+  const metodo = unwrap(
+    await client.from('metodo_recoleccion').select('id').limit(1).single(),
+    'metodo',
+  );
   const division = unwrap(
     await client
       .from('division_administrativa')
@@ -573,16 +677,28 @@ async function loadReferences(client: SupabaseClient): Promise<RefData> {
   };
 }
 
-async function cleanup(client: SupabaseClient, created: CreatedIds): Promise<void> {
+async function cleanup(
+  client: SupabaseClient,
+  created: CreatedIds,
+): Promise<void> {
   // Orden inverso a las dependencias FK
   if (created.asignacionIds.length > 0) {
-    await client.from('asignacion_vivero_subcampania').delete().in('id', created.asignacionIds);
+    await client
+      .from('asignacion_vivero_subcampania')
+      .delete()
+      .in('id', created.asignacionIds);
   }
   if (created.loteId !== undefined) {
-    await client.from('evento_lote_vivero').delete().eq('lote_id', created.loteId);
+    await client
+      .from('evento_lote_vivero')
+      .delete()
+      .eq('lote_id', created.loteId);
   }
   if (created.evidenciaIds.length > 0) {
-    await client.from('evidencias_trazabilidad').delete().in('id', created.evidenciaIds);
+    await client
+      .from('evidencias_trazabilidad')
+      .delete()
+      .in('id', created.evidenciaIds);
   }
   if (created.loteId !== undefined) {
     await client.from('lote_vivero').delete().eq('id', created.loteId);
@@ -603,19 +719,23 @@ async function cleanup(client: SupabaseClient, created: CreatedIds): Promise<voi
 
 function unwrap<T>(result: QueryResult<T>, context: string): T {
   if (result.error) throw new Error(`${context}: ${formatError(result.error)}`);
-  if (result.data === null) throw new Error(`${context}: la base no devolvió datos.`);
+  if (result.data === null)
+    throw new Error(`${context}: la base no devolvió datos.`);
   return result.data;
 }
 
 function unwrapRpcRow<T>(result: QueryResult<T[] | T>, context: string): T {
   const data = unwrap(result, context);
   if (Array.isArray(data)) {
-    if (data.length === 0) throw new Error(`${context}: la RPC no devolvió filas.`);
+    if (data.length === 0)
+      throw new Error(`${context}: la RPC no devolvió filas.`);
     return data[0];
   }
   return data;
 }
 
 function formatError(error: DbError): string {
-  return [error.message, error.details, error.hint, error.code].filter(Boolean).join(' | ');
+  return [error.message, error.details, error.hint, error.code]
+    .filter(Boolean)
+    .join(' | ');
 }
