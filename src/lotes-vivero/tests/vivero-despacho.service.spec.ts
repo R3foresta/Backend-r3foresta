@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { UnprocessableEntityException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { RegistrarDespachoDto } from '../api/dto/registrar-despacho.dto';
 import { ViveroAuthService } from '../application/vivero-auth.service';
@@ -66,13 +66,13 @@ describe('ViveroDespachoService', () => {
   it('rechaza el despacho manual si excede el saldo libre sin llamar la RPC', async () => {
     saldosService.leerSaldoDisponible.mockResolvedValue(30);
     saldosService.assertCantidadNoExcedeSaldo.mockImplementation(() => {
-      throw new BadRequestException(
+      throw new UnprocessableEntityException(
         'La cantidad solicitada excede el saldo vivo disponible para asignacion.',
       );
     });
 
     await expect(service.registrar(LOTE_ID, dto, AUTH_ID)).rejects.toThrow(
-      BadRequestException,
+      UnprocessableEntityException,
     );
 
     expect(saldosService.leerSaldoDisponible).toHaveBeenCalledWith(LOTE_ID);

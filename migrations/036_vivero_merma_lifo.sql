@@ -1,4 +1,4 @@
--- 035_vivero_merma_lifo.sql
+-- 036_vivero_merma_lifo.sql
 -- Implementa la politica LIFO de mermas sobre asignaciones (Tarea 04)
 -- Modifica el handler fn_vivero_registrar_merma para que la merma
 -- absorba primero el saldo no asignado, y el excedente se distribuya
@@ -225,18 +225,26 @@ BEGIN
   -- -----------------------------------------------------------------------
   -- 9. Bloqueo anti-deadlock de asignaciones y logica LIFO
   -- -----------------------------------------------------------------------
-  -- Bloquear filas en orden ASC por id para evitar deadlocks
+  -- Bloquear filas en orden ASC por id para evitar deadlocks.
+  -- El OFFSET 0 fuerza la materializacion de la subconsulta y garantiza
+  -- el orden de adquisicion de locks frente a planners alternativos.
+  -- Alias explicitos para evitar ambiguedad con la variable de salida lote_vivero_id.
   PERFORM 1
-  FROM public.asignacion_vivero_subcampania av
-  WHERE av.lote_vivero_id = p_lote_id AND av.estado = 'ACTIVA'
-  ORDER BY av.id ASC
-  FOR UPDATE;
+  FROM (
+    SELECT a.id
+    FROM public.asignacion_vivero_subcampania a
+    WHERE a.lote_vivero_id = p_lote_id AND a.estado = 'ACTIVA'
+    ORDER BY a.id ASC
+    OFFSET 0
+  ) ids
+  JOIN public.asignacion_vivero_subcampania av ON av.id = ids.id
+  FOR UPDATE OF av;
 
   -- Obtener la suma del saldo ya comprometido/asignado
-  SELECT COALESCE(SUM(saldo_asignado_disponible), 0)
+  SELECT COALESCE(SUM(av.saldo_asignado_disponible), 0)
   INTO v_saldo_asignado
-  FROM public.asignacion_vivero_subcampania
-  WHERE lote_vivero_id = p_lote_id AND estado = 'ACTIVA';
+  FROM public.asignacion_vivero_subcampania av
+  WHERE av.lote_vivero_id = p_lote_id AND av.estado = 'ACTIVA';
 
   v_saldo_no_asignado := v_lote.saldo_vivo_actual - v_saldo_asignado;
 
