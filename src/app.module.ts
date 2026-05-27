@@ -19,6 +19,7 @@ import { LotesViveroModule } from './lotes-vivero/lotes-vivero.module';
 import { PlantacionesModule } from './plantaciones/plantaciones.module';
 import { CampaniasModule } from './campanias/campanias.module';
 import { OrganizacionesModule } from './organizaciones/organizaciones.module';
+import { SubcampaniasModule } from './subcampanias/subcampanias.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { OrganizacionesModule } from './organizaciones/organizaciones.module';
     PlantacionesModule,
     CampaniasModule,
     OrganizacionesModule,
+    SubcampaniasModule,
   ],
   controllers: [AppController],
   providers: [AppService],
