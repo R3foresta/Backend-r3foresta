@@ -252,6 +252,29 @@ export class UsersService {
     return user;
   }
 
+  async listarParaSelector(filtros: {
+    q?: string;
+    rol?: string;
+  }): Promise<{ id: number; nombre: string; rol: string }[]> {
+    const supabase = this.supabaseService.getClient();
+
+    let query = supabase
+      .from('usuario')
+      .select('id, nombre, rol')
+      .order('nombre', { ascending: true });
+
+    if (filtros.rol) {
+      query = query.eq('rol', filtros.rol.toUpperCase());
+    }
+    if (filtros.q) {
+      query = query.ilike('nombre', `%${filtros.q}%`);
+    }
+
+    const { data, error } = await query;
+    if (error) throw new BadRequestException(error.message);
+    return (data ?? []) as { id: number; nombre: string; rol: string }[];
+  }
+
   /**
    * Completa el registro del usuario con datos del formulario
    */

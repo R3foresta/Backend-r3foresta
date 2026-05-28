@@ -1,0 +1,4 @@
+export enum PropositoAsignacion {
+  PLANTACION_INICIAL = 'PLANTACION_INICIAL',
+  REPOSICION = 'REPOSICION',
+}
