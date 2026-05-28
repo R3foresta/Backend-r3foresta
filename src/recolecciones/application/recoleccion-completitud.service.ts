@@ -34,10 +34,13 @@ export class RecoleccionCompletitudService {
       throw new NotFoundException('Ubicación no encontrada');
     }
 
+    const tipoEntidadId =
+      await this.evidenciasService.resolveTipoEntidadEvidenciaId();
+
     const { count: fotosCount, error: evidenciasError } = await supabase
       .from('evidencias_trazabilidad')
       .select('id', { count: 'exact', head: true })
-      .eq('tipo_entidad_id', this.evidenciasService.tipoEntidadEvidenciaId)
+      .eq('tipo_entidad_id', tipoEntidadId)
       .eq('entidad_id', recoleccionId)
       .is('eliminado_en', null);
 
