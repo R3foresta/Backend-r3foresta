@@ -63,7 +63,7 @@ export class SubcampaniasActivacionService {
 
     const { data: coordinadorRow } = await supabase
       .from('subcampania_equipo')
-      .select('usuario_id, usuario(id, nombre)')
+      .select('usuario_id, usuario!subcampania_equipo_usuario_fk(id, nombre)')
       .eq('subcampania_id', id)
       .eq('rol', 'COORDINADOR')
       .maybeSingle();

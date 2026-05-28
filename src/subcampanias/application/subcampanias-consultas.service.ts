@@ -42,7 +42,9 @@ export class SubcampaniasConsultasService {
 
     const { data: coordinadores } = await supabase
       .from('subcampania_equipo')
-      .select('subcampania_id, usuario_id, usuario(id, nombre)')
+      .select(
+        'subcampania_id, usuario_id, usuario!subcampania_equipo_usuario_fk(id, nombre)',
+      )
       .in('subcampania_id', ids)
       .eq('rol', 'COORDINADOR');
 
@@ -97,7 +99,9 @@ export class SubcampaniasConsultasService {
     const [equipoResult, poligonoResult] = await Promise.all([
       supabase
         .from('subcampania_equipo')
-        .select('id, usuario_id, rol, agregado_at, usuario(id, nombre)')
+        .select(
+          'id, usuario_id, rol, agregado_at, usuario!subcampania_equipo_usuario_fk(id, nombre)',
+        )
         .eq('subcampania_id', id),
       supabase.rpc('fn_subcampania_poligono_geojson', { p_id: id }),
     ]);
