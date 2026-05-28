@@ -2,10 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(awk '/^\\\\/.*plantaciones\\\\// {flag=1; print; next} /^\\\\// {flag=0} flag {print}')",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(grep -v \"^$\")"
     ],
     "additionalDirectories": [
-      "/Users/pabloandresfernandezcari/.claude/projects/-Users-pabloandresfernandezcari-Projects-R3foresta-Backend-r3foresta/memory"
+      "/Users/pabloandresfernandezcari/.claude/projects/-Users-pabloandresfernandezcari-Projects-R3foresta-Backend-r3foresta/memory",
+      "/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/src/campanias/api"
     ]
   }
 }

@@ -52,13 +52,20 @@ export class ViveroSaldosService {
       .order('fecha_asignacion', { ascending: true });
 
     if (asignacionesError) {
-      this.logger.error('Error al leer asignaciones activas:', asignacionesError);
-      throw new InternalServerErrorException('Error al obtener asignaciones del lote');
+      this.logger.error(
+        'Error al leer asignaciones activas:',
+        asignacionesError,
+      );
+      throw new InternalServerErrorException(
+        'Error al obtener asignaciones del lote',
+      );
     }
 
     const asignaciones = (asignacionesData ?? []) as AsignacionRow[];
 
-    const subcampaniaIds = [...new Set(asignaciones.map((a) => a.subcampania_id))];
+    const subcampaniaIds = [
+      ...new Set(asignaciones.map((a) => a.subcampania_id)),
+    ];
     const subcampaniaNombres: Record<number, string> = {};
 
     if (subcampaniaIds.length > 0) {
@@ -79,7 +86,9 @@ export class ViveroSaldosService {
       data: {
         lote_id: Number(saldos.lote_id),
         saldo_vivo_actual:
-          saldos.saldo_vivo_actual !== null ? Number(saldos.saldo_vivo_actual) : null,
+          saldos.saldo_vivo_actual !== null
+            ? Number(saldos.saldo_vivo_actual)
+            : null,
         saldo_asignado_total: Number(saldos.saldo_asignado_total),
         saldo_vivo_disponible_asignacion:
           saldos.saldo_vivo_disponible_asignacion !== null
@@ -151,7 +160,9 @@ export class ViveroSaldosService {
 
     if (!this.esErrorPorVistaAusente(error)) {
       this.logger.error('Error al leer v_lote_vivero_saldos:', error);
-      throw new InternalServerErrorException('Error al calcular saldos del lote');
+      throw new InternalServerErrorException(
+        'Error al calcular saldos del lote',
+      );
     }
 
     this.logger.warn(
@@ -173,7 +184,9 @@ export class ViveroSaldosService {
 
     if (loteError) {
       this.logger.error('Error al leer lote_vivero para saldos:', loteError);
-      throw new InternalServerErrorException('Error al calcular saldos del lote');
+      throw new InternalServerErrorException(
+        'Error al calcular saldos del lote',
+      );
     }
 
     if (!loteData) {
@@ -191,11 +204,15 @@ export class ViveroSaldosService {
         'Error al leer asignaciones activas para saldo fallback:',
         asignacionesError,
       );
-      throw new InternalServerErrorException('Error al calcular saldos del lote');
+      throw new InternalServerErrorException(
+        'Error al calcular saldos del lote',
+      );
     }
 
     const saldoVivoActual =
-      loteData.saldo_vivo_actual !== null ? Number(loteData.saldo_vivo_actual) : null;
+      loteData.saldo_vivo_actual !== null
+        ? Number(loteData.saldo_vivo_actual)
+        : null;
     const saldoAsignadoTotal = (asignacionesData ?? []).reduce(
       (acc, row) => acc + Number(row.saldo_asignado_disponible ?? 0),
       0,
@@ -217,10 +234,12 @@ export class ViveroSaldosService {
     return (
       error.code === 'PGRST205' ||
       error.code === '42P01' ||
-      error.message?.includes("Could not find the table 'public.v_lote_vivero_saldos'") ===
-        true ||
-      error.message?.includes('relation "public.v_lote_vivero_saldos" does not exist') ===
-        true
+      error.message?.includes(
+        "Could not find the table 'public.v_lote_vivero_saldos'",
+      ) === true ||
+      error.message?.includes(
+        'relation "public.v_lote_vivero_saldos" does not exist',
+      ) === true
     );
   }
 }

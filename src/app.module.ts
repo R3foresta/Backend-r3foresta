@@ -17,6 +17,9 @@ import { ComunidadesModule } from './comunidades/comunidades.module';
 import { EvidenciasTrazabilidadModule } from './evidencias-trazabilidad/evidencias-trazabilidad.module';
 import { LotesViveroModule } from './lotes-vivero/lotes-vivero.module';
 import { PlantacionesModule } from './plantaciones/plantaciones.module';
+import { CampaniasModule } from './campanias/campanias.module';
+import { OrganizacionesModule } from './organizaciones/organizaciones.module';
+import { SubcampaniasModule } from './subcampanias/subcampanias.module';
 
 @Module({
   imports: [
@@ -38,6 +41,9 @@ import { PlantacionesModule } from './plantaciones/plantaciones.module';
     EvidenciasTrazabilidadModule,
     LotesViveroModule,
     PlantacionesModule,
+    CampaniasModule,
+    OrganizacionesModule,
+    SubcampaniasModule,
   ],
   controllers: [AppController],
   providers: [AppService],
