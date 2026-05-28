@@ -15,11 +15,19 @@ import {
   Headers,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { RegisterFormDto } from './dto/register-form.dto';
+import {
+  ApiActualizarFotoPerfil,
+  ApiCompletarRegistro,
+  ApiListarUsuarios,
+  ApiObtenerPerfil,
+} from './docs/users.swagger';
 
 import { FileInterceptor } from '@nestjs/platform-express';
 
+@ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(
@@ -28,6 +36,7 @@ export class UsersController {
   ) {}
 
   @Get()
+  @ApiListarUsuarios()
   listar(
     @Headers('x-auth-id') authId: string | undefined,
     @Query('q') q?: string,
@@ -43,6 +52,7 @@ export class UsersController {
    * ⚠️ Para desarrollo: también acepta header x-auth-id
    */
   @Get('profile')
+  @ApiObtenerPerfil()
   async getProfile(@Req() req: any) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const authIdHeader = req.headers['x-auth-id'] as string;
@@ -81,6 +91,7 @@ export class UsersController {
    * ⚠️ Para desarrollo: también acepta header x-auth-id
    */
   @Post('register-form')
+  @ApiCompletarRegistro()
   async registerForm(@Body() dto: RegisterFormDto, @Req() req: any) {
     let authId: string;
 
@@ -114,6 +125,7 @@ export class UsersController {
   }
 
   @Patch('profile/photo')
+  @ApiActualizarFotoPerfil()
   @UseInterceptors(FileInterceptor('file')) // 'file' es el nombre del campo que enviará el front
   async updateProfilePhoto(
     @Req() req: any,

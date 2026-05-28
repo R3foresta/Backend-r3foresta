@@ -79,6 +79,7 @@ async function bootstrap() {
     .addTag('plantas', 'Endpoints para gestión de plantas y especies')
     .addTag('viveros', 'Endpoints para gestión de viveros')
     .addTag('auth', 'Endpoints de autenticación y autorización')
+    .addTag('users', 'Endpoints de gestión de usuarios y perfil')
     .addTag(
       'comunidades',
       'Endpoints CRUD de comunidades administrativas (nivel 4)',
