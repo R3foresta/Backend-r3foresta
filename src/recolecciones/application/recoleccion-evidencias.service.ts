@@ -23,8 +23,10 @@ export type FotoSubidaRecoleccion = {
 @Injectable()
 export class RecoleccionEvidenciasService {
   private readonly logger = new Logger(RecoleccionEvidenciasService.name);
+  private readonly tipoEntidadCodigo = 'RECOLECCION';
+  // Cache intentionally lives for the process lifetime; catalog changes require restart to refresh.
+  private tipoEntidadEvidenciaIdCache?: number;
   readonly bucketFotos = 'recoleccion_fotos';
-  readonly tipoEntidadEvidenciaId = 1;
 
   constructor(private readonly supabaseService: SupabaseService) {}
 
@@ -44,18 +46,39 @@ export class RecoleccionEvidenciasService {
   }
 
   async assertTipoEntidadActiva(): Promise<void> {
+    await this.resolveTipoEntidadEvidenciaId();
+  }
+
+  async resolveTipoEntidadEvidenciaId(): Promise<number> {
+    if (this.tipoEntidadEvidenciaIdCache !== undefined) {
+      return this.tipoEntidadEvidenciaIdCache;
+    }
+
     const supabase = this.supabaseService.getClient();
     const { data, error } = await supabase
       .from('tipos_entidad_evidencia')
       .select('id, activo')
-      .eq('id', this.tipoEntidadEvidenciaId)
-      .single();
+      .ilike('codigo', this.tipoEntidadCodigo)
+      .maybeSingle();
 
-    if (error || !data || !data.activo) {
-      throw new NotFoundException(
-        `No existe tipo_entidad_evidencia activo con id=${this.tipoEntidadEvidenciaId}`,
+    if (error) {
+      this.logger.error(
+        `Error al resolver tipo_entidad_evidencia ${this.tipoEntidadCodigo}:`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        'Error al resolver tipo de entidad de evidencia',
       );
     }
+
+    if (!data || !data.activo) {
+      throw new NotFoundException(
+        `No existe tipo_entidad_evidencia activo para ${this.tipoEntidadCodigo}`,
+      );
+    }
+
+    this.tipoEntidadEvidenciaIdCache = Number(data.id);
+    return this.tipoEntidadEvidenciaIdCache;
   }
 
   async uploadFotosCreacion(files: RecoleccionFotoInput[]) {
@@ -65,6 +88,7 @@ export class RecoleccionEvidenciasService {
     for (const file of files) {
       const nombreArchivo = `${Date.now()}_${file.originalname}`;
       const rutaStorage = nombreArchivo;
+      const mimeType = String(file.mimetype ?? '');
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(this.bucketFotos)
@@ -78,7 +102,6 @@ export class RecoleccionEvidenciasService {
         throw new InternalServerErrorException('Error al subir foto');
       }
 
-      const mimeType = String(file.mimetype ?? '');
       const formato = mimeType.split('/')[1].toUpperCase();
       const storageObjectId =
         typeof uploadData?.id === 'string' ? uploadData.id : null;
@@ -106,14 +129,13 @@ export class RecoleccionEvidenciasService {
     fotosSubidas: FotoSubidaRecoleccion[];
   }): Promise<void> {
     const supabase = this.supabaseService.getClient();
+    const tipoEntidadId = await this.resolveTipoEntidadEvidenciaId();
     const evidenciasInsert = params.fotosSubidas.map((foto, index) => ({
-      tipo_entidad_id: this.tipoEntidadEvidenciaId,
+      tipo_entidad_id: tipoEntidadId,
       entidad_id: params.recoleccionId,
       codigo_trazabilidad: params.codigoTrazabilidad,
       bucket: this.bucketFotos,
-      ruta_archivo: supabase.storage
-        .from(this.bucketFotos)
-        .getPublicUrl(foto.ruta_archivo).data.publicUrl,
+      ruta_archivo: foto.ruta_archivo,
       storage_object_id: foto.storage_object_id,
       tipo_archivo: 'FOTO',
       mime_type: foto.mime_type,
@@ -151,11 +173,12 @@ export class RecoleccionEvidenciasService {
     files: RecoleccionFotoInput[],
   ): Promise<{ insertedEvidenceIds: number[]; uploadedPaths: string[] }> {
     const supabase = this.supabaseService.getClient();
+    const tipoEntidadId = await this.resolveTipoEntidadEvidenciaId();
 
     const { count, error: countError } = await supabase
       .from('evidencias_trazabilidad')
       .select('id', { count: 'exact', head: true })
-      .eq('tipo_entidad_id', this.tipoEntidadEvidenciaId)
+      .eq('tipo_entidad_id', tipoEntidadId)
       .eq('entidad_id', recoleccionId)
       .is('eliminado_en', null);
 
@@ -206,13 +229,11 @@ export class RecoleccionEvidenciasService {
       const orden = ordenInicial + index;
 
       evidenciasInsert.push({
-        tipo_entidad_id: this.tipoEntidadEvidenciaId,
+        tipo_entidad_id: tipoEntidadId,
         entidad_id: recoleccionId,
         codigo_trazabilidad: codigoTrazabilidad,
         bucket: this.bucketFotos,
-        ruta_archivo: supabase.storage
-          .from(this.bucketFotos)
-          .getPublicUrl(rutaStorage).data.publicUrl,
+        ruta_archivo: rutaStorage,
         storage_object_id: storageObjectId,
         tipo_archivo: 'FOTO',
         mime_type: mimeType,
@@ -264,11 +285,13 @@ export class RecoleccionEvidenciasService {
   }
 
   async deleteByRecoleccionId(recoleccionId: number): Promise<void> {
+    const tipoEntidadId = await this.resolveTipoEntidadEvidenciaId();
+
     await this.supabaseService
       .getClient()
       .from('evidencias_trazabilidad')
       .delete()
-      .eq('tipo_entidad_id', this.tipoEntidadEvidenciaId)
+      .eq('tipo_entidad_id', tipoEntidadId)
       .eq('entidad_id', recoleccionId);
   }
 
@@ -303,6 +326,8 @@ export class RecoleccionEvidenciasService {
       return map;
     }
 
+    const tipoEntidadId = await this.resolveTipoEntidadEvidenciaId();
+
     const { data, error } = await supabase
       .from('evidencias_trazabilidad')
       .select(
@@ -328,7 +353,7 @@ export class RecoleccionEvidenciasService {
         actualizado_en
       `,
       )
-      .eq('tipo_entidad_id', this.tipoEntidadEvidenciaId)
+      .eq('tipo_entidad_id', tipoEntidadId)
       .in('entidad_id', ids)
       .is('eliminado_en', null)
       .order('entidad_id', { ascending: true })
