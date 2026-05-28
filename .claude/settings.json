@@ -4,7 +4,10 @@
       "Bash(awk '/^\\\\/.*plantaciones\\\\// {flag=1; print; next} /^\\\\// {flag=0} flag {print}')",
       "Bash(npx tsc *)",
       "Bash(npx eslint *)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(git -C /Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta stash list)",
+      "Bash(git -C /Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta log --oneline -3)",
+      "Bash(git -C /Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta log --oneline -8)"
     ],
     "additionalDirectories": [
       "/Users/pabloandresfernandezcari/.claude/projects/-Users-pabloandresfernandezcari-Projects-R3foresta-Backend-r3foresta/memory",

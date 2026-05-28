@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   Param,
@@ -16,12 +17,15 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 import { LotesViveroService } from '../application/lotes-vivero.service';
 import {
+  ApiCancelarAsignacion,
+  ApiCrearAsignacion,
   ApiCrearEvidenciaPendiente,
   ApiCrearEvidenciasPendientesAdaptabilidad,
   ApiCrearEvidenciasPendientesDespacho,
   ApiCrearEvidenciasPendientesEmbolsado,
   ApiCrearEvidenciasPendientesMerma,
   ApiCrearLoteDesdeRecoleccion,
+  ApiListarAsignaciones,
   ApiListarLotes,
   ApiObtenerAdaptabilidades,
   ApiObtenerContextoEmbolsado,
@@ -36,6 +40,7 @@ import {
   ApiRegistrarEmbolsado,
   ApiRegistrarMerma,
 } from './docs/lotes-vivero.swagger';
+import { CrearAsignacionDto } from './dto/crear-asignacion.dto';
 import { CrearEvidenciaPendienteViveroDto } from './dto/crear-evidencia-pendiente-vivero.dto';
 import { CrearLoteViveroDto } from './dto/crear-lote-vivero.dto';
 import { FiltrarLotesViveroDto } from './dto/filtrar-lotes-vivero.dto';
@@ -268,6 +273,42 @@ export class LotesViveroController {
   @ApiObtenerDetalleLote()
   obtenerDetalle(@Param('id', ParseIntPipe) loteId: number) {
     return this.lotesViveroService.obtenerDetalle(loteId);
+  }
+
+  // ---- Asignaciones ----
+
+  @Post(':id/asignaciones')
+  @ApiCrearAsignacion()
+  crearAsignacion(
+    @Param('id', ParseIntPipe) loteId: number,
+    @Body() dto: CrearAsignacionDto,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    return this.lotesViveroService.crearAsignacion(
+      loteId,
+      dto,
+      this.requireAuthId(authId),
+    );
+  }
+
+  @Get(':id/asignaciones')
+  @ApiListarAsignaciones()
+  listarAsignaciones(@Param('id', ParseIntPipe) loteId: number) {
+    return this.lotesViveroService.listarAsignaciones(loteId);
+  }
+
+  @Delete(':id/asignaciones/:asignacionId')
+  @ApiCancelarAsignacion()
+  cancelarAsignacion(
+    @Param('id', ParseIntPipe) loteId: number,
+    @Param('asignacionId', ParseIntPipe) asignacionId: number,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    return this.lotesViveroService.cancelarAsignacion(
+      loteId,
+      asignacionId,
+      this.requireAuthId(authId),
+    );
   }
 
   private requireAuthId(authId?: string): string {

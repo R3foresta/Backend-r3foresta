@@ -4,13 +4,15 @@ import {
   Get,
   Body,
   Req,
+  Query,
   UnauthorizedException,
-  UseInterceptors, // <--- Agregado para la foto de perfil
-  Patch, // <--- Agregado para la foto de perfil
-  UploadedFile, // <--- Agregado para la foto de perfil
-  ParseFilePipe, // <--- Agregado para la foto de perfil
-  MaxFileSizeValidator, // <--- Agregado para la foto de perfil
-  FileTypeValidator, // <--- Agregado para la foto de perfil
+  UseInterceptors,
+  Patch,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
+  Headers,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from './users.service';
@@ -24,6 +26,16 @@ export class UsersController {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
   ) {}
+
+  @Get()
+  listar(
+    @Headers('x-auth-id') authId: string | undefined,
+    @Query('q') q?: string,
+    @Query('rol') rol?: string,
+  ) {
+    if (!authId?.trim()) throw new UnauthorizedException('Header x-auth-id es requerido');
+    return this.usersService.listarParaSelector({ q, rol });
+  }
 
   /**
    * GET /users/profile

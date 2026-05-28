@@ -960,3 +960,99 @@ export function ApiObtenerAdaptabilidades() {
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
 }
+
+// ---- Asignaciones ----
+
+export function ApiCrearAsignacion() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Crear asignación de lote a subcampaña',
+      description:
+        'Reserva una cantidad del saldo disponible del lote para una subcampaña activa. Valida que el lote esté ACTIVO, la subcampaña exista y el saldo sea suficiente. El campo proposito es opcional (default PLANTACION_INICIAL).',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({ name: 'id', type: Number, description: 'ID del lote de vivero' }),
+    ApiBody({
+      description: 'Datos de la asignación',
+      schema: {
+        type: 'object',
+        required: ['subcampania_id', 'cantidad_asignada'],
+        properties: {
+          subcampania_id: { type: 'integer', example: 1 },
+          cantidad_asignada: { type: 'integer', minimum: 1, example: 50 },
+          proposito: {
+            type: 'string',
+            enum: ['PLANTACION_INICIAL', 'REPOSICION'],
+            example: 'PLANTACION_INICIAL',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 201,
+      description:
+        'Asignación creada. Devuelve { success: true, data } con el registro asignacion_vivero_subcampania.',
+    }),
+    ApiResponse({ status: 400, description: 'Datos inválidos' }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({ status: 403, description: 'Sin permisos de escritura' }),
+    ApiResponse({ status: 404, description: 'Lote o subcampaña no encontrados' }),
+    ApiResponse({ status: 409, description: 'Subcampaña cerrada' }),
+    ApiResponse({ status: 422, description: 'Lote no ACTIVO o saldo insuficiente' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
+export function ApiListarAsignaciones() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Listar asignaciones activas del lote',
+      description:
+        'Devuelve todas las asignaciones en estado ACTIVA del lote, incluyendo nombre de subcampaña y saldo disponible de cada una.',
+    }),
+    ApiParam({ name: 'id', type: Number, description: 'ID del lote de vivero' }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Devuelve { success: true, data: AsignacionRow[] } ordenado por fecha_asignacion ASC.',
+    }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
+export function ApiCancelarAsignacion() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Cancelar asignación de lote',
+      description:
+        'Cancela una asignación ACTIVA que no haya sido consumida en plantación (cantidad_consumida = 0). Libera el saldo devolviendo la reserva al lote.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({ name: 'id', type: Number, description: 'ID del lote de vivero' }),
+    ApiParam({
+      name: 'asignacionId',
+      type: Number,
+      description: 'ID de la asignación a cancelar',
+    }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Asignación cancelada (estado DEVUELTA). Devuelve { success: true, data }.',
+    }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({ status: 403, description: 'Sin permisos de escritura' }),
+    ApiResponse({
+      status: 404,
+      description: 'Lote o asignación no encontrados',
+    }),
+    ApiResponse({
+      status: 409,
+      description:
+        'Asignación ya cancelada/agotada o con consumo en plantación',
+    }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}

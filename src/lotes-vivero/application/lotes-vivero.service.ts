@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { CrearAsignacionDto } from '../api/dto/crear-asignacion.dto';
 import { CrearEvidenciaPendienteViveroDto } from '../api/dto/crear-evidencia-pendiente-vivero.dto';
 import { CrearLoteViveroDto } from '../api/dto/crear-lote-vivero.dto';
 import { FiltrarLotesViveroDto } from '../api/dto/filtrar-lotes-vivero.dto';
@@ -8,6 +9,7 @@ import { RegistrarDespachoDto } from '../api/dto/registrar-despacho.dto';
 import { RegistrarEmbolsadoDto } from '../api/dto/registrar-embolsado.dto';
 import { RegistrarMermaDto } from '../api/dto/registrar-merma.dto';
 import { ViveroAdaptabilidadService } from './vivero-adaptabilidad.service';
+import { ViveroAsignacionesService } from './vivero-asignaciones.service';
 import { ViveroConsultasService } from './vivero-consultas.service';
 import { ViveroDespachoService } from './vivero-despacho.service';
 import { ViveroEmbolsadoService } from './vivero-embolsado.service';
@@ -32,6 +34,7 @@ export class LotesViveroService {
     private readonly mermaService: ViveroMermaService,
     private readonly despachoService: ViveroDespachoService,
     private readonly saldosService: ViveroSaldosService,
+    private readonly asignacionesService: ViveroAsignacionesService,
   ) {}
 
   crearEvidenciaPendiente(
@@ -160,5 +163,17 @@ export class LotesViveroService {
 
   obtenerSaldos(loteId: number) {
     return this.saldosService.obtenerSaldos(loteId);
+  }
+
+  crearAsignacion(loteId: number, dto: CrearAsignacionDto, authId: string) {
+    return this.asignacionesService.crearAsignacion(loteId, dto, authId);
+  }
+
+  listarAsignaciones(loteId: number) {
+    return this.asignacionesService.listarAsignaciones(loteId);
+  }
+
+  cancelarAsignacion(loteId: number, asignacionId: number, authId: string) {
+    return this.asignacionesService.cancelarAsignacion(loteId, asignacionId, authId);
   }
 }
