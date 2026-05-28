@@ -137,7 +137,7 @@ export class ViveroEvidenciasService {
             estado: 'PENDIENTE_VINCULACION',
             formato: foto.formato,
           },
-          es_principal: false,
+          es_principal: index === 0,
           orden: index,
           tomado_en: dto.tomado_en ?? null,
           creado_por_usuario_id: usuario.id,

@@ -24,6 +24,7 @@ export type FotoSubidaRecoleccion = {
 export class RecoleccionEvidenciasService {
   private readonly logger = new Logger(RecoleccionEvidenciasService.name);
   private readonly tipoEntidadCodigo = 'RECOLECCION';
+  // Cache intentionally lives for the process lifetime; catalog changes require restart to refresh.
   private tipoEntidadEvidenciaIdCache?: number;
   readonly bucketFotos = 'recoleccion_fotos';
 
@@ -70,7 +71,7 @@ export class RecoleccionEvidenciasService {
       );
     }
 
-    if (error || !data || !data.activo) {
+    if (!data || !data.activo) {
       throw new NotFoundException(
         `No existe tipo_entidad_evidencia activo para ${this.tipoEntidadCodigo}`,
       );
