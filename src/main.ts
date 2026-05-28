@@ -7,10 +7,34 @@ import * as bodyParser from 'body-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Aumentar límite de tamaño del body (solo para campos de texto largos)
-  // NOTA: Las imágenes deben subirse a Supabase Storage, no enviarlas en base64
-  app.use(bodyParser.json({ limit: '5mb' }));
-  app.use(bodyParser.urlencoded({ limit: '5mb', extended: true }));
+  // Aumentar límite de tamaño del body (solo para campos de texto largos).
+  // IMPORTANTE: no aplicar urlencoded a multipart/form-data; eso le
+  // corresponde a Multer. Si bodyParser consume el stream antes, Multer
+  // no puede leer el archivo y el campo `imagen` llega como undefined.
+  const skipMultipart = (
+    middleware: (
+      req: import('express').Request,
+      res: import('express').Response,
+      next: import('express').NextFunction,
+    ) => void,
+  ) => {
+    return (
+      req: import('express').Request,
+      res: import('express').Response,
+      next: import('express').NextFunction,
+    ) => {
+      const contentType = req.headers['content-type'] ?? '';
+      if (contentType.startsWith('multipart/form-data')) {
+        return next();
+      }
+      return middleware(req, res, next);
+    };
+  };
+
+  app.use(skipMultipart(bodyParser.json({ limit: '5mb' })));
+  app.use(
+    skipMultipart(bodyParser.urlencoded({ limit: '5mb', extended: true })),
+  );
 
   // Configurar orígenes CORS
   const allowedOrigins = [
