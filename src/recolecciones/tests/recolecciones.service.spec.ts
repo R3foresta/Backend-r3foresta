@@ -45,6 +45,7 @@ function createQueryBuilder(result: {
     // Métodos que devuelven 'this' (permitir encadenamiento)
     select: jest.fn().mockReturnThis(), // .select('*')
     eq: jest.fn().mockReturnThis(), // .eq('id', 9)
+    ilike: jest.fn().mockReturnThis(), // .ilike('codigo', 'RECOLECCION')
     gte: jest.fn().mockReturnThis(), // .gte('fecha', '2024-01-01') - mayor o igual
     lte: jest.fn().mockReturnThis(), // .lte('fecha', '2024-12-31') - menor o igual
     in: jest.fn().mockReturnThis(), // .in('estado', ['ABIERTO', 'CERRADO'])
@@ -59,6 +60,7 @@ function createQueryBuilder(result: {
 
     // Métodos que devuelven Promise (terminan la cadena)
     single: jest.fn().mockResolvedValue(result), // Espera UN resultado
+    maybeSingle: jest.fn().mockResolvedValue(result), // Espera cero o un resultado
 
     // Implementar la interface thenable/Promise para compatibilidad
     then: (resolve: any, reject: any) =>
@@ -66,6 +68,13 @@ function createQueryBuilder(result: {
   };
 
   return builder;
+}
+
+function createTipoEntidadRecoleccionQuery(id = 7) {
+  return createQueryBuilder({
+    data: { id, activo: true },
+    error: null,
+  });
 }
 
 /**
@@ -79,6 +88,7 @@ function createQueryBuilder(result: {
 describe('RecoleccionesService', () => {
   // Variables que usaremos en los tests
   let service: RecoleccionesService;
+  let evidenciasService: RecoleccionEvidenciasService;
   let supabaseService: { getClient: jest.Mock };
   let ubicacionesReadService: { getUbicacionesByIds: jest.Mock };
 
@@ -154,6 +164,7 @@ describe('RecoleccionesService', () => {
 
     // 3. OBTENER la instancia del servicio que queremos probar
     service = module.get(RecoleccionesService);
+    evidenciasService = module.get(RecoleccionEvidenciasService);
   });
 
   /**
@@ -259,6 +270,51 @@ describe('RecoleccionesService', () => {
     ).toThrow(BadRequestException);
   });
 
+  it('registra evidencias de recoleccion con tipo_entidad resuelto por codigo y ruta de storage', async () => {
+    const tipoEntidadQuery = createTipoEntidadRecoleccionQuery(42);
+    const evidenciasQuery = createQueryBuilder({ data: null, error: null });
+    const client = {
+      from: jest.fn((table: string) => {
+        if (table === 'tipos_entidad_evidencia') return tipoEntidadQuery;
+        if (table === 'evidencias_trazabilidad') return evidenciasQuery;
+        throw new Error(`Tabla no esperada en test: ${table}`);
+      }),
+    };
+
+    supabaseService.getClient.mockReturnValue(client);
+
+    await evidenciasService.insertEvidenciasCreacion({
+      recoleccionId: 99,
+      codigoTrazabilidad: 'REC-2026-00099',
+      userId: 7,
+      fotosSubidas: [
+        {
+          ruta_archivo: '99/foto-1.jpg',
+          storage_object_id: '550e8400-e29b-41d4-a716-446655440000',
+          mime_type: 'image/jpeg',
+          tamano_bytes: 123,
+          formato: 'JPEG',
+          hash_sha256: 'hash-1',
+        },
+      ],
+    });
+
+    expect(tipoEntidadQuery.ilike).toHaveBeenCalledWith(
+      'codigo',
+      'RECOLECCION',
+    );
+    expect(evidenciasQuery.insert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        tipo_entidad_id: 42,
+        entidad_id: 99,
+        codigo_trazabilidad: 'REC-2026-00099',
+        bucket: 'recoleccion_fotos',
+        ruta_archivo: '99/foto-1.jpg',
+        creado_por_usuario_id: 7,
+      }),
+    ]);
+  });
+
   /**
    * TEST 2: Verifica que findOne() retorna recolección con elegibilidad evaluada
    *
@@ -344,6 +400,10 @@ describe('RecoleccionesService', () => {
     const client = {
       // from() es el método que selecciona qué tabla consultar
       from: jest.fn((table: string) => {
+        if (table === 'tipos_entidad_evidencia') {
+          return createTipoEntidadRecoleccionQuery();
+        }
+
         // Devolver el mock correspondiente según la tabla
         if (table === 'recoleccion') {
           return recoleccionQuery;
@@ -520,6 +580,10 @@ describe('RecoleccionesService', () => {
     // 2. CONFIGURAR CLIENTE MOCK
     const client = {
       from: jest.fn((table: string) => {
+        if (table === 'tipos_entidad_evidencia') {
+          return createTipoEntidadRecoleccionQuery();
+        }
+
         if (table === 'vivero') {
           return viveroQuery;
         }
@@ -677,6 +741,10 @@ describe('RecoleccionesService', () => {
     const recoleccionQueries = [rawQuery, updateQuery, findOneQuery];
     const client = {
       from: jest.fn((table: string) => {
+        if (table === 'tipos_entidad_evidencia') {
+          return createTipoEntidadRecoleccionQuery();
+        }
+
         if (table === 'usuario') return usuarioQuery;
         if (table === 'recoleccion') return recoleccionQueries.shift();
         if (table === 'evidencias_trazabilidad') return evidenciasQuery;
@@ -756,6 +824,10 @@ describe('RecoleccionesService', () => {
     });
     const client = {
       from: jest.fn((table: string) => {
+        if (table === 'tipos_entidad_evidencia') {
+          return createTipoEntidadRecoleccionQuery();
+        }
+
         if (table === 'usuario') return usuarioQuery;
         if (table === 'recoleccion') return recoleccionQuery;
         if (table === 'ubicacion') return ubicacionQuery;
@@ -805,6 +877,10 @@ describe('RecoleccionesService', () => {
     });
     const client = {
       from: jest.fn((table: string) => {
+        if (table === 'tipos_entidad_evidencia') {
+          return createTipoEntidadRecoleccionQuery();
+        }
+
         if (table === 'usuario') return usuarioQuery;
         if (table === 'recoleccion') return recoleccionQuery;
         if (table === 'ubicacion') return ubicacionQuery;
