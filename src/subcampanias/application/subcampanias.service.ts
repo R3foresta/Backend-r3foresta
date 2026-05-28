@@ -63,12 +63,12 @@ export class SubcampaniasService {
     return this.equipoService.listar(subcampaniaId);
   }
 
-  agregarMiembroEquipo(
+  agregarMiembrosEquipo(
     subcampaniaId: number,
-    dto: AgregarMiembroEquipoDto,
+    miembros: AgregarMiembroEquipoDto[],
     authId: string,
   ) {
-    return this.equipoService.agregar(subcampaniaId, dto, authId);
+    return this.equipoService.agregarMiembros(subcampaniaId, miembros, authId);
   }
 
   quitarMiembroEquipo(

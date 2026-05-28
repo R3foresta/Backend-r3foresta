@@ -38,7 +38,9 @@ export class SubcampaniasEquipoService {
 
     const { data, error } = await supabase
       .from('subcampania_equipo')
-      .select('id, usuario_id, rol, agregado_at, usuario(id, nombre)')
+      .select(
+        'id, usuario_id, rol, agregado_at, usuario!subcampania_equipo_usuario_fk(id, nombre)',
+      )
       .eq('subcampania_id', subcampaniaId)
       .order('agregado_at', { ascending: true });
 
@@ -57,11 +59,31 @@ export class SubcampaniasEquipoService {
     return { success: true, data: miembros };
   }
 
-  async agregar(
+  async agregarMiembros(
     subcampaniaId: number,
-    dto: AgregarMiembroEquipoDto,
+    miembros: AgregarMiembroEquipoDto[],
     authId: string,
   ) {
+    if (!Array.isArray(miembros) || miembros.length === 0) {
+      throw new BadRequestException('Debe enviar al menos un miembro.');
+    }
+
+    const idsEnPayload = miembros.map((m) => m.usuario_id);
+    if (new Set(idsEnPayload).size !== idsEnPayload.length) {
+      throw new UnprocessableEntityException(
+        'No se pueden enviar usuarios duplicados en la misma solicitud.',
+      );
+    }
+
+    const coordinadoresEnPayload = miembros.filter(
+      (m) => m.rol === RolEnSubcampania.COORDINADOR,
+    );
+    if (coordinadoresEnPayload.length > 1) {
+      throw new UnprocessableEntityException(
+        'Solo se permite un COORDINADOR por subcampaña.',
+      );
+    }
+
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertAdmin(usuario.rol);
 
@@ -80,19 +102,35 @@ export class SubcampaniasEquipoService {
       );
     }
 
+    if (coordinadoresEnPayload.length === 1) {
+      const { data: coordExistente } = await supabase
+        .from('subcampania_equipo')
+        .select('id')
+        .eq('subcampania_id', subcampaniaId)
+        .eq('rol', RolEnSubcampania.COORDINADOR)
+        .maybeSingle();
+
+      if (coordExistente) {
+        throw new UnprocessableEntityException(
+          'Ya existe un coordinador en esta subcampaña.',
+        );
+      }
+    }
+
+    const filas = miembros.map((m) => ({
+      subcampania_id: subcampaniaId,
+      usuario_id: m.usuario_id,
+      rol: m.rol,
+      agregado_by: usuario.id,
+    }));
+
     const { data, error } = await supabase
       .from('subcampania_equipo')
-      .insert({
-        subcampania_id: subcampaniaId,
-        usuario_id: dto.usuario_id,
-        rol: dto.rol,
-        agregado_by: usuario.id,
-      })
-      .select('id, usuario_id, rol, agregado_at')
-      .single();
+      .insert(filas)
+      .select('id, usuario_id, rol, agregado_at');
 
     if (error) {
-      this.logger.error('Error al agregar miembro:', error);
+      this.logger.error('Error al agregar miembros:', error);
       if (error.code === '23505') {
         const msg = String((error as any).message ?? '').toLowerCase();
         if (msg.includes('coordinador')) {
@@ -100,28 +138,26 @@ export class SubcampaniasEquipoService {
             'Ya existe un coordinador en esta subcampaña.',
           );
         }
-        if (dto.rol === RolEnSubcampania.COORDINADOR) {
-          throw new UnprocessableEntityException(
-            'Ya existe un coordinador en esta subcampaña.',
-          );
-        }
         throw new UnprocessableEntityException(
-          'El usuario ya pertenece al equipo de esta subcampaña.',
+          'Uno o más usuarios ya pertenecen al equipo de esta subcampaña.',
         );
       }
       if (error.code === '23503') {
         throw new BadRequestException(
-          'El usuario referenciado no existe.',
+          'Uno o más usuarios referenciados no existen.',
         );
       }
       throw new BadRequestException(
-        error.message || 'No se pudo agregar el miembro.',
+        error.message || 'No se pudieron agregar los miembros.',
       );
     }
 
     return {
       success: true,
-      data: { message: 'Miembro agregado correctamente.', ...(data as any) },
+      data: {
+        message: 'Miembros agregados correctamente.',
+        miembros: (data as any[]) ?? [],
+      },
     };
   }
 

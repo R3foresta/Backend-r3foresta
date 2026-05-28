@@ -23,6 +23,7 @@ function buildAuthService(rol: string): SubcampaniasAuthService {
 
 function buildSupabaseAgregar(opts: {
   subcampaniaRow: any;
+  coordinadorExistente?: any;
   insertResult?: { data: any; error: any };
 }): SupabaseService {
   const subSingle = jest
@@ -36,27 +37,38 @@ function buildSupabaseAgregar(opts: {
   const subEq = jest.fn().mockReturnValue({ is: subIs });
   const subSelect = jest.fn().mockReturnValue({ eq: subEq });
 
-  const insertSingle = jest
+  // Pre-chequeo de coordinador existente (select().eq().eq().maybeSingle())
+  const coordMaybeSingle = jest
     .fn()
-    .mockResolvedValue(
-      opts.insertResult ?? {
-        data: {
+    .mockResolvedValue({ data: opts.coordinadorExistente ?? null, error: null });
+  const coordEq2 = jest
+    .fn()
+    .mockReturnValue({ maybeSingle: coordMaybeSingle });
+  const coordEq1 = jest.fn().mockReturnValue({ eq: coordEq2 });
+  const coordSelect = jest.fn().mockReturnValue({ eq: coordEq1 });
+
+  // Insert en lote: insert([...]).select(...)
+  const insertSelect = jest.fn().mockResolvedValue(
+    opts.insertResult ?? {
+      data: [
+        {
           id: 10,
           usuario_id: 7,
           rol: 'OPERARIO',
           agregado_at: '2026-05-27T00:00:00Z',
         },
-        error: null,
-      },
-    );
-  const insertSelect = jest.fn().mockReturnValue({ single: insertSingle });
+      ],
+      error: null,
+    },
+  );
   const insert = jest.fn().mockReturnValue({ select: insertSelect });
 
   return {
     getClient: jest.fn().mockReturnValue({
       from: jest.fn().mockImplementation((table: string) => {
         if (table === 'subcampania') return { select: subSelect };
-        if (table === 'subcampania_equipo') return { insert };
+        if (table === 'subcampania_equipo')
+          return { select: coordSelect, insert };
         return {};
       }),
     }),
@@ -113,25 +125,111 @@ const buildAgregarDto = (
   rol,
 });
 
-describe('SubcampaniasEquipoService.agregar', () => {
-  it('agrega correctamente un OPERARIO', async () => {
+describe('SubcampaniasEquipoService.agregarMiembros', () => {
+  it('agrega correctamente un OPERARIO (lote de 1)', async () => {
     const supabase = buildSupabaseAgregar({ subcampaniaRow: { id: 1 } });
     const service = new SubcampaniasEquipoService(
       supabase,
       buildAuthService('ADMIN'),
     );
-    const result = await service.agregar(1, buildAgregarDto(), 'auth-1');
+    const result = await service.agregarMiembros(
+      1,
+      [buildAgregarDto()],
+      'auth-1',
+    );
     expect(result.success).toBe(true);
   });
 
-  it('lanza 422 cuando ya existe un COORDINADOR (23505)', async () => {
+  it('agrega varios OPERARIOs en un solo lote', async () => {
+    const supabase = buildSupabaseAgregar({
+      subcampaniaRow: { id: 1 },
+      insertResult: {
+        data: [
+          { id: 10, usuario_id: 7, rol: 'OPERARIO', agregado_at: 't' },
+          { id: 11, usuario_id: 8, rol: 'OPERARIO', agregado_at: 't' },
+        ],
+        error: null,
+      },
+    });
+    const service = new SubcampaniasEquipoService(
+      supabase,
+      buildAuthService('ADMIN'),
+    );
+    const result = await service.agregarMiembros(
+      1,
+      [
+        { usuario_id: 7, rol: RolEnSubcampania.OPERARIO },
+        { usuario_id: 8, rol: RolEnSubcampania.OPERARIO },
+      ],
+      'auth-1',
+    );
+    expect(result.success).toBe(true);
+    expect((result.data as any).miembros).toHaveLength(2);
+  });
+
+  it('rechaza 422 si el payload trae más de un COORDINADOR', async () => {
+    const supabase = buildSupabaseAgregar({ subcampaniaRow: { id: 1 } });
+    const service = new SubcampaniasEquipoService(
+      supabase,
+      buildAuthService('ADMIN'),
+    );
+    await expect(
+      service.agregarMiembros(
+        1,
+        [
+          { usuario_id: 7, rol: RolEnSubcampania.COORDINADOR },
+          { usuario_id: 8, rol: RolEnSubcampania.COORDINADOR },
+        ],
+        'auth-1',
+      ),
+    ).rejects.toThrow(UnprocessableEntityException);
+  });
+
+  it('rechaza 422 si el payload trae usuario_id duplicado', async () => {
+    const supabase = buildSupabaseAgregar({ subcampaniaRow: { id: 1 } });
+    const service = new SubcampaniasEquipoService(
+      supabase,
+      buildAuthService('ADMIN'),
+    );
+    await expect(
+      service.agregarMiembros(
+        1,
+        [
+          { usuario_id: 7, rol: RolEnSubcampania.OPERARIO },
+          { usuario_id: 7, rol: RolEnSubcampania.OPERARIO },
+        ],
+        'auth-1',
+      ),
+    ).rejects.toThrow(UnprocessableEntityException);
+  });
+
+  it('rechaza 422 si ya hay coordinador y el payload pide otro', async () => {
+    const supabase = buildSupabaseAgregar({
+      subcampaniaRow: { id: 1 },
+      coordinadorExistente: { id: 999 },
+    });
+    const service = new SubcampaniasEquipoService(
+      supabase,
+      buildAuthService('ADMIN'),
+    );
+    await expect(
+      service.agregarMiembros(
+        1,
+        [{ usuario_id: 7, rol: RolEnSubcampania.COORDINADOR }],
+        'auth-1',
+      ),
+    ).rejects.toThrow(UnprocessableEntityException);
+  });
+
+  it('lanza 422 cuando la DB devuelve 23505 por coordinador duplicado', async () => {
     const supabase = buildSupabaseAgregar({
       subcampaniaRow: { id: 1 },
       insertResult: {
         data: null,
         error: {
           code: '23505',
-          message: 'duplicate key value violates unique constraint',
+          message:
+            'duplicate key value violates subcampania_equipo_un_coordinador_idx',
         },
       },
     });
@@ -140,7 +238,11 @@ describe('SubcampaniasEquipoService.agregar', () => {
       buildAuthService('ADMIN'),
     );
     await expect(
-      service.agregar(1, buildAgregarDto(RolEnSubcampania.COORDINADOR), 'auth-1'),
+      service.agregarMiembros(
+        1,
+        [{ usuario_id: 7, rol: RolEnSubcampania.COORDINADOR }],
+        'auth-1',
+      ),
     ).rejects.toThrow(UnprocessableEntityException);
   });
 
@@ -160,7 +262,11 @@ describe('SubcampaniasEquipoService.agregar', () => {
       buildAuthService('ADMIN'),
     );
     await expect(
-      service.agregar(1, buildAgregarDto(RolEnSubcampania.OPERARIO), 'auth-1'),
+      service.agregarMiembros(
+        1,
+        [buildAgregarDto(RolEnSubcampania.OPERARIO)],
+        'auth-1',
+      ),
     ).rejects.toThrow(UnprocessableEntityException);
   });
 
@@ -171,7 +277,7 @@ describe('SubcampaniasEquipoService.agregar', () => {
       buildAuthService('ADMIN'),
     );
     await expect(
-      service.agregar(99, buildAgregarDto(), 'auth-1'),
+      service.agregarMiembros(99, [buildAgregarDto()], 'auth-1'),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -182,7 +288,7 @@ describe('SubcampaniasEquipoService.agregar', () => {
       buildAuthService('GENERAL'),
     );
     await expect(
-      service.agregar(1, buildAgregarDto(), 'auth-1'),
+      service.agregarMiembros(1, [buildAgregarDto()], 'auth-1'),
     ).rejects.toThrow(ForbiddenException);
   });
 });

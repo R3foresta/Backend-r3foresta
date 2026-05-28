@@ -6,6 +6,7 @@ import {
   Get,
   Headers,
   Param,
+  ParseArrayPipe,
   ParseIntPipe,
   Patch,
   Post,
@@ -21,7 +22,7 @@ import { EditarSubcampaniaDto } from './dto/editar-subcampania.dto';
 import { SetearPoligonoDto } from './dto/setear-poligono.dto';
 import {
   ApiActivarSubcampania,
-  ApiAgregarMiembroEquipo,
+  ApiAgregarMiembrosEquipo,
   ApiBorrarSubcampania,
   ApiCerrarSubcampania,
   ApiCrearSubcampania,
@@ -144,15 +145,22 @@ export class SubcampaniasController {
   }
 
   @Post(':id/equipo')
-  @ApiAgregarMiembroEquipo()
-  agregarMiembro(
+  @ApiAgregarMiembrosEquipo()
+  agregarMiembros(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: AgregarMiembroEquipoDto,
+    @Body(
+      new ParseArrayPipe({
+        items: AgregarMiembroEquipoDto,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
+    miembros: AgregarMiembroEquipoDto[],
     @Headers('x-auth-id') authId?: string,
   ) {
-    return this.subcampaniasService.agregarMiembroEquipo(
+    return this.subcampaniasService.agregarMiembrosEquipo(
       id,
-      dto,
+      miembros,
       this.requireAuthId(authId),
     );
   }

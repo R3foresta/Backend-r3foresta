@@ -377,29 +377,41 @@ export function ApiListarEquipo() {
   );
 }
 
-export function ApiAgregarMiembroEquipo() {
+export function ApiAgregarMiembrosEquipo() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Agregar miembro al equipo de una subcampaña',
+      summary: 'Agregar uno o más miembros al equipo de una subcampaña',
       description:
-        'Agrega un usuario al equipo con un rol determinado. Solo puede existir un único COORDINADOR por subcampaña (constraint DB). Solo ADMIN.',
+        'Recibe un arreglo de miembros `[{ usuario_id, rol }, ...]` (de 1 a N). ' +
+        'La inserción es atómica: si alguno falla, no se agrega ninguno. ' +
+        'Solo puede existir un único COORDINADOR por subcampaña (constraint DB + pre-chequeo). ' +
+        'No se admiten `usuario_id` repetidos en el mismo payload. Solo ADMIN.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
     ApiParam({ name: 'id', type: 'integer' }),
     ApiBody({
       schema: {
-        type: 'object',
-        required: ['usuario_id', 'rol'],
-        properties: {
-          usuario_id: { type: 'integer', minimum: 1, example: 7 },
-          rol: { type: 'string', enum: ['COORDINADOR', 'OPERARIO'] },
+        type: 'array',
+        minItems: 1,
+        items: {
+          type: 'object',
+          required: ['usuario_id', 'rol'],
+          properties: {
+            usuario_id: { type: 'integer', minimum: 1, example: 7 },
+            rol: { type: 'string', enum: ['COORDINADOR', 'OPERARIO'] },
+          },
         },
+        example: [
+          { usuario_id: 13, rol: 'OPERARIO' },
+          { usuario_id: 14, rol: 'OPERARIO' },
+          { usuario_id: 15, rol: 'COORDINADOR' },
+        ],
       },
     }),
     ApiResponse({
       status: 201,
-      description: 'Miembro agregado correctamente.',
+      description: 'Miembros agregados correctamente.',
     }),
     ApiResponse({ status: 400, description: 'Datos inválidos.' }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
@@ -410,7 +422,8 @@ export function ApiAgregarMiembroEquipo() {
     ApiResponse({ status: 404, description: 'Subcampaña no encontrada.' }),
     ApiResponse({
       status: 422,
-      description: 'Coordinador duplicado o usuario ya pertenece al equipo.',
+      description:
+        'Más de un COORDINADOR en el payload, coordinador ya existente, usuarios duplicados, o alguno ya pertenece al equipo.',
     }),
   );
 }
