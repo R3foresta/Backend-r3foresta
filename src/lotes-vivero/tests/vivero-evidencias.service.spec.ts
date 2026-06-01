@@ -24,6 +24,7 @@ describe('ViveroEvidenciasService', () => {
   let from: jest.Mock;
   let upload: jest.Mock;
   let remove: jest.Mock;
+  const tipoEntidadEventoViveroId = 9;
 
   const foto = {
     mimetype: 'image/jpeg',
@@ -53,7 +54,7 @@ describe('ViveroEvidenciasService', () => {
     from = jest.fn((table: string) => {
       if (table === 'tipos_entidad_evidencia') {
         return createQueryBuilder({
-          data: { id: 9, activo: true },
+          data: { id: tipoEntidadEventoViveroId, activo: true },
           error: null,
         });
       }
@@ -63,7 +64,7 @@ describe('ViveroEvidenciasService', () => {
           data: [
             {
               id: 501,
-              tipo_entidad_id: 9,
+              tipo_entidad_id: tipoEntidadEventoViveroId,
               entidad_id: 0,
               codigo_trazabilidad: null,
               bucket: 'recoleccion_fotos',
@@ -137,7 +138,7 @@ describe('ViveroEvidenciasService', () => {
     const payload = evidenciasQuery.insert.mock.calls[0][0][0];
 
     expect(payload).toMatchObject({
-      tipo_entidad_id: 9,
+      tipo_entidad_id: tipoEntidadEventoViveroId,
       entidad_id: 0,
       codigo_trazabilidad: null,
       bucket: 'recoleccion_fotos',

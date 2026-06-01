@@ -29,7 +29,7 @@ import { CreateTipoPlantaDto } from './dto/create-tipo-planta.dto';
 import { ListPlantasQueryDto } from './dto/list-plantas-query.dto';
 import { UpdatePlantaDto } from './dto/update-planta.dto';
 
-const MAX_IMAGEN_BYTES = 2 * 1024 * 1024;
+const MAX_IMAGEN_BYTES = 5 * 1024 * 1024; // 5 MB — el frontend comprime, pero el límite real de entrada es 5 MB
 const IMAGEN_MIMETYPES = '.(png|jpeg|jpg|webp)';
 
 @ApiTags('plantas')
