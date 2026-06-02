@@ -62,4 +62,10 @@ export class FiltrarLotesViveroDto {
   @IsOptional()
   @IsString()
   q?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  subcampania_id?: number;
 }

@@ -59,7 +59,7 @@ export class ViveroConsultasService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly timelineService: ViveroTimelineService,
-  ) {}
+  ) { }
 
   async listarLotes(filters: FiltrarLotesViveroDto) {
     const supabase = this.supabaseService.getClient();
@@ -74,6 +74,20 @@ export class ViveroConsultasService {
       .order('created_at', { ascending: false })
       .order('id', { ascending: false });
 
+    if (filters.subcampania_id) {
+      const { data: asigData } = await supabase
+        .from('asignacion_vivero_subcampania')
+        .select('lote_vivero_id')
+        .eq('subcampania_id', filters.subcampania_id)
+        .eq('estado', 'ACTIVA');
+      const loteIds = (asigData || []).map((a: any) => Number(a.lote_vivero_id));
+      if (loteIds.length === 0) {
+        query = query.in('id', [-1]);
+      } else {
+        query = query.in('id', loteIds);
+      }
+    }
+
     query = this.applyListFilters(query, filters);
     query = query.range(offset, offset + limit - 1);
 
@@ -87,9 +101,56 @@ export class ViveroConsultasService {
     const total = count || 0;
     const totalPages = Math.ceil(total / limit);
 
+    const loteIds = (data || []).map((row: any) => Number(row.id));
+    const saldosMap = new Map<number, { saldo_asignado_total: number; saldo_vivo_disponible_asignacion: number | null }>();
+    const countsMap = new Map<number, number>();
+
+    if (loteIds.length > 0) {
+      // 1. Cargar saldos
+      const { data: saldosData, error: saldosError } = await supabase
+        .from('v_lote_vivero_saldos')
+        .select('lote_id, saldo_asignado_total, saldo_vivo_disponible_asignacion')
+        .in('lote_id', loteIds);
+
+      if (!saldosError && saldosData) {
+        saldosData.forEach((s: any) => {
+          saldosMap.set(Number(s.lote_id), {
+            saldo_asignado_total: Number(s.saldo_asignado_total || 0),
+            saldo_vivo_disponible_asignacion: s.saldo_vivo_disponible_asignacion !== null ? Number(s.saldo_vivo_disponible_asignacion) : null,
+          });
+        });
+      }
+
+      // 2. Cargar cantidad de asignaciones activas
+      const { data: asigData, error: asigError } = await supabase
+        .from('asignacion_vivero_subcampania')
+        .select('lote_vivero_id')
+        .eq('estado', 'ACTIVA')
+        .in('lote_vivero_id', loteIds);
+
+      if (!asigError && asigData) {
+        asigData.forEach((a: any) => {
+          const lid = Number(a.lote_vivero_id);
+          countsMap.set(lid, (countsMap.get(lid) || 0) + 1);
+        });
+      }
+    }
+
     return {
       success: true,
-      data: (data || []).map((row: any) => this.mapLoteRow(row)),
+      data: (data || []).map((row: any) => {
+        const mapped = this.mapLoteRow(row);
+        const saldos = saldosMap.get(mapped.id);
+        const activeAsigCount = countsMap.get(mapped.id) || 0;
+        return {
+          ...mapped,
+          saldo_asignado_total: saldos ? saldos.saldo_asignado_total : 0,
+          saldo_vivo_disponible_asignacion: saldos && saldos.saldo_vivo_disponible_asignacion !== null
+            ? saldos.saldo_vivo_disponible_asignacion
+            : mapped.saldo_vivo_actual,
+          cantidad_asignaciones_activas: activeAsigCount,
+        };
+      }),
       pagination: {
         page,
         limit,
@@ -134,6 +195,34 @@ export class ViveroConsultasService {
       throw new NotFoundException(`Lote de vivero ${loteId} no encontrado`);
     }
 
+    // Obtener saldos y cantidad de asignaciones
+    let saldoAsignadoTotal = 0;
+    let saldoVivoDisponibleAsignacion: number | null = null;
+    let activeAsigCount = 0;
+
+    const { data: saldosData } = await supabase
+      .from('v_lote_vivero_saldos')
+      .select('saldo_asignado_total, saldo_vivo_disponible_asignacion')
+      .eq('lote_id', loteId)
+      .maybeSingle();
+
+    if (saldosData) {
+      saldoAsignadoTotal = Number(saldosData.saldo_asignado_total || 0);
+      saldoVivoDisponibleAsignacion = saldosData.saldo_vivo_disponible_asignacion !== null
+        ? Number(saldosData.saldo_vivo_disponible_asignacion)
+        : null;
+    }
+
+    const { data: asigData } = await supabase
+      .from('asignacion_vivero_subcampania')
+      .select('id')
+      .eq('lote_vivero_id', loteId)
+      .eq('estado', 'ACTIVA');
+
+    if (asigData) {
+      activeAsigCount = asigData.length;
+    }
+
     const { data: eventosRaw, error: eventosError } = await supabase
       .from('evento_lote_vivero')
       .select(
@@ -173,10 +262,16 @@ export class ViveroConsultasService {
       (eventosRaw ?? []) as unknown as EventoSnapshotRow[],
     );
 
+    const mapped = this.mapLoteRow(loteRow);
     return {
       success: true,
       data: {
-        ...this.mapLoteRow(loteRow),
+        ...mapped,
+        saldo_asignado_total: saldoAsignadoTotal,
+        saldo_vivo_disponible_asignacion: saldoVivoDisponibleAsignacion !== null
+          ? saldoVivoDisponibleAsignacion
+          : mapped.saldo_vivo_actual,
+        cantidad_asignaciones_activas: activeAsigCount,
         ultimo_evento_por_tipo: ultimoEventoPorTipo,
       },
     };
@@ -358,7 +453,7 @@ export class ViveroConsultasService {
       unidad_medida_inicial: row.unidad_medida_inicial,
       plantas_vivas_iniciales:
         row.plantas_vivas_iniciales === null ||
-        row.plantas_vivas_iniciales === undefined
+          row.plantas_vivas_iniciales === undefined
           ? null
           : Number(row.plantas_vivas_iniciales),
       saldo_vivo_actual: saldoVivoActual,

@@ -13,6 +13,7 @@ function createQueryMock(response: any) {
     select: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
     gte: jest.fn().mockReturnThis(),
     lte: jest.fn().mockReturnThis(),
     or: jest.fn().mockReturnThis(),
@@ -189,6 +190,14 @@ function createDetailQueryMock(loteResponse: any, eventosResponse: any) {
     maybeSingle: jest.fn().mockResolvedValue(loteResponse),
   };
 
+  const genericQuery: any = {
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
+    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+    then: (resolve: any) => Promise.resolve({ data: [], error: null }).then(resolve),
+  };
+
   const eventosQuery: any = {
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
@@ -200,6 +209,7 @@ function createDetailQueryMock(loteResponse: any, eventosResponse: any) {
   const from = jest.fn((table: string) => {
     if (table === 'lote_vivero') return loteQuery;
     if (table === 'evento_lote_vivero') return eventosQuery;
+    if (table === 'v_lote_vivero_saldos' || table === 'asignacion_vivero_subcampania') return genericQuery;
     throw new Error(`Unexpected table in test: ${table}`);
   });
 
