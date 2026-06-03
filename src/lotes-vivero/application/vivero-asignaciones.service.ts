@@ -176,13 +176,17 @@ export class ViveroAsignacionesService {
 
     return {
       success: true,
-      data: data.map((a) => ({
-        ...a,
-        subcampania_nombre: subcampaniaNombres[a.subcampania_id]?.nombre ?? null,
-        campania_nombre: subcampaniaNombres[a.subcampania_id]?.campania_nombre ?? null,
-        coordinador_nombre: coordinatorNombres[a.subcampania_id] ?? null,
-        creador_nombre: a.creator ? `${a.creator.nombre} ${a.creator.apellido || ''}`.trim() : null,
-      })),
+      data: data.map((a) => {
+        const creatorObj = Array.isArray(a.creator) ? a.creator[0] : a.creator;
+        const c = creatorObj as any;
+        return {
+          ...a,
+          subcampania_nombre: subcampaniaNombres[a.subcampania_id]?.nombre ?? null,
+          campania_nombre: subcampaniaNombres[a.subcampania_id]?.campania_nombre ?? null,
+          coordinador_nombre: coordinatorNombres[a.subcampania_id] ?? null,
+          creador_nombre: c ? `${c.nombre} ${c.apellido || ''}`.trim() : null,
+        };
+      }),
     };
   }
 
