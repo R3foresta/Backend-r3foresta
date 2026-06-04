@@ -176,7 +176,7 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 | `titulo` | string | No | Título descriptivo (máx. 120 chars) |
 | `descripcion` | string | No | Descripción de las fotos (máx. 1000 chars) |
 | `tomado_en` | string (ISO 8601) | No | Fecha y hora en que se tomaron las fotos |
-| `es_principal` | boolean | No | Indica si es la foto principal del evento |
+| `es_principal` | boolean | No | Ignorado mientras la evidencia esta pendiente; la evidencia principal aplica cuando ya existe el evento definitivo |
 | `metadata` | string (JSON) | No | Metadata adicional serializada como texto |
 
 **Respuesta exitosa (201)**:

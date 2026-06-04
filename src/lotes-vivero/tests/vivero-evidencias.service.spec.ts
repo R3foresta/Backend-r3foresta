@@ -77,7 +77,7 @@ describe('ViveroEvidenciasService', () => {
               titulo: 'Inicio 1',
               descripcion: 'Foto inicio',
               metadata: {},
-              es_principal: true,
+              es_principal: false,
               orden: 0,
               tomado_en: null,
               creado_en: '2026-04-27',
@@ -115,7 +115,7 @@ describe('ViveroEvidenciasService', () => {
     );
   });
 
-  it('crea evidencia pendiente de evento vivero con entidad_id 0', async () => {
+  it('crea evidencia pendiente de evento vivero sin marcar principal mientras entidad_id es 0', async () => {
     const result = await service.crearPendienteParaEvento(
       {
         titulo: 'Inicio',
@@ -146,7 +146,7 @@ describe('ViveroEvidenciasService', () => {
       mime_type: 'image/jpeg',
       titulo: 'Inicio',
       descripcion: 'Foto inicio',
-      es_principal: true,
+      es_principal: false,
       orden: 0,
       creado_por_usuario_id: 77,
     });
