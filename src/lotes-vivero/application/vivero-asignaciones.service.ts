@@ -127,7 +127,7 @@ export class ViveroAsignacionesService {
     const { data, error } = await supabase
       .from('asignacion_vivero_subcampania')
       .select(
-        'id, subcampania_id, proposito, estado, cantidad_asignada, cantidad_consumida, cantidad_devuelta, cantidad_mermada, saldo_asignado_disponible, usuario_asignacion_id, fecha_asignacion, updated_at',
+        'id, subcampania_id, proposito, estado, cantidad_asignada, cantidad_consumida, cantidad_devuelta, cantidad_mermada, saldo_asignado_disponible, usuario_asignacion_id, fecha_asignacion, updated_at, creator:usuario_asignacion_id(nombre, apellido)',
       )
       .eq('lote_vivero_id', loteId)
       .eq('estado', 'ACTIVA')
@@ -140,25 +140,53 @@ export class ViveroAsignacionesService {
 
     const asignaciones = data ?? [];
     const subcampaniaIds = [...new Set(asignaciones.map((a) => a.subcampania_id))];
-    const subcampaniaNombres: Record<number, string> = {};
+    const subcampaniaNombres: Record<number, { nombre: string; campania_nombre: string }> = {};
 
     if (subcampaniaIds.length > 0) {
       const { data: subData } = await supabase
         .from('subcampania')
-        .select('id, nombre')
+        .select('id, nombre, campania:campania_id(nombre)')
         .in('id', subcampaniaIds);
 
-      for (const sub of (subData ?? []) as { id: number; nombre: string }[]) {
-        subcampaniaNombres[sub.id] = sub.nombre;
+      for (const sub of (subData ?? []) as any[]) {
+        subcampaniaNombres[sub.id] = {
+          nombre: sub.nombre,
+          campania_nombre: sub.campania?.nombre || 'Sin campaña',
+        };
+      }
+    }
+
+    const coordinatorNombres: Record<number, string> = {};
+    if (subcampaniaIds.length > 0) {
+      const { data: coorData } = await supabase
+        .from('subcampania_equipo')
+        .select(
+          'subcampania_id, usuario:usuario_id(nombre, apellido)',
+        )
+        .in('subcampania_id', subcampaniaIds)
+        .eq('rol', 'COORDINADOR');
+
+      for (const c of coorData ?? []) {
+        const u = (c as any).usuario;
+        if (u) {
+          coordinatorNombres[Number((c as any).subcampania_id)] = `${u.nombre} ${u.apellido || ''}`.trim();
+        }
       }
     }
 
     return {
       success: true,
-      data: asignaciones.map((a) => ({
-        ...a,
-        subcampania_nombre: subcampaniaNombres[a.subcampania_id] ?? null,
-      })),
+      data: data.map((a) => {
+        const creatorObj = Array.isArray(a.creator) ? a.creator[0] : a.creator;
+        const c = creatorObj as any;
+        return {
+          ...a,
+          subcampania_nombre: subcampaniaNombres[a.subcampania_id]?.nombre ?? null,
+          campania_nombre: subcampaniaNombres[a.subcampania_id]?.campania_nombre ?? null,
+          coordinador_nombre: coordinatorNombres[a.subcampania_id] ?? null,
+          creador_nombre: c ? `${c.nombre} ${c.apellido || ''}`.trim() : null,
+        };
+      }),
     };
   }
 
