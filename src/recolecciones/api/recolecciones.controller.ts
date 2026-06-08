@@ -42,7 +42,7 @@ export class RecoleccionesController {
 
   @Post()
   @ApiCreateRecoleccion()
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 10 }]))
   async create(
     @Body() bodyRaw: any,
     @Headers('x-auth-id') authId?: string,
@@ -64,7 +64,7 @@ export class RecoleccionesController {
 
   @Patch(':id/draft')
   @ApiUpdateDraftRecoleccion()
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 10 }]))
   async updateDraft(
     @Param('id', ParseIntPipe) id: number,
     @Body() bodyRaw: any,

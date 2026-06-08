@@ -26,7 +26,7 @@ export class EvidenciaCompletitudPolicy {
     options: { minCount?: number; maxCount?: number; requireBuffer?: boolean },
   ): void {
     const minCount = options.minCount ?? 0;
-    const maxCount = options.maxCount ?? 5;
+    const maxCount = options.maxCount ?? 10;
 
     if (files.length < minCount) {
       throw new BadRequestException(
