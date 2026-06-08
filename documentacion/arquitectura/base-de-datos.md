@@ -207,7 +207,7 @@ Almacena fotos asociadas a recolecciones.
 | `recoleccion_id` | `bigint` | NOT NULL, FK | Recolección asociada |
 | `url` | `text` | NOT NULL | URL de la imagen |
 | `peso_bytes` | `integer` | max 5MB | Tamaño del archivo |
-| `formato` | `text` | JPG, JPEG, PNG | Formato de imagen |
+| `formato` | `text` | JPG, JPEG, PNG, WEBP, HEIC, HEIF | Formato de imagen |
 | `created_at` | `date` | NOT NULL, DEFAULT CURRENT_DATE | Fecha de subida |
 
 **Relaciones:**
@@ -371,7 +371,7 @@ Almacena fotos asociadas a una plantación.
 | `plantacion_id` | `bigint` | NOT NULL, FK | Plantación asociada |
 | `url` | `text` | NOT NULL | URL de la imagen |
 | `peso_bytes` | `integer` | max 5MB | Tamaño del archivo |
-| `formato` | `text` | JPG, JPEG, PNG | Formato de imagen |
+| `formato` | `text` | JPG, JPEG, PNG, WEBP, HEIC, HEIF | Formato de imagen |
 | `descripcion` | `text` | - | Descripción de la foto |
 | `created_at` | `timestamp with time zone` | NOT NULL, DEFAULT now() | Fecha de subida |
 

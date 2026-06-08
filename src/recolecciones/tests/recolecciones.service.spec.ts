@@ -315,6 +315,23 @@ describe('RecoleccionesService', () => {
     ]);
   });
 
+  it('acepta formatos de galeria en fotos de recoleccion', () => {
+    expect(() =>
+      evidenciasService.validarFotosCreacion([
+        {
+          mimetype: 'image/heic',
+          originalname: 'iphone.heic',
+          buffer: Buffer.from('foto-1'),
+        },
+        {
+          mimetype: 'image/webp',
+          originalname: 'android.webp',
+          buffer: Buffer.from('foto-2'),
+        },
+      ]),
+    ).not.toThrow();
+  });
+
   /**
    * TEST 2: Verifica que findOne() retorna recolección con elegibilidad evaluada
    *

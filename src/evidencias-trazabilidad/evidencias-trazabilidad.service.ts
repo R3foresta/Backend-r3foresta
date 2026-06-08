@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { createHash } from 'crypto';
+import { ImageFilePolicy } from '../common/files/image-file.policy';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateEvidenciaRecoleccionDto } from './dto/create-evidencia-recoleccion.dto';
 import { ListEvidenciasTrazabilidadDto } from './dto/list-evidencias-trazabilidad.dto';
@@ -107,16 +108,8 @@ export class EvidenciasTrazabilidadService {
     }
 
     // Validación previa de archivos antes de comenzar uploads.
-
     for (const file of files) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-      const formato = file.mimetype.split('/')[1].toUpperCase();
-
-      if (!['JPG', 'JPEG', 'PNG'].includes(formato)) {
-        throw new BadRequestException(
-          `Formato ${formato} no permitido. Solo JPG, JPEG, PNG`,
-        );
-      }
+      ImageFilePolicy.assertAllowedImage(file, { requireBuffer: true });
 
       // TODO: No podemos liminar al usuario a enviar una imagen porque bloquea al usuario, lo que tendríamos que hacer es comprirmir la imaen.
       // if (file.size > 5242880) {
@@ -218,6 +211,7 @@ export class EvidenciasTrazabilidadService {
 
     try {
       for (const file of files) {
+        const image = ImageFilePolicy.resolve(file);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         const sanitizedOriginalName = String(file.originalname || 'evidencia')
           .replace(/\s+/g, '_')
@@ -232,7 +226,7 @@ export class EvidenciasTrazabilidadService {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
           .upload(rutaStorage, file.buffer, {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            contentType: file.mimetype,
+            contentType: image.mimeType,
             upsert: false,
           });
 
@@ -244,8 +238,6 @@ export class EvidenciasTrazabilidadService {
           throw new InternalServerErrorException('Error al subir evidencias');
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-        const formato = file.mimetype.split('/')[1].toUpperCase();
         const storageObjectId =
           typeof uploadData?.id === 'string' ? uploadData.id : null;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -257,12 +249,10 @@ export class EvidenciasTrazabilidadService {
         fotosSubidas.push({
           ruta_archivo: rutaStorage,
           storage_object_id: storageObjectId,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-          mime_type: file.mimetype,
+          mime_type: image.mimeType,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
           tamano_bytes: file.size,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          formato,
+          formato: image.formato,
           hash_sha256: hashSha256,
         });
       }

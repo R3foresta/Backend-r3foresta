@@ -36,7 +36,7 @@
 
 | Key | Type | Value de ejemplo |
 |---|---|---|
-| `fotos` | File | _(selecciona 1-5 imágenes JPG o PNG)_ |
+| `fotos` | File | _(selecciona 1-5 imágenes JPG/JPEG/PNG/WEBP/HEIC/HEIF)_ |
 | `titulo` | Text | `Subetapa media sombra` |
 | `descripcion` | Text | `Plantas en fase de aclimatacion` |
 

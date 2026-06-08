@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { createHash } from 'crypto';
+import { ImageFilePolicy } from '../../common/files/image-file.policy';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CrearEvidenciaPendientePlantacionDto } from '../api/dto/crear-evidencia-pendiente-plantacion.dto';
 import { PlantacionAuthService } from './plantacion-auth.service';
@@ -55,6 +56,7 @@ export class PlantacionEvidenciasService {
 
     try {
       for (const [index, file] of files.entries()) {
+        const image = ImageFilePolicy.resolve(file);
         const safeOriginalName = String(
           file.originalname || `evidencia_${index + 1}`,
         )
@@ -71,7 +73,7 @@ export class PlantacionEvidenciasService {
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from(this.bucketEvidencias)
           .upload(rutaStorage, file.buffer!, {
-            contentType: String(file.mimetype ?? ''),
+            contentType: image.mimeType,
             upsert: false,
           });
 
@@ -85,8 +87,6 @@ export class PlantacionEvidenciasService {
           );
         }
 
-        const mimeType = String(file.mimetype ?? '');
-        const formato = mimeType.split('/')[1].toUpperCase();
         const storageObjectId =
           typeof uploadData?.id === 'string' ? uploadData.id : null;
         const hashSha256 = file.buffer
@@ -96,9 +96,9 @@ export class PlantacionEvidenciasService {
         fotosSubidas.push({
           ruta_archivo: rutaStorage,
           storage_object_id: storageObjectId,
-          mime_type: mimeType,
+          mime_type: image.mimeType,
           tamano_bytes: Number(file.size ?? 0),
-          formato,
+          formato: image.formato,
           hash_sha256: hashSha256,
         });
       }
@@ -241,21 +241,7 @@ export class PlantacionEvidenciasService {
     }
 
     for (const file of files) {
-      if (!Buffer.isBuffer(file.buffer)) {
-        throw new BadRequestException(
-          'No se pudieron procesar las fotos enviadas. Verifica multipart/form-data.',
-        );
-      }
-
-      const mimeType = String(file.mimetype ?? '')
-        .trim()
-        .toLowerCase();
-      const formato = mimeType.split('/')[1]?.toUpperCase();
-      if (!formato || !['JPG', 'JPEG', 'PNG'].includes(formato)) {
-        throw new BadRequestException(
-          `Formato ${formato || 'DESCONOCIDO'} no permitido. Solo JPG, JPEG, PNG`,
-        );
-      }
+      ImageFilePolicy.assertAllowedImage(file, { requireBuffer: true });
     }
   }
 

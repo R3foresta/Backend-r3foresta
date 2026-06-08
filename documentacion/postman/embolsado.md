@@ -182,7 +182,7 @@ Content-Type: multipart/form-data
 | ------ | ---------------------------------------------------- |
 | 400    | No se enviaron fotos                                 |
 | 400    | El lote no está en estado ACTIVO                     |
-| 400    | Formato de imagen no permitido (solo JPG, JPEG, PNG) |
+| 400    | Formato de imagen no permitido |
 | 401    | Falta el header `x-auth-id`                          |
 | 404    | El lote no existe                                    |
 

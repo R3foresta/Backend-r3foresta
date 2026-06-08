@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { createHash } from 'crypto';
+import { ImageFilePolicy } from '../../common/files/image-file.policy';
 import { SupabaseService } from '../../supabase/supabase.service';
 import {
   EvidenciaCompletitudPolicy,
@@ -88,12 +89,12 @@ export class RecoleccionEvidenciasService {
     for (const file of files) {
       const nombreArchivo = `${Date.now()}_${file.originalname}`;
       const rutaStorage = nombreArchivo;
-      const mimeType = String(file.mimetype ?? '');
+      const image = ImageFilePolicy.resolve(file);
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(this.bucketFotos)
         .upload(rutaStorage, file.buffer!, {
-          contentType: file.mimetype,
+          contentType: image.mimeType,
           upsert: false,
         });
 
@@ -102,7 +103,6 @@ export class RecoleccionEvidenciasService {
         throw new InternalServerErrorException('Error al subir foto');
       }
 
-      const formato = mimeType.split('/')[1].toUpperCase();
       const storageObjectId =
         typeof uploadData?.id === 'string' ? uploadData.id : null;
       const hashSha256 = file.buffer
@@ -112,9 +112,9 @@ export class RecoleccionEvidenciasService {
       fotosSubidas.push({
         ruta_archivo: rutaStorage,
         storage_object_id: storageObjectId,
-        mime_type: mimeType,
+        mime_type: image.mimeType,
         tamano_bytes: Number(file.size ?? 0),
-        formato,
+        formato: image.formato,
         hash_sha256: hashSha256,
       });
     }
@@ -198,8 +198,7 @@ export class RecoleccionEvidenciasService {
     const ordenInicial = Number(count || 0);
 
     for (const [index, file] of files.entries()) {
-      const mimeType = String(file.mimetype ?? '').trim();
-      const formato = mimeType.split('/')[1].toUpperCase();
+      const image = ImageFilePolicy.resolve(file);
       const safeOriginalName = String(file.originalname || `foto_${index + 1}`)
         .trim()
         .replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -208,7 +207,7 @@ export class RecoleccionEvidenciasService {
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(this.bucketFotos)
         .upload(rutaStorage, file.buffer!, {
-          contentType: mimeType,
+          contentType: image.mimeType,
           upsert: false,
         });
 
@@ -236,13 +235,13 @@ export class RecoleccionEvidenciasService {
         ruta_archivo: rutaStorage,
         storage_object_id: storageObjectId,
         tipo_archivo: 'FOTO',
-        mime_type: mimeType,
+        mime_type: image.mimeType,
         tamano_bytes: Number(file.size ?? 0),
         hash_sha256: hashSha256,
         titulo: `Foto ${orden + 1}`,
         metadata: {
           origen: 'UPDATE_DRAFT',
-          formato,
+          formato: image.formato,
         },
         es_principal: orden === 0,
         orden,

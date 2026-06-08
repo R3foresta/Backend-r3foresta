@@ -114,6 +114,22 @@ describe('ViveroEmbolsadoService', () => {
     );
   }
 
+  function buildRegistrarFromMock(
+    lote: Record<string, unknown> | null = {
+      ...loteActivo,
+      cantidad_inicial_en_proceso: 100,
+    },
+  ) {
+    const loteChain = buildChain({
+      maybeSingle: jest.fn().mockResolvedValue({ data: lote, error: null }),
+    });
+
+    return jest.fn().mockImplementation((tabla: string) => {
+      if (tabla === 'lote_vivero') return loteChain;
+      return buildChain();
+    });
+  }
+
   // -------------------------------------------------------------------------
   // Test 1: GET context devuelve lote activo con INICIO y sin EMBOLSADO
   // -------------------------------------------------------------------------
@@ -252,7 +268,8 @@ describe('ViveroEmbolsadoService', () => {
           .mockResolvedValue({ data: rpcResultadoEmbolsado, error: null }),
       });
 
-      service = buildService(jest.fn(), rpcMock);
+      fromMock = buildRegistrarFromMock();
+      service = buildService(fromMock, rpcMock);
 
       const response = await service.registrar(LOTE_ID, dto, AUTH_ID);
       const resultado = response.data;
@@ -288,7 +305,8 @@ describe('ViveroEmbolsadoService', () => {
           .fn()
           .mockResolvedValue({ data: rpcResultadoEmbolsado, error: null }),
       });
-      service = buildService(jest.fn(), rpcMock);
+      fromMock = buildRegistrarFromMock();
+      service = buildService(fromMock, rpcMock);
 
       // Simula que el frontend intenta mandar campos prohibidos en el body
       const dtoConCamposExtra = { ...dto } as any;
@@ -308,7 +326,8 @@ describe('ViveroEmbolsadoService', () => {
     // Test 5: rechaza cuando el responsable no esta disponible
     it('propaga NotFoundException si el usuario autenticado no existe', async () => {
       rpcMock = jest.fn();
-      service = buildService(jest.fn(), rpcMock);
+      fromMock = buildRegistrarFromMock();
+      service = buildService(fromMock, rpcMock);
       authService.getUserByAuthId.mockRejectedValue(
         new NotFoundException('Usuario no encontrado'),
       );
@@ -330,7 +349,8 @@ describe('ViveroEmbolsadoService', () => {
           },
         }),
       });
-      service = buildService(jest.fn(), rpcMock);
+      fromMock = buildRegistrarFromMock();
+      service = buildService(fromMock, rpcMock);
 
       const dtoInvalido = { ...dto, plantas_vivas_iniciales: 0 };
       await expect(
@@ -349,7 +369,8 @@ describe('ViveroEmbolsadoService', () => {
           },
         }),
       });
-      service = buildService(jest.fn(), rpcMock);
+      fromMock = buildRegistrarFromMock();
+      service = buildService(fromMock, rpcMock);
 
       const dtoSinEvidencia = { ...dto, evidencia_ids: [] };
       await expect(
@@ -368,7 +389,8 @@ describe('ViveroEmbolsadoService', () => {
           },
         }),
       });
-      service = buildService(jest.fn(), rpcMock);
+      fromMock = buildRegistrarFromMock();
+      service = buildService(fromMock, rpcMock);
 
       await expect(service.registrar(LOTE_ID, dto, AUTH_ID)).rejects.toThrow(
         BadRequestException,
@@ -386,7 +408,8 @@ describe('ViveroEmbolsadoService', () => {
           },
         }),
       });
-      service = buildService(jest.fn(), rpcMock);
+      fromMock = buildRegistrarFromMock();
+      service = buildService(fromMock, rpcMock);
 
       await expect(service.registrar(LOTE_ID, dto, AUTH_ID)).rejects.toThrow(
         BadRequestException,
@@ -404,7 +427,8 @@ describe('ViveroEmbolsadoService', () => {
           },
         }),
       });
-      service = buildService(jest.fn(), rpcMock);
+      fromMock = buildRegistrarFromMock();
+      service = buildService(fromMock, rpcMock);
 
       await expect(service.registrar(LOTE_ID, dto, AUTH_ID)).rejects.toThrow(
         BadRequestException,

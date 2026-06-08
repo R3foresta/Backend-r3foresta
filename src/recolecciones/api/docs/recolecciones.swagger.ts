@@ -115,6 +115,8 @@ export function ApiCreateRecoleccion() {
           fotos: {
             type: 'array',
             items: { type: 'string', format: 'binary' },
+            description:
+              'Archivos de imagen: JPG/JPEG/PNG/WEBP/HEIC/HEIF (min 2, max 10)',
           },
         },
       },

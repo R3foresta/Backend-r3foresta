@@ -515,7 +515,8 @@ export function ApiCrearEvidenciasPendientesDespacho() {
           fotos: {
             type: 'array',
             items: { type: 'string', format: 'binary' },
-            description: 'Archivos de imagen (max 5, solo JPG/JPEG/PNG)',
+            description:
+              'Archivos de imagen (max 5, JPG/JPEG/PNG/WEBP/HEIC/HEIF)',
           },
         },
       },
@@ -744,7 +745,8 @@ export function ApiCrearEvidenciasPendientesEmbolsado() {
           fotos: {
             type: 'array',
             items: { type: 'string', format: 'binary' },
-            description: 'Archivos de imagen (max 5, solo JPG/JPEG/PNG)',
+            description:
+              'Archivos de imagen (max 5, JPG/JPEG/PNG/WEBP/HEIC/HEIF)',
           },
         },
       },
@@ -817,7 +819,8 @@ export function ApiCrearEvidenciasPendientesMerma() {
           fotos: {
             type: 'array',
             items: { type: 'string', format: 'binary' },
-            description: 'Archivos de imagen (max 5, solo JPG/JPEG/PNG)',
+            description:
+              'Archivos de imagen (max 5, JPG/JPEG/PNG/WEBP/HEIC/HEIF)',
           },
         },
       },
@@ -901,7 +904,8 @@ export function ApiCrearEvidenciasPendientesAdaptabilidad() {
           fotos: {
             type: 'array',
             items: { type: 'string', format: 'binary' },
-            description: 'Archivos de imagen (max 5, solo JPG/JPEG/PNG)',
+            description:
+              'Archivos de imagen (max 5, JPG/JPEG/PNG/WEBP/HEIC/HEIF)',
           },
         },
       },

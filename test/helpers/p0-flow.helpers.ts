@@ -3,10 +3,10 @@ import { Test } from '@nestjs/testing';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import { AppModule } from '../src/app.module';
-import { SupabaseService } from '../src/supabase/supabase.service';
+import { AppModule } from '../../src/app.module';
+import { SupabaseService } from '../../src/supabase/supabase.service';
 
-config({ path: resolve(__dirname, '../.env') });
+config({ path: resolve(process.cwd(), '.env') });
 
 export type P0UserRef = {
   id: number;

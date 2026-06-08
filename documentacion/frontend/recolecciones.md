@@ -88,7 +88,7 @@ Campos FormData:
 | `vivero_id` | number | no | |
 | `observaciones` | string | no | máx. 1000 chars |
 | `ubicacion` | string JSON | sí | Serializar `CreateUbicacionDto` como JSON en el campo |
-| `fotos` | File[] | sí | 1–5 archivos JPG/PNG |
+| `fotos` | File[] | sí | 2–10 archivos JPG/JPEG/PNG/WEBP/HEIC/HEIF |
 
 Ejemplo del campo `ubicacion` (serializado como string en el FormData):
 

@@ -141,7 +141,7 @@ Body FormData:
 
 | Campo          | Tipo           | Requerido | Reglas                                                   |
 | -------------- | -------------- | --------- | -------------------------------------------------------- |
-| `fotos`        | File[]         | si        | 1 a 5 imagenes. Solo JPG, JPEG o PNG.                    |
+| `fotos`        | File[]         | si        | 1 a 5 imagenes. JPG/JPEG/PNG/WEBP/HEIC/HEIF.             |
 | `titulo`       | string         | no        | Maximo 120 caracteres.                                   |
 | `descripcion`  | string         | no        | Maximo 1000 caracteres.                                  |
 | `metadata`     | string         | no        | JSON serializado como texto. Debe representar un objeto. |

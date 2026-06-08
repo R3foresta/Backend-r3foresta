@@ -38,7 +38,7 @@ URL:     {{base_url}}/lotes-vivero/{{lote_id}}/merma/evidencias-pendientes
 
 | Key | Type | Value | Requerido |
 |-----|------|-------|-----------|
-| `fotos` | File | Seleccionar imagen JPG/JPEG/PNG | Si (min 1, max 5) |
+| `fotos` | File | Seleccionar imagen JPG/JPEG/PNG/WEBP/HEIC/HEIF | Si (min 1, max 5) |
 | `titulo` | Text | `Evidencia merma por plaga` | No |
 | `descripcion` | Text | `Plantas afectadas en sector norte` | No |
 

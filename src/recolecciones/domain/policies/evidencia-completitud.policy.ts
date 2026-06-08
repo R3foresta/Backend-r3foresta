@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { ImageFilePolicy } from '../../../common/files/image-file.policy';
 
 export type RecoleccionFotoInput = {
   mimetype?: string;
@@ -39,22 +40,9 @@ export class EvidenciaCompletitudPolicy {
     }
 
     for (const file of files) {
-      if (options.requireBuffer && !Buffer.isBuffer(file.buffer)) {
-        throw new BadRequestException(
-          'No se pudieron procesar las fotos enviadas. Verifica que el endpoint use multipart/form-data correctamente.',
-        );
-      }
-
-      const mimeType = String(file.mimetype ?? '')
-        .trim()
-        .toLowerCase();
-      const formato = mimeType.split('/')[1]?.toUpperCase();
-
-      if (!formato || !['JPG', 'JPEG', 'PNG'].includes(formato)) {
-        throw new BadRequestException(
-          `Formato ${formato || 'DESCONOCIDO'} no permitido. Solo JPG, JPEG, PNG`,
-        );
-      }
+      ImageFilePolicy.assertAllowedImage(file, {
+        requireBuffer: options.requireBuffer,
+      });
 
       // TODO: No podemos liminar al usuario a enviar una imagen porque bloquea al usuario, lo que tendríamos que hacer es comprirmir la imaen.
       // if (Number(file.size ?? 0) > 5242880) {

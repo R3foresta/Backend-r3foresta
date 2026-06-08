@@ -18,10 +18,14 @@ npm run start:prod         # run compiled dist/main.js
 npm run build              # nest build → ./dist
 npm run lint               # eslint --fix on src/, apps/, libs/, test/
 npm run format             # prettier write
-npm run test               # jest (rootDir: src, testRegex: .*\.spec\.ts$)
-npm run test:watch
-npm run test:cov
-npm run test:e2e           # uses test/jest-e2e.json
+npm test                   # unit tests via test/jest-unit.json
+npm run test:unit          # src/**/*.spec.ts + test/unit/**/*.spec.ts
+npm run test:integration   # test/integration/**/*.spec.ts; may need real Supabase env
+npm run test:watch         # unit tests in watch mode
+npm run test:cov           # unit coverage
+npm run test:e2e           # all test/e2e/**/*.e2e-spec.ts
+npm run test:e2e:p0        # P0 HTTP flows
+npm run test:e2e:db        # DB/RPC flows
 npx jest path/to/file.spec.ts            # single test file
 npx jest -t "name of test"               # single test by name
 ```

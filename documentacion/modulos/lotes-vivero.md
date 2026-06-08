@@ -172,7 +172,7 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `fotos` | File[] | No | Hasta 5 imágenes (jpg, png, webp) |
+| `fotos` | File[] | No | Hasta 5 imágenes (jpg, jpeg, png, webp, heic, heif) |
 | `titulo` | string | No | Título descriptivo (máx. 120 chars) |
 | `descripcion` | string | No | Descripción de las fotos (máx. 1000 chars) |
 | `tomado_en` | string (ISO 8601) | No | Fecha y hora en que se tomaron las fotos |

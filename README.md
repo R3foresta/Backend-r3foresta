@@ -48,14 +48,28 @@ $ npm run start:prod
 
 ```bash
 # unit tests
-$ npm run test
+$ npm test
 
-# e2e tests
+# unit tests using explicit config
+$ npm run test:unit
+
+# integration tests against real external services
+$ npm run test:integration
+
+# all e2e tests
 $ npm run test:e2e
+
+# P0 HTTP e2e tests
+$ npm run test:e2e:p0
+
+# DB/RPC e2e tests
+$ npm run test:e2e:db
 
 # test coverage
 $ npm run test:cov
 ```
+
+See `test/README.md` for the folder map.
 
 ## Deployment
 

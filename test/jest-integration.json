@@ -4,8 +4,9 @@
   "testEnvironment": "node",
   "setupFiles": ["dotenv/config"],
   "watchman": false,
-  "testMatch": ["<rootDir>/test/e2e/**/*.e2e-spec.ts"],
+  "testMatch": ["<rootDir>/test/integration/**/*.spec.ts"],
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
-  }
+  },
+  "testTimeout": 15000
 }

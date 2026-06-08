@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 import { resolve } from 'path';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-config({ path: resolve(__dirname, '../.env') });
+config({ path: resolve(process.cwd(), '.env') });
 
 type DbError = {
   message?: string;

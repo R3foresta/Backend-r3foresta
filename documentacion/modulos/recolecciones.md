@@ -65,7 +65,7 @@ Todos exigen header `x-auth-id`. Aquellos marcados con `*` también exigen `x-us
 
 | HTTP | Ruta | DTO | Rol | Notas |
 |---|---|---|---|---|
-| POST | `/api/recolecciones` | `CreateRecoleccionDto` (multipart) | GENERAL+ | Crea en `BORRADOR`. Acepta `fotos` (1-5 archivos JPG/PNG) |
+| POST | `/api/recolecciones` | `CreateRecoleccionDto` (multipart) | GENERAL+ | Crea en `BORRADOR`. Acepta `fotos` (2-10 archivos JPG/JPEG/PNG/WEBP/HEIC/HEIF) |
 | PATCH | `/api/recolecciones/:id/draft` * | `UpdateDraftDto` (multipart) | dueño / ADMIN | Solo si `estado_registro = BORRADOR` |
 | PATCH | `/api/recolecciones/:id/submit` * | — | dueño | `BORRADOR` → `PENDIENTE_VALIDACION` |
 | PATCH | `/api/recolecciones/:id/approve` * | — | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `VALIDADO`. Ejecuta Pinata + mint |
@@ -90,7 +90,7 @@ Todos exigen header `x-auth-id`. Aquellos marcados con `*` también exigen `x-us
 | `vivero_id` | int | no | Opcional |
 | `observaciones` | string ≤ 1000 | no | |
 | `ubicacion` | `CreateUbicacionDto` | sí | Anidado |
-| `fotos` | File[] 1–5 | sí (multipart) | JPG/PNG |
+| `fotos` | File[] 2–10 | sí (multipart) | JPG/JPEG/PNG/WEBP/HEIC/HEIF |
 
 `CreateUbicacionDto` requiere `latitud` (-90..90) y `longitud` (-180..180). Opcionales: `pais_id`, `division_id`, `nombre`, `referencia`, `precision_m`, `fuente`.
 
