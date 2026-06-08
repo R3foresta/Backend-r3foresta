@@ -33,14 +33,14 @@ export class RecoleccionEvidenciasService {
   validarFotosCreacion(files: RecoleccionFotoInput[]): void {
     EvidenciaCompletitudPolicy.validarFotos(files, {
       minCount: 2,
-      maxCount: 5,
+      maxCount: 10,
       requireBuffer: true,
     });
   }
 
   validarDraftFotos(files: RecoleccionFotoInput[]): void {
     EvidenciaCompletitudPolicy.validarFotos(files, {
-      maxCount: 5,
+      maxCount: 10,
       requireBuffer: files.length > 0,
     });
   }

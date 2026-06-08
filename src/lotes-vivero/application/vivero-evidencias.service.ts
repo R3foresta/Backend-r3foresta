@@ -137,7 +137,8 @@ export class ViveroEvidenciasService {
             estado: 'PENDIENTE_VINCULACION',
             formato: foto.formato,
           },
-          es_principal: index === 0,
+          // Las pendientes comparten entidad_id=0; la principalidad aplica al vincularlas.
+          es_principal: false,
           orden: index,
           tomado_en: dto.tomado_en ?? null,
           creado_por_usuario_id: usuario.id,

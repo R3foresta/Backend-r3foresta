@@ -143,7 +143,9 @@ describe('ApiCrearEvidenciaPendiente', () => {
 
   it('define summary correcto en ApiOperation', () => {
     const op = getOperation(fn);
-    expect(op?.summary).toBe('Crear evidencia pendiente de vivero');
+    expect(op?.summary).toBe(
+      'Crear evidencias pendientes para evento de vivero',
+    );
   });
 
   it('incluye el header x-auth-id en los parametros', () => {
@@ -179,7 +181,9 @@ describe('ApiCrearLoteDesdeRecoleccion', () => {
 
   it('define summary correcto en ApiOperation', () => {
     const op = getOperation(fn);
-    expect(op?.summary).toBe('Crear lote de vivero desde recoleccion');
+    expect(op?.summary).toBe(
+      'Crear lote de vivero desde recoleccion validada',
+    );
   });
 
   it('incluye el header x-auth-id', () => {

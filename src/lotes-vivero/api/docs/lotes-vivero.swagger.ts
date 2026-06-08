@@ -61,8 +61,9 @@ export function ApiCrearEvidenciaPendiente() {
           },
           es_principal: {
             type: 'boolean',
-            example: true,
-            description: 'Indica si esta foto es la principal del evento',
+            example: false,
+            description:
+              'Ignorado mientras la evidencia esta pendiente; la evidencia principal aplica cuando ya existe el evento definitivo',
           },
           fotos: {
             type: 'array',
