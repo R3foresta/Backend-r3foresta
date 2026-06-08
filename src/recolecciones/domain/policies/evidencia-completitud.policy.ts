@@ -84,7 +84,7 @@ export class EvidenciaCompletitudPolicy {
     const fotosCount = Number(recoleccion.fotos_count ?? 0);
     if (!Number.isFinite(fotosCount) || fotosCount < 2) {
       throw new BadRequestException(
-        'Para solicitar validación se requieren al menos 2 fotos.',
+        'Para solicitar validación se requieren al menos 2 fotos (1 de Lugar + 1 de Total recolectado).',
       );
     }
   }

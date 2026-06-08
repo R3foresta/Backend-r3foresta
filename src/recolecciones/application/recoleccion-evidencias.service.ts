@@ -32,7 +32,7 @@ export class RecoleccionEvidenciasService {
 
   validarFotosCreacion(files: RecoleccionFotoInput[]): void {
     EvidenciaCompletitudPolicy.validarFotos(files, {
-      minCount: 4,
+      minCount: 2,
       maxCount: 10,
       requireBuffer: true,
     });
