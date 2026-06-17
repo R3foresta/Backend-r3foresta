@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BlockchainService } from '../../blockchain/blockchain.service';
+import { EvidenceFileService } from '../../common/files/evidence-file.service';
 import { UbicacionesReadService } from '../../common/ubicaciones/ubicaciones-read.service';
 import { PinataService } from '../../pinata/pinata.service';
 import { PlantasService } from '../../plantas/plantas.service';
@@ -136,6 +137,7 @@ describe('RecoleccionesService', () => {
         RecoleccionEvidenciasService,
         RecoleccionUbicacionService,
         RecoleccionValidacionService,
+        EvidenceFileService,
 
         // MOCKS de dependencias externas
         // Formato: { provide: ClaseReal, useValue: MockObject }
@@ -293,8 +295,15 @@ describe('RecoleccionesService', () => {
           storage_object_id: '550e8400-e29b-41d4-a716-446655440000',
           mime_type: 'image/jpeg',
           tamano_bytes: 123,
-          formato: 'JPEG',
           hash_sha256: 'hash-1',
+          metadata: {
+            nombre_original: 'foto-1.jpg',
+            mime_type_recibido: 'image/jpeg',
+            mime_type_resuelto: 'image/jpeg',
+            formato_original: 'JPEG',
+            hash_algoritmo: 'sha256',
+            archivo_original_preservado: true,
+          },
         },
       ],
     });
@@ -311,6 +320,15 @@ describe('RecoleccionesService', () => {
         bucket: 'recoleccion_fotos',
         ruta_archivo: '99/foto-1.jpg',
         creado_por_usuario_id: 7,
+        metadata: {
+          origen: 'CREATE_RECOLECCION',
+          nombre_original: 'foto-1.jpg',
+          mime_type_recibido: 'image/jpeg',
+          mime_type_resuelto: 'image/jpeg',
+          formato_original: 'JPEG',
+          hash_algoritmo: 'sha256',
+          archivo_original_preservado: true,
+        },
       }),
     ]);
   });

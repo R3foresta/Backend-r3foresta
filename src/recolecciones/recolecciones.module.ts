@@ -4,6 +4,7 @@ import { RecoleccionesController } from './api/recolecciones.controller';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { PinataModule } from '../pinata/pinata.module';
 import { BlockchainModule } from '../blockchain/blockchain.module';
+import { EvidenceFileService } from '../common/files/evidence-file.service';
 import { UbicacionesModule } from '../common/ubicaciones/ubicaciones.module';
 import { RecoleccionElegibilidadService } from './application/recoleccion-elegibilidad.service';
 import { PlantasModule } from '../plantas/plantas.module';
@@ -46,6 +47,7 @@ import { RecoleccionFormDataParser } from './api/parsers/recoleccion-formdata.pa
     RecoleccionUbicacionService,
     RecoleccionValidacionService,
     RecoleccionFormDataParser,
+    EvidenceFileService,
   ],
   exports: [
     RecoleccionesService,
