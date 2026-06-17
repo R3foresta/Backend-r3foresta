@@ -10,6 +10,7 @@ import { SupabaseService } from '../../supabase/supabase.service';
 import { CrearEvidenciaPendienteViveroDto } from '../api/dto/crear-evidencia-pendiente-vivero.dto';
 import { RegistrarAdaptabilidadDto } from '../api/dto/registrar-adaptabilidad.dto';
 import { SubetapaAdaptabilidad } from '../domain/enums/subetapa-adaptabilidad.enum';
+import { TipoEventoVivero } from '../domain/enums/tipo-evento-vivero.enum';
 import { ViveroAuthService } from './vivero-auth.service';
 import {
   ViveroEvidenceFileInput,
@@ -105,6 +106,7 @@ export class ViveroAdaptabilidadService {
       dto,
       authId,
       files,
+      { eventoTipo: TipoEventoVivero.ADAPTABILIDAD },
     );
 
     const evidenciaIds: number[] = resultado.evidencia_ids;

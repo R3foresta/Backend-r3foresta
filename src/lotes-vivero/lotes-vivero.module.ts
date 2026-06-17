@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EvidenceFileService } from '../common/files/evidence-file.service';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { LotesViveroController } from './api/lotes-vivero.controller';
 import { LotesViveroService } from './application/lotes-vivero.service';
@@ -22,6 +23,7 @@ import { ViveroTimelineService } from './application/vivero-timeline.service';
   controllers: [LotesViveroController],
   providers: [
     LotesViveroService,
+    EvidenceFileService,
     ViveroAdaptabilidadService,
     ViveroAsignacionesService,
     ViveroAuthService,

@@ -2,10 +2,12 @@ import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
+  IsEnum,
   IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
+import { TipoEventoVivero } from '../../domain/enums/tipo-evento-vivero.enum';
 
 export class CrearEvidenciaPendienteViveroDto {
   @IsOptional()
@@ -25,6 +27,10 @@ export class CrearEvidenciaPendienteViveroDto {
   @IsOptional()
   @IsDateString({}, { message: 'tomado_en debe ser una fecha ISO valida' })
   tomado_en?: string;
+
+  @IsOptional()
+  @IsEnum(TipoEventoVivero, { message: 'evento_tipo no es valido' })
+  evento_tipo?: TipoEventoVivero;
 
   @Transform(({ value }) => {
     if (value === undefined || value === null || value === '') {

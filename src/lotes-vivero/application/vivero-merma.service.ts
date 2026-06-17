@@ -11,6 +11,7 @@ import { CrearEvidenciaPendienteViveroDto } from '../api/dto/crear-evidencia-pen
 import { RegistrarMermaDto } from '../api/dto/registrar-merma.dto';
 import { CausaMermaVivero } from '../domain/enums/causa-merma-vivero.enum';
 import { MotivoCierreLote } from '../domain/enums/motivo-cierre-lote.enum';
+import { TipoEventoVivero } from '../domain/enums/tipo-evento-vivero.enum';
 import { ViveroAuthService } from './vivero-auth.service';
 import {
   ViveroEvidenceFileInput,
@@ -109,6 +110,7 @@ export class ViveroMermaService {
       dto,
       authId,
       files,
+      { eventoTipo: TipoEventoVivero.MERMA },
     );
 
     const evidenciaIds: number[] = resultado.evidencia_ids;

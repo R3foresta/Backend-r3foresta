@@ -5,10 +5,13 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { createHash } from 'crypto';
-import { ImageFilePolicy } from '../../common/files/image-file.policy';
+import {
+  EvidenceFileService,
+  type PreparedEvidenceFile,
+} from '../../common/files/evidence-file.service';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CrearEvidenciaPendienteViveroDto } from '../api/dto/crear-evidencia-pendiente-vivero.dto';
+import { TipoEventoVivero } from '../domain/enums/tipo-evento-vivero.enum';
 import { ViveroAuthService } from './vivero-auth.service';
 
 export type ViveroEvidenceFileInput = {
@@ -23,8 +26,12 @@ type FotoSubidaVivero = {
   storage_object_id: string | null;
   mime_type: string;
   tamano_bytes: number;
-  formato: string;
   hash_sha256: string | null;
+  metadata: PreparedEvidenceFile['metadata'];
+};
+
+export type CrearPendienteViveroOptions = {
+  eventoTipo?: TipoEventoVivero;
 };
 
 @Injectable()
@@ -43,26 +50,32 @@ export class ViveroEvidenciasService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly authService: ViveroAuthService,
+    private readonly evidenceFileService: EvidenceFileService,
   ) {}
 
   async crearPendienteParaEvento(
     dto: CrearEvidenciaPendienteViveroDto,
     authId: string,
     files: ViveroEvidenceFileInput[] = [],
+    options: CrearPendienteViveroOptions = {},
   ) {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertCanWrite(usuario.rol);
     this.validarFotos(files);
+    const preparedFiles =
+      this.evidenceFileService.prepareOriginalEvidenceFiles(files);
 
     const supabase = this.supabaseService.getClient();
     const tipoEntidadId = await this.resolveTipoEntidadEventoViveroId();
     const metadataPayload = this.parseMetadata(dto.metadata);
+    const evento =
+      dto.evento_tipo ?? options.eventoTipo ?? TipoEventoVivero.INICIO;
     const fotosSubidas: FotoSubidaVivero[] = [];
     const timestampBase = Date.now();
 
     try {
-      for (const [index, file] of files.entries()) {
-        const image = ImageFilePolicy.resolve(file);
+      for (const [index, prepared] of preparedFiles.entries()) {
+        const file = files[index];
         const safeOriginalName = String(
           file.originalname || `evidencia_${index + 1}`,
         )
@@ -78,8 +91,8 @@ export class ViveroEvidenciasService {
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from(this.bucketEvidencias)
-          .upload(rutaStorage, file.buffer!, {
-            contentType: image.mimeType,
+          .upload(rutaStorage, prepared.originalBuffer, {
+            contentType: prepared.storageContentType,
             upsert: false,
           });
 
@@ -95,17 +108,14 @@ export class ViveroEvidenciasService {
 
         const storageObjectId =
           typeof uploadData?.id === 'string' ? uploadData.id : null;
-        const hashSha256 = file.buffer
-          ? createHash('sha256').update(file.buffer).digest('hex')
-          : null;
 
         fotosSubidas.push({
           ruta_archivo: rutaStorage,
           storage_object_id: storageObjectId,
-          mime_type: image.mimeType,
-          tamano_bytes: Number(file.size ?? 0),
-          formato: image.formato,
-          hash_sha256: hashSha256,
+          mime_type: prepared.storageContentType,
+          tamano_bytes: prepared.tamanoBytes,
+          hash_sha256: prepared.hashSha256,
+          metadata: prepared.metadata,
         });
       }
 
@@ -133,9 +143,10 @@ export class ViveroEvidenciasService {
           descripcion,
           metadata: {
             ...(metadataPayload || {}),
-            origen: 'VIVERO_EVENTO_PENDIENTE',
+            origen: 'VIVERO_EVIDENCIA_PENDIENTE',
+            evento,
             estado: 'PENDIENTE_VINCULACION',
-            formato: foto.formato,
+            ...foto.metadata,
           },
           // Las pendientes comparten entidad_id=0; la principalidad aplica al vincularlas.
           es_principal: false,
@@ -247,15 +258,6 @@ export class ViveroEvidenciasService {
       throw new BadRequestException('Maximo 5 fotos permitidas');
     }
 
-    for (const file of files) {
-      ImageFilePolicy.assertAllowedImage(file, { requireBuffer: true });
-      // TODO: No podemos liminar al usuario a enviar una imagen porque bloquea al usuario, lo que tendríamos que hacer es comprirmir la imaen.
-      // if (Number(file.size ?? 0) > 5242880) {
-      //   throw new BadRequestException(
-      //     `Archivo ${file.originalname || 'sin_nombre'} supera 5MB`,
-      //   );
-      // }
-    }
   }
 
   private parseMetadata(metadata?: string): Record<string, unknown> | null {

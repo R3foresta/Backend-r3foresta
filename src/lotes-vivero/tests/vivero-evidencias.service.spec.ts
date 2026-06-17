@@ -1,7 +1,10 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { createHash } from 'crypto';
+import { EvidenceFileService } from '../../common/files/evidence-file.service';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { ViveroAuthService } from '../application/vivero-auth.service';
 import { ViveroEvidenciasService } from '../application/vivero-evidencias.service';
+import { TipoEventoVivero } from '../domain/enums/tipo-evento-vivero.enum';
 
 function createQueryBuilder(result: { data: any; error: any }) {
   const builder: any = {
@@ -112,6 +115,7 @@ describe('ViveroEvidenciasService', () => {
     service = new ViveroEvidenciasService(
       supabaseService,
       authService as unknown as ViveroAuthService,
+      new EvidenceFileService(),
     );
   });
 
@@ -129,6 +133,11 @@ describe('ViveroEvidenciasService', () => {
     expect(authService.getUserByAuthId).toHaveBeenCalledWith('auth-1');
     expect(authService.assertCanWrite).toHaveBeenCalledWith('GENERAL');
     expect(upload).toHaveBeenCalledTimes(1);
+    expect(upload.mock.calls[0][1]).toBe(foto.buffer);
+    expect(upload.mock.calls[0][2]).toMatchObject({
+      contentType: 'image/jpeg',
+      upsert: false,
+    });
 
     const evidenciasQuery = from.mock.results.find(
       (resultItem) =>
@@ -144,6 +153,8 @@ describe('ViveroEvidenciasService', () => {
       bucket: 'recoleccion_fotos',
       tipo_archivo: 'FOTO',
       mime_type: 'image/jpeg',
+      tamano_bytes: foto.buffer.length,
+      hash_sha256: createHash('sha256').update(foto.buffer).digest('hex'),
       titulo: 'Inicio',
       descripcion: 'Foto inicio',
       es_principal: false,
@@ -152,14 +163,66 @@ describe('ViveroEvidenciasService', () => {
     });
     expect(payload.metadata).toMatchObject({
       fuente: 'app',
-      origen: 'VIVERO_EVENTO_PENDIENTE',
+      origen: 'VIVERO_EVIDENCIA_PENDIENTE',
+      evento: TipoEventoVivero.INICIO,
       estado: 'PENDIENTE_VINCULACION',
-      formato: 'JPEG',
+      nombre_original: 'inicio.jpg',
+      mime_type_recibido: 'image/jpeg',
+      mime_type_resuelto: 'image/jpeg',
+      formato_original: 'JPEG',
+      hash_algoritmo: 'sha256',
+      archivo_original_preservado: true,
     });
     expect(result.success).toBe(true);
     expect(result.evidencia_ids).toEqual([501]);
     expect(result.data[0].id).toBe(501);
     expect(result.data[0].public_url).toContain('https://storage.example/');
+  });
+
+  it('acepta HEIC preservando buffer original y metadata auditable', async () => {
+    const heicBuffer = Buffer.from([0, 1, 2, 3, 255]);
+    const heic = {
+      mimetype: 'image/heic',
+      size: 999,
+      originalname: 'captura.heic',
+      buffer: heicBuffer,
+    };
+
+    await service.crearPendienteParaEvento({}, 'auth-1', [heic], {
+      eventoTipo: TipoEventoVivero.DESPACHO,
+    });
+
+    expect(upload).toHaveBeenCalledWith(
+      expect.any(String),
+      heicBuffer,
+      expect.objectContaining({
+        contentType: 'image/heic',
+        upsert: false,
+      }),
+    );
+
+    const evidenciasQuery = from.mock.results.find(
+      (resultItem) =>
+        resultItem.type === 'return' &&
+        resultItem.value.insert?.mock?.calls.length > 0,
+    )?.value;
+    const payload = evidenciasQuery.insert.mock.calls[0][0][0];
+
+    expect(payload).toMatchObject({
+      mime_type: 'image/heic',
+      tamano_bytes: heicBuffer.length,
+      hash_sha256: createHash('sha256').update(heicBuffer).digest('hex'),
+    });
+    expect(payload.metadata).toMatchObject({
+      origen: 'VIVERO_EVIDENCIA_PENDIENTE',
+      evento: TipoEventoVivero.DESPACHO,
+      nombre_original: 'captura.heic',
+      mime_type_recibido: 'image/heic',
+      mime_type_resuelto: 'image/heic',
+      formato_original: 'HEIC',
+      hash_algoritmo: 'sha256',
+      archivo_original_preservado: true,
+    });
   });
 
   it('rechaza la solicitud sin fotos', async () => {

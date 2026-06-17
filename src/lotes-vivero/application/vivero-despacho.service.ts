@@ -11,6 +11,7 @@ import { CrearEvidenciaPendienteViveroDto } from '../api/dto/crear-evidencia-pen
 import { RegistrarDespachoDto } from '../api/dto/registrar-despacho.dto';
 import { DestinoTipoVivero } from '../domain/enums/destino-tipo-vivero.enum';
 import { MotivoCierreLote } from '../domain/enums/motivo-cierre-lote.enum';
+import { TipoEventoVivero } from '../domain/enums/tipo-evento-vivero.enum';
 import { ViveroAuthService } from './vivero-auth.service';
 import {
   ViveroEvidenceFileInput,
@@ -116,6 +117,7 @@ export class ViveroDespachoService {
       dto,
       authId,
       files,
+      { eventoTipo: TipoEventoVivero.DESPACHO },
     );
 
     const evidenciaIds: number[] = resultado.evidencia_ids;

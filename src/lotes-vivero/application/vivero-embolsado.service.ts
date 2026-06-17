@@ -8,6 +8,7 @@ import {
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CrearEvidenciaPendienteViveroDto } from '../api/dto/crear-evidencia-pendiente-vivero.dto';
 import { RegistrarEmbolsadoDto } from '../api/dto/registrar-embolsado.dto';
+import { TipoEventoVivero } from '../domain/enums/tipo-evento-vivero.enum';
 import { ViveroAuthService } from './vivero-auth.service';
 import {
   ViveroEvidenceFileInput,
@@ -212,6 +213,7 @@ export class ViveroEmbolsadoService {
       dto,
       authId,
       files,
+      { eventoTipo: TipoEventoVivero.EMBOLSADO },
     );
 
     const evidenciaIds: number[] = resultado.evidencia_ids;
