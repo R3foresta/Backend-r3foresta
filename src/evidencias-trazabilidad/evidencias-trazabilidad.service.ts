@@ -5,8 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { createHash } from 'crypto';
-import { ImageFilePolicy } from '../common/files/image-file.policy';
+import { EvidenceFileService } from '../common/files/evidence-file.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateEvidenciaRecoleccionDto } from './dto/create-evidencia-recoleccion.dto';
 import { ListEvidenciasTrazabilidadDto } from './dto/list-evidencias-trazabilidad.dto';
@@ -89,7 +88,10 @@ type EvidenciaRow = {
 export class EvidenciasTrazabilidadService {
   private readonly logger = new Logger(EvidenciasTrazabilidadService.name);
 
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly evidenceFileService: EvidenceFileService,
+  ) {}
 
   async createForRecoleccion(
     recoleccionId: number,
@@ -107,18 +109,8 @@ export class EvidenciasTrazabilidadService {
       throw new BadRequestException('Máximo 5 fotos permitidas por solicitud');
     }
 
-    // Validación previa de archivos antes de comenzar uploads.
-    for (const file of files) {
-      ImageFilePolicy.assertAllowedImage(file, { requireBuffer: true });
-
-      // TODO: No podemos liminar al usuario a enviar una imagen porque bloquea al usuario, lo que tendríamos que hacer es comprirmir la imaen.
-      // if (file.size > 5242880) {
-      //   throw new BadRequestException(
-      //     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      //     `Archivo ${file.originalname} supera 5MB`,
-      //   );
-      // }
-    }
+    const preparedFiles =
+      this.evidenceFileService.prepareOriginalEvidenceFiles(files);
 
     const supabase = this.supabaseService.getClient();
     const metadataPayload = this.parseMetadata(payload.metadata);
@@ -205,13 +197,13 @@ export class EvidenciasTrazabilidadService {
       storage_object_id: string | null;
       mime_type: string;
       tamano_bytes: number;
-      formato: string;
-      hash_sha256: string | null;
+      hash_sha256: string;
+      metadata: Record<string, unknown>;
     }> = [];
 
     try {
-      for (const file of files) {
-        const image = ImageFilePolicy.resolve(file);
+      for (const [index, prepared] of preparedFiles.entries()) {
+        const file = files[index];
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         const sanitizedOriginalName = String(file.originalname || 'evidencia')
           .replace(/\s+/g, '_')
@@ -223,10 +215,8 @@ export class EvidenciasTrazabilidadService {
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from(bucketFotos)
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-          .upload(rutaStorage, file.buffer, {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            contentType: image.mimeType,
+          .upload(rutaStorage, prepared.originalBuffer, {
+            contentType: prepared.storageContentType,
             upsert: false,
           });
 
@@ -240,20 +230,14 @@ export class EvidenciasTrazabilidadService {
 
         const storageObjectId =
           typeof uploadData?.id === 'string' ? uploadData.id : null;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        const hashSha256 = file.buffer
-          ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
-            createHash('sha256').update(file.buffer).digest('hex')
-          : null;
 
         fotosSubidas.push({
           ruta_archivo: rutaStorage,
           storage_object_id: storageObjectId,
-          mime_type: image.mimeType,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-          tamano_bytes: file.size,
-          formato: image.formato,
-          hash_sha256: hashSha256,
+          mime_type: prepared.storageContentType,
+          tamano_bytes: prepared.tamanoBytes,
+          hash_sha256: prepared.hashSha256,
+          metadata: prepared.metadata,
         });
       }
 
@@ -292,7 +276,7 @@ export class EvidenciasTrazabilidadService {
           descripcion,
           metadata: {
             ...metadataBase,
-            formato: foto.formato,
+            ...foto.metadata,
           },
           es_principal: esPrincipal,
           orden,
