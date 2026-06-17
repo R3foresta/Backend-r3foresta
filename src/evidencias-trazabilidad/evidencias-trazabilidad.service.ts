@@ -84,6 +84,16 @@ type EvidenciaRow = {
     | null;
 };
 
+const RESERVED_EVIDENCE_METADATA_KEYS = new Set([
+  'origen',
+  'nombre_original',
+  'mime_type_recibido',
+  'mime_type_resuelto',
+  'formato_original',
+  'hash_algoritmo',
+  'archivo_original_preservado',
+]);
+
 @Injectable()
 export class EvidenciasTrazabilidadService {
   private readonly logger = new Logger(EvidenciasTrazabilidadService.name);
@@ -243,10 +253,7 @@ export class EvidenciasTrazabilidadService {
 
       const tituloBase = payload.titulo?.trim() || null;
       const descripcion = payload.descripcion?.trim() || null;
-      const metadataBase: Record<string, unknown> = {
-        origen: 'POST_EVIDENCIAS_RECOLECCION',
-        ...(metadataPayload || {}),
-      };
+      const clientMetadata = this.filterReservedMetadata(metadataPayload);
       const forzarPrincipal = payload.es_principal === true;
 
       const evidenciasInsert = fotosSubidas.map((foto, index) => {
@@ -275,7 +282,8 @@ export class EvidenciasTrazabilidadService {
           titulo,
           descripcion,
           metadata: {
-            ...metadataBase,
+            ...clientMetadata,
+            origen: 'POST_EVIDENCIAS_RECOLECCION',
             ...foto.metadata,
           },
           es_principal: esPrincipal,
@@ -634,6 +642,20 @@ export class EvidenciasTrazabilidadService {
         'metadata debe ser un JSON válido serializado en texto',
       );
     }
+  }
+
+  private filterReservedMetadata(
+    metadata: Record<string, unknown> | null,
+  ): Record<string, unknown> {
+    if (!metadata) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(metadata).filter(
+        ([key]) => !RESERVED_EVIDENCE_METADATA_KEYS.has(key),
+      ),
+    );
   }
 
   private normalizeRelation<T>(value?: T | T[] | null): T | null {

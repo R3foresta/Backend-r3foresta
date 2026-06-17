@@ -130,7 +130,8 @@ describe('EvidenciasTrazabilidadService', () => {
       {
         titulo: 'Seguimiento',
         descripcion: 'Foto posterior',
-        metadata: '{"fuente":"app-mobile"}',
+        metadata:
+          '{"fuente":"app-mobile","origen":"OTRO","hash_algoritmo":"md5","archivo_original_preservado":false}',
         tomado_en: '2026-06-17T08:00:00-04:00',
       },
       'auth-123',
@@ -183,6 +184,11 @@ describe('EvidenciasTrazabilidadService', () => {
     });
     expect(result.success).toBe(true);
     expect(result.data).toHaveLength(1);
+    expect(payload.metadata).not.toMatchObject({
+      origen: 'OTRO',
+      hash_algoritmo: 'md5',
+      archivo_original_preservado: false,
+    });
   });
 
   it('mantiene el maximo actual de 5 fotos por solicitud', async () => {
