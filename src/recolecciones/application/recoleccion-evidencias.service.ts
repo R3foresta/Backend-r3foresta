@@ -4,8 +4,10 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { createHash } from 'crypto';
-import { ImageFilePolicy } from '../../common/files/image-file.policy';
+import {
+  EvidenceFileService,
+  type PreparedEvidenceFile,
+} from '../../common/files/evidence-file.service';
 import { SupabaseService } from '../../supabase/supabase.service';
 import {
   EvidenciaCompletitudPolicy,
@@ -17,8 +19,8 @@ export type FotoSubidaRecoleccion = {
   storage_object_id: string | null;
   mime_type: string;
   tamano_bytes: number;
-  formato: string;
   hash_sha256: string | null;
+  metadata: PreparedEvidenceFile['metadata'];
 };
 
 @Injectable()
@@ -29,7 +31,10 @@ export class RecoleccionEvidenciasService {
   private tipoEntidadEvidenciaIdCache?: number;
   readonly bucketFotos = 'recoleccion_fotos';
 
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly evidenceFileService: EvidenceFileService,
+  ) {}
 
   validarFotosCreacion(files: RecoleccionFotoInput[]): void {
     EvidenciaCompletitudPolicy.validarFotos(files, {
@@ -84,17 +89,19 @@ export class RecoleccionEvidenciasService {
 
   async uploadFotosCreacion(files: RecoleccionFotoInput[]) {
     const supabase = this.supabaseService.getClient();
+    const preparedFiles =
+      this.evidenceFileService.prepareOriginalEvidenceFiles(files);
     const fotosSubidas: FotoSubidaRecoleccion[] = [];
 
-    for (const file of files) {
+    for (const [index, file] of files.entries()) {
+      const prepared = preparedFiles[index];
       const nombreArchivo = `${Date.now()}_${file.originalname}`;
       const rutaStorage = nombreArchivo;
-      const image = ImageFilePolicy.resolve(file);
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(this.bucketFotos)
-        .upload(rutaStorage, file.buffer!, {
-          contentType: image.mimeType,
+        .upload(rutaStorage, prepared.originalBuffer, {
+          contentType: prepared.storageContentType,
           upsert: false,
         });
 
@@ -105,17 +112,14 @@ export class RecoleccionEvidenciasService {
 
       const storageObjectId =
         typeof uploadData?.id === 'string' ? uploadData.id : null;
-      const hashSha256 = file.buffer
-        ? createHash('sha256').update(file.buffer).digest('hex')
-        : null;
 
       fotosSubidas.push({
         ruta_archivo: rutaStorage,
         storage_object_id: storageObjectId,
-        mime_type: image.mimeType,
-        tamano_bytes: Number(file.size ?? 0),
-        formato: image.formato,
-        hash_sha256: hashSha256,
+        mime_type: prepared.storageContentType,
+        tamano_bytes: prepared.tamanoBytes,
+        hash_sha256: prepared.hashSha256,
+        metadata: prepared.metadata,
       });
     }
 
@@ -144,7 +148,7 @@ export class RecoleccionEvidenciasService {
       titulo: `Foto ${index + 1}`,
       metadata: {
         origen: 'CREATE_RECOLECCION',
-        formato: foto.formato,
+        ...foto.metadata,
       },
       es_principal: index === 0,
       orden: index,
@@ -196,9 +200,11 @@ export class RecoleccionEvidenciasService {
     const evidenciasInsert: Array<Record<string, unknown>> = [];
     const timestampBase = Date.now();
     const ordenInicial = Number(count || 0);
+    const preparedFiles =
+      this.evidenceFileService.prepareOriginalEvidenceFiles(files);
 
-    for (const [index, file] of files.entries()) {
-      const image = ImageFilePolicy.resolve(file);
+    for (const [index, prepared] of preparedFiles.entries()) {
+      const file = files[index];
       const safeOriginalName = String(file.originalname || `foto_${index + 1}`)
         .trim()
         .replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -206,8 +212,8 @@ export class RecoleccionEvidenciasService {
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(this.bucketFotos)
-        .upload(rutaStorage, file.buffer!, {
-          contentType: image.mimeType,
+        .upload(rutaStorage, prepared.originalBuffer, {
+          contentType: prepared.storageContentType,
           upsert: false,
         });
 
@@ -222,9 +228,6 @@ export class RecoleccionEvidenciasService {
 
       const storageObjectId =
         typeof uploadData?.id === 'string' ? uploadData.id : null;
-      const hashSha256 = createHash('sha256')
-        .update(file.buffer!)
-        .digest('hex');
       const orden = ordenInicial + index;
 
       evidenciasInsert.push({
@@ -235,13 +238,13 @@ export class RecoleccionEvidenciasService {
         ruta_archivo: rutaStorage,
         storage_object_id: storageObjectId,
         tipo_archivo: 'FOTO',
-        mime_type: image.mimeType,
-        tamano_bytes: Number(file.size ?? 0),
-        hash_sha256: hashSha256,
+        mime_type: prepared.storageContentType,
+        tamano_bytes: prepared.tamanoBytes,
+        hash_sha256: prepared.hashSha256,
         titulo: `Foto ${orden + 1}`,
         metadata: {
           origen: 'UPDATE_DRAFT',
-          formato: image.formato,
+          ...prepared.metadata,
         },
         es_principal: orden === 0,
         orden,
