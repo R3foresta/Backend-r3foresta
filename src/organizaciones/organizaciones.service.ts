@@ -271,9 +271,34 @@ export class OrganizacionesService {
 
     const referencias = count ?? 0;
     if (referencias > 0) {
-      throw new UnprocessableEntityException(
-        `Esta organizacion esta asociada a ${referencias} campaña(s); desactivela en lugar de borrarla.`,
-      );
+      const { data, error: updateError } = await supabase
+        .from('organizacion')
+        .update({ activo: false, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select(SELECT_COLUMNS)
+        .single();
+
+      if (updateError) {
+        this.logger.error(
+          `Error al archivar organizacion ${id} con referencias activas`,
+          updateError,
+        );
+        throw new InternalServerErrorException(
+          updateError.message || 'No se pudo archivar la organizacion.',
+        );
+      }
+
+      return {
+        success: true,
+        data: {
+          message:
+            'Organizacion archivada correctamente porque tiene campañas asociadas.',
+          id,
+          metodo: 'soft_delete',
+          referencias,
+          organizacion: data as OrganizacionRow,
+        },
+      };
     }
 
     const { error: deleteError } = await supabase
@@ -299,7 +324,11 @@ export class OrganizacionesService {
 
     return {
       success: true,
-      data: { message: 'Organizacion eliminada correctamente.', id },
+      data: {
+        message: 'Organizacion eliminada correctamente.',
+        id,
+        metodo: 'hard_delete',
+      },
     };
   }
 

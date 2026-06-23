@@ -238,7 +238,7 @@ curl -X PATCH http://localhost:3000/api/organizaciones/1 \
 ## DELETE /organizaciones/:id
 
 **Rol mínimo**: ADMIN  
-**Descripción**: Elimina (soft delete) una organización.
+**Descripción**: Elimina una organización. Si no tiene campañas asociadas hace hard delete; si está ligada a una o más campañas hace soft delete marcando `activo=false`.
 
 **Headers**
 | Header | Requerido | Descripción |
@@ -255,7 +255,19 @@ curl -X PATCH http://localhost:3000/api/organizaciones/1 \
 {
   "success": true,
   "data": {
-    "message": "Organización eliminada correctamente."
+    "message": "Organizacion archivada correctamente porque tiene campañas asociadas.",
+    "id": 1,
+    "metodo": "soft_delete",
+    "referencias": 2,
+    "organizacion": {
+      "id": 1,
+      "nombre": "Fundación Verde Andina",
+      "tipo": "FUNDACION",
+      "activo": false,
+      "logo_url": "https://supabase.../organizaciones/1/logo.jpg?v=1716920000000",
+      "created_at": "2026-05-28T10:00:00Z",
+      "updated_at": "2026-05-28T13:00:00Z"
+    }
   }
 }
 ```
@@ -394,7 +406,7 @@ ALCALDIA | ASOCIACION_CIUDADANA | OTRO
 
 1. **Nombre único**: Case-insensitive, constraint en BD.
 2. **Logo**: Reemplaza automáticamente al subir uno nuevo. URL con cache-busting (`?v=timestamp`).
-3. **Soft delete**: `DELETE` marca como inactivo; no elimina del todo.
+3. **Borrado híbrido**: `DELETE` hace hard delete si no hay vínculos con campañas; si existen vínculos, marca `activo=false`.
 4. **ADMIN only**: Creación, edición, y eliminación requieren rol ADMIN.
 5. **Activo default**: Nueva organización se crea con `activo=true`.
 
@@ -407,4 +419,4 @@ ALCALDIA | ASOCIACION_CIUDADANA | OTRO
 3. **GET** → Lista para selectores en campañas
 4. **PATCH** → Actualiza información
 5. **DELETE /logo** → Elimina logo si es necesario
-6. **DELETE** → Soft delete de organización
+6. **DELETE** → Hard delete o soft delete según vínculos con campañas

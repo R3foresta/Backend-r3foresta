@@ -344,9 +344,13 @@ describe('OrganizacionesService.editar', () => {
 });
 
 describe('OrganizacionesService.borrar', () => {
-  it('lanza 422 si hay referencias en campania_organizacion', async () => {
+  it('soft-delete si hay referencias en campania_organizacion', async () => {
+    const archived = { ...baseOrg, activo: false };
     const { supabase, builders } = makeSupabase({
-      organizacion: { data: baseOrg, error: null },
+      organizacion: [
+        { data: baseOrg, error: null }, // cargar
+        { data: archived, error: null }, // soft delete
+      ],
       campania_organizacion: { count: 3, error: null },
     });
     const service = new OrganizacionesService(
@@ -355,10 +359,14 @@ describe('OrganizacionesService.borrar', () => {
       buildLogoService(),
     );
 
-    await expect(service.borrar(1, 'auth-1')).rejects.toThrow(
-      UnprocessableEntityException,
+    const result = await service.borrar(1, 'auth-1');
+    expect((result as any).data.metodo).toBe('soft_delete');
+    expect((result as any).data.referencias).toBe(3);
+    expect((result as any).data.organizacion.activo).toBe(false);
+    expect(builders.organizacion[1].update).toHaveBeenCalledWith(
+      expect.objectContaining({ activo: false }),
     );
-    expect(builders.organizacion).toHaveLength(1);
+    expect(builders.organizacion[1].delete).not.toHaveBeenCalled();
   });
 
   it('hard-delete cuando no hay referencias', async () => {
