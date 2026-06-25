@@ -54,6 +54,15 @@ export class CampaniasController {
     return this.campaniasService.obtenerPorId(id);
   }
 
+  @Get(':id/subcampanias')
+  listarSubcampanias(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    this.requireAuthId(authId);
+    return this.campaniasService.listarSubcampanias(id);
+  }
+
   @Patch(':id')
   @ApiEditarCampania()
   editar(

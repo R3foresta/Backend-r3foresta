@@ -70,7 +70,7 @@ curl -X POST http://localhost:3000/api/campanias \
 
 ## GET /campanias
 
-**Rol mínimo**: GENERAL  
+**Rol mínimo**: GENERAL
 **Descripción**: Lista todas las campañas.
 
 **Headers**
@@ -164,6 +164,67 @@ curl -X GET http://localhost:3000/api/campanias \
 **Ejemplo cURL**
 ```bash
 curl -X GET http://localhost:3000/api/campanias/1 \
+  -H "x-auth-id: <tu-auth-id>"
+```
+
+---
+
+## GET /campanias/:id/subcampanias
+
+**Rol mínimo**: GENERAL
+**Descripción**: Lista las subcampañas de una campaña específica. Es equivalente a `GET /subcampanias?campania_id=:id`, pero valida primero que la campaña exista.
+
+**Headers**
+| Header | Requerido | Descripción |
+|--------|-----------|-------------|
+| x-auth-id | ✓ | Supabase auth_id del usuario |
+
+**Path Parameters**
+| Parámetro | Tipo | Descripción |
+|-----------|------|------------|
+| id | number | ID de la campaña |
+
+**Respuesta exitosa** `200`
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 11,
+      "campania_id": 1,
+      "nombre": "Subcampaña Zona A",
+      "descripcion": "Plantación en zona A",
+      "tipo": "PLANTACION",
+      "estado": "BORRADOR",
+      "fase_mantenimiento": "NO_APLICA",
+      "zona_id": 10,
+      "area_hectareas": null,
+      "meta_total_arboles": 500,
+      "codigo_trazabilidad": "SUB-001-CMP-2026-001",
+      "total_plantado_inicial": 0,
+      "total_repuesto": 0,
+      "total_muerto_acumulado": 0,
+      "saldo_vivo_actual": 0,
+      "coordinador": {
+        "id": 7,
+        "nombre": "Coord Pepe"
+      },
+      "created_at": "2026-05-28T10:00:00Z",
+      "updated_at": "2026-05-28T10:00:00Z"
+    }
+  ]
+}
+```
+
+**Errores**
+| Status | Cuándo |
+|--------|--------|
+| 401 | Header x-auth-id ausente |
+| 404 | Campaña no encontrada |
+
+**Ejemplo cURL**
+```bash
+curl -X GET http://localhost:3000/api/campanias/1/subcampanias \
   -H "x-auth-id: <tu-auth-id>"
 ```
 
@@ -407,6 +468,7 @@ REFORESTACION | ARBORIZACION | FORESTACION
 1. **POST** → Crea campaña
 2. **POST /organizaciones** → Asocia organizaciones
 3. **GET** → Lista para selectores en subcampañas
-4. **PATCH** → Actualiza detalles
-5. **DELETE /organizaciones/:id** → Desasocia org si es necesario
-6. **DELETE** → Elimina campaña
+4. **GET /:id/subcampanias** → Lista subcampañas de la campaña
+5. **PATCH** → Actualiza detalles
+6. **DELETE /organizaciones/:id** → Desasocia org si es necesario
+7. **DELETE** → Elimina campaña

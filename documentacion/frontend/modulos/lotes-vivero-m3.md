@@ -9,7 +9,7 @@ Base URL: `/api/lotes-vivero`
 
 ## GET /lotes-vivero
 
-**Rol mínimo**: GENERAL  
+**Rol mínimo**: GENERAL
 **Descripción**: Lista lotes de vivero disponibles para asignación a subcampañas.
 
 **Headers**
@@ -64,7 +64,7 @@ curl -X GET "http://localhost:3000/api/lotes-vivero?estado=ACTIVO" \
 
 ## GET /lotes-vivero/:id
 
-**Rol mínimo**: GENERAL  
+**Rol mínimo**: GENERAL
 **Descripción**: Obtiene detalle completo de un lote de vivero.
 
 **Headers**
@@ -109,10 +109,55 @@ curl -X GET http://localhost:3000/api/lotes-vivero/1 \
 
 ---
 
+## GET /lotes-vivero/stock/especies
+
+**Rol mínimo**: GENERAL
+**Descripción**: Lista stock vivo disponible para asignación agrupado por especie/planta. Es el endpoint recomendado para que el frontend muestre disponibilidad antes de reservar.
+
+**Respuesta exitosa** `200`
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "planta_id": 5,
+      "especie": "Aliso",
+      "nombre_cientifico": "Alnus acuminata",
+      "nombre_comun_principal": "Aliso",
+      "saldo_vivo_actual_total": 1200,
+      "saldo_reservado_total": 300,
+      "saldo_disponible_total": 900,
+      "lotes": [
+        {
+          "lote_id": 31,
+          "codigo_trazabilidad": "VIV-000031-REC-2026-057",
+          "saldo_vivo_actual": 700,
+          "saldo_reservado": 200,
+          "saldo_disponible": 500
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Notas**
+- `saldo_disponible_total` = suma de saldos disponibles para asignación por especie.
+- Cada lote incluye `saldo_reservado`, que corresponde a reservas activas para subcampañas.
+- No usar este endpoint como garantía de concurrencia. La garantía final la aplica `POST /lotes-vivero/:id/reservas` en BD.
+
+**Ejemplo cURL**
+```bash
+curl -X GET http://localhost:3000/api/lotes-vivero/stock/especies \
+  -H "x-auth-id: <tu-auth-id>"
+```
+
+---
+
 ## GET /lotes-vivero/:id/saldos
 
 **Rol mínimo**: GENERAL  
-**Descripción**: Obtiene el saldo disponible de un lote para asignación. Resultado de: cantidad_inicial - cantidad_asignada.
+**Descripción**: Obtiene saldos operativos de un lote para asignación. El saldo disponible descuenta reservas activas.
 
 **Headers**
 | Header | Requerido | Descripción |
@@ -130,20 +175,30 @@ curl -X GET http://localhost:3000/api/lotes-vivero/1 \
   "success": true,
   "data": {
     "lote_id": 1,
-    "cantidad_inicial": 500,
-    "cantidad_asignada": 150,
-    "saldo_disponible": 350,
-    "cantidad_en_embolsado": 50,
-    "cantidad_en_adaptabilidad": 0,
-    "cantidad_en_merma": 0,
-    "cantidad_en_despacho": 0
+    "saldo_vivo_actual": 500,
+    "saldo_asignado_total": 150,
+    "saldo_vivo_disponible_asignacion": 350,
+    "asignaciones_activas": [
+      {
+        "id": 10,
+        "subcampania_id": 5,
+        "subcampania_nombre": "Subcampaña Zona A",
+        "proposito": "PLANTACION_INICIAL",
+        "cantidad_asignada": 150,
+        "cantidad_consumida": 0,
+        "cantidad_devuelta": 0,
+        "cantidad_mermada": 0,
+        "saldo_asignado_disponible": 150
+      }
+    ]
   }
 }
 ```
 
-**Campos GENERATED**:
-- `saldo_disponible`: Calculado en BD como `cantidad_inicial - cantidad_asignada`
-- Otros campos desglosados por etapa del ciclo de vivero
+**Campos clave**:
+- `saldo_vivo_actual`: plantas vivas actuales del lote.
+- `saldo_asignado_total`: suma de saldos reservados en asignaciones activas.
+- `saldo_vivo_disponible_asignacion`: saldo que todavía puede reservarse o despacharse manualmente sin tocar reservas.
 
 **Errores**
 | Status | Cuándo |
@@ -162,7 +217,7 @@ curl -X GET http://localhost:3000/api/lotes-vivero/1/saldos \
 ## POST /lotes-vivero/:id/asignaciones
 
 **Rol mínimo**: GENERAL  
-**Descripción**: Asigna una cantidad de un lote a una subcampaña.
+**Descripción**: Asigna/reserva una cantidad de un lote a una subcampaña. Usa la misma lógica transaccional que `POST /lotes-vivero/:id/reservas`.
 
 **Headers**
 | Header | Requerido | Descripción |
@@ -201,14 +256,88 @@ curl -X GET http://localhost:3000/api/lotes-vivero/1/saldos \
 **Errores**
 | Status | Cuándo |
 |--------|--------|
-| 400 | Validación fallida: cantidad > saldo, proposito inválido |
+| 400 | Validación fallida: proposito inválido o error no clasificable |
 | 401 | Header x-auth-id ausente |
 | 404 | Lote o subcampaña no encontrado |
-| 422 | Lote no está en estado ACTIVO; subcampaña no válida |
+| 422 | Lote no está en estado ACTIVO; subcampaña no válida; cantidad excede saldo disponible |
 
 **Ejemplo cURL**
 ```bash
 curl -X POST http://localhost:3000/api/lotes-vivero/1/asignaciones \
+  -H "Content-Type: application/json" \
+  -H "x-auth-id: <tu-auth-id>" \
+  -d '{
+    "subcampania_id": 5,
+    "cantidad_asignada": 100,
+    "proposito": "PLANTACION_INICIAL"
+  }'
+```
+
+---
+
+## POST /lotes-vivero/:id/reservas
+
+**Rol mínimo**: GENERAL
+**Descripción**: Endpoint recomendado para reservar stock por lote hacia una subcampaña. Ejecuta la reserva en una RPC transaccional que bloquea el lote y las reservas activas antes de calcular saldo disponible.
+
+**Headers**
+| Header | Requerido | Descripción |
+|--------|-----------|-------------|
+| x-auth-id | ✓ | Supabase auth_id del usuario |
+| Content-Type | ✓ | `application/json` |
+
+**Path Parameters**
+| Parámetro | Tipo | Descripción |
+|-----------|------|------------|
+| id | number | ID del lote de vivero |
+
+**Body** (`application/json`)
+| Campo | Tipo | Requerido | Validación |
+|-------|------|-----------|------------|
+| subcampania_id | number | ✓ | ID de subcampaña existente en BORRADOR o ACTIVA |
+| cantidad_asignada | number | ✓ | >= 1, <= saldo_vivo_disponible_asignacion |
+| proposito | PropositoAsignacion | — | Default: PLANTACION_INICIAL |
+
+**Respuesta exitosa** `201`
+```json
+{
+  "success": true,
+  "data": {
+    "id": 10,
+    "lote_vivero_id": 1,
+    "subcampania_id": 5,
+    "cantidad_asignada": 100,
+    "cantidad_consumida": 0,
+    "cantidad_devuelta": 0,
+    "cantidad_mermada": 0,
+    "saldo_asignado_disponible": 100,
+    "proposito": "PLANTACION_INICIAL",
+    "estado": "ACTIVA",
+    "usuario_asignacion_id": 1,
+    "fecha_asignacion": "2026-05-28T14:00:00Z",
+    "updated_at": "2026-05-28T14:00:00Z",
+    "subcampania_nombre": "Subcampaña Zona A"
+  }
+}
+```
+
+**Concurrencia**
+- La reserva es atómica en BD mediante `fn_vivero_reservar_stock_lote`.
+- Si dos usuarios reservan el mismo lote al mismo tiempo, la segunda operación recalcula saldo después del bloqueo y puede devolver 422 si ya no alcanza.
+- El frontend no debe asumir que el saldo leído previamente sigue disponible; debe mostrar el mensaje del backend si recibe 422.
+
+**Errores**
+| Status | Cuándo |
+|--------|--------|
+| 400 | Validación fallida o error no clasificable |
+| 401 | Header x-auth-id ausente |
+| 404 | Lote o subcampaña no encontrado |
+| 422 | Lote no ACTIVO, subcampaña no admite reservas, o cantidad excede saldo |
+| 500 | RPC no aplicada o no visible en schema cache |
+
+**Ejemplo cURL**
+```bash
+curl -X POST http://localhost:3000/api/lotes-vivero/1/reservas \
   -H "Content-Type: application/json" \
   -H "x-auth-id: <tu-auth-id>" \
   -d '{
@@ -421,9 +550,15 @@ ACTIVO | INACTIVO | CERRADO
   subcampania_id: number;
   subcampania_nombre?: string;
   cantidad_asignada: number;
+  cantidad_consumida: number;
+  cantidad_devuelta: number;
+  cantidad_mermada: number;
+  saldo_asignado_disponible: number;
   proposito?: PropositoAsignacion;
   estado: string;
-  created_at: string;
+  usuario_asignacion_id: number;
+  fecha_asignacion: string;
+  updated_at: string;
 }
 ```
 
@@ -431,13 +566,30 @@ ACTIVO | INACTIVO | CERRADO
 ```typescript
 {
   lote_id: number;
-  cantidad_inicial: number;
-  cantidad_asignada: number;
-  saldo_disponible: number; // GENERATED
-  cantidad_en_embolsado: number;
-  cantidad_en_adaptabilidad: number;
-  cantidad_en_merma: number;
-  cantidad_en_despacho: number;
+  saldo_vivo_actual: number | null;
+  saldo_asignado_total: number;
+  saldo_vivo_disponible_asignacion: number | null;
+  asignaciones_activas: Asignacion[];
+}
+```
+
+### StockDisponiblePorEspecie
+```typescript
+{
+  planta_id: number;
+  especie: string | null;
+  nombre_cientifico: string | null;
+  nombre_comun_principal: string | null;
+  saldo_vivo_actual_total: number;
+  saldo_reservado_total: number;
+  saldo_disponible_total: number;
+  lotes: Array<{
+    lote_id: number;
+    codigo_trazabilidad: string;
+    saldo_vivo_actual: number;
+    saldo_reservado: number;
+    saldo_disponible: number;
+  }>;
 }
 ```
 
@@ -460,21 +612,22 @@ ACTIVO | INACTIVO | CERRADO
 
 ## Reglas de Negocio
 
-1. **Saldo**: `saldo_disponible = cantidad_inicial - cantidad_asignada` (GENERATED)
-2. **Asignación máxima**: No puede superar `saldo_disponible`
-3. **Lote requerido ACTIVO**: Solo se asigna desde lotes en estado ACTIVO
-4. **Proposito**: Opcional; documentar si es plantación inicial o reposición
-5. **Cancelación**: Devuelve cantidad al saldo_disponible
-6. **Timeline**: Read-only, auditoria completa de eventos
+1. **Saldo disponible para reserva**: `saldo_vivo_disponible_asignacion = saldo_vivo_actual - saldo_asignado_total`.
+2. **Reserva máxima**: No puede superar `saldo_vivo_disponible_asignacion`.
+3. **Reserva transaccional**: `POST /lotes-vivero/:id/reservas` bloquea lote y reservas activas antes de calcular saldo.
+4. **Lote requerido ACTIVO**: Solo se reserva desde lotes en estado ACTIVO.
+5. **Subcampaña destino**: Solo admite reservas si está en BORRADOR o ACTIVA.
+6. **Proposito**: Opcional; default `PLANTACION_INICIAL`; también admite `REPOSICION`.
+7. **Cancelación**: Devuelve cantidad al saldo disponible si la asignación no fue consumida.
+8. **Timeline**: Read-only, auditoria completa de eventos.
 
 ---
 
 ## Flujo Típico (M3)
 
-1. **GET /lotes-vivero** → Listar lotes disponibles
-2. **GET /lotes-vivero/:id** → Ver detalle
-3. **GET /lotes-vivero/:id/saldos** → Verificar saldo disponible
-4. **POST /asignaciones** → Asignar cantidad a subcampaña
-5. **GET /asignaciones** → Ver asignaciones activas
-6. **DELETE /asignaciones/:id** → Cancelar si es necesario
-7. **GET /timeline** → Auditar historial del lote
+1. **GET /lotes-vivero/stock/especies** → Mostrar disponibilidad agrupada por especie.
+2. **GET /lotes-vivero/:id/saldos** → Verificar saldos del lote seleccionado.
+3. **POST /lotes-vivero/:id/reservas** → Reservar stock de forma transaccional.
+4. **GET /lotes-vivero/:id/asignaciones** → Ver asignaciones activas.
+5. **DELETE /lotes-vivero/:id/asignaciones/:asignacionId** → Cancelar si no fue consumida.
+6. **GET /lotes-vivero/:id/timeline** → Auditar historial del lote.

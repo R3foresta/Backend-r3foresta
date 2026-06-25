@@ -321,13 +321,16 @@ curl -X POST http://localhost:3000/api/subcampanias/1/poligono \
 
 ## POST /subcampanias/:id/activar
 
-**Rol mínimo**: GENERAL  
-**Descripción**: Activa una subcampaña (transición: BORRADOR → ACTIVA).
+**Rol mínimo**: ADMIN
+**Descripción**: Activa una subcampaña (transición: BORRADOR → ACTIVA) solo si la composición operativa está completa.
 
 **Pre-condiciones**:
 - Estado actual: BORRADOR
-- Debe tener poligono seteado
-- Debe tener meta_total_arboles >= 1
+- Debe tener ubicación (`zona_id`) y polígono seteado
+- Debe tener equipo con un miembro `COORDINADOR`
+- Debe tener `meta_total_arboles >= 1`
+- Debe tener reservas activas de vivero
+- El total reservado debe cubrir `meta_total_arboles`
 
 **Headers**
 | Header | Requerido | Descripción |
@@ -344,9 +347,20 @@ curl -X POST http://localhost:3000/api/subcampanias/1/poligono \
 {
   "success": true,
   "data": {
+    "message": "Subcampaña activada correctamente.",
     "id": 1,
     "estado": "ACTIVA",
-    "fase_mantenimiento": "NO_APLICA",
+    "nombre_zona_snapshot": "Zona A",
+    "nombre_coordinador_snapshot": "Coord Pepe",
+    "nombres_organizaciones_snapshot": ["Org A"],
+    "composicion_reservada": [
+      {
+        "planta_id": 5,
+        "especie": "Aliso",
+        "nombre_cientifico": "Alnus acuminata",
+        "saldo_reservado": 500
+      }
+    ],
     "updated_at": "2026-05-28T11:00:00Z"
   }
 }
@@ -356,8 +370,14 @@ curl -X POST http://localhost:3000/api/subcampanias/1/poligono \
 | Status | Cuándo |
 |--------|--------|
 | 401 | Header x-auth-id ausente |
+| 403 | Rol distinto de ADMIN |
 | 404 | Subcampaña no encontrada |
-| 422 | No cumple pre-condiciones (sin polígono, estado no es BORRADOR) |
+| 422 | No cumple pre-condiciones: estado no BORRADOR, sin polígono, sin coordinador, sin reservas, o reservas insuficientes |
+
+**Notas para frontend**
+- Si el backend devuelve `422`, mostrar el mensaje del backend: indica exactamente qué falta.
+- Antes de activar, verificar que ya existan polígono, coordinador y reservas suficientes.
+- Las reservas se crean desde `POST /lotes-vivero/:loteId/reservas`.
 
 **Ejemplo cURL**
 ```bash
@@ -665,16 +685,27 @@ COORDINADOR | OPERARIO
 }
 ```
 
+### ComposicionReservada
+```typescript
+{
+  planta_id: number;
+  especie: string | null;
+  nombre_cientifico: string | null;
+  saldo_reservado: number;
+}
+```
+
 ---
 
 ## Reglas de Negocio
 
 1. **Ciclo de vida**: BORRADOR → ACTIVA → (COMPLETADA | FINALIZADA_PARCIAL)
-2. **Pre-condiciones de activación**: Polígono requerido, meta >= 1
+2. **Pre-condiciones de activación**: Polígono, ubicación, coordinador, meta >= 1 y reservas activas suficientes
 3. **Campos GENERATED**: `saldo_vivo_actual` es calculado en BD
 4. **GeoJSON**: Orden [longitud, latitud]
 5. **Equipo**: Un usuario puede tener rol COORDINADOR o OPERARIO por subcampaña
-6. **Soft delete**: Solo en estado BORRADOR; otros estados se archivan
+6. **Reservas**: La suma de `saldo_reservado` debe cubrir `meta_total_arboles` antes de activar
+7. **Soft delete**: Solo en estado BORRADOR; otros estados se archivan
 
 ---
 
@@ -684,5 +715,6 @@ COORDINADOR | OPERARIO
 2. **PATCH** → Editar detalles
 3. **POST /poligono** → Establecer zona
 4. **POST /equipo** → Agregar coordinadores y operarios
-5. **POST /activar** → Pasar a ACTIVA
-6. **POST /cerrar** → Cerrar (COMPLETADA o FINALIZADA_PARCIAL)
+5. **POST /lotes-vivero/:loteId/reservas** → Reservar stock suficiente
+6. **POST /activar** → Pasar a ACTIVA
+7. **POST /cerrar** → Cerrar (COMPLETADA o FINALIZADA_PARCIAL)

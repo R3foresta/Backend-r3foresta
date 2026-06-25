@@ -30,6 +30,8 @@ function buildSupabase(opts: {
   subcampaniaRow?: (Estado & { id: number; campania_id: number }) | null;
   subcampaniaError?: any;
   coordinadorRow?: any;
+  reservasRows?: any[];
+  reservasError?: any;
   updateResult?: { data: any; error: any };
 }): SupabaseService {
   const subSingle = jest
@@ -50,9 +52,7 @@ function buildSupabase(opts: {
         ? { data: opts.coordinadorRow, error: null }
         : { data: null, error: null },
     );
-  const coordEq2 = jest
-    .fn()
-    .mockReturnValue({ maybeSingle: coordMaybeSingle });
+  const coordEq2 = jest.fn().mockReturnValue({ maybeSingle: coordMaybeSingle });
   const coordEq1 = jest.fn().mockReturnValue({ eq: coordEq2 });
   const coordSelect = jest.fn().mockReturnValue({ eq: coordEq1 });
 
@@ -66,6 +66,25 @@ function buildSupabase(opts: {
     .fn()
     .mockResolvedValue({ data: [{ organizacion: { nombre: 'Org A' } }] });
   const orgsSelect = jest.fn().mockReturnValue({ eq: orgsEq });
+
+  const reservasEq2 = jest.fn().mockResolvedValue({
+    data: opts.reservasRows ?? [
+      {
+        saldo_asignado_disponible: 500,
+        lote_vivero: {
+          planta_id: 1,
+          planta: {
+            id: 1,
+            especie: 'Aliso',
+            nombre_cientifico: 'Alnus acuminata',
+          },
+        },
+      },
+    ],
+    error: opts.reservasError ?? null,
+  });
+  const reservasEq1 = jest.fn().mockReturnValue({ eq: reservasEq2 });
+  const reservasSelect = jest.fn().mockReturnValue({ eq: reservasEq1 });
 
   const updateSingle = jest
     .fn()
@@ -88,6 +107,9 @@ function buildSupabase(opts: {
     }
     if (table === 'campania_organizacion') {
       return { select: orgsSelect };
+    }
+    if (table === 'asignacion_vivero_subcampania') {
+      return { select: reservasSelect };
     }
     return {};
   });
@@ -202,6 +224,58 @@ describe('SubcampaniasActivacionService', () => {
         zona_id: 10,
       },
       coordinadorRow: { usuario_id: 7, usuario: { id: 7, nombre: 'Coord' } },
+    });
+    const service = new SubcampaniasActivacionService(
+      supabase,
+      buildAuthService('ADMIN'),
+    );
+    await expect(service.activar(1, 'auth-1')).rejects.toThrow(
+      UnprocessableEntityException,
+    );
+  });
+
+  it('lanza 422 si no hay reservas activas', async () => {
+    const supabase = buildSupabase({
+      subcampaniaRow: {
+        id: 1,
+        campania_id: 50,
+        estado: 'BORRADOR',
+        meta_total_arboles: 500,
+        poligono_geom: 'POLYGON(...)',
+        zona_id: 10,
+      },
+      coordinadorRow: { usuario_id: 7, usuario: { id: 7, nombre: 'Coord' } },
+      reservasRows: [],
+    });
+    const service = new SubcampaniasActivacionService(
+      supabase,
+      buildAuthService('ADMIN'),
+    );
+    await expect(service.activar(1, 'auth-1')).rejects.toThrow(
+      UnprocessableEntityException,
+    );
+  });
+
+  it('lanza 422 si las reservas no cubren la meta', async () => {
+    const supabase = buildSupabase({
+      subcampaniaRow: {
+        id: 1,
+        campania_id: 50,
+        estado: 'BORRADOR',
+        meta_total_arboles: 500,
+        poligono_geom: 'POLYGON(...)',
+        zona_id: 10,
+      },
+      coordinadorRow: { usuario_id: 7, usuario: { id: 7, nombre: 'Coord' } },
+      reservasRows: [
+        {
+          saldo_asignado_disponible: 499,
+          lote_vivero: {
+            planta_id: 1,
+            planta: { id: 1, especie: 'Aliso', nombre_cientifico: 'Alnus' },
+          },
+        },
+      ],
     });
     const service = new SubcampaniasActivacionService(
       supabase,
