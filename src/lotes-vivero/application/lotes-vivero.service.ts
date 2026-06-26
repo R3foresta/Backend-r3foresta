@@ -165,6 +165,10 @@ export class LotesViveroService {
     return this.saldosService.obtenerSaldos(loteId);
   }
 
+  listarStockDisponiblePorEspecie() {
+    return this.saldosService.listarStockDisponiblePorEspecie();
+  }
+
   crearAsignacion(loteId: number, dto: CrearAsignacionDto, authId: string) {
     return this.asignacionesService.crearAsignacion(loteId, dto, authId);
   }
@@ -174,6 +178,10 @@ export class LotesViveroService {
   }
 
   cancelarAsignacion(loteId: number, asignacionId: number, authId: string) {
-    return this.asignacionesService.cancelarAsignacion(loteId, asignacionId, authId);
+    return this.asignacionesService.cancelarAsignacion(
+      loteId,
+      asignacionId,
+      authId,
+    );
   }
 }

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { SubcampaniasService } from '../../subcampanias/application/subcampanias.service';
 import { AsociarOrganizacionesDto } from '../api/dto/asociar-organizaciones.dto';
 import { CrearCampaniaDto } from '../api/dto/crear-campania.dto';
 import { EditarCampaniaDto } from '../api/dto/editar-campania.dto';
@@ -14,6 +15,7 @@ export class CampaniasService {
     private readonly consultasService: CampaniasConsultasService,
     private readonly edicionService: CampaniasEdicionService,
     private readonly organizacionesService: CampaniasOrganizacionesService,
+    private readonly subcampaniasService: SubcampaniasService,
   ) {}
 
   crear(dto: CrearCampaniaDto, authId: string) {
@@ -26,6 +28,11 @@ export class CampaniasService {
 
   obtenerPorId(id: number) {
     return this.consultasService.obtenerPorId(id);
+  }
+
+  async listarSubcampanias(id: number) {
+    await this.consultasService.asegurarExiste(id);
+    return this.subcampaniasService.listar({ campania_id: id });
   }
 
   editar(id: number, dto: EditarCampaniaDto, authId: string) {

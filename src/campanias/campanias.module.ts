@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../supabase/supabase.module';
+import { SubcampaniasModule } from '../subcampanias/subcampanias.module';
 import { CampaniasController } from './api/campanias.controller';
 import { CampaniasAuthService } from './application/campanias-auth.service';
 import { CampaniasCodigosService } from './application/campanias-codigos.service';
@@ -10,7 +11,7 @@ import { CampaniasOrganizacionesService } from './application/campanias-organiza
 import { CampaniasService } from './application/campanias.service';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [SupabaseModule, SubcampaniasModule],
   controllers: [CampaniasController],
   providers: [
     CampaniasService,

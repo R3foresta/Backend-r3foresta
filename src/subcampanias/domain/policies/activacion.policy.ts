@@ -7,11 +7,18 @@ export type ActivacionParams = {
   tienePoligono: boolean;
   tieneCoordinador: boolean;
   metaTotal: number;
+  totalReservado?: number;
 };
 
 export class ActivacionPolicy {
   static assertPuedeActivar(params: ActivacionParams): void {
-    const { estadoActual, tienePoligono, tieneCoordinador, metaTotal } = params;
+    const {
+      estadoActual,
+      tienePoligono,
+      tieneCoordinador,
+      metaTotal,
+      totalReservado,
+    } = params;
 
     if (estadoActual !== EstadoSubcampania.BORRADOR) {
       throw new ActivacionPolicyError(
@@ -34,6 +41,22 @@ export class ActivacionPolicy {
     if (!Number.isFinite(metaTotal) || metaTotal <= 0) {
       throw new ActivacionPolicyError(
         'meta_total_arboles debe ser mayor a 0 para activar.',
+      );
+    }
+
+    if (totalReservado !== undefined && totalReservado <= 0) {
+      throw new ActivacionPolicyError(
+        'La subcampaña no tiene reservas activas de vivero. Reservar stock antes de activar.',
+      );
+    }
+
+    if (
+      totalReservado !== undefined &&
+      Number.isFinite(metaTotal) &&
+      totalReservado < metaTotal
+    ) {
+      throw new ActivacionPolicyError(
+        `Las reservas activas (${totalReservado}) no cubren la meta_total_arboles (${metaTotal}).`,
       );
     }
   }

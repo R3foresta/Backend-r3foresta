@@ -144,6 +144,21 @@ export class CampaniasConsultasService {
     };
   }
 
+  async asegurarExiste(id: number): Promise<void> {
+    const supabase = this.supabaseService.getClient();
+
+    const { data, error } = await supabase
+      .from('campania')
+      .select('id')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .single();
+
+    if (error || !data) {
+      throw new NotFoundException(`Campaña con id ${id} no encontrada`);
+    }
+  }
+
   private mapRow(
     c: CampaniaRow,
     estadosMap: Map<number, string>,

@@ -32,6 +32,39 @@ type AsignacionRow = {
   saldo_asignado_disponible: number;
 };
 
+type PlantaStockRow = {
+  id: number;
+  especie: string | null;
+  nombre_cientifico: string | null;
+  nombre_comun_principal: string | null;
+};
+
+type LoteStockRow = {
+  id: number;
+  codigo_trazabilidad: string;
+  planta_id: number;
+  saldo_vivo_actual: number | null;
+  estado_lote: string;
+  planta: PlantaStockRow | PlantaStockRow[] | null;
+};
+
+type StockDisponibleEspecie = {
+  planta_id: number;
+  especie: string | null;
+  nombre_cientifico: string | null;
+  nombre_comun_principal: string | null;
+  saldo_vivo_actual_total: number;
+  saldo_reservado_total: number;
+  saldo_disponible_total: number;
+  lotes: {
+    lote_id: number;
+    codigo_trazabilidad: string;
+    saldo_vivo_actual: number;
+    saldo_reservado: number;
+    saldo_disponible: number;
+  }[];
+};
+
 @Injectable()
 export class ViveroSaldosService {
   private readonly logger = new Logger(ViveroSaldosService.name);
@@ -106,6 +139,88 @@ export class ViveroSaldosService {
           saldo_asignado_disponible: Number(a.saldo_asignado_disponible),
         })),
       },
+    };
+  }
+
+  async listarStockDisponiblePorEspecie() {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: lotes, error: lotesError } = await supabase
+      .from('lote_vivero')
+      .select(
+        'id, codigo_trazabilidad, planta_id, saldo_vivo_actual, estado_lote, planta:planta_id(id, especie, nombre_cientifico, nombre_comun_principal)',
+      )
+      .eq('estado_lote', 'ACTIVO')
+      .not('saldo_vivo_actual', 'is', null)
+      .gt('saldo_vivo_actual', 0)
+      .order('id', { ascending: true });
+
+    if (lotesError) {
+      this.logger.error(
+        'Error al leer lotes para stock por especie:',
+        lotesError,
+      );
+      throw new InternalServerErrorException(
+        'Error al listar stock disponible por especie',
+      );
+    }
+
+    const loteRows = (lotes ?? []) as LoteStockRow[];
+    if (loteRows.length === 0) {
+      return { success: true, data: [] };
+    }
+
+    const saldosMap = await this.cargarSaldosDisponibles(
+      loteRows.map((lote) => Number(lote.id)),
+    );
+
+    const especiesMap = new Map<number, StockDisponibleEspecie>();
+
+    for (const lote of loteRows) {
+      const saldos = saldosMap.get(Number(lote.id));
+      const saldoDisponible = Number(
+        saldos?.saldo_vivo_disponible_asignacion ?? 0,
+      );
+      if (saldoDisponible <= 0) continue;
+
+      const planta = this.unwrapRelation(lote.planta);
+      const plantaId = Number(lote.planta_id ?? planta?.id);
+      if (!Number.isFinite(plantaId)) continue;
+
+      const current: StockDisponibleEspecie = especiesMap.get(plantaId) ?? {
+        planta_id: plantaId,
+        especie: planta?.especie ?? null,
+        nombre_cientifico: planta?.nombre_cientifico ?? null,
+        nombre_comun_principal: planta?.nombre_comun_principal ?? null,
+        saldo_vivo_actual_total: 0,
+        saldo_reservado_total: 0,
+        saldo_disponible_total: 0,
+        lotes: [],
+      };
+
+      const saldoVivoActual = Number(
+        saldos?.saldo_vivo_actual ?? lote.saldo_vivo_actual ?? 0,
+      );
+      const saldoReservado = Number(saldos?.saldo_asignado_total ?? 0);
+
+      current.saldo_vivo_actual_total += saldoVivoActual;
+      current.saldo_reservado_total += saldoReservado;
+      current.saldo_disponible_total += saldoDisponible;
+      current.lotes.push({
+        lote_id: Number(lote.id),
+        codigo_trazabilidad: lote.codigo_trazabilidad,
+        saldo_vivo_actual: saldoVivoActual,
+        saldo_reservado: saldoReservado,
+        saldo_disponible: saldoDisponible,
+      });
+      especiesMap.set(plantaId, current);
+    }
+
+    return {
+      success: true,
+      data: [...especiesMap.values()].sort((a, b) =>
+        String(a.especie ?? '').localeCompare(String(b.especie ?? '')),
+      ),
     };
   }
 
@@ -227,6 +342,42 @@ export class ViveroSaldosService {
     };
   }
 
+  private async cargarSaldosDisponibles(
+    loteIds: number[],
+  ): Promise<Map<number, SaldosBaseRow>> {
+    const supabase = this.supabaseService.getClient();
+    const { data, error } = await supabase
+      .from('v_lote_vivero_saldos')
+      .select(
+        'lote_id, saldo_vivo_actual, saldo_asignado_total, saldo_vivo_disponible_asignacion',
+      )
+      .in('lote_id', loteIds);
+
+    if (!error) {
+      return new Map(
+        ((data ?? []) as SaldosVistaRow[]).map((row) => [
+          Number(row.lote_id),
+          row,
+        ]),
+      );
+    }
+
+    if (!this.esErrorPorVistaAusente(error)) {
+      this.logger.error('Error al leer v_lote_vivero_saldos:', error);
+      throw new InternalServerErrorException(
+        'Error al listar stock disponible por especie',
+      );
+    }
+
+    const saldos = await Promise.all(
+      loteIds.map(
+        async (loteId) =>
+          [loteId, await this.calcularSaldosDesdeTablas(loteId)] as const,
+      ),
+    );
+    return new Map(saldos);
+  }
+
   private esErrorPorVistaAusente(error: {
     code?: string;
     message?: string;
@@ -241,5 +392,10 @@ export class ViveroSaldosService {
         'relation "public.v_lote_vivero_saldos" does not exist',
       ) === true
     );
+  }
+
+  private unwrapRelation<T>(value: T | T[] | null | undefined): T | null {
+    if (Array.isArray(value)) return value[0] ?? null;
+    return value ?? null;
   }
 }

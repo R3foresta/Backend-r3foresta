@@ -126,6 +126,18 @@ describe('ActivacionPolicy', () => {
       ActivacionPolicy.assertPuedeActivar({ ...base, metaTotal: -1 }),
     ).toThrow(ActivacionPolicyError);
   });
+
+  it('rechaza si no hay reservas activas', () => {
+    expect(() =>
+      ActivacionPolicy.assertPuedeActivar({ ...base, totalReservado: 0 }),
+    ).toThrow(ActivacionPolicyError);
+  });
+
+  it('rechaza si las reservas no cubren la meta', () => {
+    expect(() =>
+      ActivacionPolicy.assertPuedeActivar({ ...base, totalReservado: 99 }),
+    ).toThrow(ActivacionPolicyError);
+  });
 });
 
 describe('CierrePolicy', () => {

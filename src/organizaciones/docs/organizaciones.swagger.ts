@@ -189,9 +189,9 @@ export function ApiBorrarLogo() {
 export function ApiBorrarOrganizacion() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Borrar organizacion (hard delete)',
+      summary: 'Borrar organizacion (hard delete o soft delete)',
       description:
-        'Solo si no esta referenciada en campania_organizacion. Si lo esta, devuelve 422 sugiriendo PATCH activo=false. Solo ADMIN.',
+        'Si no esta referenciada en campania_organizacion, elimina fisicamente la organizacion y su logo. Si esta asociada a una o mas campañas, conserva la fila y marca activo=false. Solo ADMIN.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -205,7 +205,8 @@ export function ApiBorrarOrganizacion() {
     ApiResponse({ status: 404, description: 'Organizacion no encontrada.' }),
     ApiResponse({
       status: 422,
-      description: 'La organizacion esta asociada a una o mas campañas.',
+      description:
+        'No se puede borrar por otra referencia activa fuera de campania_organizacion.',
     }),
   );
 }

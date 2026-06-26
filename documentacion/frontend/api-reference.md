@@ -1,6 +1,6 @@
 # API Reference — Reforesta Backend
 
-**Última actualización**: 2026-05-28
+**Última actualización**: 2026-06-25
 
 ## Tabla de Contenidos
 
@@ -149,6 +149,7 @@ PLANTACION_INICIAL | REPOSICION
 
 ### [1. Usuarios](modulos/usuarios.md)
 - `GET /users` — Listar usuarios (selector)
+- `GET /users/rol/:rol` — Listar usuarios por rol
 - `GET /users/profile` — Perfil del usuario autenticado
 - `POST /users/register-form` — Completar registro
 - `PATCH /users/profile/photo` 📎 — Subir foto de perfil
@@ -171,6 +172,7 @@ PLANTACION_INICIAL | REPOSICION
 - `POST /campanias` — Crear
 - `GET /campanias` — Listar
 - `GET /campanias/:id` — Detalle
+- `GET /campanias/:id/subcampanias` — Listar subcampañas de la campaña
 - `PATCH /campanias/:id` — Editar
 - `DELETE /campanias/:id` — Borrar
 - `POST /campanias/:id/organizaciones` — Asociar orgs
@@ -192,8 +194,10 @@ PLANTACION_INICIAL | REPOSICION
 ### [6. Lotes de Vivero (M3)](modulos/lotes-vivero-m3.md)
 Endpoints relevantes para flujo de asignaciones de M3:
 - `GET /lotes-vivero` — Listar lotes disponibles
+- `GET /lotes-vivero/stock/especies` — Stock disponible agrupado por especie
 - `GET /lotes-vivero/:id` — Detalle del lote
 - `GET /lotes-vivero/:id/saldos` — Saldo disponible para asignación
+- `POST /lotes-vivero/:id/reservas` — Reservar stock transaccionalmente
 - `POST /lotes-vivero/:id/asignaciones` — Asignar a subcampaña
 - `GET /lotes-vivero/:id/asignaciones` — Ver asignaciones activas
 - `DELETE /lotes-vivero/:id/asignaciones/:asignacionId` — Cancelar asignación
@@ -233,7 +237,7 @@ Algunos endpoints aceptan `x-auth-id` directamente (sin JWT) en modo dev. Ver `u
 - **Fotos de evidencias**: máx. 5 archivos por request
 
 ### Pre-condiciones (Lifecycle)
-Endpoints como `/activar` y `/cerrar` en subcampañas requieren ciertos estados previos. Ver detalles en módulo Subcampañas.
+Endpoints como `/activar` y `/cerrar` en subcampañas requieren ciertos estados previos. `POST /subcampanias/:id/activar` exige polígono, coordinador y reservas activas suficientes para cubrir `meta_total_arboles`. Ver detalles en módulo Subcampañas.
 
 ---
 

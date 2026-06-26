@@ -254,6 +254,11 @@ export class LotesViveroController {
     return this.lotesViveroService.listarLotes(filters);
   }
 
+  @Get('stock/especies')
+  listarStockDisponiblePorEspecie() {
+    return this.lotesViveroService.listarStockDisponiblePorEspecie();
+  }
+
   @Get(':id/saldos')
   @ApiObtenerSaldos()
   obtenerSaldos(@Param('id', ParseIntPipe) loteId: number) {
@@ -280,6 +285,19 @@ export class LotesViveroController {
   @Post(':id/asignaciones')
   @ApiCrearAsignacion()
   crearAsignacion(
+    @Param('id', ParseIntPipe) loteId: number,
+    @Body() dto: CrearAsignacionDto,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    return this.lotesViveroService.crearAsignacion(
+      loteId,
+      dto,
+      this.requireAuthId(authId),
+    );
+  }
+
+  @Post(':id/reservas')
+  reservarStock(
     @Param('id', ParseIntPipe) loteId: number,
     @Body() dto: CrearAsignacionDto,
     @Headers('x-auth-id') authId?: string,

@@ -6,7 +6,7 @@ Base URL: `/api/users`
 
 ## GET /users
 
-**Rol mínimo**: GENERAL  
+**Rol mínimo**: GENERAL
 **Descripción**: Lista usuarios para selectores (dropdowns), filtrados por nombre y/o rol.
 
 **Headers**
@@ -22,21 +22,18 @@ Base URL: `/api/users`
 
 **Respuesta exitosa** `200`
 ```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "nombre": "Juan Pérez",
-      "rol": "ADMIN"
-    },
-    {
-      "id": 2,
-      "nombre": "María González",
-      "rol": "GENERAL"
-    }
-  ]
-}
+[
+  {
+    "id": 1,
+    "nombre": "Juan Pérez",
+    "rol": "ADMIN"
+  },
+  {
+    "id": 2,
+    "nombre": "María González",
+    "rol": "GENERAL"
+  }
+]
 ```
 
 **Errores**
@@ -48,6 +45,55 @@ Base URL: `/api/users`
 **Ejemplo cURL**
 ```bash
 curl -X GET "http://localhost:3000/api/users?q=juan&rol=ADMIN" \
+  -H "x-auth-id: <tu-auth-id>"
+```
+
+---
+
+## GET /users/rol/:rol
+
+**Rol mínimo**: GENERAL
+**Descripción**: Alias explícito para listar usuarios por rol. Útil para selectores de coordinadores/equipo.
+
+**Headers**
+| Header | Requerido | Descripción |
+|--------|-----------|-------------|
+| x-auth-id | ✓ | Supabase auth_id del usuario autenticado |
+
+**Path Parameters**
+| Parámetro | Tipo | Descripción |
+|-----------|------|------------|
+| rol | string | Rol exacto: ADMIN, GENERAL, VALIDADOR, VOLUNTARIO |
+
+**Query Parameters**
+| Parámetro | Tipo | Requerido | Descripción |
+|-----------|------|-----------|------------|
+| q | string | — | Búsqueda ILIKE por nombre |
+
+**Respuesta exitosa** `200`
+```json
+[
+  {
+    "id": 7,
+    "nombre": "Coord Pepe",
+    "rol": "GENERAL"
+  }
+]
+```
+
+**Notas**
+- Es equivalente a `GET /users?rol=:rol&q=...`.
+- Para coordinadores de subcampaña, filtrar por el rol de usuario que producto defina como elegible y luego asignarlo con rol de equipo `COORDINADOR`.
+
+**Errores**
+| Status | Cuándo |
+|--------|--------|
+| 400 | Rol inválido o parámetros malformados |
+| 401 | Header x-auth-id ausente |
+
+**Ejemplo cURL**
+```bash
+curl -X GET "http://localhost:3000/api/users/rol/GENERAL?q=coord" \
   -H "x-auth-id: <tu-auth-id>"
 ```
 
@@ -269,4 +315,4 @@ curl -X PATCH http://localhost:3000/api/users/profile/photo \
 2. **POST /register-form** → Completa nombre, documento, organización
 3. **GET /profile** → Lee datos actualizados
 4. **PATCH /profile/photo** → Sube foto
-5. **GET /users?q=...** → Búsqueda de usuarios para asignaciones
+5. **GET /users?q=...** o **GET /users/rol/:rol?q=...** → Búsqueda de usuarios para asignaciones/equipo

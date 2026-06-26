@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Body,
+  Param,
   Req,
   Query,
   UnauthorizedException,
@@ -42,7 +43,19 @@ export class UsersController {
     @Query('q') q?: string,
     @Query('rol') rol?: string,
   ) {
-    if (!authId?.trim()) throw new UnauthorizedException('Header x-auth-id es requerido');
+    if (!authId?.trim())
+      throw new UnauthorizedException('Header x-auth-id es requerido');
+    return this.usersService.listarParaSelector({ q, rol });
+  }
+
+  @Get('rol/:rol')
+  listarPorRol(
+    @Headers('x-auth-id') authId: string | undefined,
+    @Param('rol') rol: string,
+    @Query('q') q?: string,
+  ) {
+    if (!authId?.trim())
+      throw new UnauthorizedException('Header x-auth-id es requerido');
     return this.usersService.listarParaSelector({ q, rol });
   }
 

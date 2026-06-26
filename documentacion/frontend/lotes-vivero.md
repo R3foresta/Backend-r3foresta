@@ -16,7 +16,13 @@ Endpoints listos para consumo:
 POST /api/lotes-vivero/evidencias-pendientes
 POST /api/lotes-vivero
 GET  /api/lotes-vivero
+GET  /api/lotes-vivero/stock/especies                  ← stock disponible agrupado por especie
 GET  /api/lotes-vivero/:id                              ← detalle con ultimo_evento_por_tipo
+GET  /api/lotes-vivero/:id/saldos                       ← saldo vivo y reservas activas
+POST /api/lotes-vivero/:id/reservas                     ← reserva transaccional para subcampaña
+POST /api/lotes-vivero/:id/asignaciones                 ← alias compatible de reserva/asignación
+GET  /api/lotes-vivero/:id/asignaciones
+DELETE /api/lotes-vivero/:id/asignaciones/:asignacionId
 GET  /api/lotes-vivero/:id/embolsado/context
 POST /api/lotes-vivero/:id/embolsado/evidencias-pendientes
 POST /api/lotes-vivero/:id/embolsado
