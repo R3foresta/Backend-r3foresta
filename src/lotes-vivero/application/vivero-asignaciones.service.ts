@@ -31,7 +31,7 @@ export class ViveroAsignacionesService {
     // Verificar que el lote existe y está activo
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')
-      .select('id, estado')
+      .select('id, estado_lote')
       .eq('id', loteId)
       .maybeSingle();
 
@@ -42,9 +42,9 @@ export class ViveroAsignacionesService {
     if (!lote) {
       throw new NotFoundException(`Lote de vivero ${loteId} no encontrado`);
     }
-    if (lote.estado !== 'ACTIVO') {
+    if (lote.estado_lote !== 'ACTIVO') {
       throw new UnprocessableEntityException(
-        `Solo se puede asignar desde un lote ACTIVO (estado actual: ${lote.estado})`,
+        `Solo se puede asignar desde un lote ACTIVO (estado actual: ${lote.estado_lote})`,
       );
     }
 
