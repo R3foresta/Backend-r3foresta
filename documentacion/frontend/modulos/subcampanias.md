@@ -4,9 +4,63 @@ Base URL: `/api/subcampanias`
 
 ---
 
+## Decisiones de integración frontend
+
+### `zona_id`
+
+`zona_id` es el `id` de `division_administrativa`; no existe un catálogo aparte de zonas para subcampañas.
+
+Si el selector de comunidad devuelve el `id` de una fila de `division_administrativa` (por ejemplo, una comunidad/localidad de la jerarquía País → Departamento → Provincia → Municipio → Comunidad), ese valor debe enviarse como `zona_id`.
+
+No confundir con `ubicacion.id`: `ubicacion` es otra tabla usada para registros puntuales con coordenadas/referencia. Subcampaña referencia directamente `division_administrativa.id`.
+
+### Momento de creación
+
+`POST /subcampanias` requiere estos campos mínimos:
+
+- `campania_id`
+- `nombre`
+- `zona_id`
+- `meta_total_arboles`
+
+`meta_total_arboles` no puede ser `null` ni `0`. Si el flujo de frontend obtiene comunidad/nombre en paso 1 y define especies/meta en paso 2, la subcampaña solo puede crearse al terminar el paso 2, cuando ya existan los cuatro campos mínimos.
+
+### Mix de especies
+
+No existe un endpoint para persistir un mix planificado por porcentaje como `[{ planta_id, pct }]`.
+
+El backend persiste la composición operativa mediante reservas de vivero: `POST /lotes-vivero/:loteId/reservas`. La `composicion_reservada` que devuelve `POST /subcampanias/:id/activar` se calcula desde reservas activas (`asignacion_vivero_subcampania`) y sus lotes/especies; no desde una tabla de porcentajes planificados.
+
+Implicación para frontend:
+
+- Si el paso "Especies y meta" solo guarda porcentajes, eso queda como borrador local hasta que se traduzca a cantidades/lotes y se creen reservas.
+- Si producto necesita persistir el mix porcentual antes de reservar stock, falta contrato backend nuevo, por ejemplo `PUT /subcampanias/:id/composicion`.
+- Con el contrato actual, el flujo persistente real es: elegir especie/stock disponible → seleccionar lote(s) → reservar cantidades por lote → activar cuando la suma reservada cubra `meta_total_arboles`.
+
+### Coordinador
+
+El coordinador no se envía en `POST /subcampanias` ni en `PATCH /subcampanias/:id`.
+
+Se persiste como miembro del equipo con rol `COORDINADOR`:
+
+```json
+[
+  { "usuario_id": 15, "rol": "COORDINADOR" }
+]
+```
+
+Endpoint: `POST /subcampanias/:id/equipo`.
+
+Para cambiar coordinador:
+
+- En `BORRADOR`: usar `DELETE /subcampanias/:id/equipo/:usuarioId` para quitar el coordinador anterior y luego `POST /subcampanias/:id/equipo` para agregar el nuevo.
+- En `ACTIVA`: el backend no permite quitar al coordinador actual y tampoco permite agregar un segundo `COORDINADOR`; no hay endpoint de reemplazo atómico. Si ese caso de uso es requerido, falta contrato backend nuevo.
+
+---
+
 ## POST /subcampanias
 
-**Rol mínimo**: GENERAL  
+**Rol mínimo**: ADMIN  
 **Descripción**: Crea una subcampaña en estado BORRADOR dentro de una campaña.
 
 **Headers**
@@ -21,7 +75,7 @@ Base URL: `/api/subcampanias`
 | campania_id | number | ✓ | ID de campaña existente |
 | nombre | string | ✓ | min 3, max 200 |
 | descripcion | string | — | max 1000 caracteres |
-| zona_id | number | ✓ | ID de división administrativa (ubicación) |
+| zona_id | number | ✓ | ID de `division_administrativa` |
 | meta_total_arboles | number | ✓ | >= 1 |
 | fecha_estimada_inicio | string | — | ISO date (YYYY-MM-DD) |
 | fecha_estimada_fin | string | — | ISO date |
@@ -32,35 +86,36 @@ Base URL: `/api/subcampanias`
 {
   "success": true,
   "data": {
+    "message": "Subcampaña creada correctamente.",
     "id": 1,
     "campania_id": 1,
     "nombre": "Subcampaña Zona A",
-    "descripcion": "Plantación en zona A de La Paz",
+    "tipo": "REFORESTACION",
+    "estado": "BORRADOR",
     "zona_id": 10,
     "meta_total_arboles": 1000,
+    "codigo_trazabilidad": "SUB-001-CMP-2026-001",
+    "descripcion": "Plantación en zona A de La Paz",
     "fecha_estimada_inicio": "2026-06-01",
     "fecha_estimada_fin": "2026-08-31",
     "tolerancia_gps_metros": 50,
-    "estado": "BORRADOR",
-    "fase_mantenimiento": "NO_APLICA",
-    "poligono": null,
-    "saldo_vivo_actual": 1000,
-    "created_at": "2026-05-28T10:00:00Z",
-    "updated_at": "2026-05-28T10:00:00Z"
+    "created_at": "2026-05-28T10:00:00Z"
   }
 }
 ```
 
-**Campos GENERATED** (solo lectura):
+**Campos generados / derivados**
 - `estado`: "BORRADOR"
-- `fase_mantenimiento`: "NO_APLICA"
-- `saldo_vivo_actual`: Calculado en BD
+- `tipo`: heredado desde la campaña; no enviar en el payload
+- `codigo_trazabilidad`: generado por backend
+- `saldo_vivo_actual`: calculado en BD y disponible en consultas (`GET`)
 
 **Errores**
 | Status | Cuándo |
 |--------|--------|
 | 400 | Validación fallida |
 | 401 | Header x-auth-id ausente |
+| 403 | El usuario autenticado no tiene rol ADMIN |
 | 404 | Campaña o zona no encontrada |
 
 **Ejemplo cURL**
@@ -82,7 +137,7 @@ curl -X POST http://localhost:3000/api/subcampanias \
 
 ## GET /subcampanias
 
-**Rol mínimo**: GENERAL  
+**Rol mínimo**: usuario autenticado  
 **Descripción**: Lista subcampañas con filtros opcionales.
 
 **Headers**
@@ -127,7 +182,7 @@ curl -X GET "http://localhost:3000/api/subcampanias?campania_id=1&estado=ACTIVA"
 
 ## GET /subcampanias/:id
 
-**Rol mínimo**: GENERAL  
+**Rol mínimo**: usuario autenticado  
 **Descripción**: Obtiene detalle completo de una subcampaña.
 
 **Headers**
@@ -183,7 +238,7 @@ curl -X GET http://localhost:3000/api/subcampanias/1 \
 
 ## PATCH /subcampanias/:id
 
-**Rol mínimo**: GENERAL  
+**Rol mínimo**: ADMIN  
 **Descripción**: Edita datos de una subcampaña (solo en estado BORRADOR o PAUSADA).
 
 **Headers**
@@ -202,7 +257,7 @@ curl -X GET http://localhost:3000/api/subcampanias/1 \
 |-------|------|-----------|------------|
 | nombre | string | — | min 3, max 200 |
 | descripcion | string | — | max 1000 |
-| zona_id | number | — | Division administrativa válida |
+| zona_id | number | — | ID válido de `division_administrativa` |
 | meta_total_arboles | number | — | >= 1 |
 | fecha_estimada_inicio | string | — | ISO date |
 | fecha_estimada_fin | string | — | ISO date |
@@ -228,6 +283,7 @@ curl -X GET http://localhost:3000/api/subcampanias/1 \
 |--------|--------|
 | 400 | Validación fallida |
 | 401 | Header x-auth-id ausente |
+| 403 | El usuario autenticado no tiene rol ADMIN |
 | 404 | Subcampaña no encontrada |
 | 422 | Subcampaña en estado no editable |
 
@@ -246,7 +302,7 @@ curl -X PATCH http://localhost:3000/api/subcampanias/1 \
 
 ## POST /subcampanias/:id/poligono
 
-**Rol mínimo**: GENERAL  
+**Rol mínimo**: ADMIN  
 **Descripción**: Establece el polígono GeoJSON de la zona de la subcampaña.
 
 **Headers**
@@ -302,6 +358,7 @@ curl -X PATCH http://localhost:3000/api/subcampanias/1 \
 |--------|--------|
 | 400 | GeoJSON inválido |
 | 401 | Header x-auth-id ausente |
+| 403 | El usuario autenticado no tiene rol ADMIN |
 | 404 | Subcampaña no encontrada |
 
 **Ejemplo cURL**
@@ -326,7 +383,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/poligono \
 
 **Pre-condiciones**:
 - Estado actual: BORRADOR
-- Debe tener ubicación (`zona_id`) y polígono seteado
+- Debe tener `zona_id` (`division_administrativa.id`) y polígono seteado
 - Debe tener equipo con un miembro `COORDINADOR`
 - Debe tener `meta_total_arboles >= 1`
 - Debe tener reservas activas de vivero
@@ -389,7 +446,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/activar \
 
 ## POST /subcampanias/:id/cerrar
 
-**Rol mínimo**: GENERAL  
+**Rol mínimo**: ADMIN  
 **Descripción**: Cierra una subcampaña (transición: ACTIVA → COMPLETADA o FINALIZADA_PARCIAL).
 
 **Pre-condiciones**:
@@ -424,7 +481,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/activar \
   "data": {
     "id": 1,
     "estado": "COMPLETADA",
-    "fase_mantenimiento": "MONITOREO_HISTORICO",
+    "fase_mantenimiento": "MANTENIMIENTO_ACTIVO",
     "fecha_cierre_operativo": "2026-08-31",
     "fecha_fin_mantenimiento": "2026-09-30",
     "updated_at": "2026-05-28T12:00:00Z"
@@ -437,6 +494,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/activar \
 |--------|--------|
 | 400 | Validación fallida |
 | 401 | Header x-auth-id ausente |
+| 403 | El usuario autenticado no tiene rol ADMIN |
 | 404 | Subcampaña no encontrada |
 | 422 | Estado no es ACTIVA; motivo_cierre_parcial no válido o ausente |
 
@@ -456,7 +514,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 
 ## DELETE /subcampanias/:id
 
-**Rol mínimo**: GENERAL  
+**Rol mínimo**: ADMIN  
 **Descripción**: Elimina una subcampaña (solo en estado BORRADOR).
 
 **Headers**
@@ -483,6 +541,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 | Status | Cuándo |
 |--------|--------|
 | 401 | Header x-auth-id ausente |
+| 403 | El usuario autenticado no tiene rol ADMIN |
 | 404 | Subcampaña no encontrada |
 | 422 | Estado no es BORRADOR |
 
@@ -496,7 +555,7 @@ curl -X DELETE http://localhost:3000/api/subcampanias/1 \
 
 ## GET /subcampanias/:id/equipo
 
-**Rol mínimo**: GENERAL  
+**Rol mínimo**: usuario autenticado  
 **Descripción**: Lista miembros del equipo de la subcampaña.
 
 **Headers**
@@ -515,16 +574,18 @@ curl -X DELETE http://localhost:3000/api/subcampanias/1 \
   "success": true,
   "data": [
     {
+      "id": 10,
       "usuario_id": 1,
-      "nombre": "Juan Pérez",
+      "nombre_usuario": "Juan Pérez",
       "rol": "COORDINADOR",
-      "added_at": "2026-05-28T10:00:00Z"
+      "agregado_at": "2026-05-28T10:00:00Z"
     },
     {
+      "id": 11,
       "usuario_id": 2,
-      "nombre": "María González",
+      "nombre_usuario": "María González",
       "rol": "OPERARIO",
-      "added_at": "2026-05-28T10:15:00Z"
+      "agregado_at": "2026-05-28T10:15:00Z"
     }
   ]
 }
@@ -546,8 +607,8 @@ curl -X GET http://localhost:3000/api/subcampanias/1/equipo \
 
 ## POST /subcampanias/:id/equipo
 
-**Rol mínimo**: GENERAL  
-**Descripción**: Agrega un miembro al equipo de la subcampaña.
+**Rol mínimo**: ADMIN  
+**Descripción**: Agrega uno o más miembros al equipo de la subcampaña. La operación recibe un arreglo y se inserta de forma atómica: si un miembro falla, no se agrega ninguno.
 
 **Headers**
 | Header | Requerido | Descripción |
@@ -561,20 +622,39 @@ curl -X GET http://localhost:3000/api/subcampanias/1/equipo \
 | id | number | ID de la subcampaña |
 
 **Body** (`application/json`)
+
+Arreglo de 1 a N miembros:
+
 | Campo | Tipo | Requerido | Validación |
 |-------|------|-----------|------------|
-| usuario_id | number | ✓ | Usuario existente |
+| usuario_id | number | ✓ | Usuario existente; no repetir dentro del mismo payload |
 | rol | RolEnSubcampania | ✓ | COORDINADOR, OPERARIO |
+
+Reglas:
+- Solo puede existir un `COORDINADOR` por subcampaña.
+- No se aceptan usuarios duplicados en la misma solicitud.
+- No se usa `equipo_ids` en `PATCH /subcampanias/:id`; el equipo se administra con este endpoint y con `DELETE /subcampanias/:id/equipo/:usuarioId`.
 
 **Respuesta exitosa** `201`
 ```json
 {
   "success": true,
   "data": {
-    "usuario_id": 3,
-    "nombre": "Carlos López",
-    "rol": "OPERARIO",
-    "added_at": "2026-05-28T13:00:00Z"
+    "message": "Miembros agregados correctamente.",
+    "miembros": [
+      {
+        "id": 20,
+        "usuario_id": 3,
+        "rol": "OPERARIO",
+        "agregado_at": "2026-05-28T13:00:00Z"
+      },
+      {
+        "id": 21,
+        "usuario_id": 4,
+        "rol": "COORDINADOR",
+        "agregado_at": "2026-05-28T13:00:00Z"
+      }
+    ]
   }
 }
 ```
@@ -582,27 +662,34 @@ curl -X GET http://localhost:3000/api/subcampanias/1/equipo \
 **Errores**
 | Status | Cuándo |
 |--------|--------|
-| 400 | Rol inválido |
+| 400 | Payload inválido; rol inválido; uno o más usuarios referenciados no existen |
 | 401 | Header x-auth-id ausente |
-| 404 | Subcampaña o usuario no encontrado |
-| 409 | Usuario ya es miembro del equipo |
+| 403 | El usuario autenticado no tiene rol ADMIN |
+| 404 | Subcampaña no encontrada; usuario autenticado no encontrado |
+| 422 | Más de un COORDINADOR en el payload; ya existe un coordinador; usuarios duplicados; uno o más usuarios ya pertenecen al equipo |
 
 **Ejemplo cURL**
 ```bash
 curl -X POST http://localhost:3000/api/subcampanias/1/equipo \
   -H "Content-Type: application/json" \
   -H "x-auth-id: <tu-auth-id>" \
-  -d '{
-    "usuario_id": 3,
-    "rol": "OPERARIO"
-  }'
+  -d '[
+    {
+      "usuario_id": 3,
+      "rol": "OPERARIO"
+    },
+    {
+      "usuario_id": 4,
+      "rol": "COORDINADOR"
+    }
+  ]'
 ```
 
 ---
 
 ## DELETE /subcampanias/:id/equipo/:usuarioId
 
-**Rol mínimo**: GENERAL  
+**Rol mínimo**: ADMIN  
 **Descripción**: Remueve un miembro del equipo.
 
 **Headers**
@@ -621,7 +708,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/equipo \
 {
   "success": true,
   "data": {
-    "message": "Miembro removido correctamente."
+    "message": "Miembro quitado correctamente."
   }
 }
 ```
@@ -630,7 +717,9 @@ curl -X POST http://localhost:3000/api/subcampanias/1/equipo \
 | Status | Cuándo |
 |--------|--------|
 | 401 | Header x-auth-id ausente |
-| 404 | Subcampaña o usuario no encontrado; usuario no es miembro |
+| 403 | El usuario autenticado no tiene rol ADMIN |
+| 404 | Subcampaña no encontrada; usuario autenticado no encontrado; usuario no es miembro del equipo |
+| 422 | Se intenta quitar al COORDINADOR mientras la subcampaña está ACTIVA |
 
 **Ejemplo cURL**
 ```bash
@@ -713,7 +802,7 @@ COORDINADOR | OPERARIO
 
 1. **POST** → Crear subcampaña (BORRADOR)
 2. **PATCH** → Editar detalles
-3. **POST /poligono** → Establecer zona
+3. **POST /poligono** → Establecer polígono
 4. **POST /equipo** → Agregar coordinadores y operarios
 5. **POST /lotes-vivero/:loteId/reservas** → Reservar stock suficiente
 6. **POST /activar** → Pasar a ACTIVA
