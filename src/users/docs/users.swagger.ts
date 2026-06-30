@@ -20,7 +20,7 @@ export function ApiListarUsuarios() {
     ApiOperation({
       summary: 'Listar usuarios (selector)',
       description:
-        'Devuelve `{ id, nombre, rol }` ordenado por nombre. Pensado para autocompletes/selectores. Requiere header `x-auth-id`.',
+        'Devuelve `{ id, nombre, rol, foto_perfil_url }` ordenado por nombre. Pensado para autocompletes/selectores. Requiere header `x-auth-id`.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),

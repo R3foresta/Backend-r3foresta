@@ -44,9 +44,7 @@ El coordinador no se envía en `POST /subcampanias` ni en `PATCH /subcampanias/:
 Se persiste como miembro del equipo con rol `COORDINADOR`:
 
 ```json
-[
-  { "usuario_id": 15, "rol": "COORDINADOR" }
-]
+[{ "usuario_id": 15, "rol": "COORDINADOR" }]
 ```
 
 Endpoint: `POST /subcampanias/:id/equipo`.
@@ -82,6 +80,7 @@ Para cambiar coordinador:
 | tolerancia_gps_metros | number | — | Default: 50; min 1 |
 
 **Respuesta exitosa** `201`
+
 ```json
 {
   "success": true,
@@ -105,6 +104,7 @@ Para cambiar coordinador:
 ```
 
 **Campos generados / derivados**
+
 - `estado`: "BORRADOR"
 - `tipo`: heredado desde la campaña; no enviar en el payload
 - `codigo_trazabilidad`: generado por backend
@@ -119,6 +119,7 @@ Para cambiar coordinador:
 | 404 | Campaña o zona no encontrada |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X POST http://localhost:3000/api/subcampanias \
   -H "Content-Type: application/json" \
@@ -153,6 +154,7 @@ curl -X POST http://localhost:3000/api/subcampanias \
 | zona_id | number | — | Filtrar por zona |
 
 **Respuesta exitosa** `200`
+
 ```json
 {
   "success": true,
@@ -173,6 +175,7 @@ curl -X POST http://localhost:3000/api/subcampanias \
 ```
 
 **Ejemplo cURL**
+
 ```bash
 curl -X GET "http://localhost:3000/api/subcampanias?campania_id=1&estado=ACTIVA" \
   -H "x-auth-id: <tu-auth-id>"
@@ -196,6 +199,7 @@ curl -X GET "http://localhost:3000/api/subcampanias?campania_id=1&estado=ACTIVA"
 | id | number | ID de la subcampaña |
 
 **Respuesta exitosa** `200`
+
 ```json
 {
   "success": true,
@@ -229,6 +233,7 @@ curl -X GET "http://localhost:3000/api/subcampanias?campania_id=1&estado=ACTIVA"
 | 404 | Subcampaña no encontrada |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X GET http://localhost:3000/api/subcampanias/1 \
   -H "x-auth-id: <tu-auth-id>"
@@ -265,6 +270,7 @@ curl -X GET http://localhost:3000/api/subcampanias/1 \
 | observaciones_cierre | string | — | max 2000 (para cierre parcial) |
 
 **Respuesta exitosa** `200`
+
 ```json
 {
   "success": true,
@@ -288,6 +294,7 @@ curl -X GET http://localhost:3000/api/subcampanias/1 \
 | 422 | Subcampaña en estado no editable |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X PATCH http://localhost:3000/api/subcampanias/1 \
   -H "Content-Type: application/json" \
@@ -322,6 +329,7 @@ curl -X PATCH http://localhost:3000/api/subcampanias/1 \
 | poligono | GeoJSON | ✓ | Polygon con `type: "Polygon"`, coordinates: [[[lng, lat], ...]] |
 
 **Ejemplo de Body**
+
 ```json
 {
   "poligono": {
@@ -329,8 +337,8 @@ curl -X PATCH http://localhost:3000/api/subcampanias/1 \
     "coordinates": [
       [
         [-68.1193, -16.2902],
-        [-68.1190, -16.2910],
-        [-68.1180, -16.2905],
+        [-68.119, -16.291],
+        [-68.118, -16.2905],
         [-68.1193, -16.2902]
       ]
     ]
@@ -339,6 +347,7 @@ curl -X PATCH http://localhost:3000/api/subcampanias/1 \
 ```
 
 **Respuesta exitosa** `200`
+
 ```json
 {
   "success": true,
@@ -362,6 +371,7 @@ curl -X PATCH http://localhost:3000/api/subcampanias/1 \
 | 404 | Subcampaña no encontrada |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X POST http://localhost:3000/api/subcampanias/1/poligono \
   -H "Content-Type: application/json" \
@@ -382,6 +392,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/poligono \
 **Descripción**: Activa una subcampaña (transición: BORRADOR → ACTIVA) solo si la composición operativa está completa.
 
 **Pre-condiciones**:
+
 - Estado actual: BORRADOR
 - Debe tener `zona_id` (`division_administrativa.id`) y polígono seteado
 - Debe tener equipo con un miembro `COORDINADOR`
@@ -400,6 +411,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/poligono \
 | id | number | ID de la subcampaña |
 
 **Respuesta exitosa** `200`
+
 ```json
 {
   "success": true,
@@ -432,11 +444,13 @@ curl -X POST http://localhost:3000/api/subcampanias/1/poligono \
 | 422 | No cumple pre-condiciones: estado no BORRADOR, sin polígono, sin coordinador, sin reservas, o reservas insuficientes |
 
 **Notas para frontend**
+
 - Si el backend devuelve `422`, mostrar el mensaje del backend: indica exactamente qué falta.
 - Antes de activar, verificar que ya existan polígono, coordinador y reservas suficientes.
 - Las reservas se crean desde `POST /lotes-vivero/:loteId/reservas`.
 
 **Ejemplo cURL**
+
 ```bash
 curl -X POST http://localhost:3000/api/subcampanias/1/activar \
   -H "x-auth-id: <tu-auth-id>"
@@ -450,6 +464,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/activar \
 **Descripción**: Cierra una subcampaña (transición: ACTIVA → COMPLETADA o FINALIZADA_PARCIAL).
 
 **Pre-condiciones**:
+
 - Estado actual: ACTIVA
 - Debe setearse estado_final (COMPLETADA o FINALIZADA_PARCIAL)
 - Si FINALIZADA_PARCIAL, debe indicarse motivo_cierre_parcial
@@ -475,6 +490,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/activar \
 | observaciones_cierre | string | — | max 2000 caracteres |
 
 **Respuesta exitosa** `200`
+
 ```json
 {
   "success": true,
@@ -499,6 +515,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/activar \
 | 422 | Estado no es ACTIVA; motivo_cierre_parcial no válido o ausente |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
   -H "Content-Type: application/json" \
@@ -528,6 +545,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 | id | number | ID de la subcampaña |
 
 **Respuesta exitosa** `200`
+
 ```json
 {
   "success": true,
@@ -546,6 +564,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 | 422 | Estado no es BORRADOR |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X DELETE http://localhost:3000/api/subcampanias/1 \
   -H "x-auth-id: <tu-auth-id>"
@@ -569,6 +588,7 @@ curl -X DELETE http://localhost:3000/api/subcampanias/1 \
 | id | number | ID de la subcampaña |
 
 **Respuesta exitosa** `200`
+
 ```json
 {
   "success": true,
@@ -578,14 +598,16 @@ curl -X DELETE http://localhost:3000/api/subcampanias/1 \
       "usuario_id": 1,
       "nombre_usuario": "Juan Pérez",
       "rol": "COORDINADOR",
-      "agregado_at": "2026-05-28T10:00:00Z"
+      "agregado_at": "2026-05-28T10:00:00Z",
+      "foto_perfil_url": "https://supabase.../imagenes-perfil/user_1716910800000_abc123/profile-picture.jpg?v=1716920000000"
     },
     {
       "id": 11,
       "usuario_id": 2,
       "nombre_usuario": "María González",
       "rol": "OPERARIO",
-      "agregado_at": "2026-05-28T10:15:00Z"
+      "agregado_at": "2026-05-28T10:15:00Z",
+      "foto_perfil_url": null
     }
   ]
 }
@@ -598,6 +620,7 @@ curl -X DELETE http://localhost:3000/api/subcampanias/1 \
 | 404 | Subcampaña no encontrada |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X GET http://localhost:3000/api/subcampanias/1/equipo \
   -H "x-auth-id: <tu-auth-id>"
@@ -625,17 +648,19 @@ curl -X GET http://localhost:3000/api/subcampanias/1/equipo \
 
 Arreglo de 1 a N miembros:
 
-| Campo | Tipo | Requerido | Validación |
-|-------|------|-----------|------------|
-| usuario_id | number | ✓ | Usuario existente; no repetir dentro del mismo payload |
-| rol | RolEnSubcampania | ✓ | COORDINADOR, OPERARIO |
+| Campo      | Tipo             | Requerido | Validación                                             |
+| ---------- | ---------------- | --------- | ------------------------------------------------------ |
+| usuario_id | number           | ✓         | Usuario existente; no repetir dentro del mismo payload |
+| rol        | RolEnSubcampania | ✓         | COORDINADOR, OPERARIO                                  |
 
 Reglas:
+
 - Solo puede existir un `COORDINADOR` por subcampaña.
 - No se aceptan usuarios duplicados en la misma solicitud.
 - No se usa `equipo_ids` en `PATCH /subcampanias/:id`; el equipo se administra con este endpoint y con `DELETE /subcampanias/:id/equipo/:usuarioId`.
 
 **Respuesta exitosa** `201`
+
 ```json
 {
   "success": true,
@@ -645,14 +670,18 @@ Reglas:
       {
         "id": 20,
         "usuario_id": 3,
+        "nombre_usuario": "Carlos López",
         "rol": "OPERARIO",
-        "agregado_at": "2026-05-28T13:00:00Z"
+        "agregado_at": "2026-05-28T13:00:00Z",
+        "foto_perfil_url": "https://supabase.../imagenes-perfil/user_1716910800000_ghi789/profile-picture.jpg?v=1716920000000"
       },
       {
         "id": 21,
         "usuario_id": 4,
+        "nombre_usuario": "Coord Pepe",
         "rol": "COORDINADOR",
-        "agregado_at": "2026-05-28T13:00:00Z"
+        "agregado_at": "2026-05-28T13:00:00Z",
+        "foto_perfil_url": null
       }
     ]
   }
@@ -669,6 +698,7 @@ Reglas:
 | 422 | Más de un COORDINADOR en el payload; ya existe un coordinador; usuarios duplicados; uno o más usuarios ya pertenecen al equipo |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X POST http://localhost:3000/api/subcampanias/1/equipo \
   -H "Content-Type: application/json" \
@@ -704,6 +734,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/equipo \
 | usuarioId | number | ID del usuario a remover |
 
 **Respuesta exitosa** `200`
+
 ```json
 {
   "success": true,
@@ -722,6 +753,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/equipo \
 | 422 | Se intenta quitar al COORDINADOR mientras la subcampaña está ACTIVA |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X DELETE http://localhost:3000/api/subcampanias/1/equipo/3 \
   -H "x-auth-id: <tu-auth-id>"
@@ -732,16 +764,19 @@ curl -X DELETE http://localhost:3000/api/subcampanias/1/equipo/3 \
 ## Tipos & Estructuras
 
 ### EstadoSubcampania
+
 ```
 BORRADOR | ACTIVA | COMPLETADA | FINALIZADA_PARCIAL | PAUSADA | CANCELADA
 ```
 
 ### FaseMantenimiento
+
 ```
 NO_APLICA | MANTENIMIENTO_ACTIVO | MONITOREO_HISTORICO
 ```
 
 ### MotivoCierreParcial
+
 ```
 FALTA_STOCK | PROBLEMAS_CLIMATICOS | CANCELACION_CONVENIO | CONFLICTO_SOCIAL |
 ACCESO_RESTRINGIDO | CAMBIO_PRIORIDAD_INSTITUCIONAL | RIESGO_OPERATIVO |
@@ -749,11 +784,26 @@ META_REDEFINIDA | CIERRE_ADMINISTRATIVO | OTRO
 ```
 
 ### RolEnSubcampania
+
 ```
 COORDINADOR | OPERARIO
 ```
 
+### EquipoMember
+
+```typescript
+{
+  id: number;
+  usuario_id: number;
+  nombre_usuario: string | null;
+  rol: RolEnSubcampania;
+  agregado_at: string | null;
+  foto_perfil_url: string | null;
+}
+```
+
 ### Subcampaña
+
 ```typescript
 {
   id: number;
@@ -775,6 +825,7 @@ COORDINADOR | OPERARIO
 ```
 
 ### ComposicionReservada
+
 ```typescript
 {
   planta_id: number;

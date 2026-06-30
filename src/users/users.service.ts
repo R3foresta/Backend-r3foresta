@@ -252,15 +252,19 @@ export class UsersService {
     return user;
   }
 
-  async listarParaSelector(filtros: {
-    q?: string;
-    rol?: string;
-  }): Promise<{ id: number; nombre: string; rol: string }[]> {
+  async listarParaSelector(filtros: { q?: string; rol?: string }): Promise<
+    {
+      id: number;
+      nombre: string;
+      rol: string;
+      foto_perfil_url: string | null;
+    }[]
+  > {
     const supabase = this.supabaseService.getClient();
 
     let query = supabase
       .from('usuario')
-      .select('id, nombre, rol')
+      .select('id, nombre, rol, foto_perfil_url')
       .order('nombre', { ascending: true });
 
     if (filtros.rol) {
@@ -272,7 +276,12 @@ export class UsersService {
 
     const { data, error } = await query;
     if (error) throw new BadRequestException(error.message);
-    return (data ?? []) as { id: number; nombre: string; rol: string }[];
+    return ((data ?? []) as any[]).map((usuario) => ({
+      id: Number(usuario.id),
+      nombre: usuario.nombre,
+      rol: usuario.rol,
+      foto_perfil_url: usuario.foto_perfil_url ?? null,
+    }));
   }
 
   /**

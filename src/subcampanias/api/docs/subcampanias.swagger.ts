@@ -366,7 +366,7 @@ export function ApiListarEquipo() {
     ApiOperation({
       summary: 'Listar miembros del equipo de una subcampaña',
       description:
-        'Devuelve la lista de miembros del equipo con su rol y datos del usuario.',
+        'Devuelve la lista de miembros del equipo con su rol, nombre del usuario y foto_perfil_url.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -385,7 +385,7 @@ export function ApiAgregarMiembrosEquipo() {
         'Recibe un arreglo de miembros `[{ usuario_id, rol }, ...]` (de 1 a N). ' +
         'La inserción es atómica: si alguno falla, no se agrega ninguno. ' +
         'Solo puede existir un único COORDINADOR por subcampaña (constraint DB + pre-chequeo). ' +
-        'No se admiten `usuario_id` repetidos en el mismo payload. Solo ADMIN.',
+        'No se admiten `usuario_id` repetidos en el mismo payload. Devuelve los miembros agregados hidratados con `nombre_usuario` y `foto_perfil_url`. Solo ADMIN.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
