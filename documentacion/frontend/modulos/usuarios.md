@@ -21,17 +21,20 @@ Base URL: `/api/users`
 | rol | string | — | Filtrar por rol exacto (ADMIN, GENERAL, VALIDADOR, VOLUNTARIO) |
 
 **Respuesta exitosa** `200`
+
 ```json
 [
   {
     "id": 1,
     "nombre": "Juan Pérez",
-    "rol": "ADMIN"
+    "rol": "ADMIN",
+    "foto_perfil_url": "https://supabase.../imagenes-perfil/user_1716910800000_abc123/profile-picture.jpg?v=1716920000000"
   },
   {
     "id": 2,
     "nombre": "María González",
-    "rol": "GENERAL"
+    "rol": "GENERAL",
+    "foto_perfil_url": null
   }
 ]
 ```
@@ -43,6 +46,7 @@ Base URL: `/api/users`
 | 401 | Header x-auth-id ausente |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X GET "http://localhost:3000/api/users?q=juan&rol=ADMIN" \
   -H "x-auth-id: <tu-auth-id>"
@@ -71,17 +75,20 @@ curl -X GET "http://localhost:3000/api/users?q=juan&rol=ADMIN" \
 | q | string | — | Búsqueda ILIKE por nombre |
 
 **Respuesta exitosa** `200`
+
 ```json
 [
   {
     "id": 7,
     "nombre": "Coord Pepe",
-    "rol": "GENERAL"
+    "rol": "GENERAL",
+    "foto_perfil_url": "https://supabase.../imagenes-perfil/user_1716910800000_def456/profile-picture.jpg?v=1716920000000"
   }
 ]
 ```
 
 **Notas**
+
 - Es equivalente a `GET /users?rol=:rol&q=...`.
 - Para coordinadores de subcampaña, filtrar por el rol de usuario que producto defina como elegible y luego asignarlo con rol de equipo `COORDINADOR`.
 
@@ -92,6 +99,7 @@ curl -X GET "http://localhost:3000/api/users?q=juan&rol=ADMIN" \
 | 401 | Header x-auth-id ausente |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X GET "http://localhost:3000/api/users/rol/GENERAL?q=coord" \
   -H "x-auth-id: <tu-auth-id>"
@@ -110,6 +118,7 @@ curl -X GET "http://localhost:3000/api/users/rol/GENERAL?q=coord" \
 | x-auth-id | ✓ | Supabase auth_id (dev mode); o JWT Bearer (prod) |
 
 **Respuesta exitosa** `200`
+
 ```json
 {
   "id": 1,
@@ -130,6 +139,7 @@ curl -X GET "http://localhost:3000/api/users/rol/GENERAL?q=coord" \
 ```
 
 **Campos Opcionales** (pueden ser `null`):
+
 - `apellido`
 - `doc_identidad`
 - `wallet_address`
@@ -144,6 +154,7 @@ curl -X GET "http://localhost:3000/api/users/rol/GENERAL?q=coord" \
 | 404 | Usuario no encontrado en BD |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X GET http://localhost:3000/api/users/profile \
   -H "x-auth-id: <tu-auth-id>"
@@ -174,6 +185,7 @@ curl -X GET http://localhost:3000/api/users/profile \
 | rol | string | — | Default: GENERAL; client nunca puede auto-elevar a ADMIN |
 
 **Respuesta exitosa** `200`
+
 ```json
 {
   "id": 1,
@@ -200,6 +212,7 @@ curl -X GET http://localhost:3000/api/users/profile \
 | 409 | `doc_identidad` o `wallet_address` ya existen en otra cuenta |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X POST http://localhost:3000/api/users/register-form \
   -H "Content-Type: application/json" \
@@ -233,6 +246,7 @@ curl -X POST http://localhost:3000/api/users/register-form \
 | file | file | ✓ | max 2 MB; tipos: PNG, JPEG, JPG, WebP |
 
 **Respuesta exitosa** `200`
+
 ```json
 {
   "id": 1,
@@ -244,6 +258,7 @@ curl -X POST http://localhost:3000/api/users/register-form \
 ```
 
 **Notas**
+
 - URL incluye `?v=timestamp` para forzar recarga del navegador (bypass caché local)
 - Foto anterior es eliminada automáticamente
 - Almacenamiento: `supabase/imagenes-perfil/{auth_id}/profile-picture.{ext}`
@@ -256,6 +271,7 @@ curl -X POST http://localhost:3000/api/users/register-form \
 | 401 | Header x-auth-id ausente |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X PATCH http://localhost:3000/api/users/profile/photo \
   -H "x-auth-id: <tu-auth-id>" \
@@ -267,6 +283,7 @@ curl -X PATCH http://localhost:3000/api/users/profile/photo \
 ## Tipos & Estructuras
 
 ### Usuario (completo)
+
 ```typescript
 {
   id: number;
@@ -287,11 +304,13 @@ curl -X PATCH http://localhost:3000/api/users/profile/photo \
 ```
 
 ### Usuario (selector/lista)
+
 ```typescript
 {
   id: number;
   nombre: string;
   rol: string;
+  foto_perfil_url: string | null;
 }
 ```
 

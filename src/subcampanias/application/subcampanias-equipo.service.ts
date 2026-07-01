@@ -39,7 +39,7 @@ export class SubcampaniasEquipoService {
     const { data, error } = await supabase
       .from('subcampania_equipo')
       .select(
-        'id, usuario_id, rol, agregado_at, usuario!subcampania_equipo_usuario_fk(id, nombre)',
+        'id, usuario_id, rol, agregado_at, usuario!subcampania_equipo_usuario_fk(id, nombre, foto_perfil_url)',
       )
       .eq('subcampania_id', subcampaniaId)
       .order('agregado_at', { ascending: true });
@@ -48,13 +48,7 @@ export class SubcampaniasEquipoService {
       throw new BadRequestException(error.message);
     }
 
-    const miembros = (data ?? []).map((e: any) => ({
-      id: Number(e.id),
-      usuario_id: Number(e.usuario_id),
-      rol: e.rol,
-      agregado_at: e.agregado_at,
-      nombre_usuario: e.usuario?.nombre ?? null,
-    }));
+    const miembros = (data ?? []).map((e: any) => this.mapMiembroEquipo(e));
 
     return { success: true, data: miembros };
   }
@@ -127,7 +121,7 @@ export class SubcampaniasEquipoService {
     const { data, error } = await supabase
       .from('subcampania_equipo')
       .insert(filas)
-      .select('id, usuario_id, rol, agregado_at');
+      .select('id');
 
     if (error) {
       this.logger.error('Error al agregar miembros:', error);
@@ -152,11 +146,15 @@ export class SubcampaniasEquipoService {
       );
     }
 
+    const miembrosAgregados = await this.obtenerMiembrosPorIds(
+      ((data as any[]) ?? []).map((m) => Number(m.id)),
+    );
+
     return {
       success: true,
       data: {
         message: 'Miembros agregados correctamente.',
-        miembros: (data as any[]) ?? [],
+        miembros: miembrosAgregados,
       },
     };
   }
@@ -223,6 +221,41 @@ export class SubcampaniasEquipoService {
     return {
       success: true,
       data: { message: 'Miembro quitado correctamente.' },
+    };
+  }
+
+  private async obtenerMiembrosPorIds(ids: number[]) {
+    if (ids.length === 0) return [];
+
+    const supabase = this.supabaseService.getClient();
+    const { data, error } = await supabase
+      .from('subcampania_equipo')
+      .select(
+        'id, usuario_id, rol, agregado_at, usuario!subcampania_equipo_usuario_fk(id, nombre, foto_perfil_url)',
+      )
+      .in('id', ids)
+      .order('agregado_at', { ascending: true });
+
+    if (error) {
+      this.logger.error('Error al hidratar miembros agregados:', error);
+      throw new BadRequestException(
+        error.message || 'No se pudieron leer los miembros agregados.',
+      );
+    }
+
+    return (data ?? []).map((e: any) => this.mapMiembroEquipo(e));
+  }
+
+  private mapMiembroEquipo(e: any) {
+    const usuario = Array.isArray(e.usuario) ? e.usuario[0] : e.usuario;
+
+    return {
+      id: Number(e.id),
+      usuario_id: Number(e.usuario_id),
+      rol: e.rol,
+      agregado_at: e.agregado_at ?? null,
+      nombre_usuario: usuario?.nombre ?? null,
+      foto_perfil_url: usuario?.foto_perfil_url ?? null,
     };
   }
 }

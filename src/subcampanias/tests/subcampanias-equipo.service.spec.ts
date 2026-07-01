@@ -25,6 +25,7 @@ function buildSupabaseAgregar(opts: {
   subcampaniaRow: any;
   coordinadorExistente?: any;
   insertResult?: { data: any; error: any };
+  hydrateResult?: { data: any; error: any };
 }): SupabaseService {
   const subSingle = jest
     .fn()
@@ -40,35 +41,57 @@ function buildSupabaseAgregar(opts: {
   // Pre-chequeo de coordinador existente (select().eq().eq().maybeSingle())
   const coordMaybeSingle = jest
     .fn()
-    .mockResolvedValue({ data: opts.coordinadorExistente ?? null, error: null });
-  const coordEq2 = jest
-    .fn()
-    .mockReturnValue({ maybeSingle: coordMaybeSingle });
+    .mockResolvedValue({
+      data: opts.coordinadorExistente ?? null,
+      error: null,
+    });
+  const coordEq2 = jest.fn().mockReturnValue({ maybeSingle: coordMaybeSingle });
   const coordEq1 = jest.fn().mockReturnValue({ eq: coordEq2 });
-  const coordSelect = jest.fn().mockReturnValue({ eq: coordEq1 });
 
-  // Insert en lote: insert([...]).select(...)
-  const insertSelect = jest.fn().mockResolvedValue(
-    opts.insertResult ?? {
-      data: [
-        {
-          id: 10,
-          usuario_id: 7,
-          rol: 'OPERARIO',
-          agregado_at: '2026-05-27T00:00:00Z',
+  const defaultInsertData = [
+    {
+      id: 10,
+      usuario_id: 7,
+      rol: 'OPERARIO',
+      agregado_at: '2026-05-27T00:00:00Z',
+    },
+  ];
+
+  // Insert en lote: insert([...]).select('id')
+  const insertSelect = jest
+    .fn()
+    .mockResolvedValue(
+      opts.insertResult ?? { data: defaultInsertData, error: null },
+    );
+  const insert = jest.fn().mockReturnValue({ select: insertSelect });
+
+  const insertedRows = (opts.insertResult?.data ?? defaultInsertData) as any[];
+  const hydrateOrder = jest.fn().mockResolvedValue(
+    opts.hydrateResult ?? {
+      data: insertedRows.map((row) => ({
+        ...row,
+        usuario: {
+          id: row.usuario_id,
+          nombre: `Usuario ${row.usuario_id}`,
+          foto_perfil_url: `https://cdn.example.com/${row.usuario_id}.jpg`,
         },
-      ],
+      })),
       error: null,
     },
   );
-  const insert = jest.fn().mockReturnValue({ select: insertSelect });
+  const hydrateIn = jest.fn().mockReturnValue({ order: hydrateOrder });
+
+  const equipoSelect = jest.fn().mockImplementation((columns: string) => {
+    if (columns === 'id') return { eq: coordEq1 };
+    return { in: hydrateIn };
+  });
 
   return {
     getClient: jest.fn().mockReturnValue({
       from: jest.fn().mockImplementation((table: string) => {
         if (table === 'subcampania') return { select: subSelect };
         if (table === 'subcampania_equipo')
-          return { select: coordSelect, insert };
+          return { select: equipoSelect, insert };
         return {};
       }),
     }),
@@ -138,6 +161,11 @@ describe('SubcampaniasEquipoService.agregarMiembros', () => {
       'auth-1',
     );
     expect(result.success).toBe(true);
+    expect((result.data as any).miembros[0]).toMatchObject({
+      usuario_id: 7,
+      nombre_usuario: 'Usuario 7',
+      foto_perfil_url: 'https://cdn.example.com/7.jpg',
+    });
   });
 
   it('agrega varios OPERARIOs en un solo lote', async () => {

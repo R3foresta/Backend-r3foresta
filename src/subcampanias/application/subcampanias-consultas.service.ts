@@ -27,8 +27,10 @@ export class SubcampaniasConsultasService {
 
     if (filtros.campania_id !== undefined)
       query = query.eq('campania_id', filtros.campania_id);
-    if (filtros.estado !== undefined) query = query.eq('estado', filtros.estado);
-    if (filtros.zona_id !== undefined) query = query.eq('zona_id', filtros.zona_id);
+    if (filtros.estado !== undefined)
+      query = query.eq('estado', filtros.estado);
+    if (filtros.zona_id !== undefined)
+      query = query.eq('zona_id', filtros.zona_id);
 
     const { data: subcampanias, error } = await query.order('created_at', {
       ascending: false,
@@ -100,19 +102,24 @@ export class SubcampaniasConsultasService {
       supabase
         .from('subcampania_equipo')
         .select(
-          'id, usuario_id, rol, agregado_at, usuario!subcampania_equipo_usuario_fk(id, nombre)',
+          'id, usuario_id, rol, agregado_at, usuario!subcampania_equipo_usuario_fk(id, nombre, foto_perfil_url)',
         )
         .eq('subcampania_id', id),
       supabase.rpc('fn_subcampania_poligono_geojson', { p_id: id }),
     ]);
 
-    const equipo = (equipoResult.data ?? []).map((e: any) => ({
-      id: Number(e.id),
-      usuario_id: Number(e.usuario_id),
-      rol: e.rol,
-      agregado_at: e.agregado_at,
-      nombre_usuario: e.usuario?.nombre ?? null,
-    }));
+    const equipo = (equipoResult.data ?? []).map((e: any) => {
+      const usuario = Array.isArray(e.usuario) ? e.usuario[0] : e.usuario;
+
+      return {
+        id: Number(e.id),
+        usuario_id: Number(e.usuario_id),
+        rol: e.rol,
+        agregado_at: e.agregado_at,
+        nombre_usuario: usuario?.nombre ?? null,
+        foto_perfil_url: usuario?.foto_perfil_url ?? null,
+      };
+    });
 
     const poligonoGeoJSON = (poligonoResult.data as any) ?? null;
 
