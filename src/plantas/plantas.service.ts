@@ -197,7 +197,7 @@ export class PlantasService {
     const supabase = this.supabaseService.getClient();
     const { data: actual } = await supabase
       .from('planta')
-      .select('id, nombre_cientifico, variedad')
+      .select('id, nombre_cientifico, variedad, activo')
       .eq('id', id)
       .maybeSingle();
 
@@ -216,6 +216,10 @@ export class PlantasService {
 
     if (cambiaIdentidad) {
       await this.assertNoDuplicado(nuevoCientifico, nuevaVariedad, id);
+    }
+
+    if (dto.activo === false && actual.activo !== false) {
+      await this.assertSinProcesosActivos(id);
     }
 
     const updatePayload: Record<string, unknown> = {};
@@ -279,6 +283,8 @@ export class PlantasService {
       return this.obtenerPorId(id);
     }
 
+    await this.assertSinProcesosActivos(id);
+
     const { error } = await supabase
       .from('planta')
       .update({ activo: false })
@@ -290,6 +296,103 @@ export class PlantasService {
     }
 
     return this.obtenerPorId(id);
+  }
+
+  private async assertSinProcesosActivos(plantaId: number) {
+    const supabase = this.supabaseService.getClient();
+    const [recoleccionesResult, lotesViveroResult] = await Promise.all([
+      supabase
+        .from('recoleccion')
+        .select(
+          'id, codigo_trazabilidad, estado_registro, estado_operativo, saldo_actual',
+        )
+        .eq('planta_id', plantaId),
+      supabase
+        .from('lote_vivero')
+        .select(
+          'id, codigo_trazabilidad, estado_lote, saldo_vivo_actual, cantidad_inicial_en_proceso',
+        )
+        .eq('planta_id', plantaId),
+    ]);
+
+    if (recoleccionesResult.error) {
+      this.logger.error(
+        `Error al validar recolecciones activas de planta ${plantaId}`,
+        recoleccionesResult.error,
+      );
+      throw new InternalServerErrorException(
+        'Error al validar uso de la planta en recolecciones',
+      );
+    }
+
+    if (lotesViveroResult.error) {
+      this.logger.error(
+        `Error al validar lotes de vivero activos de planta ${plantaId}`,
+        lotesViveroResult.error,
+      );
+      throw new InternalServerErrorException(
+        'Error al validar uso de la planta en vivero',
+      );
+    }
+
+    const recoleccionesActivas = (recoleccionesResult.data ?? []).filter(
+      (row) => this.esRecoleccionEnProceso(row),
+    );
+    const lotesActivos = (lotesViveroResult.data ?? []).filter((row) =>
+      this.esLoteViveroEnProceso(row),
+    );
+
+    if (recoleccionesActivas.length > 0 || lotesActivos.length > 0) {
+      const partes = [
+        recoleccionesActivas.length > 0
+          ? `${recoleccionesActivas.length} recoleccion(es) en proceso`
+          : null,
+        lotesActivos.length > 0
+          ? `${lotesActivos.length} lote(s) de vivero en proceso`
+          : null,
+      ].filter(Boolean);
+
+      throw new ConflictException(
+        `No se puede desactivar esta planta porque tiene ${partes.join(
+          ' y ',
+        )}. Cierra o finaliza esos procesos antes de desactivarla.`,
+      );
+    }
+  }
+
+  private esRecoleccionEnProceso(row: {
+    estado_registro?: string | null;
+    estado_operativo?: string | null;
+    saldo_actual?: number | string | null;
+  }): boolean {
+    const estadoRegistro = String(row.estado_registro ?? '').toUpperCase();
+    const estadoOperativo = String(row.estado_operativo ?? '').toUpperCase();
+    const saldoActual = Number(row.saldo_actual ?? 0);
+
+    return (
+      estadoOperativo === 'ABIERTO' ||
+      saldoActual > 0 ||
+      estadoRegistro === 'BORRADOR' ||
+      estadoRegistro === 'PENDIENTE_VALIDACION'
+    );
+  }
+
+  private esLoteViveroEnProceso(row: {
+    estado_lote?: string | null;
+    saldo_vivo_actual?: number | string | null;
+    cantidad_inicial_en_proceso?: number | string | null;
+  }): boolean {
+    const estadoLote = String(row.estado_lote ?? '').toUpperCase();
+    const saldoVivoActual = Number(row.saldo_vivo_actual ?? 0);
+    const cantidadInicialEnProceso = Number(
+      row.cantidad_inicial_en_proceso ?? 0,
+    );
+
+    return (
+      estadoLote === 'ACTIVO' ||
+      saldoVivoActual > 0 ||
+      cantidadInicialEnProceso > 0
+    );
   }
 
   private async assertTipoPlantaExiste(tipoPlantaId: number) {
