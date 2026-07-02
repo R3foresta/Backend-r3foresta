@@ -792,7 +792,7 @@ Para implementar inicio de lote:
 7. Llamar POST /api/lotes-vivero con JSON y esos evidencia_ids.
 8. Guardar lote_vivero_id, evento_inicio_id y codigo_trazabilidad retornados.
 9. Refrescar listado con GET /api/lotes-vivero.
-10. No llamar todavia endpoints de adaptabilidad/merma/despacho/timeline desde UI productiva.
+10. Adaptabilidad, merma, descarte pre-embolsado y timeline ya pueden consumirse desde UI productiva. Despacho sigue pendiente si el ambiente backend no lo tiene habilitado.
 ```
 
 ## Referencias de codigo
@@ -816,6 +816,9 @@ src/lotes-vivero/application/vivero-evidencias.service.ts
 src/lotes-vivero/application/vivero-inicio.service.ts
 src/lotes-vivero/application/vivero-consultas.service.ts
 src/lotes-vivero/application/vivero-embolsado.service.ts
+src/lotes-vivero/application/vivero-adaptabilidad.service.ts
+src/lotes-vivero/application/vivero-merma.service.ts
+src/lotes-vivero/application/vivero-descarte-pre-embolsado.service.ts
 ```
 
 Migracion RPC vigente:
@@ -823,4 +826,5 @@ Migracion RPC vigente:
 ```txt
 migrations/018_fix_vivero_inicio_lote_rpc_trazabilidad_evidencia.sql
 migrations/019_vivero_embolsado_rpc.sql
+migrations/046_vivero_descarte_pre_embolsado.sql
 ```
