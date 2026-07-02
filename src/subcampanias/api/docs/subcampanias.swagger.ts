@@ -236,7 +236,7 @@ export function ApiActivarSubcampania() {
     ApiOperation({
       summary: 'Activar subcampaña',
       description:
-        'Transiciona BORRADOR → ACTIVA. Requiere polígono presente, coordinador asignado y meta_total_arboles > 0. Congela los snapshots de zona, coordinador y organizaciones. Solo ADMIN.',
+        'Transiciona BORRADOR → ACTIVA. Requiere polígono presente, coordinador asignado, meta_total_arboles > 0 y plan de metas por especie completo (≥1 especie, SUM(porcentaje_objetivo)=100 y SUM(cantidad_objetivo)=meta_total_arboles). Se permite activar con 0% de stock asignado (RN-PLA-09). Congela snapshots de zona, coordinador y organizaciones. Registra SUBCAMPANIA_ACTIVADA en historial. Solo ADMIN.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -330,6 +330,128 @@ export function ApiCerrarSubcampania() {
       status: 422,
       description:
         'Transición inválida o motivo requerido para cierre parcial.',
+    }),
+  );
+}
+
+export function ApiCancelarSubcampania() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Cancelar subcampaña (BORRADOR o ACTIVA sin plantar)',
+      description:
+        'Transiciona la subcampaña a CANCELADA (RN-PLA-37). Aplica a BORRADOR y a ACTIVA cuando total_plantado_inicial = 0. Motivo obligatorio (texto libre). Setea deleted_at/deleted_by (inactivación, no borrado físico), libera todas las asignaciones activas como devolución lógica al lote (no genera evento en M2) y registra SUBCAMPANIA_CANCELADA en el historial. Solo ADMIN.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({ name: 'id', type: 'integer' }),
+    ApiBody({
+      schema: {
+        type: 'object',
+        required: ['motivo'],
+        properties: {
+          motivo: {
+            type: 'string',
+            minLength: 3,
+            maxLength: 1000,
+            example:
+              'Se descarta la subcampaña por cambio de prioridad institucional.',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 201,
+      description: 'Subcampaña cancelada correctamente.',
+    }),
+    ApiResponse({
+      status: 400,
+      description: 'Motivo faltante o datos inválidos.',
+    }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 403,
+      description: 'Solo el rol ADMIN puede cancelar subcampañas.',
+    }),
+    ApiResponse({ status: 404, description: 'Subcampaña no encontrada.' }),
+    ApiResponse({
+      status: 409,
+      description:
+        'Ya existen plantaciones (total_plantado_inicial > 0) — usar cierre FINALIZADA_PARCIAL — o la subcampaña ya está cerrada/cancelada.',
+    }),
+  );
+}
+
+export function ApiObtenerPlan() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Obtener plan de metas por especie',
+      description:
+        'Devuelve el plan (SUBCAMPANIA_META_ESPECIE) de la subcampaña: filas con planta_id, porcentaje_objetivo y cantidad_objetivo. Vacío si aún no se cargó.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({ name: 'id', type: 'integer' }),
+    ApiResponse({ status: 200, description: 'Plan de metas por especie.' }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({ status: 404, description: 'Subcampaña no encontrada.' }),
+  );
+}
+
+export function ApiGuardarPlan() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Guardar (reemplazo bulk) plan de metas por especie',
+      description:
+        'Sustituye todo el plan de la subcampaña por el arreglo enviado. Solo permitido en estado BORRADOR (RN-PLA-17). Cada planta aparece una vez, porcentaje ∈ (0, 100], cantidad > 0. La consistencia total (SUM(%)=100, SUM(cantidad)=meta_total) se verifica al activar (RN-PLA-16). Solo ADMIN.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({ name: 'id', type: 'integer' }),
+    ApiBody({
+      schema: {
+        type: 'object',
+        required: ['metas'],
+        properties: {
+          metas: {
+            type: 'array',
+            minItems: 1,
+            items: {
+              type: 'object',
+              required: [
+                'planta_id',
+                'porcentaje_objetivo',
+                'cantidad_objetivo',
+              ],
+              properties: {
+                planta_id: { type: 'integer', minimum: 1, example: 3 },
+                porcentaje_objetivo: {
+                  type: 'number',
+                  minimum: 0.01,
+                  maximum: 100,
+                  example: 40,
+                },
+                cantidad_objetivo: {
+                  type: 'integer',
+                  minimum: 1,
+                  example: 200,
+                },
+              },
+            },
+          },
+        },
+      },
+    }),
+    ApiResponse({ status: 200, description: 'Plan guardado correctamente.' }),
+    ApiResponse({ status: 400, description: 'Datos inválidos.' }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 403,
+      description: 'Solo el rol ADMIN puede editar el plan.',
+    }),
+    ApiResponse({ status: 404, description: 'Subcampaña no encontrada.' }),
+    ApiResponse({
+      status: 422,
+      description: 'Estado ≠ BORRADOR o planta_id repetido en el payload.',
     }),
   );
 }

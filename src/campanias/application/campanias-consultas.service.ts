@@ -51,7 +51,7 @@ export class CampaniasConsultasService {
         .in('campania_id', ids),
       supabase
         .from('subcampania')
-        .select('campania_id')
+        .select('campania_id, estado, meta_total_arboles')
         .in('campania_id', ids)
         .is('deleted_at', null),
     ]);
@@ -70,15 +70,25 @@ export class CampaniasConsultasService {
     }
 
     const countMap = new Map<number, number>();
+    const metaPlanificadaMap = new Map<number, number>();
     for (const s of subcampResult.data ?? []) {
       const cid = Number((s as any).campania_id);
       countMap.set(cid, (countMap.get(cid) ?? 0) + 1);
+      // RN-PLA-36: incluye BORRADOR, excluye CANCELADA (deleted_at filter ya la excluye
+      // como fila viva; el filtro por estado adicional cubre el caso de datos legados).
+      if ((s as any).estado !== 'CANCELADA') {
+        metaPlanificadaMap.set(
+          cid,
+          (metaPlanificadaMap.get(cid) ?? 0) +
+            Number((s as any).meta_total_arboles ?? 0),
+        );
+      }
     }
 
     return {
       success: true,
       data: (campanias as CampaniaRow[]).map((c) =>
-        this.mapRow(c, estadosMap, orgsMap, countMap),
+        this.mapRow(c, estadosMap, orgsMap, countMap, metaPlanificadaMap),
       ),
     };
   }
@@ -113,7 +123,7 @@ export class CampaniasConsultasService {
         .eq('campania_id', id),
       supabase
         .from('subcampania')
-        .select('id', { count: 'exact', head: true })
+        .select('id, estado, meta_total_arboles')
         .eq('campania_id', id)
         .is('deleted_at', null),
     ]);
@@ -123,7 +133,21 @@ export class CampaniasConsultasService {
     const organizaciones = (orgsResult.data ?? [])
       .map((o: any) => o.organizacion)
       .filter(Boolean);
-    const countSubcampanias = subcampResult.count ?? 0;
+    const subcampaniasVivas = (subcampResult.data ?? []) as Array<{
+      id: number;
+      estado: string;
+      meta_total_arboles: number | string | null;
+    }>;
+    const countSubcampanias = subcampaniasVivas.length;
+    // RN-PLA-36: meta_planificada_campania suma metas de subcampañas con estado
+    // distinto de CANCELADA (incluye BORRADOR). No se persiste.
+    const metaPlanificadaCampania = subcampaniasVivas.reduce(
+      (acc, s) =>
+        s.estado !== 'CANCELADA'
+          ? acc + Number(s.meta_total_arboles ?? 0)
+          : acc,
+      0,
+    );
 
     return {
       success: true,
@@ -137,6 +161,7 @@ export class CampaniasConsultasService {
         fecha_estimada_fin: (campania as any).fecha_estimada_fin ?? null,
         estado_derivado: estadoDerivado,
         count_subcampanias: Number(countSubcampanias),
+        meta_planificada_campania: metaPlanificadaCampania,
         organizaciones,
         created_at: (campania as any).created_at,
         updated_at: (campania as any).updated_at,
@@ -164,6 +189,7 @@ export class CampaniasConsultasService {
     estadosMap: Map<number, string>,
     orgsMap: Map<number, any[]>,
     countMap: Map<number, number>,
+    metaPlanificadaMap: Map<number, number>,
   ) {
     return {
       id: Number(c.id),
@@ -175,6 +201,7 @@ export class CampaniasConsultasService {
       fecha_estimada_fin: c.fecha_estimada_fin ?? null,
       estado_derivado: estadosMap.get(Number(c.id)) ?? 'BORRADOR',
       count_subcampanias: countMap.get(Number(c.id)) ?? 0,
+      meta_planificada_campania: metaPlanificadaMap.get(Number(c.id)) ?? 0,
       organizaciones: orgsMap.get(Number(c.id)) ?? [],
       created_at: c.created_at,
       updated_at: c.updated_at,

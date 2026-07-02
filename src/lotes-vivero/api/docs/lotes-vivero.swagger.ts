@@ -1118,7 +1118,11 @@ export function ApiCrearAsignacion() {
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
-    ApiParam({ name: 'id', type: Number, description: 'ID del lote de vivero' }),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
     ApiBody({
       description: 'Datos de la asignación',
       schema: {
@@ -1143,9 +1147,15 @@ export function ApiCrearAsignacion() {
     ApiResponse({ status: 400, description: 'Datos inválidos' }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
     ApiResponse({ status: 403, description: 'Sin permisos de escritura' }),
-    ApiResponse({ status: 404, description: 'Lote o subcampaña no encontrados' }),
+    ApiResponse({
+      status: 404,
+      description: 'Lote o subcampaña no encontrados',
+    }),
     ApiResponse({ status: 409, description: 'Subcampaña cerrada' }),
-    ApiResponse({ status: 422, description: 'Lote no ACTIVO o saldo insuficiente' }),
+    ApiResponse({
+      status: 422,
+      description: 'Lote no ACTIVO o saldo insuficiente',
+    }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
 }
@@ -1157,7 +1167,11 @@ export function ApiListarAsignaciones() {
       description:
         'Devuelve todas las asignaciones en estado ACTIVA del lote, incluyendo nombre de subcampaña y saldo disponible de cada una.',
     }),
-    ApiParam({ name: 'id', type: Number, description: 'ID del lote de vivero' }),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
     ApiResponse({
       status: 200,
       description:
@@ -1177,7 +1191,11 @@ export function ApiCancelarAsignacion() {
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
-    ApiParam({ name: 'id', type: Number, description: 'ID del lote de vivero' }),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
     ApiParam({
       name: 'asignacionId',
       type: Number,

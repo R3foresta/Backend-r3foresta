@@ -39,12 +39,10 @@ function buildSupabaseAgregar(opts: {
   const subSelect = jest.fn().mockReturnValue({ eq: subEq });
 
   // Pre-chequeo de coordinador existente (select().eq().eq().maybeSingle())
-  const coordMaybeSingle = jest
-    .fn()
-    .mockResolvedValue({
-      data: opts.coordinadorExistente ?? null,
-      error: null,
-    });
+  const coordMaybeSingle = jest.fn().mockResolvedValue({
+    data: opts.coordinadorExistente ?? null,
+    error: null,
+  });
   const coordEq2 = jest.fn().mockReturnValue({ maybeSingle: coordMaybeSingle });
   const coordEq1 = jest.fn().mockReturnValue({ eq: coordEq2 });
 

@@ -25,17 +25,38 @@ No confundir con `ubicacion.id`: `ubicacion` es otra tabla usada para registros 
 
 `meta_total_arboles` no puede ser `null` ni `0`. Si el flujo de frontend obtiene comunidad/nombre en paso 1 y define especies/meta en paso 2, la subcampaña solo puede crearse al terminar el paso 2, cuando ya existan los cuatro campos mínimos.
 
-### Mix de especies
+### Plan de metas por especie (planeación) vs. reservas (cumplimiento)
 
-No existe un endpoint para persistir un mix planificado por porcentaje como `[{ planta_id, pct }]`.
+Decisión cerrada 2026-07-01 (`RN-PLA-15..18`, `RN-PLA-36`, `RN-PLA-09`):
 
-El backend persiste la composición operativa mediante reservas de vivero: `POST /lotes-vivero/:loteId/reservas`. La `composicion_reservada` que devuelve `POST /subcampanias/:id/activar` se calcula desde reservas activas (`asignacion_vivero_subcampania`) y sus lotes/especies; no desde una tabla de porcentajes planificados.
+- **Plan de metas** (planeación) vive en `SUBCAMPANIA_META_ESPECIE`. Se persiste con `PUT /subcampanias/:id/plan` y se puede editar libremente mientras la subcampaña esté en `BORRADOR`. Cada meta lleva `planta_id`, `porcentaje_objetivo` (0 < x ≤ 100) y `cantidad_objetivo` (> 0).
+- **Reservas de vivero** (cumplimiento) siguen registrándose en `POST /lotes-vivero/:loteId/reservas` y solo se aceptan cuando la subcampaña está `ACTIVA` (o `COMPLETADA` / `FINALIZADA_PARCIAL` para reposición). Ver "Guard de asignación" abajo.
+- Al **activar** (`POST /subcampanias/:id/activar`) el backend valida el plan: `SUM(porcentaje_objetivo) = 100` y `SUM(cantidad_objetivo) = meta_total_arboles`. **Se permite activar con 0% de stock reservado** — la subcampaña puede activarse aunque aún no haya asignaciones de lote (`RN-PLA-09`). El sistema muestra advertencia visual con cobertura, pero no bloquea la activación.
 
-Implicación para frontend:
+Flujo persistente para frontend:
 
-- Si el paso "Especies y meta" solo guarda porcentajes, eso queda como borrador local hasta que se traduzca a cantidades/lotes y se creen reservas.
-- Si producto necesita persistir el mix porcentual antes de reservar stock, falta contrato backend nuevo, por ejemplo `PUT /subcampanias/:id/composicion`.
-- Con el contrato actual, el flujo persistente real es: elegir especie/stock disponible → seleccionar lote(s) → reservar cantidades por lote → activar cuando la suma reservada cubra `meta_total_arboles`.
+1. `POST /subcampanias` → crea BORRADOR con `meta_total_arboles`.
+2. `PUT /subcampanias/:id/plan` (opcional al crear, editable mientras BORRADOR) → guarda las metas por especie.
+3. `POST /subcampanias/:id/poligono` + `POST /subcampanias/:id/equipo` (coordinador).
+4. Opcionalmente `POST /lotes-vivero/:loteId/reservas` para pre-cargar stock — **no obligatorio** (el guard actual rechaza reservas mientras la subcampaña siga en BORRADOR; ver siguiente sección).
+5. `POST /subcampanias/:id/activar`.
+6. Reservas reales de stock se hacen tras activar; se pueden ampliar durante toda la vida `ACTIVA`.
+
+### Guard de asignación por estado
+
+El endpoint `POST /lotes-vivero/:loteId/reservas` (M2) rechaza reservas contra subcampañas en estos casos:
+
+- `estado = BORRADOR` o `estado = CANCELADA` → **409 Conflict** ("No se asignan lotes a una subcampaña en estado …"). Ver `RN-VIV-11` / `RF-PLA-04`.
+- `proposito = PLANTACION_INICIAL` y `estado ≠ ACTIVA` → **422**.
+- `proposito = REPOSICION` y `estado ∉ {ACTIVA, COMPLETADA, FINALIZADA_PARCIAL}` → **422**.
+
+### Meta agregada de campaña derivada (`meta_planificada_campania`)
+
+`GET /campanias` y `GET /campanias/:id` ahora devuelven `meta_planificada_campania` (número entero). Se calcula como `SUM(meta_total_arboles)` de las subcampañas hijas cuyo `estado <> CANCELADA` (incluye `BORRADOR`). Ver `RN-PLA-36`. La vista pública debe filtrar aparte a `ACTIVA | COMPLETADA | FINALIZADA_PARCIAL`.
+
+### Cancelación de subcampaña sin plantaciones
+
+Ver la sección `POST /subcampanias/:id/cancelar` más abajo. Regla resumen: cancelable solo si `total_plantado_inicial = 0` (BORRADOR o ACTIVA sin plantar); si ya hay plantaciones, usar cierre `FINALIZADA_PARCIAL`.
 
 ### Coordinador
 
@@ -389,16 +410,17 @@ curl -X POST http://localhost:3000/api/subcampanias/1/poligono \
 ## POST /subcampanias/:id/activar
 
 **Rol mínimo**: ADMIN
-**Descripción**: Activa una subcampaña (transición: BORRADOR → ACTIVA) solo si la composición operativa está completa.
+**Descripción**: Activa una subcampaña (transición: BORRADOR → ACTIVA). El plan por especie debe estar completo, pero **el stock reservado NO tiene que cubrir la meta** (`RN-PLA-09`).
 
 **Pre-condiciones**:
 
 - Estado actual: BORRADOR
-- Debe tener `zona_id` (`division_administrativa.id`) y polígono seteado
-- Debe tener equipo con un miembro `COORDINADOR`
-- Debe tener `meta_total_arboles >= 1`
-- Debe tener reservas activas de vivero
-- El total reservado debe cubrir `meta_total_arboles`
+- `zona_id` (`division_administrativa.id`) y polígono seteados
+- Equipo con un miembro `COORDINADOR`
+- `meta_total_arboles > 0`
+- Plan de metas por especie completo (`RN-PLA-16`): ≥1 fila en `SUBCAMPANIA_META_ESPECIE`, `SUM(porcentaje_objetivo) = 100` y `SUM(cantidad_objetivo) = meta_total_arboles`
+
+**Se permite activar con 0 reservas**. La respuesta expone `composicion_reservada` (puede ser `[]`) para que el frontend muestre la brecha de cobertura por especie sin bloquear la activación.
 
 **Headers**
 | Header | Requerido | Descripción |
@@ -526,6 +548,128 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
     "fecha_fin_mantenimiento": "2026-09-30"
   }'
 ```
+
+---
+
+## POST /subcampanias/:id/cancelar
+
+**Rol mínimo**: ADMIN  
+**Descripción**: Cancela una subcampaña sin plantaciones (`RN-PLA-37`). Aplica a `BORRADOR` (siempre) y a `ACTIVA` cuyo `total_plantado_inicial = 0`. Deja `estado = CANCELADA`, setea `deleted_at`/`deleted_by` (inactivación, no borrado físico), libera todas las asignaciones activas como devolución lógica al lote (no genera evento en M2) y registra `SUBCAMPANIA_CANCELADA` en el historial. Si `total_plantado_inicial > 0`, responde 409 sugiriendo `FINALIZADA_PARCIAL`. Atómico.
+
+**Body** (`application/json`)
+
+```json
+{
+  "motivo": "Cambio de prioridad institucional"
+}
+```
+
+| Campo | Tipo | Requerido | Reglas |
+|-------|------|-----------|--------|
+| motivo | string | ✓ | 3–1000 caracteres. Texto libre (MVP). |
+
+**Respuesta exitosa** `201`
+
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Subcampaña cancelada correctamente.",
+    "id": 5,
+    "estado": "CANCELADA",
+    "deleted_at": "2026-07-02T00:00:00Z",
+    "deleted_by": 42,
+    "motivo": "Cambio de prioridad institucional"
+  }
+}
+```
+
+**Errores**
+| Status | Cuándo |
+|--------|--------|
+| 400 | Motivo faltante o vacío |
+| 401 | Header x-auth-id ausente |
+| 403 | Rol distinto de ADMIN |
+| 404 | Subcampaña no encontrada |
+| 409 | Ya existen plantaciones (`total_plantado_inicial > 0`) — usar `FINALIZADA_PARCIAL` |
+| 409 | Estado no permite cancelación (ya `CANCELADA`, `COMPLETADA` o `FINALIZADA_PARCIAL`) |
+
+---
+
+## GET /subcampanias/:id/plan
+
+**Rol mínimo**: cualquier usuario autenticado.  
+**Descripción**: Devuelve el plan de metas por especie (`SUBCAMPANIA_META_ESPECIE`). Vacío si aún no se cargó.
+
+**Respuesta exitosa** `200`
+
+```json
+{
+  "success": true,
+  "data": {
+    "subcampania_id": 1,
+    "estado": "BORRADOR",
+    "meta_total_arboles": 500,
+    "metas": [
+      {
+        "planta_id": 5,
+        "porcentaje_objetivo": 60,
+        "cantidad_objetivo": 300,
+        "planta": { "id": 5, "especie": "Aliso", "nombre_cientifico": "Alnus acuminata" }
+      },
+      {
+        "planta_id": 8,
+        "porcentaje_objetivo": 40,
+        "cantidad_objetivo": 200,
+        "planta": { "id": 8, "especie": "Nogal", "nombre_cientifico": "Juglans regia" }
+      }
+    ]
+  }
+}
+```
+
+---
+
+## PUT /subcampanias/:id/plan
+
+**Rol mínimo**: ADMIN  
+**Descripción**: Reemplazo bulk del plan de metas por especie. Solo permitido en `BORRADOR` (`RN-PLA-17`). Cada `planta_id` una sola vez, `porcentaje_objetivo ∈ (0, 100]`, `cantidad_objetivo > 0`. La consistencia total (`SUM(%) = 100`, `SUM(cantidad) = meta_total_arboles`) se verifica al activar (`RN-PLA-16`), no aquí.
+
+**Body** (`application/json`)
+
+```json
+{
+  "metas": [
+    { "planta_id": 5, "porcentaje_objetivo": 60, "cantidad_objetivo": 300 },
+    { "planta_id": 8, "porcentaje_objetivo": 40, "cantidad_objetivo": 200 }
+  ]
+}
+```
+
+**Respuesta exitosa** `200`
+
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Plan de metas guardado correctamente.",
+    "subcampania_id": 1,
+    "metas": [
+      { "planta_id": 5, "porcentaje_objetivo": 60, "cantidad_objetivo": 300 },
+      { "planta_id": 8, "porcentaje_objetivo": 40, "cantidad_objetivo": 200 }
+    ]
+  }
+}
+```
+
+**Errores**
+| Status | Cuándo |
+|--------|--------|
+| 400 | Datos inválidos o `planta_id` inexistente en catálogo |
+| 401 | Header x-auth-id ausente |
+| 403 | Rol distinto de ADMIN |
+| 404 | Subcampaña no encontrada |
+| 422 | Estado ≠ BORRADOR o `planta_id` repetido en el payload |
 
 ---
 

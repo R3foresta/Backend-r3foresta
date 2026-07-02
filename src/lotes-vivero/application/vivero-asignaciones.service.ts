@@ -125,14 +125,36 @@ export class ViveroAsignacionesService {
         `Subcampaña ${dto.subcampania_id} no encontrada`,
       );
     }
-    const estadosQueAceptanAsignacion = ['BORRADOR', 'ACTIVA'];
-    if (!estadosQueAceptanAsignacion.includes(subcampania.estado)) {
-      throw new UnprocessableEntityException(
-        `No se puede asignar a una subcampaña en estado ${subcampania.estado}. Solo se admite en BORRADOR o ACTIVA.`,
+    const proposito = dto.proposito ?? PropositoAsignacion.PLANTACION_INICIAL;
+
+    // RN-VIV-11 / RF-PLA-04: nunca aceptar BORRADOR ni CANCELADA.
+    // PLANTACION_INICIAL requiere ACTIVA. REPOSICION admite ACTIVA/COMPLETADA/FINALIZADA_PARCIAL.
+    if (
+      subcampania.estado === 'BORRADOR' ||
+      subcampania.estado === 'CANCELADA'
+    ) {
+      throw new ConflictException(
+        `No se asignan lotes a una subcampaña en estado ${subcampania.estado}. Activar primero (BORRADOR) o crear una nueva (CANCELADA).`,
       );
     }
-
-    const proposito = dto.proposito ?? PropositoAsignacion.PLANTACION_INICIAL;
+    if (
+      proposito === PropositoAsignacion.PLANTACION_INICIAL &&
+      subcampania.estado !== 'ACTIVA'
+    ) {
+      throw new UnprocessableEntityException(
+        `PLANTACION_INICIAL solo se admite con la subcampaña en ACTIVA (estado actual: ${subcampania.estado}).`,
+      );
+    }
+    if (
+      proposito === PropositoAsignacion.REPOSICION &&
+      !['ACTIVA', 'COMPLETADA', 'FINALIZADA_PARCIAL'].includes(
+        subcampania.estado,
+      )
+    ) {
+      throw new UnprocessableEntityException(
+        `REPOSICION solo se admite con la subcampaña en ACTIVA, COMPLETADA o FINALIZADA_PARCIAL (estado actual: ${subcampania.estado}).`,
+      );
+    }
 
     const rpcResult = (await supabase.rpc('fn_vivero_reservar_stock_lote', {
       p_lote_vivero_id: loteId,

@@ -82,9 +82,7 @@ describe('EvidenceFilePolicy', () => {
 
   it('rechaza archivo sin buffer', () => {
     expect(() =>
-      service.prepareOriginalEvidenceFile(
-        file({ buffer: undefined }) as EvidenceFileInput,
-      ),
+      service.prepareOriginalEvidenceFile(file({ buffer: undefined })),
     ).toThrow(BadRequestException);
   });
 

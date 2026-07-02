@@ -7,8 +7,13 @@ import {
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CrearSubcampaniaDto } from '../api/dto/crear-subcampania.dto';
+import { EstadoSubcampania } from '../domain/enums/estado-subcampania.enum';
 import { SubcampaniasAuthService } from './subcampanias-auth.service';
 import { SubcampaniasCodigosService } from './subcampanias-codigos.service';
+import {
+  SubcampaniasHistorialService,
+  TipoHistorialSubcampania,
+} from './subcampanias-historial.service';
 
 @Injectable()
 export class SubcampaniasCreationService {
@@ -18,6 +23,7 @@ export class SubcampaniasCreationService {
     private readonly supabaseService: SupabaseService,
     private readonly authService: SubcampaniasAuthService,
     private readonly codigosService: SubcampaniasCodigosService,
+    private readonly historialService: SubcampaniasHistorialService,
   ) {}
 
   async crear(dto: CrearSubcampaniaDto, authId: string) {
@@ -86,11 +92,27 @@ export class SubcampaniasCreationService {
       );
     }
 
+    const subcampaniaCreada = subcampania as Record<string, unknown>;
+    const subcampaniaId = Number(subcampaniaCreada.id);
+
+    await this.historialService.registrar({
+      subcampaniaId,
+      tipo: TipoHistorialSubcampania.BORRADOR_CREADO,
+      actorUserId: usuario.id,
+      estadoDestino: EstadoSubcampania.BORRADOR,
+      metadata: {
+        codigo_trazabilidad: codigo,
+        campania_id: dto.campania_id,
+        zona_id: dto.zona_id,
+        meta_total_arboles: dto.meta_total_arboles,
+      },
+    });
+
     return {
       success: true,
       data: {
         message: 'Subcampaña creada correctamente.',
-        ...(subcampania as any),
+        ...subcampaniaCreada,
       },
     };
   }

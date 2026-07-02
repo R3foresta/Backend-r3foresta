@@ -39,14 +39,16 @@ function buildSupabase(opts: {
   const subEq = jest.fn().mockReturnValue({ is: subIs });
   const subSelect = jest.fn().mockReturnValue({ eq: subEq });
 
-  const updateSingle = jest
-    .fn()
-    .mockResolvedValue(
-      opts.updateResult ?? {
-        data: { id: 1, estado: 'COMPLETADA', fase_mantenimiento: 'MANTENIMIENTO_ACTIVO' },
-        error: null,
+  const updateSingle = jest.fn().mockResolvedValue(
+    opts.updateResult ?? {
+      data: {
+        id: 1,
+        estado: 'COMPLETADA',
+        fase_mantenimiento: 'MANTENIMIENTO_ACTIVO',
       },
-    );
+      error: null,
+    },
+  );
   const updateSelect = jest.fn().mockReturnValue({ single: updateSingle });
   const updateEq = jest.fn().mockReturnValue({ select: updateSelect });
   const update = jest.fn().mockReturnValue({ eq: updateEq });
@@ -75,10 +77,8 @@ describe('SubcampaniasCierreService', () => {
     );
     const result = await service.cerrar(1, baseDto, 'auth-1');
     expect(result.success).toBe(true);
-    expect((result.data as any).fase_mantenimiento).toBe(
-      'MANTENIMIENTO_ACTIVO',
-    );
-    expect((result.data as any).estado).toBe('COMPLETADA');
+    expect(result.data.fase_mantenimiento).toBe('MANTENIMIENTO_ACTIVO');
+    expect(result.data.estado).toBe('COMPLETADA');
   });
 
   it('cierra como FINALIZADA_PARCIAL con motivo válido', async () => {
@@ -104,8 +104,8 @@ describe('SubcampaniasCierreService', () => {
       motivo_cierre_parcial: MotivoCierreParcial.FALTA_STOCK,
     };
     const result = await service.cerrar(1, dto, 'auth-1');
-    expect((result.data as any).estado).toBe('FINALIZADA_PARCIAL');
-    expect((result.data as any).motivo_cierre_parcial).toBe('FALTA_STOCK');
+    expect(result.data.estado).toBe('FINALIZADA_PARCIAL');
+    expect(result.data.motivo_cierre_parcial).toBe('FALTA_STOCK');
   });
 
   it('lanza 422 si FINALIZADA_PARCIAL no incluye motivo', async () => {

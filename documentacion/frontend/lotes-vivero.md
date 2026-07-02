@@ -27,6 +27,8 @@ GET  /api/lotes-vivero/:id/embolsado/context
 POST /api/lotes-vivero/:id/embolsado/evidencias-pendientes
 POST /api/lotes-vivero/:id/embolsado
 GET  /api/lotes-vivero/:id/embolsado
+POST /api/lotes-vivero/:id/descarte-pre-embolsado/evidencias-pendientes
+POST /api/lotes-vivero/:id/descarte-pre-embolsado
 POST /api/lotes-vivero/:id/adaptabilidad/evidencias-pendientes
 POST /api/lotes-vivero/:id/adaptabilidad
 GET  /api/lotes-vivero/:id/adaptabilidad
@@ -57,6 +59,7 @@ La respuesta combina el lote + relaciones + un **snapshot del último evento por
     ultimo_evento_por_tipo: {
       INICIO:             EventoSnapshot | null,
       EMBOLSADO:          EventoSnapshot | null,
+      DESCARTE_PRE_EMBOLSADO: EventoSnapshot | null,
       ADAPTABILIDAD:      EventoSnapshot | null,
       MERMA:              EventoSnapshot | null,
       DESPACHO:           EventoSnapshot | null,
@@ -76,9 +79,10 @@ type EventoSnapshot = {
   saldo_vivo_despues: number | null,
   subetapa_destino: 'SOMBRA' | 'MEDIA_SOMBRA' | 'SOL_DIRECTO' | null,
   causa_merma: 'PLAGA' | 'ENFERMEDAD' | 'SEQUIA' | 'DANO_FISICO' | 'MUERTE_NATURAL' | 'OTRO' | null,
+  causa_descarte_pre_embolsado: 'NO_GERMINACION' | 'NO_ENRAIZAMIENTO' | 'CONTAMINACION' | 'PERDIDA_TOTAL_MATERIAL' | 'MATERIAL_NO_VIABLE' | 'DANO_PRE_EMBOLSADO' | 'OTRO' | null,
   destino_tipo: 'PLANTACION_PROPIA' | 'DONACION_COMUNIDAD' | 'VENTA' | 'OTRO' | null,
   destino_referencia: string | null,
-  motivo_cierre_calculado: 'DESPACHO_TOTAL' | 'PERDIDA_TOTAL' | 'MIXTO' | null,
+  motivo_cierre_calculado: 'DESPACHO_TOTAL' | 'PERDIDA_TOTAL' | 'MIXTO' | 'DESCARTE_PRE_EMBOLSADO' | null,
 }
 ```
 
@@ -89,6 +93,7 @@ Para que los forms de eventos calculen `fechaMin` sin N+1:
 | Form | `fechaMin` correcto |
 |---|---|
 | EMBOLSADO | `lote.fecha_inicio` (no requiere mirar el snapshot — INICIO siempre existe si el lote existe) |
+| DESCARTE_PRE_EMBOLSADO | `lote.fecha_inicio` |
 | ADAPTABILIDAD | `ultimo_evento_por_tipo.EMBOLSADO?.fecha_evento` |
 | MERMA | `ultimo_evento_por_tipo.EMBOLSADO?.fecha_evento` |
 | DESPACHO | `ultimo_evento_por_tipo.EMBOLSADO?.fecha_evento` |
@@ -98,6 +103,7 @@ Todos los eventos también respetan la **ventana retroactiva de 10 días** (back
 ### Reglas a recordar al consumirlo
 
 - `EMBOLSADO` solo puede existir una vez por lote. Si el form de embolsado ve `ultimo_evento_por_tipo.EMBOLSADO !== null`, no debe permitir registrar otro.
+- `DESCARTE_PRE_EMBOLSADO` solo se muestra si el lote esta `ACTIVO`, tiene `INICIO` y `ultimo_evento_por_tipo.EMBOLSADO === null`. Si ya existe `EMBOLSADO`, la perdida total post-embolsado se registra como `MERMA` por todo el `saldo_vivo_actual`.
 - `ADAPTABILIDAD`, `MERMA` y `DESPACHO` pueden tener N eventos; el snapshot expone el **último**. Si necesitan la lista completa de un tipo, usar el GET dedicado del evento (`/:id/merma`, `/:id/adaptabilidad`).
 - Cada tipo de evento tiene su propio `EventoSnapshot` con la misma forma; los campos que no aplican vienen `null` (p.ej. `causa_merma` en `INICIO`).
 - `EMBOLSADO` no requiere `ADAPTABILIDAD` previo para registrar MERMA o DESPACHO. ADAPTABILIDAD es solo seguimiento operativo (RN-VIV-09).
@@ -106,7 +112,7 @@ Todos los eventos también respetan la **ventana retroactiva de 10 días** (back
 
 No requiere `x-auth-id` por ahora (consistente con el resto de GET). Esto está bajo revisión — ver TODO en el controller y `documentacion/README.md` sección Pendientes.
 
-El resto del ciclo (inicio, embolsado, adaptabilidad, merma, timeline) ya esta operativo. Solo el despacho queda pendiente de implementar en backend.
+El resto del ciclo (inicio, embolsado, descarte pre-embolsado, adaptabilidad, merma, timeline) ya esta operativo. Solo el despacho queda pendiente de implementar en backend.
 
 ## Regla de autenticacion
 
@@ -300,7 +306,7 @@ Query params:
 | `vivero_id`      | number | no        | Entero >= 1.                                |
 | `recoleccion_id` | number | no        | Entero >= 1.                                |
 | `lote_vivero_id` | number | no        | Entero >= 1. Filtra por `lote_vivero.id`.   |
-| `motivo_cierre`  | string | no        | `DESPACHO_TOTAL`, `PERDIDA_TOTAL`, `MIXTO`. |
+| `motivo_cierre`  | string | no        | `DESPACHO_TOTAL`, `PERDIDA_TOTAL`, `MIXTO`, `DESCARTE_PRE_EMBOLSADO`. |
 | `fecha_inicio`   | string | no        | Fecha ISO. Filtra desde `fecha_inicio`.     |
 | `fecha_fin`      | string | no        | Fecha ISO. Filtra hasta `fecha_inicio`.     |
 | `q`              | string | no        | Busca en codigo y snapshots de texto.       |
@@ -565,6 +571,132 @@ type ResultadoEmbolsadoNoRegistradoResponse = {
     evento: null;
   };
 };
+```
+
+## 5. Descarte pre-embolsado
+
+Usar esta accion para cerrar un lote que tuvo `INICIO`, sigue `ACTIVO` y nunca llego a `EMBOLSADO`.
+
+No usar `MERMA` ni `PERDIDA_TOTAL` en este caso: antes de `EMBOLSADO` todavia no existe `saldo_vivo_actual`.
+
+### 5.1 Cuando mostrar la accion
+
+Usar `GET /api/lotes-vivero/:id` y mostrar la accion solo si:
+
+```ts
+const puedeDescartarPreEmbolsado =
+  lote.estado_lote === 'ACTIVO' &&
+  lote.ultimo_evento_por_tipo.INICIO !== null &&
+  lote.ultimo_evento_por_tipo.EMBOLSADO === null &&
+  lote.ultimo_evento_por_tipo.DESCARTE_PRE_EMBOLSADO === null;
+```
+
+Si `ultimo_evento_por_tipo.EMBOLSADO !== null`, no mostrar esta accion. Para perdida total despues de embolsado, usar `MERMA` por todo el `saldo_vivo_actual`; no existe una accion separada de "perdida total" parcial.
+
+Prellenar y bloquear en el formulario:
+
+```ts
+cantidad_material_afectado = lote.cantidad_inicial_en_proceso;
+unidad_medida_evento = lote.unidad_medida_inicial;
+```
+
+No permitir editar esos dos campos si la UI usa esta accion como "descarte total pre-embolsado".
+
+### 5.2 Evidencias pendientes de descarte pre-embolsado
+
+```txt
+POST /api/lotes-vivero/:id/descarte-pre-embolsado/evidencias-pendientes
+Content-Type: multipart/form-data
+x-auth-id: <auth_id_de_supabase>
+```
+
+Usa el mismo FormData de evidencias: `fotos`, `titulo`, `descripcion`, `metadata`, `tomado_en`, `es_principal`.
+
+Respuesta:
+
+```ts
+type EvidenciasPendientesDescartePreEmbolsadoResponse = {
+  success: true;
+  data: {
+    evidencia_ids: number[];
+    evidencias: Array<{
+      id: number;
+      codigo_trazabilidad: string;
+      entidad_id: 0;
+      ruta_archivo: string;
+      tipo_archivo: string;
+    }>;
+  };
+};
+```
+
+### 5.3 Registrar descarte pre-embolsado
+
+```txt
+POST /api/lotes-vivero/:id/descarte-pre-embolsado
+Content-Type: application/json
+x-auth-id: <auth_id_de_supabase>
+```
+
+Body:
+
+```ts
+type RegistrarDescartePreEmbolsadoRequest = {
+  fecha_evento: string; // YYYY-MM-DD
+  cantidad_material_afectado: number; // debe ser igual a lote.cantidad_inicial_en_proceso
+  unidad_medida_evento: 'UNIDAD' | 'G'; // debe ser igual a lote.unidad_medida_inicial
+  causa_descarte_pre_embolsado:
+    | 'NO_GERMINACION'
+    | 'NO_ENRAIZAMIENTO'
+    | 'CONTAMINACION'
+    | 'PERDIDA_TOTAL_MATERIAL'
+    | 'MATERIAL_NO_VIABLE'
+    | 'DANO_PRE_EMBOLSADO'
+    | 'OTRO';
+  evidencia_ids: number[]; // minimo 1
+  observaciones?: string; // max 1000
+};
+```
+
+No enviar `responsable_id`, `saldo_vivo_actual`, `plantas_vivas_iniciales`, `estado_lote`, `motivo_cierre` ni `evento_cierre_id`. La RPC los valida/calcula.
+
+Respuesta:
+
+```ts
+type RegistrarDescartePreEmbolsadoResponse = {
+  success: true;
+  data: {
+    message: string;
+    evento_descarte_pre_embolsado_id: number;
+    evento_cierre_id: number;
+    lote_vivero_id: number;
+    codigo_trazabilidad: string;
+    cantidad_material_afectado: number;
+    unidad_medida_evento: 'UNIDAD' | 'G';
+    causa_descarte_pre_embolsado: RegistrarDescartePreEmbolsadoRequest['causa_descarte_pre_embolsado'];
+    evidencia_ids_vinculadas: number[];
+    lote_finalizado: true;
+    motivo_cierre: 'DESCARTE_PRE_EMBOLSADO';
+  };
+};
+```
+
+Despues de guardar, refrescar:
+
+```txt
+GET /api/lotes-vivero/:id
+GET /api/lotes-vivero/:id/timeline
+```
+
+El lote debe volver con:
+
+```ts
+estado_lote: 'FINALIZADO';
+motivo_cierre: 'DESCARTE_PRE_EMBOLSADO';
+plantas_vivas_iniciales: null;
+saldo_vivo_actual: null;
+ultimo_evento_por_tipo.DESCARTE_PRE_EMBOLSADO !== null;
+ultimo_evento_por_tipo.CIERRE_AUTOMATICO !== null;
 ```
 
 ## Validaciones que debe respetar el frontend

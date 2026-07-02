@@ -257,7 +257,6 @@ export class ViveroEvidenciasService {
     if (files.length > 5) {
       throw new BadRequestException('Maximo 5 fotos permitidas');
     }
-
   }
 
   private parseMetadata(metadata?: string): Record<string, unknown> | null {

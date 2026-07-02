@@ -9,6 +9,13 @@ import { CrearSubcampaniaDto } from '../api/dto/crear-subcampania.dto';
 import { SubcampaniasAuthService } from '../application/subcampanias-auth.service';
 import { SubcampaniasCodigosService } from '../application/subcampanias-codigos.service';
 import { SubcampaniasCreationService } from '../application/subcampanias-creation.service';
+import { SubcampaniasHistorialService } from '../application/subcampanias-historial.service';
+
+function buildHistorialService(): SubcampaniasHistorialService {
+  return {
+    registrar: jest.fn().mockResolvedValue(undefined),
+  } as unknown as SubcampaniasHistorialService;
+}
 
 function buildDto(
   overrides: Partial<CrearSubcampaniaDto> = {},
@@ -46,12 +53,8 @@ function buildSupabase(opts: {
   campaniaResult: { data: any; error: any };
   insertResult: { data: any; error: any };
 }): SupabaseService {
-  const campaniaSingle = jest
-    .fn()
-    .mockResolvedValueOnce(opts.campaniaResult);
-  const campaniaIs = jest
-    .fn()
-    .mockReturnValue({ single: campaniaSingle });
+  const campaniaSingle = jest.fn().mockResolvedValueOnce(opts.campaniaResult);
+  const campaniaIs = jest.fn().mockReturnValue({ single: campaniaSingle });
   const campaniaEq = jest.fn().mockReturnValue({ is: campaniaIs });
   const campaniaSelect = jest.fn().mockReturnValue({ eq: campaniaEq });
 
@@ -104,6 +107,7 @@ describe('SubcampaniasCreationService', () => {
       supabase,
       authService,
       codigosService,
+      buildHistorialService(),
     );
     const result = await service.crear(buildDto(), 'auth-1');
 
@@ -127,6 +131,7 @@ describe('SubcampaniasCreationService', () => {
       supabase,
       authService,
       codigosService,
+      buildHistorialService(),
     );
 
     await expect(service.crear(buildDto(), 'auth-1')).rejects.toThrow(
@@ -146,6 +151,7 @@ describe('SubcampaniasCreationService', () => {
       supabase,
       authService,
       codigosService,
+      buildHistorialService(),
     );
 
     await expect(service.crear(buildDto(), 'auth-1')).rejects.toThrow(
@@ -168,6 +174,7 @@ describe('SubcampaniasCreationService', () => {
       supabase,
       authService,
       codigosService,
+      buildHistorialService(),
     );
 
     await expect(service.crear(buildDto(), 'auth-1')).rejects.toThrow(
@@ -187,6 +194,7 @@ describe('SubcampaniasCreationService', () => {
       supabase,
       authService,
       codigosService,
+      buildHistorialService(),
     );
 
     await expect(
@@ -215,6 +223,7 @@ describe('SubcampaniasCreationService', () => {
       supabase,
       authService,
       codigosService,
+      buildHistorialService(),
     );
 
     await expect(service.crear(buildDto(), 'auth-1')).rejects.toThrow(

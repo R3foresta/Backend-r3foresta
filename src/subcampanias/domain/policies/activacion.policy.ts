@@ -2,13 +2,24 @@ import { EstadoSubcampania } from '../enums/estado-subcampania.enum';
 
 export class ActivacionPolicyError extends Error {}
 
+export type MetaEspecieItem = {
+  planta_id: number;
+  porcentaje_objetivo: number;
+  cantidad_objetivo: number;
+};
+
 export type ActivacionParams = {
   estadoActual: EstadoSubcampania;
   tienePoligono: boolean;
   tieneCoordinador: boolean;
   metaTotal: number;
-  totalReservado?: number;
+  planEspecies: MetaEspecieItem[];
 };
+
+// Tolerancia numerica al comparar suma de porcentajes con 100.
+// Los porcentajes pueden llegar como NUMERIC(5,2) desde la BD, por lo que
+// aceptamos un error de rounding <= 0.01.
+const PORCENTAJE_TOLERANCIA = 0.01;
 
 export class ActivacionPolicy {
   static assertPuedeActivar(params: ActivacionParams): void {
@@ -17,7 +28,7 @@ export class ActivacionPolicy {
       tienePoligono,
       tieneCoordinador,
       metaTotal,
-      totalReservado,
+      planEspecies,
     } = params;
 
     if (estadoActual !== EstadoSubcampania.BORRADOR) {
@@ -44,19 +55,32 @@ export class ActivacionPolicy {
       );
     }
 
-    if (totalReservado !== undefined && totalReservado <= 0) {
+    // RN-PLA-08 / RN-PLA-16: plan de metas por especie es obligatorio.
+    // Se permite activar con 0% de stock asignado (RN-PLA-09): no se valida
+    // ninguna reserva contra el plan aqui.
+    if (!Array.isArray(planEspecies) || planEspecies.length === 0) {
       throw new ActivacionPolicyError(
-        'La subcampaña no tiene reservas activas de vivero. Reservar stock antes de activar.',
+        'El plan de metas por especie es obligatorio (≥1 especie). Cargarlo en PUT /subcampanias/:id/plan antes de activar.',
       );
     }
 
-    if (
-      totalReservado !== undefined &&
-      Number.isFinite(metaTotal) &&
-      totalReservado < metaTotal
-    ) {
+    const sumaPorcentaje = planEspecies.reduce(
+      (acc, m) => acc + Number(m.porcentaje_objetivo ?? 0),
+      0,
+    );
+    if (Math.abs(sumaPorcentaje - 100) > PORCENTAJE_TOLERANCIA) {
       throw new ActivacionPolicyError(
-        `Las reservas activas (${totalReservado}) no cubren la meta_total_arboles (${metaTotal}).`,
+        `El plan por especie debe sumar 100% (suma actual: ${sumaPorcentaje}).`,
+      );
+    }
+
+    const sumaCantidad = planEspecies.reduce(
+      (acc, m) => acc + Number(m.cantidad_objetivo ?? 0),
+      0,
+    );
+    if (sumaCantidad !== metaTotal) {
+      throw new ActivacionPolicyError(
+        `La suma de cantidad_objetivo del plan (${sumaCantidad}) no coincide con meta_total_arboles (${metaTotal}).`,
       );
     }
   }

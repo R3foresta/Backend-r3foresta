@@ -88,9 +88,13 @@ describe('ActivacionPolicy', () => {
     tienePoligono: true,
     tieneCoordinador: true,
     metaTotal: 100,
+    planEspecies: [
+      { planta_id: 1, porcentaje_objetivo: 60, cantidad_objetivo: 60 },
+      { planta_id: 2, porcentaje_objetivo: 40, cantidad_objetivo: 40 },
+    ],
   };
 
-  it('permite activar cuando se cumplen todas las condiciones', () => {
+  it('permite activar cuando se cumplen todas las condiciones (0% stock incluido)', () => {
     expect(() => ActivacionPolicy.assertPuedeActivar(base)).not.toThrow();
   });
 
@@ -127,15 +131,33 @@ describe('ActivacionPolicy', () => {
     ).toThrow(ActivacionPolicyError);
   });
 
-  it('rechaza si no hay reservas activas', () => {
+  it('rechaza si el plan por especie está vacío', () => {
     expect(() =>
-      ActivacionPolicy.assertPuedeActivar({ ...base, totalReservado: 0 }),
+      ActivacionPolicy.assertPuedeActivar({ ...base, planEspecies: [] }),
     ).toThrow(ActivacionPolicyError);
   });
 
-  it('rechaza si las reservas no cubren la meta', () => {
+  it('rechaza si SUM(porcentaje_objetivo) ≠ 100', () => {
     expect(() =>
-      ActivacionPolicy.assertPuedeActivar({ ...base, totalReservado: 99 }),
+      ActivacionPolicy.assertPuedeActivar({
+        ...base,
+        planEspecies: [
+          { planta_id: 1, porcentaje_objetivo: 30, cantidad_objetivo: 30 },
+          { planta_id: 2, porcentaje_objetivo: 40, cantidad_objetivo: 40 },
+        ],
+      }),
+    ).toThrow(ActivacionPolicyError);
+  });
+
+  it('rechaza si SUM(cantidad_objetivo) ≠ meta_total_arboles', () => {
+    expect(() =>
+      ActivacionPolicy.assertPuedeActivar({
+        ...base,
+        planEspecies: [
+          { planta_id: 1, porcentaje_objetivo: 60, cantidad_objetivo: 50 },
+          { planta_id: 2, porcentaje_objetivo: 40, cantidad_objetivo: 40 },
+        ],
+      }),
     ).toThrow(ActivacionPolicyError);
   });
 });

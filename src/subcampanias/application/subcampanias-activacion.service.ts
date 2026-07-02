@@ -17,6 +17,10 @@ import {
   TransicionEstadoPolicyError,
 } from '../domain/policies/transicion-estado.policy';
 import { SubcampaniasAuthService } from './subcampanias-auth.service';
+import {
+  SubcampaniasHistorialService,
+  TipoHistorialSubcampania,
+} from './subcampanias-historial.service';
 
 type SubcampaniaActivacionRow = {
   id: number;
@@ -72,6 +76,7 @@ export class SubcampaniasActivacionService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly authService: SubcampaniasAuthService,
+    private readonly historialService: SubcampaniasHistorialService,
   ) {}
 
   async activar(id: number, authId: string) {
@@ -120,18 +125,16 @@ export class SubcampaniasActivacionService {
     const coordinadorRow = coordinadorData as CoordinadorRow | null;
     const tieneCoordinador = !!coordinadorRow;
     const composicion = await this.obtenerComposicionReservada(id);
-    const totalReservado = composicion.reduce(
-      (acc, item) => acc + item.saldo_reservado,
-      0,
-    );
+    const planEspecies = await this.obtenerPlan(id);
+    const metaTotal = Number(actual.meta_total_arboles ?? 0);
 
     try {
       ActivacionPolicy.assertPuedeActivar({
         estadoActual,
         tienePoligono,
         tieneCoordinador,
-        metaTotal: Number(actual.meta_total_arboles ?? 0),
-        totalReservado,
+        metaTotal,
+        planEspecies,
       });
     } catch (err) {
       if (err instanceof ActivacionPolicyError) {
@@ -182,6 +185,27 @@ export class SubcampaniasActivacionService {
       );
     }
 
+    const totalReservado = composicion.reduce(
+      (acc, item) => acc + item.saldo_reservado,
+      0,
+    );
+
+    await this.historialService.registrar({
+      subcampaniaId: id,
+      tipo: TipoHistorialSubcampania.SUBCAMPANIA_ACTIVADA,
+      actorUserId: usuario.id,
+      estadoOrigen: EstadoSubcampania.BORRADOR,
+      estadoDestino: EstadoSubcampania.ACTIVA,
+      metadata: {
+        nombre_zona_snapshot: nombreZona,
+        nombre_coordinador_snapshot: nombreCoordinador,
+        nombres_organizaciones_snapshot: nombresOrganizaciones,
+        meta_total_arboles: metaTotal,
+        total_reservado_al_activar: totalReservado,
+        especies_planificadas: planEspecies.length,
+      },
+    });
+
     return {
       success: true,
       data: {
@@ -190,6 +214,33 @@ export class SubcampaniasActivacionService {
         ...(updated as Record<string, unknown>),
       },
     };
+  }
+
+  private async obtenerPlan(subcampaniaId: number): Promise<
+    {
+      planta_id: number;
+      porcentaje_objetivo: number;
+      cantidad_objetivo: number;
+    }[]
+  > {
+    const supabase = this.supabaseService.getClient();
+    const { data, error } = await supabase
+      .from('subcampania_meta_especie')
+      .select('planta_id, porcentaje_objetivo, cantidad_objetivo')
+      .eq('subcampania_id', subcampaniaId);
+
+    if (error) {
+      this.logger.error('Error al leer plan de metas por especie:', error);
+      throw new InternalServerErrorException(
+        'Error al verificar el plan de metas por especie.',
+      );
+    }
+
+    return (data ?? []).map((row: any) => ({
+      planta_id: Number(row.planta_id),
+      porcentaje_objetivo: Number(row.porcentaje_objetivo),
+      cantidad_objetivo: Number(row.cantidad_objetivo),
+    }));
   }
 
   private async obtenerComposicionReservada(subcampaniaId: number): Promise<

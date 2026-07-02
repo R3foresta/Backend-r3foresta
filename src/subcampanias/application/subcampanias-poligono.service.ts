@@ -41,16 +41,10 @@ export class SubcampaniasPoligonoService {
     if (error) {
       this.logger.error('Error al setear poligono:', error);
       const msg = (error as any).message ?? '';
-      if (
-        (error as any).code === 'P0002' ||
-        msg.includes('no existe')
-      ) {
+      if ((error as any).code === 'P0002' || msg.includes('no existe')) {
         throw new NotFoundException(`Subcampaña con id ${id} no encontrada`);
       }
-      if (
-        (error as any).code === 'P0001' ||
-        msg.includes('BORRADOR')
-      ) {
+      if ((error as any).code === 'P0001' || msg.includes('BORRADOR')) {
         throw new UnprocessableEntityException(
           'Solo se puede setear el polígono en estado BORRADOR.',
         );

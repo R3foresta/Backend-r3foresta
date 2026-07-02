@@ -121,7 +121,7 @@ export class SubcampaniasConsultasService {
       };
     });
 
-    const poligonoGeoJSON = (poligonoResult.data as any) ?? null;
+    const poligonoGeoJSON = poligonoResult.data ?? null;
 
     return {
       success: true,

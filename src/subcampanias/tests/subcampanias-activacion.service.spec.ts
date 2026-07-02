@@ -6,6 +6,7 @@ import {
 import { SupabaseService } from '../../supabase/supabase.service';
 import { SubcampaniasActivacionService } from '../application/subcampanias-activacion.service';
 import { SubcampaniasAuthService } from '../application/subcampanias-auth.service';
+import { SubcampaniasHistorialService } from '../application/subcampanias-historial.service';
 
 type Estado = {
   estado: string;
@@ -13,6 +14,17 @@ type Estado = {
   poligono_geom: any;
   zona_id: number;
 };
+
+type PlanRow = {
+  planta_id: number;
+  porcentaje_objetivo: number;
+  cantidad_objetivo: number;
+};
+
+const DEFAULT_PLAN: PlanRow[] = [
+  { planta_id: 1, porcentaje_objetivo: 60, cantidad_objetivo: 300 },
+  { planta_id: 2, porcentaje_objetivo: 40, cantidad_objetivo: 200 },
+];
 
 function buildAuthService(rol: string): SubcampaniasAuthService {
   return {
@@ -26,12 +38,20 @@ function buildAuthService(rol: string): SubcampaniasAuthService {
   } as unknown as SubcampaniasAuthService;
 }
 
+function buildHistorialService(): SubcampaniasHistorialService {
+  return {
+    registrar: jest.fn().mockResolvedValue(undefined),
+  } as unknown as SubcampaniasHistorialService;
+}
+
 function buildSupabase(opts: {
   subcampaniaRow?: (Estado & { id: number; campania_id: number }) | null;
   subcampaniaError?: any;
   coordinadorRow?: any;
   reservasRows?: any[];
   reservasError?: any;
+  planRows?: PlanRow[];
+  planError?: any;
   updateResult?: { data: any; error: any };
 }): SupabaseService {
   const subSingle = jest
@@ -68,23 +88,17 @@ function buildSupabase(opts: {
   const orgsSelect = jest.fn().mockReturnValue({ eq: orgsEq });
 
   const reservasEq2 = jest.fn().mockResolvedValue({
-    data: opts.reservasRows ?? [
-      {
-        saldo_asignado_disponible: 500,
-        lote_vivero: {
-          planta_id: 1,
-          planta: {
-            id: 1,
-            especie: 'Aliso',
-            nombre_cientifico: 'Alnus acuminata',
-          },
-        },
-      },
-    ],
+    data: opts.reservasRows ?? [],
     error: opts.reservasError ?? null,
   });
   const reservasEq1 = jest.fn().mockReturnValue({ eq: reservasEq2 });
   const reservasSelect = jest.fn().mockReturnValue({ eq: reservasEq1 });
+
+  const planEq = jest.fn().mockResolvedValue({
+    data: opts.planRows ?? DEFAULT_PLAN,
+    error: opts.planError ?? null,
+  });
+  const planSelect = jest.fn().mockReturnValue({ eq: planEq });
 
   const updateSingle = jest
     .fn()
@@ -111,6 +125,9 @@ function buildSupabase(opts: {
     if (table === 'asignacion_vivero_subcampania') {
       return { select: reservasSelect };
     }
+    if (table === 'subcampania_meta_especie') {
+      return { select: planSelect };
+    }
     return {};
   });
 
@@ -119,21 +136,24 @@ function buildSupabase(opts: {
   } as unknown as SupabaseService;
 }
 
+const validSub = {
+  id: 1,
+  campania_id: 50,
+  estado: 'BORRADOR',
+  meta_total_arboles: 500,
+  poligono_geom: 'POLYGON(...)',
+  zona_id: 10,
+};
+
 describe('SubcampaniasActivacionService', () => {
-  it('activa correctamente cuando se cumplen las pre-condiciones y setea snapshots', async () => {
+  it('activa con 0 stock cuando el plan es válido y se cumplen pre-condiciones (RN-PLA-09)', async () => {
     const supabase = buildSupabase({
-      subcampaniaRow: {
-        id: 1,
-        campania_id: 50,
-        estado: 'BORRADOR',
-        meta_total_arboles: 500,
-        poligono_geom: 'POLYGON(...)',
-        zona_id: 10,
-      },
+      subcampaniaRow: { ...validSub },
       coordinadorRow: {
         usuario_id: 7,
         usuario: { id: 7, nombre: 'Coord Pepe' },
       },
+      reservasRows: [], // 0 asignaciones — RN-PLA-09 permite activar
       updateResult: {
         data: {
           id: 1,
@@ -145,9 +165,11 @@ describe('SubcampaniasActivacionService', () => {
         error: null,
       },
     });
+    const historialService = buildHistorialService();
     const service = new SubcampaniasActivacionService(
       supabase,
       buildAuthService('ADMIN'),
+      historialService,
     );
 
     const result = await service.activar(1, 'auth-1');
@@ -158,6 +180,14 @@ describe('SubcampaniasActivacionService', () => {
     expect((result.data as any).nombres_organizaciones_snapshot).toEqual([
       'Org A',
     ]);
+    expect(historialService.registrar).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subcampaniaId: 1,
+        tipo: 'SUBCAMPANIA_ACTIVADA',
+        actorUserId: 99,
+        estadoDestino: 'ACTIVA',
+      }),
+    );
   });
 
   it('lanza 404 si no encuentra la subcampaña', async () => {
@@ -165,6 +195,7 @@ describe('SubcampaniasActivacionService', () => {
     const service = new SubcampaniasActivacionService(
       supabase,
       buildAuthService('ADMIN'),
+      buildHistorialService(),
     );
     await expect(service.activar(99, 'auth-1')).rejects.toThrow(
       NotFoundException,
@@ -173,19 +204,13 @@ describe('SubcampaniasActivacionService', () => {
 
   it('lanza 422 si no tiene polígono', async () => {
     const supabase = buildSupabase({
-      subcampaniaRow: {
-        id: 1,
-        campania_id: 50,
-        estado: 'BORRADOR',
-        meta_total_arboles: 500,
-        poligono_geom: null,
-        zona_id: 10,
-      },
+      subcampaniaRow: { ...validSub, poligono_geom: null },
       coordinadorRow: { usuario_id: 7, usuario: { id: 7, nombre: 'Coord' } },
     });
     const service = new SubcampaniasActivacionService(
       supabase,
       buildAuthService('ADMIN'),
+      buildHistorialService(),
     );
     await expect(service.activar(1, 'auth-1')).rejects.toThrow(
       UnprocessableEntityException,
@@ -194,92 +219,67 @@ describe('SubcampaniasActivacionService', () => {
 
   it('lanza 422 si no hay coordinador', async () => {
     const supabase = buildSupabase({
-      subcampaniaRow: {
-        id: 1,
-        campania_id: 50,
-        estado: 'BORRADOR',
-        meta_total_arboles: 500,
-        poligono_geom: 'POLYGON(...)',
-        zona_id: 10,
-      },
+      subcampaniaRow: { ...validSub },
       coordinadorRow: null,
     });
     const service = new SubcampaniasActivacionService(
       supabase,
       buildAuthService('ADMIN'),
+      buildHistorialService(),
     );
     await expect(service.activar(1, 'auth-1')).rejects.toThrow(
       UnprocessableEntityException,
     );
   });
 
-  it('lanza 422 si meta_total_arboles es 0 (transición inválida)', async () => {
+  it('lanza 422 si el plan por especie está vacío', async () => {
     const supabase = buildSupabase({
-      subcampaniaRow: {
-        id: 1,
-        campania_id: 50,
-        estado: 'BORRADOR',
-        meta_total_arboles: 0,
-        poligono_geom: 'POLYGON(...)',
-        zona_id: 10,
-      },
+      subcampaniaRow: { ...validSub },
       coordinadorRow: { usuario_id: 7, usuario: { id: 7, nombre: 'Coord' } },
+      planRows: [],
     });
     const service = new SubcampaniasActivacionService(
       supabase,
       buildAuthService('ADMIN'),
+      buildHistorialService(),
     );
     await expect(service.activar(1, 'auth-1')).rejects.toThrow(
       UnprocessableEntityException,
     );
   });
 
-  it('lanza 422 si no hay reservas activas', async () => {
+  it('lanza 422 si SUM(cantidad_objetivo) no coincide con meta_total_arboles', async () => {
     const supabase = buildSupabase({
-      subcampaniaRow: {
-        id: 1,
-        campania_id: 50,
-        estado: 'BORRADOR',
-        meta_total_arboles: 500,
-        poligono_geom: 'POLYGON(...)',
-        zona_id: 10,
-      },
+      subcampaniaRow: { ...validSub, meta_total_arboles: 500 },
       coordinadorRow: { usuario_id: 7, usuario: { id: 7, nombre: 'Coord' } },
-      reservasRows: [],
-    });
-    const service = new SubcampaniasActivacionService(
-      supabase,
-      buildAuthService('ADMIN'),
-    );
-    await expect(service.activar(1, 'auth-1')).rejects.toThrow(
-      UnprocessableEntityException,
-    );
-  });
-
-  it('lanza 422 si las reservas no cubren la meta', async () => {
-    const supabase = buildSupabase({
-      subcampaniaRow: {
-        id: 1,
-        campania_id: 50,
-        estado: 'BORRADOR',
-        meta_total_arboles: 500,
-        poligono_geom: 'POLYGON(...)',
-        zona_id: 10,
-      },
-      coordinadorRow: { usuario_id: 7, usuario: { id: 7, nombre: 'Coord' } },
-      reservasRows: [
-        {
-          saldo_asignado_disponible: 499,
-          lote_vivero: {
-            planta_id: 1,
-            planta: { id: 1, especie: 'Aliso', nombre_cientifico: 'Alnus' },
-          },
-        },
+      planRows: [
+        { planta_id: 1, porcentaje_objetivo: 60, cantidad_objetivo: 200 },
+        { planta_id: 2, porcentaje_objetivo: 40, cantidad_objetivo: 200 },
       ],
     });
     const service = new SubcampaniasActivacionService(
       supabase,
       buildAuthService('ADMIN'),
+      buildHistorialService(),
+    );
+    await expect(service.activar(1, 'auth-1')).rejects.toThrow(
+      UnprocessableEntityException,
+    );
+  });
+
+  it('lanza 422 si SUM(porcentaje_objetivo) ≠ 100', async () => {
+    const supabase = buildSupabase({
+      subcampaniaRow: { ...validSub },
+      coordinadorRow: { usuario_id: 7, usuario: { id: 7, nombre: 'Coord' } },
+      planRows: [
+        { planta_id: 1, porcentaje_objetivo: 30, cantidad_objetivo: 300 },
+        { planta_id: 2, porcentaje_objetivo: 40, cantidad_objetivo: 200 },
+      ],
+    });
+    const service = new SubcampaniasActivacionService(
+      supabase,
+      buildAuthService('ADMIN'),
+      buildHistorialService(),
     );
     await expect(service.activar(1, 'auth-1')).rejects.toThrow(
       UnprocessableEntityException,
@@ -288,19 +288,13 @@ describe('SubcampaniasActivacionService', () => {
 
   it('lanza 422 si el estado actual no es BORRADOR', async () => {
     const supabase = buildSupabase({
-      subcampaniaRow: {
-        id: 1,
-        campania_id: 50,
-        estado: 'ACTIVA',
-        meta_total_arboles: 500,
-        poligono_geom: 'POLYGON(...)',
-        zona_id: 10,
-      },
+      subcampaniaRow: { ...validSub, estado: 'ACTIVA' },
       coordinadorRow: { usuario_id: 7, usuario: { id: 7, nombre: 'Coord' } },
     });
     const service = new SubcampaniasActivacionService(
       supabase,
       buildAuthService('ADMIN'),
+      buildHistorialService(),
     );
     await expect(service.activar(1, 'auth-1')).rejects.toThrow(
       UnprocessableEntityException,
@@ -309,19 +303,13 @@ describe('SubcampaniasActivacionService', () => {
 
   it('lanza ForbiddenException si el rol no es ADMIN', async () => {
     const supabase = buildSupabase({
-      subcampaniaRow: {
-        id: 1,
-        campania_id: 50,
-        estado: 'BORRADOR',
-        meta_total_arboles: 500,
-        poligono_geom: 'POLYGON(...)',
-        zona_id: 10,
-      },
+      subcampaniaRow: { ...validSub },
       coordinadorRow: { usuario_id: 7, usuario: { id: 7, nombre: 'Coord' } },
     });
     const service = new SubcampaniasActivacionService(
       supabase,
       buildAuthService('GENERAL'),
+      buildHistorialService(),
     );
     await expect(service.activar(1, 'auth-1')).rejects.toThrow(
       ForbiddenException,

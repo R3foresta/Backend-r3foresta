@@ -91,23 +91,22 @@ curl -X POST http://localhost:3000/api/campanias \
       "descripcion": "Reforestación zona norte",
       "fecha_estimada_inicio": "2026-06-01",
       "fecha_estimada_fin": "2026-12-31",
+      "estado_derivado": "BORRADOR",
+      "count_subcampanias": 3,
+      "meta_planificada_campania": 1500,
+      "organizaciones": [],
       "created_at": "2026-05-28T10:00:00Z",
       "updated_at": "2026-05-28T10:00:00Z"
-    },
-    {
-      "id": 2,
-      "nombre": "Arborización Sur 2026",
-      "tipo": "ARBORIZACION",
-      "codigo_trazabilidad": "CMP-2026-002",
-      "descripcion": null,
-      "fecha_estimada_inicio": null,
-      "fecha_estimada_fin": null,
-      "created_at": "2026-05-27T15:00:00Z",
-      "updated_at": "2026-05-27T15:00:00Z"
     }
   ]
 }
 ```
+
+Nota sobre `meta_planificada_campania` (RN-PLA-36):
+
+- Derivado en tiempo real, nunca persistido en `CAMPANIA`.
+- Suma `meta_total_arboles` de las subcampañas cuyo `estado <> CANCELADA` — incluye `BORRADOR`, `ACTIVA`, `COMPLETADA`, `FINALIZADA_PARCIAL`.
+- Consumo interno (admin/coordinador). La vista pública debe agregar aparte solo `ACTIVA | COMPLETADA | FINALIZADA_PARCIAL`.
 
 **Errores**
 | Status | Cuándo |
@@ -149,11 +148,19 @@ curl -X GET http://localhost:3000/api/campanias \
     "descripcion": "Reforestación zona norte",
     "fecha_estimada_inicio": "2026-06-01",
     "fecha_estimada_fin": "2026-12-31",
+    "estado_derivado": "BORRADOR",
+    "count_subcampanias": 3,
+    "meta_planificada_campania": 1500,
+    "organizaciones": [
+      { "id": 4, "nombre": "ONG Verde", "tipo": "ONG", "activo": true, "logo_url": null }
+    ],
     "created_at": "2026-05-28T10:00:00Z",
     "updated_at": "2026-05-28T10:00:00Z"
   }
 }
 ```
+
+`meta_planificada_campania` sigue la misma regla que en `GET /campanias`: `SUM(subcampania.meta_total_arboles)` con `estado <> CANCELADA` (incluye `BORRADOR`).
 
 **Errores**
 | Status | Cuándo |

@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { AgregarMiembroEquipoDto } from '../api/dto/agregar-miembro-equipo.dto';
+import { CancelarSubcampaniaDto } from '../api/dto/cancelar-subcampania.dto';
 import { CerrarSubcampaniaDto } from '../api/dto/cerrar-subcampania.dto';
 import { CrearSubcampaniaDto } from '../api/dto/crear-subcampania.dto';
 import { EditarSubcampaniaDto } from '../api/dto/editar-subcampania.dto';
+import { GuardarPlanDto } from '../api/dto/guardar-plan.dto';
 import { SetearPoligonoDto } from '../api/dto/setear-poligono.dto';
 import { SubcampaniasActivacionService } from './subcampanias-activacion.service';
+import { SubcampaniasCancelacionService } from './subcampanias-cancelacion.service';
 import { SubcampaniasCierreService } from './subcampanias-cierre.service';
+import { SubcampaniasPlanService } from './subcampanias-plan.service';
 import {
   ListarSubcampaniasFiltros,
   SubcampaniasConsultasService,
@@ -24,7 +28,9 @@ export class SubcampaniasService {
     private readonly poligonoService: SubcampaniasPoligonoService,
     private readonly activacionService: SubcampaniasActivacionService,
     private readonly cierreService: SubcampaniasCierreService,
+    private readonly cancelacionService: SubcampaniasCancelacionService,
     private readonly equipoService: SubcampaniasEquipoService,
+    private readonly planService: SubcampaniasPlanService,
   ) {}
 
   crear(dto: CrearSubcampaniaDto, authId: string) {
@@ -57,6 +63,18 @@ export class SubcampaniasService {
 
   cerrar(id: number, dto: CerrarSubcampaniaDto, authId: string) {
     return this.cierreService.cerrar(id, dto, authId);
+  }
+
+  cancelar(id: number, dto: CancelarSubcampaniaDto, authId: string) {
+    return this.cancelacionService.cancelar(id, dto, authId);
+  }
+
+  obtenerPlan(id: number) {
+    return this.planService.obtener(id);
+  }
+
+  guardarPlan(id: number, dto: GuardarPlanDto, authId: string) {
+    return this.planService.guardar(id, dto, authId);
   }
 
   listarEquipo(subcampaniaId: number) {

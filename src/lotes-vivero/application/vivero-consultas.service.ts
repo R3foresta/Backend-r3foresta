@@ -62,7 +62,7 @@ export class ViveroConsultasService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly timelineService: ViveroTimelineService,
-  ) { }
+  ) {}
 
   async listarLotes(filters: FiltrarLotesViveroDto) {
     const supabase = this.supabaseService.getClient();
@@ -83,7 +83,9 @@ export class ViveroConsultasService {
         .select('lote_vivero_id')
         .eq('subcampania_id', filters.subcampania_id)
         .eq('estado', 'ACTIVA');
-      const loteIds = (asigData || []).map((a: any) => Number(a.lote_vivero_id));
+      const loteIds = (asigData || []).map((a: any) =>
+        Number(a.lote_vivero_id),
+      );
       if (loteIds.length === 0) {
         query = query.in('id', [-1]);
       } else {
@@ -105,21 +107,32 @@ export class ViveroConsultasService {
     const totalPages = Math.ceil(total / limit);
 
     const loteIds = (data || []).map((row: any) => Number(row.id));
-    const saldosMap = new Map<number, { saldo_asignado_total: number; saldo_vivo_disponible_asignacion: number | null }>();
+    const saldosMap = new Map<
+      number,
+      {
+        saldo_asignado_total: number;
+        saldo_vivo_disponible_asignacion: number | null;
+      }
+    >();
     const countsMap = new Map<number, number>();
 
     if (loteIds.length > 0) {
       // 1. Cargar saldos
       const { data: saldosData, error: saldosError } = await supabase
         .from('v_lote_vivero_saldos')
-        .select('lote_id, saldo_asignado_total, saldo_vivo_disponible_asignacion')
+        .select(
+          'lote_id, saldo_asignado_total, saldo_vivo_disponible_asignacion',
+        )
         .in('lote_id', loteIds);
 
       if (!saldosError && saldosData) {
         saldosData.forEach((s: any) => {
           saldosMap.set(Number(s.lote_id), {
             saldo_asignado_total: Number(s.saldo_asignado_total || 0),
-            saldo_vivo_disponible_asignacion: s.saldo_vivo_disponible_asignacion !== null ? Number(s.saldo_vivo_disponible_asignacion) : null,
+            saldo_vivo_disponible_asignacion:
+              s.saldo_vivo_disponible_asignacion !== null
+                ? Number(s.saldo_vivo_disponible_asignacion)
+                : null,
           });
         });
       }
@@ -148,9 +161,10 @@ export class ViveroConsultasService {
         return {
           ...mapped,
           saldo_asignado_total: saldos ? saldos.saldo_asignado_total : 0,
-          saldo_vivo_disponible_asignacion: saldos && saldos.saldo_vivo_disponible_asignacion !== null
-            ? saldos.saldo_vivo_disponible_asignacion
-            : mapped.saldo_vivo_actual,
+          saldo_vivo_disponible_asignacion:
+            saldos && saldos.saldo_vivo_disponible_asignacion !== null
+              ? saldos.saldo_vivo_disponible_asignacion
+              : mapped.saldo_vivo_actual,
           cantidad_asignaciones_activas: activeAsigCount,
         };
       }),
@@ -211,9 +225,10 @@ export class ViveroConsultasService {
 
     if (saldosData) {
       saldoAsignadoTotal = Number(saldosData.saldo_asignado_total || 0);
-      saldoVivoDisponibleAsignacion = saldosData.saldo_vivo_disponible_asignacion !== null
-        ? Number(saldosData.saldo_vivo_disponible_asignacion)
-        : null;
+      saldoVivoDisponibleAsignacion =
+        saldosData.saldo_vivo_disponible_asignacion !== null
+          ? Number(saldosData.saldo_vivo_disponible_asignacion)
+          : null;
     }
 
     const { data: asigData } = await supabase
@@ -272,9 +287,10 @@ export class ViveroConsultasService {
       data: {
         ...mapped,
         saldo_asignado_total: saldoAsignadoTotal,
-        saldo_vivo_disponible_asignacion: saldoVivoDisponibleAsignacion !== null
-          ? saldoVivoDisponibleAsignacion
-          : mapped.saldo_vivo_actual,
+        saldo_vivo_disponible_asignacion:
+          saldoVivoDisponibleAsignacion !== null
+            ? saldoVivoDisponibleAsignacion
+            : mapped.saldo_vivo_actual,
         cantidad_asignaciones_activas: activeAsigCount,
         ultimo_evento_por_tipo: ultimoEventoPorTipo,
       },
@@ -459,7 +475,7 @@ export class ViveroConsultasService {
       unidad_medida_inicial: row.unidad_medida_inicial,
       plantas_vivas_iniciales:
         row.plantas_vivas_iniciales === null ||
-          row.plantas_vivas_iniciales === undefined
+        row.plantas_vivas_iniciales === undefined
           ? null
           : Number(row.plantas_vivas_iniciales),
       saldo_vivo_actual: saldoVivoActual,

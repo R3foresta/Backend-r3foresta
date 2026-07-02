@@ -17,6 +17,12 @@ Cookbooks operativos para probar el backend contra entorno local o staging. Cada
 |---|---|---|
 | Plantas | [plantas.md](./plantas.md) | CRUD `/api/plantas` y `/api/plantas/tipos-planta` |
 
+## Subcampañas (Modulo 3)
+
+| Evento | Documento | Endpoint principal |
+|---|---|---|
+| Cancelar subcampaña (RN-PLA-37) | [cancelar-subcampania.md](./cancelar-subcampania.md) | `POST /api/subcampanias/:id/cancelar` |
+
 Para una visión completa de los endpoints del módulo, ver [../modulos/lotes-vivero.md](../modulos/lotes-vivero.md). Para guía de consumo desde el frontend, ver [../frontend/lotes-vivero.md](../frontend/lotes-vivero.md).
 
 ## Pre-condiciones comunes

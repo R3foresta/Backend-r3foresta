@@ -10,26 +10,32 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Put,
   Query,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { SubcampaniasService } from '../application/subcampanias.service';
 import { AgregarMiembroEquipoDto } from './dto/agregar-miembro-equipo.dto';
+import { CancelarSubcampaniaDto } from './dto/cancelar-subcampania.dto';
 import { CerrarSubcampaniaDto } from './dto/cerrar-subcampania.dto';
 import { CrearSubcampaniaDto } from './dto/crear-subcampania.dto';
 import { EditarSubcampaniaDto } from './dto/editar-subcampania.dto';
+import { GuardarPlanDto } from './dto/guardar-plan.dto';
 import { SetearPoligonoDto } from './dto/setear-poligono.dto';
 import {
   ApiActivarSubcampania,
   ApiAgregarMiembrosEquipo,
   ApiBorrarSubcampania,
+  ApiCancelarSubcampania,
   ApiCerrarSubcampania,
   ApiCrearSubcampania,
   ApiDetalleSubcampania,
   ApiEditarSubcampania,
+  ApiGuardarPlan,
   ApiListarEquipo,
   ApiListarSubcampanias,
+  ApiObtenerPlan,
   ApiQuitarMiembroEquipo,
   ApiSetearPoligono,
 } from './docs/subcampanias.swagger';
@@ -81,11 +87,7 @@ export class SubcampaniasController {
     @Body() dto: EditarSubcampaniaDto,
     @Headers('x-auth-id') authId?: string,
   ) {
-    return this.subcampaniasService.editar(
-      id,
-      dto,
-      this.requireAuthId(authId),
-    );
+    return this.subcampaniasService.editar(id, dto, this.requireAuthId(authId));
   }
 
   @Post(':id/poligono')
@@ -118,7 +120,41 @@ export class SubcampaniasController {
     @Body() dto: CerrarSubcampaniaDto,
     @Headers('x-auth-id') authId?: string,
   ) {
-    return this.subcampaniasService.cerrar(
+    return this.subcampaniasService.cerrar(id, dto, this.requireAuthId(authId));
+  }
+
+  @Post(':id/cancelar')
+  @ApiCancelarSubcampania()
+  cancelar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CancelarSubcampaniaDto,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    return this.subcampaniasService.cancelar(
+      id,
+      dto,
+      this.requireAuthId(authId),
+    );
+  }
+
+  @Get(':id/plan')
+  @ApiObtenerPlan()
+  obtenerPlan(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    this.requireAuthId(authId);
+    return this.subcampaniasService.obtenerPlan(id);
+  }
+
+  @Put(':id/plan')
+  @ApiGuardarPlan()
+  guardarPlan(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: GuardarPlanDto,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    return this.subcampaniasService.guardarPlan(
       id,
       dto,
       this.requireAuthId(authId),
@@ -190,10 +226,7 @@ export class SubcampaniasController {
     return normalized;
   }
 
-  private parseIntQuery(
-    paramName: string,
-    raw?: string,
-  ): number | undefined {
+  private parseIntQuery(paramName: string, raw?: string): number | undefined {
     if (raw === undefined || raw === null || raw === '') return undefined;
     const parsed = Number(raw);
     if (!Number.isInteger(parsed) || parsed <= 0) {
