@@ -8,6 +8,7 @@ import { ViveroAsignacionesService } from './application/vivero-asignaciones.ser
 import { ViveroAuthService } from './application/vivero-auth.service';
 import { ViveroCodigosService } from './application/vivero-codigos.service';
 import { ViveroConsultasService } from './application/vivero-consultas.service';
+import { ViveroDescartePreEmbolsadoService } from './application/vivero-descarte-pre-embolsado.service';
 import { ViveroDespachoService } from './application/vivero-despacho.service';
 import { ViveroEmbolsadoService } from './application/vivero-embolsado.service';
 import { ViveroEventosService } from './application/vivero-eventos.service';
@@ -29,6 +30,7 @@ import { ViveroTimelineService } from './application/vivero-timeline.service';
     ViveroAuthService,
     ViveroCodigosService,
     ViveroConsultasService,
+    ViveroDescartePreEmbolsadoService,
     ViveroDespachoService,
     ViveroEmbolsadoService,
     ViveroEventosService,

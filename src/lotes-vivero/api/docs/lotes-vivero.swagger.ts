@@ -9,6 +9,7 @@ import {
   ApiResponse,
   ApiSecurity,
 } from '@nestjs/swagger';
+import { CausaDescartePreEmbolsado } from '../../domain/enums/causa-descarte-pre-embolsado.enum';
 import { CausaMermaVivero } from '../../domain/enums/causa-merma-vivero.enum';
 import { DestinoTipoVivero } from '../../domain/enums/destino-tipo-vivero.enum';
 import { EstadoLoteVivero } from '../../domain/enums/estado-lote-vivero.enum';
@@ -388,6 +389,90 @@ export function ApiRegistrarMerma() {
   );
 }
 
+export function ApiRegistrarDescartePreEmbolsado() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Registrar descarte pre-embolsado',
+      description:
+        'Cierra un lote que tiene INICIO pero no tiene EMBOLSADO, llamando la RPC fn_vivero_registrar_descarte_pre_embolsado en una sola transaccion. No crea saldo vivo ni modifica saldo_vivo_actual. Requiere causa, evidencia obligatoria, cantidad total del material en proceso y unidad igual a unidad_medida_inicial.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
+    ApiBody({
+      schema: {
+        type: 'object',
+        required: [
+          'fecha_evento',
+          'cantidad_material_afectado',
+          'unidad_medida_evento',
+          'causa_descarte_pre_embolsado',
+          'evidencia_ids',
+        ],
+        properties: {
+          fecha_evento: {
+            type: 'string',
+            format: 'date',
+            example: '2026-05-10',
+          },
+          cantidad_material_afectado: {
+            type: 'number',
+            minimum: 0.000001,
+            example: 120,
+            description:
+              'Debe ser total e igual a cantidad_inicial_en_proceso del lote. No permite parcialidad.',
+          },
+          unidad_medida_evento: {
+            type: 'string',
+            enum: Object.values(UnidadMedidaVivero),
+            example: UnidadMedidaVivero.UNIDAD,
+            description: 'Debe coincidir con unidad_medida_inicial del lote.',
+          },
+          causa_descarte_pre_embolsado: {
+            type: 'string',
+            enum: Object.values(CausaDescartePreEmbolsado),
+            example: CausaDescartePreEmbolsado.NO_GERMINACION,
+          },
+          evidencia_ids: {
+            type: 'array',
+            items: { type: 'integer', minimum: 1 },
+            minItems: 1,
+            example: [401],
+            description:
+              'IDs de evidencias pendientes obtenidos en POST :id/descarte-pre-embolsado/evidencias-pendientes. Obligatorio.',
+          },
+          observaciones: {
+            type: 'string',
+            maxLength: 1000,
+            example: 'Material descartado por no germinacion',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 201,
+      description:
+        'Descarte registrado. Devuelve evento_descarte_pre_embolsado_id, evento_cierre_id, lote_finalizado y motivo_cierre DESCARTE_PRE_EMBOLSADO.',
+    }),
+    ApiResponse({
+      status: 400,
+      description:
+        'Datos invalidos, falta evidencia/causa, lote sin INICIO, lote con EMBOLSADO, cantidad parcial o unidad distinta.',
+    }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 403,
+      description: 'Rol del usuario sin permiso de escritura',
+    }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
 export function ApiRegistrarDespacho() {
   return applyDecorators(
     ApiOperation({
@@ -560,7 +645,7 @@ export function ApiObtenerDetalleLote() {
     ApiOperation({
       summary: 'Detalle del lote con snapshot del ultimo evento por tipo',
       description:
-        'Devuelve los campos del lote, sus relaciones (vivero, recoleccion, planta, responsable) y un mapa ultimo_evento_por_tipo con el evento mas reciente de cada tipo (INICIO, EMBOLSADO, ADAPTABILIDAD, MERMA, DESPACHO, CIERRE_AUTOMATICO). Pensado para que los formularios de eventos validen fechas contra el evento previo (RN-VIV-10/RN-VIV-33) sin disparar N+1 calls.',
+        'Devuelve los campos del lote, sus relaciones (vivero, recoleccion, planta, responsable) y un mapa ultimo_evento_por_tipo con el evento mas reciente de cada tipo (INICIO, EMBOLSADO, DESCARTE_PRE_EMBOLSADO, ADAPTABILIDAD, MERMA, DESPACHO, CIERRE_AUTOMATICO). Pensado para que los formularios de eventos validen fechas contra el evento previo (RN-VIV-10/RN-VIV-33) sin disparar N+1 calls.',
     }),
     ApiParam({
       name: 'id',
@@ -831,6 +916,62 @@ export function ApiCrearEvidenciasPendientesMerma() {
         'Evidencias pendientes creadas. Devuelve { success: true, data } con evidencia_ids y evidencias con codigo_trazabilidad del lote.',
     }),
     ApiResponse({ status: 400, description: 'Sin fotos o lote no ACTIVO' }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}
+
+export function ApiCrearEvidenciasPendientesDescartePreEmbolsado() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Subir evidencias pendientes para descarte pre-embolsado',
+      description:
+        'Sube fotos al storage y crea registros en evidencias_trazabilidad con entidad_id=0, vinculando el codigo_trazabilidad del lote. Los IDs retornados deben enviarse en POST :id/descarte-pre-embolsado.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({
+      name: 'id',
+      type: Number,
+      description: 'ID del lote de vivero',
+    }),
+    ApiConsumes('multipart/form-data'),
+    ApiBody({
+      description: 'Fotos de evidencia para el descarte pre-embolsado',
+      schema: {
+        type: 'object',
+        required: ['fotos'],
+        properties: {
+          titulo: {
+            type: 'string',
+            maxLength: 120,
+            example: 'Evidencia de descarte pre-embolsado',
+          },
+          descripcion: {
+            type: 'string',
+            maxLength: 1000,
+            example: 'Fotos del material que no produjo plantas vivas',
+          },
+          fotos: {
+            type: 'array',
+            items: { type: 'string', format: 'binary' },
+            description:
+              'Archivos de imagen (max 5, JPG/JPEG/PNG/WEBP/HEIC/HEIF)',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 201,
+      description:
+        'Evidencias pendientes creadas. Devuelve { success: true, data } con evidencia_ids y evidencias con codigo_trazabilidad del lote.',
+    }),
+    ApiResponse({
+      status: 400,
+      description:
+        'Sin fotos, lote no ACTIVO, lote sin INICIO o lote con EMBOLSADO.',
+    }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),

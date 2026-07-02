@@ -5,12 +5,14 @@ import { CrearLoteViveroDto } from '../api/dto/crear-lote-vivero.dto';
 import { FiltrarLotesViveroDto } from '../api/dto/filtrar-lotes-vivero.dto';
 import { FiltrarTimelineLoteDto } from '../api/dto/filtrar-timeline-lote.dto';
 import { RegistrarAdaptabilidadDto } from '../api/dto/registrar-adaptabilidad.dto';
+import { RegistrarDescartePreEmbolsadoDto } from '../api/dto/registrar-descarte-pre-embolsado.dto';
 import { RegistrarDespachoDto } from '../api/dto/registrar-despacho.dto';
 import { RegistrarEmbolsadoDto } from '../api/dto/registrar-embolsado.dto';
 import { RegistrarMermaDto } from '../api/dto/registrar-merma.dto';
 import { ViveroAdaptabilidadService } from './vivero-adaptabilidad.service';
 import { ViveroAsignacionesService } from './vivero-asignaciones.service';
 import { ViveroConsultasService } from './vivero-consultas.service';
+import { ViveroDescartePreEmbolsadoService } from './vivero-descarte-pre-embolsado.service';
 import { ViveroDespachoService } from './vivero-despacho.service';
 import { ViveroEmbolsadoService } from './vivero-embolsado.service';
 import { ViveroEventosService } from './vivero-eventos.service';
@@ -33,6 +35,7 @@ export class LotesViveroService {
     private readonly adaptabilidadService: ViveroAdaptabilidadService,
     private readonly mermaService: ViveroMermaService,
     private readonly despachoService: ViveroDespachoService,
+    private readonly descartePreEmbolsadoService: ViveroDescartePreEmbolsadoService,
     private readonly saldosService: ViveroSaldosService,
     private readonly asignacionesService: ViveroAsignacionesService,
   ) {}
@@ -147,6 +150,32 @@ export class LotesViveroService {
 
   obtenerDespachos(loteId: number) {
     return this.despachoService.obtenerDespachos(loteId);
+  }
+
+  registrarDescartePreEmbolsado(
+    loteId: number,
+    dto: RegistrarDescartePreEmbolsadoDto,
+    authId: string,
+  ) {
+    return this.eventosService.registrarDescartePreEmbolsado(
+      loteId,
+      dto,
+      authId,
+    );
+  }
+
+  crearEvidenciasPendientesDescartePreEmbolsado(
+    loteId: number,
+    dto: CrearEvidenciaPendienteViveroDto,
+    authId: string,
+    files: ViveroEvidenceFileInput[],
+  ) {
+    return this.descartePreEmbolsadoService.crearEvidenciasPendientes(
+      loteId,
+      dto,
+      authId,
+      files,
+    );
   }
 
   listarLotes(filters: FiltrarLotesViveroDto) {

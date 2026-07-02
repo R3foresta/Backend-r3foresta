@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { RegistrarAdaptabilidadDto } from '../api/dto/registrar-adaptabilidad.dto';
+import { RegistrarDescartePreEmbolsadoDto } from '../api/dto/registrar-descarte-pre-embolsado.dto';
 import { RegistrarDespachoDto } from '../api/dto/registrar-despacho.dto';
 import { RegistrarEmbolsadoDto } from '../api/dto/registrar-embolsado.dto';
 import { RegistrarMermaDto } from '../api/dto/registrar-merma.dto';
 import { ViveroAdaptabilidadService } from './vivero-adaptabilidad.service';
+import { ViveroDescartePreEmbolsadoService } from './vivero-descarte-pre-embolsado.service';
 import { ViveroDespachoService } from './vivero-despacho.service';
 import { ViveroEmbolsadoService } from './vivero-embolsado.service';
 import { ViveroMermaService } from './vivero-merma.service';
@@ -15,6 +17,7 @@ export class ViveroEventosService {
     private readonly adaptabilidadService: ViveroAdaptabilidadService,
     private readonly mermaService: ViveroMermaService,
     private readonly despachoService: ViveroDespachoService,
+    private readonly descartePreEmbolsadoService: ViveroDescartePreEmbolsadoService,
   ) {}
 
   registrarEmbolsado(
@@ -39,5 +42,13 @@ export class ViveroEventosService {
 
   registrarDespacho(loteId: number, dto: RegistrarDespachoDto, authId: string) {
     return this.despachoService.registrar(loteId, dto, authId);
+  }
+
+  registrarDescartePreEmbolsado(
+    loteId: number,
+    dto: RegistrarDescartePreEmbolsadoDto,
+    authId: string,
+  ) {
+    return this.descartePreEmbolsadoService.registrar(loteId, dto, authId);
   }
 }

@@ -20,6 +20,7 @@ import {
   ApiCancelarAsignacion,
   ApiCrearAsignacion,
   ApiCrearEvidenciaPendiente,
+  ApiCrearEvidenciasPendientesDescartePreEmbolsado,
   ApiCrearEvidenciasPendientesAdaptabilidad,
   ApiCrearEvidenciasPendientesDespacho,
   ApiCrearEvidenciasPendientesEmbolsado,
@@ -36,6 +37,7 @@ import {
   ApiObtenerSaldos,
   ApiObtenerTimeline,
   ApiRegistrarAdaptabilidad,
+  ApiRegistrarDescartePreEmbolsado,
   ApiRegistrarDespacho,
   ApiRegistrarEmbolsado,
   ApiRegistrarMerma,
@@ -46,6 +48,7 @@ import { CrearLoteViveroDto } from './dto/crear-lote-vivero.dto';
 import { FiltrarLotesViveroDto } from './dto/filtrar-lotes-vivero.dto';
 import { FiltrarTimelineLoteDto } from './dto/filtrar-timeline-lote.dto';
 import { RegistrarAdaptabilidadDto } from './dto/registrar-adaptabilidad.dto';
+import { RegistrarDescartePreEmbolsadoDto } from './dto/registrar-descarte-pre-embolsado.dto';
 import { RegistrarDespachoDto } from './dto/registrar-despacho.dto';
 import { RegistrarEmbolsadoDto } from './dto/registrar-embolsado.dto';
 import { RegistrarMermaDto } from './dto/registrar-merma.dto';
@@ -133,6 +136,39 @@ export class LotesViveroController {
   @ApiObtenerResultadoEmbolsado()
   obtenerResultadoEmbolsado(@Param('id', ParseIntPipe) loteId: number) {
     return this.lotesViveroService.obtenerResultadoEmbolsado(loteId);
+  }
+
+  // ---- Descarte pre-embolsado ----
+
+  @Post(':id/descarte-pre-embolsado/evidencias-pendientes')
+  @ApiCrearEvidenciasPendientesDescartePreEmbolsado()
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
+  crearEvidenciasPendientesDescartePreEmbolsado(
+    @Param('id', ParseIntPipe) loteId: number,
+    @Body() dto: CrearEvidenciaPendienteViveroDto,
+    @Headers('x-auth-id') authId?: string,
+    @UploadedFiles() files?: { fotos?: any[] },
+  ) {
+    return this.lotesViveroService.crearEvidenciasPendientesDescartePreEmbolsado(
+      loteId,
+      dto,
+      this.requireAuthId(authId),
+      files?.fotos || [],
+    );
+  }
+
+  @Post(':id/descarte-pre-embolsado')
+  @ApiRegistrarDescartePreEmbolsado()
+  registrarDescartePreEmbolsado(
+    @Param('id', ParseIntPipe) loteId: number,
+    @Body() dto: RegistrarDescartePreEmbolsadoDto,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    return this.lotesViveroService.registrarDescartePreEmbolsado(
+      loteId,
+      dto,
+      this.requireAuthId(authId),
+    );
   }
 
   // ---- Adaptabilidad ----

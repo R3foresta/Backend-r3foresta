@@ -7,6 +7,7 @@ import {
 import { SupabaseService } from '../../supabase/supabase.service';
 import { FiltrarLotesViveroDto } from '../api/dto/filtrar-lotes-vivero.dto';
 import { FiltrarTimelineLoteDto } from '../api/dto/filtrar-timeline-lote.dto';
+import { CausaDescartePreEmbolsado } from '../domain/enums/causa-descarte-pre-embolsado.enum';
 import { CausaMermaVivero } from '../domain/enums/causa-merma-vivero.enum';
 import { DestinoTipoVivero } from '../domain/enums/destino-tipo-vivero.enum';
 import { MotivoCierreLote } from '../domain/enums/motivo-cierre-lote.enum';
@@ -26,6 +27,7 @@ type EventoSnapshot = {
   saldo_vivo_despues: number | null;
   subetapa_destino: SubetapaAdaptabilidad | null;
   causa_merma: CausaMermaVivero | null;
+  causa_descarte_pre_embolsado: CausaDescartePreEmbolsado | null;
   destino_tipo: DestinoTipoVivero | null;
   destino_referencia: string | null;
   motivo_cierre_calculado: MotivoCierreLote | null;
@@ -47,6 +49,7 @@ type EventoSnapshotRow = {
   saldo_vivo_despues: number | string | null;
   subetapa_destino: SubetapaAdaptabilidad | null;
   causa_merma: CausaMermaVivero | null;
+  causa_descarte_pre_embolsado: CausaDescartePreEmbolsado | null;
   destino_tipo: DestinoTipoVivero | null;
   destino_referencia: string | null;
   motivo_cierre_calculado: MotivoCierreLote | null;
@@ -238,6 +241,7 @@ export class ViveroConsultasService {
           'saldo_vivo_despues',
           'subetapa_destino',
           'causa_merma',
+          'causa_descarte_pre_embolsado',
           'destino_tipo',
           'destino_referencia',
           'motivo_cierre_calculado',
@@ -283,6 +287,7 @@ export class ViveroConsultasService {
     const result: UltimoEventoPorTipo = {
       [TipoEventoVivero.INICIO]: null,
       [TipoEventoVivero.EMBOLSADO]: null,
+      [TipoEventoVivero.DESCARTE_PRE_EMBOLSADO]: null,
       [TipoEventoVivero.ADAPTABILIDAD]: null,
       [TipoEventoVivero.MERMA]: null,
       [TipoEventoVivero.DESPACHO]: null,
@@ -315,6 +320,7 @@ export class ViveroConsultasService {
       saldo_vivo_despues: num(ev.saldo_vivo_despues),
       subetapa_destino: ev.subetapa_destino ?? null,
       causa_merma: ev.causa_merma ?? null,
+      causa_descarte_pre_embolsado: ev.causa_descarte_pre_embolsado ?? null,
       destino_tipo: ev.destino_tipo ?? null,
       destino_referencia: ev.destino_referencia ?? null,
       motivo_cierre_calculado: ev.motivo_cierre_calculado ?? null,

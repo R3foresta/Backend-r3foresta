@@ -195,7 +195,8 @@ function createDetailQueryMock(loteResponse: any, eventosResponse: any) {
     eq: jest.fn().mockReturnThis(),
     in: jest.fn().mockReturnThis(),
     maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
-    then: (resolve: any) => Promise.resolve({ data: [], error: null }).then(resolve),
+    then: (resolve: any) =>
+      Promise.resolve({ data: [], error: null }).then(resolve),
   };
 
   const eventosQuery: any = {
@@ -209,7 +210,11 @@ function createDetailQueryMock(loteResponse: any, eventosResponse: any) {
   const from = jest.fn((table: string) => {
     if (table === 'lote_vivero') return loteQuery;
     if (table === 'evento_lote_vivero') return eventosQuery;
-    if (table === 'v_lote_vivero_saldos' || table === 'asignacion_vivero_subcampania') return genericQuery;
+    if (
+      table === 'v_lote_vivero_saldos' ||
+      table === 'asignacion_vivero_subcampania'
+    )
+      return genericQuery;
     throw new Error(`Unexpected table in test: ${table}`);
   });
 
@@ -392,6 +397,9 @@ describe('ViveroConsultasService.obtenerDetalle', () => {
     expect(result.data.ultimo_evento_por_tipo.ADAPTABILIDAD).toEqual(
       expect.objectContaining({ subetapa_destino: 'MEDIA_SOMBRA' }),
     );
+    expect(
+      result.data.ultimo_evento_por_tipo.DESCARTE_PRE_EMBOLSADO,
+    ).toBeNull();
     expect(result.data.ultimo_evento_por_tipo.DESPACHO).toBeNull();
     expect(result.data.ultimo_evento_por_tipo.CIERRE_AUTOMATICO).toBeNull();
   });
@@ -404,6 +412,7 @@ describe('ViveroConsultasService.obtenerDetalle', () => {
     expect(result.data.ultimo_evento_por_tipo).toEqual({
       INICIO: null,
       EMBOLSADO: null,
+      DESCARTE_PRE_EMBOLSADO: null,
       ADAPTABILIDAD: null,
       MERMA: null,
       DESPACHO: null,

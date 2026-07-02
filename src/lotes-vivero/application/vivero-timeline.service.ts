@@ -7,6 +7,7 @@ import {
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { FiltrarTimelineLoteDto } from '../api/dto/filtrar-timeline-lote.dto';
+import { CausaDescartePreEmbolsado } from '../domain/enums/causa-descarte-pre-embolsado.enum';
 import { CausaMermaVivero } from '../domain/enums/causa-merma-vivero.enum';
 import { DestinoTipoVivero } from '../domain/enums/destino-tipo-vivero.enum';
 import { MotivoCierreLote } from '../domain/enums/motivo-cierre-lote.enum';
@@ -40,6 +41,7 @@ type EventoTimelineRow = {
   cantidad_afectada: number | null;
   unidad_medida_evento: UnidadMedidaVivero | null;
   causa_merma: CausaMermaVivero | null;
+  causa_descarte_pre_embolsado: CausaDescartePreEmbolsado | null;
   destino_tipo: DestinoTipoVivero | null;
   destino_referencia: string | null;
   subetapa_destino: SubetapaAdaptabilidad | null;
@@ -90,6 +92,13 @@ type PayloadMerma = {
   saldo_vivo_despues: number | null;
 };
 
+type PayloadDescartePreEmbolsado = {
+  tipo: TipoEventoVivero.DESCARTE_PRE_EMBOLSADO;
+  cantidad_material_afectado: number | null;
+  unidad_medida_evento: UnidadMedidaVivero | null;
+  causa_descarte_pre_embolsado: CausaDescartePreEmbolsado | null;
+};
+
 type PayloadDespacho = {
   tipo: TipoEventoVivero.DESPACHO;
   cantidad_afectada: number | null;
@@ -107,6 +116,7 @@ type PayloadCierreAutomatico = {
 type EventoPayload =
   | PayloadInicio
   | PayloadEmbolsado
+  | PayloadDescartePreEmbolsado
   | PayloadAdaptabilidad
   | PayloadMerma
   | PayloadDespacho
@@ -126,6 +136,7 @@ const EVENTO_COLUMNS = [
   'cantidad_afectada',
   'unidad_medida_evento',
   'causa_merma',
+  'causa_descarte_pre_embolsado',
   'destino_tipo',
   'destino_referencia',
   'subetapa_destino',
@@ -376,6 +387,15 @@ export class ViveroTimelineService {
           subetapa_destino: evento.subetapa_destino ?? null,
           saldo_vivo_antes: num(evento.saldo_vivo_antes),
           saldo_vivo_despues: num(evento.saldo_vivo_despues),
+        };
+
+      case TipoEventoVivero.DESCARTE_PRE_EMBOLSADO:
+        return {
+          tipo: TipoEventoVivero.DESCARTE_PRE_EMBOLSADO,
+          cantidad_material_afectado: num(evento.cantidad_afectada),
+          unidad_medida_evento: evento.unidad_medida_evento ?? null,
+          causa_descarte_pre_embolsado:
+            evento.causa_descarte_pre_embolsado ?? null,
         };
 
       case TipoEventoVivero.MERMA:
