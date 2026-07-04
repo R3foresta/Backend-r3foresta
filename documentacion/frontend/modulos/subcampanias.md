@@ -159,8 +159,8 @@ curl -X POST http://localhost:3000/api/subcampanias \
 
 ## GET /subcampanias
 
-**Rol mínimo**: usuario autenticado  
-**Descripción**: Lista subcampañas con filtros opcionales.
+**Rol mínimo**: usuario autenticado
+**Descripción**: Lista subcampañas con filtros opcionales, **con payload enriquecido para dashboard** (2026-07-04). Idéntica respuesta a `GET /campanias/:id/subcampanias` (ver módulo Campañas para la especificación de los campos agregados).
 
 **Headers**
 | Header | Requerido | Descripción |
@@ -184,16 +184,53 @@ curl -X POST http://localhost:3000/api/subcampanias \
       "id": 1,
       "campania_id": 1,
       "nombre": "Subcampaña Zona A",
+      "descripcion": null,
+      "tipo": "REFORESTACION",
       "estado": "ACTIVA",
-      "zona_id": 10,
-      "meta_total_arboles": 1000,
-      "saldo_vivo_actual": 750,
       "fase_mantenimiento": "MANTENIMIENTO_ACTIVO",
-      "created_at": "2026-05-28T10:00:00Z"
+      "zona_id": 10,
+      "zona_nombre": "Comunidad Sur",
+      "area_hectareas": 2.5,
+      "meta_total_arboles": 1000,
+      "codigo_trazabilidad": "SUB-001-CMP-2026-001",
+      "total_plantado_inicial": 250,
+      "total_repuesto": 0,
+      "total_muerto_acumulado": 0,
+      "saldo_vivo_actual": 250,
+      "plantados": 250,
+      "avance_pct": 25,
+      "has_plan_especies": true,
+      "personas_count": 3,
+      "lotes_count": 2,
+      "eventos_count": 5,
+      "equipo": [
+        {
+          "usuario_id": 7,
+          "nombre_usuario": "Coord Pepe",
+          "rol": "COORDINADOR",
+          "foto_perfil_url": null
+        }
+      ],
+      "coordinador": { "id": 7, "nombre": "Coord Pepe" },
+      "created_at": "2026-05-28T10:00:00Z",
+      "updated_at": "2026-05-28T10:00:00Z"
     }
   ]
 }
 ```
+
+**Campos agregados (2026-07-04)** — mismos que `GET /campanias/:id/subcampanias`:
+
+| Campo | Tipo | Semántica |
+|-------|------|-----------|
+| `zona_nombre` | string \| null | Snapshot si existe, si no `division_administrativa.nombre`. |
+| `plantados` | number | Alias de `total_plantado_inicial`. |
+| `avance_pct` | number \| null | `plantados / meta × 100` acotado a `[0, 100]`; `null` si meta = 0. |
+| `has_plan_especies` | boolean | `SUBCAMPANIA_META_ESPECIE` tiene filas para la subcampaña. |
+| `personas_count` | number | Total de miembros (COORDINADOR + OPERARIO). |
+| `lotes_count` | number | `lote_vivero_id` distintos con asignación `ACTIVA`. |
+| `eventos_count` | number | `registro_plantacion` + `evento_plantacion`. |
+| `equipo` | `EquipoMember[]` | Siempre presente (puede ser `[]`). |
 
 **Ejemplo cURL**
 
