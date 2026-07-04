@@ -52,9 +52,11 @@ function buildSupabase(config: {
     if (tabla === 'asignacion_vivero_subcampania') {
       return {
         select: jest.fn().mockReturnValue({
-          in: jest.fn().mockResolvedValue({
-            data: config.asignaciones ?? [],
-            error: null,
+          in: jest.fn().mockReturnValue({
+            eq: jest.fn().mockResolvedValue({
+              data: config.asignaciones ?? [],
+              error: null,
+            }),
           }),
         }),
       } as any;
@@ -235,10 +237,11 @@ describe('SubcampaniasConsultasService.listar (payload enriquecido)', () => {
         },
       ],
       planEspecies: [{ subcampania_id: 10 }],
+      // 3 filas pero solo 2 lotes distintos: lotes_count debe ser 2, no 3.
       asignaciones: [
-        { subcampania_id: 10 },
-        { subcampania_id: 10 },
-        { subcampania_id: 10 },
+        { subcampania_id: 10, lote_vivero_id: 100 },
+        { subcampania_id: 10, lote_vivero_id: 100 },
+        { subcampania_id: 10, lote_vivero_id: 200 },
       ],
       registros: [{ subcampania_id: 10 }, { subcampania_id: 10 }],
       eventos: [{ subcampania_id: 10 }],
@@ -249,7 +252,7 @@ describe('SubcampaniasConsultasService.listar (payload enriquecido)', () => {
 
     expect(item.personas_count).toBe(2);
     expect(item.has_plan_especies).toBe(true);
-    expect(item.lotes_count).toBe(3);
+    expect(item.lotes_count).toBe(2);
     expect(item.eventos_count).toBe(3);
     // Prefiere snapshot cuando existe
     expect(item.zona_nombre).toBe('Zona Snapshot');

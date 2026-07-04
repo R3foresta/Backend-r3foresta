@@ -75,8 +75,9 @@ export class SubcampaniasConsultasService {
         .in('subcampania_id', ids),
       supabase
         .from('asignacion_vivero_subcampania')
-        .select('subcampania_id')
-        .in('subcampania_id', ids),
+        .select('subcampania_id, lote_vivero_id')
+        .in('subcampania_id', ids)
+        .eq('estado', 'ACTIVA'),
       supabase
         .from('registro_plantacion')
         .select('subcampania_id')
@@ -113,13 +114,14 @@ export class SubcampaniasConsultasService {
       conPlanSet.add(Number((row as any).subcampania_id));
     }
 
-    const asignacionesCountMap = new Map<number, number>();
+    // lotes_count = lotes distintos actualmente vinculados (asignacion ACTIVA).
+    // Si el mismo lote se reserva varias veces sigue siendo el mismo lote.
+    const lotesPorSubMap = new Map<number, Set<number>>();
     for (const row of asignacionesResult.data ?? []) {
       const subId = Number((row as any).subcampania_id);
-      asignacionesCountMap.set(
-        subId,
-        (asignacionesCountMap.get(subId) ?? 0) + 1,
-      );
+      const loteId = Number((row as any).lote_vivero_id);
+      if (!lotesPorSubMap.has(subId)) lotesPorSubMap.set(subId, new Set());
+      lotesPorSubMap.get(subId)!.add(loteId);
     }
 
     const registrosCountMap = new Map<number, number>();
@@ -176,7 +178,7 @@ export class SubcampaniasConsultasService {
           avance_pct: avancePct,
           has_plan_especies: conPlanSet.has(subId),
           personas_count: equipo.length,
-          lotes_count: asignacionesCountMap.get(subId) ?? 0,
+          lotes_count: lotesPorSubMap.get(subId)?.size ?? 0,
           eventos_count: eventosCount,
           equipo,
           coordinador: coordinador

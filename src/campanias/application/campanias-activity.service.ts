@@ -39,10 +39,14 @@ export class CampaniasActivityService {
 
     const supabase = this.supabaseService.getClient();
 
+    // Alineado con metrics: excluye subcampañas soft-deleted (incluye CANCELADA,
+    // que se marca con deleted_at en fn_subcampania_cancelar). Evita que
+    // ultima_actividad referencie datos que los totales no cuentan.
     const { data: subcampaniasRows } = await supabase
       .from('subcampania')
       .select('id, nombre, nombre_zona_snapshot, zona_id')
-      .eq('campania_id', campaniaId);
+      .eq('campania_id', campaniaId)
+      .is('deleted_at', null);
 
     const subcampanias = (subcampaniasRows ?? []) as any[];
     if (subcampanias.length === 0) return [];

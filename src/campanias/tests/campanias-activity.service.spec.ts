@@ -13,9 +13,11 @@ function buildSupabase(config: {
     if (tabla === 'subcampania') {
       return {
         select: jest.fn().mockReturnValue({
-          eq: jest
-            .fn()
-            .mockResolvedValue({ data: config.subcampanias, error: null }),
+          eq: jest.fn().mockReturnValue({
+            is: jest
+              .fn()
+              .mockResolvedValue({ data: config.subcampanias, error: null }),
+          }),
         }),
       } as any;
     }
