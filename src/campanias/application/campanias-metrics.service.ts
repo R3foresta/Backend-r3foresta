@@ -73,7 +73,9 @@ export class CampaniasMetricsService {
         (registrosCount.count ?? 0) + (eventosPlantacionCount.count ?? 0);
     }
 
-    const actividad = await this.activityService.listar(campaniaId, 1);
+    const actividad = await this.activityService.listar(campaniaId, 1, {
+      soloSubcampaniasVivas: true,
+    });
     const ultimaActividad = actividad[0]
       ? {
           autor: actividad[0].autor,

@@ -11,15 +11,16 @@ function buildSupabase(config: {
 }): SupabaseService {
   const fromMock = jest.fn((tabla: string) => {
     if (tabla === 'subcampania') {
-      return {
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            is: jest
-              .fn()
-              .mockResolvedValue({ data: config.subcampanias, error: null }),
-          }),
-        }),
-      } as any;
+      const result = { data: config.subcampanias, error: null };
+      const chain: any = {};
+      chain.select = jest.fn(() => chain);
+      chain.eq = jest.fn(() => chain);
+      chain.is = jest.fn(() => chain);
+      chain.then = (
+        onResolve: (v: unknown) => unknown,
+        onReject?: (v: unknown) => unknown,
+      ) => Promise.resolve(result).then(onResolve, onReject);
+      return chain;
     }
     if (tabla === 'division_administrativa') {
       return {
@@ -228,5 +229,40 @@ describe('CampaniasActivityService', () => {
     );
     await expect(service.listar(1, 0)).rejects.toThrow(BadRequestException);
     await expect(service.listar(1, 51)).rejects.toThrow(BadRequestException);
+  });
+
+  it('con soloSubcampaniasVivas=true aplica filtro deleted_at IS NULL', async () => {
+    const supabase = buildSupabase({ subcampanias: [] });
+    const service = new CampaniasActivityService(
+      supabase,
+      buildConsultasService(),
+    );
+    await service.listar(1, 5, { soloSubcampaniasVivas: true });
+    const client: any = (supabase.getClient as jest.Mock).mock.results[0].value;
+    const fromCalls = (client.from as jest.Mock).mock.calls.map(
+      (c: any[]) => c[0],
+    );
+    expect(fromCalls).toContain('subcampania');
+    const subChain = (client.from as jest.Mock).mock.results.find(
+      (_: any, i: number) => fromCalls[i] === 'subcampania',
+    ).value;
+    expect(subChain.is).toHaveBeenCalledWith('deleted_at', null);
+  });
+
+  it('sin opciones NO filtra deleted_at (incluye cancelaciones)', async () => {
+    const supabase = buildSupabase({ subcampanias: [] });
+    const service = new CampaniasActivityService(
+      supabase,
+      buildConsultasService(),
+    );
+    await service.listar(1, 5);
+    const client: any = (supabase.getClient as jest.Mock).mock.results[0].value;
+    const fromCalls = (client.from as jest.Mock).mock.calls.map(
+      (c: any[]) => c[0],
+    );
+    const subChain = (client.from as jest.Mock).mock.results.find(
+      (_: any, i: number) => fromCalls[i] === 'subcampania',
+    ).value;
+    expect(subChain.is).not.toHaveBeenCalled();
   });
 });

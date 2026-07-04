@@ -30,7 +30,11 @@ export class CampaniasActivityService {
     private readonly consultasService: CampaniasConsultasService,
   ) {}
 
-  async listar(campaniaId: number, limit = 5): Promise<ActivityItem[]> {
+  async listar(
+    campaniaId: number,
+    limit = 5,
+    opts: { soloSubcampaniasVivas?: boolean } = {},
+  ): Promise<ActivityItem[]> {
     await this.consultasService.asegurarExiste(campaniaId);
 
     if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
@@ -39,14 +43,18 @@ export class CampaniasActivityService {
 
     const supabase = this.supabaseService.getClient();
 
-    // Alineado con metrics: excluye subcampañas soft-deleted (incluye CANCELADA,
-    // que se marca con deleted_at en fn_subcampania_cancelar). Evita que
-    // ultima_actividad referencie datos que los totales no cuentan.
-    const { data: subcampaniasRows } = await supabase
+    // Por defecto incluye subcampañas soft-deleted para que el feed muestre
+    // eventos SUBCAMPANIA_CANCELADA (fn_subcampania_cancelar marca deleted_at
+    // en la misma transaccion en la que inserta el historial). Metrics pasa
+    // soloSubcampaniasVivas=true para alinear ultima_actividad con los totales.
+    let subQuery = supabase
       .from('subcampania')
       .select('id, nombre, nombre_zona_snapshot, zona_id')
-      .eq('campania_id', campaniaId)
-      .is('deleted_at', null);
+      .eq('campania_id', campaniaId);
+    if (opts.soloSubcampaniasVivas) {
+      subQuery = subQuery.is('deleted_at', null);
+    }
+    const { data: subcampaniasRows } = await subQuery;
 
     const subcampanias = (subcampaniasRows ?? []) as any[];
     if (subcampanias.length === 0) return [];
