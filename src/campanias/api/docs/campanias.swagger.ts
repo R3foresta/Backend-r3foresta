@@ -4,6 +4,7 @@ import {
   ApiHeader,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiSecurity,
 } from '@nestjs/swagger';
@@ -117,7 +118,7 @@ export function ApiEditarCampania() {
     ApiOperation({
       summary: 'Editar campaña',
       description:
-        'Actualiza los campos editables de una campaña. Cambiar tipo es 422 si ya tiene subcampañas. Solo ADMIN.',
+        'Actualiza los campos editables de una campaña (nombre, descripción, fechas). Cambiar tipo devuelve 422 si existe cualquier subcampaña asociada, incluidas soft-deleted (RN-PLA-38). Solo ADMIN.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -158,7 +159,8 @@ export function ApiEditarCampania() {
     ApiResponse({ status: 404, description: 'Campaña no encontrada.' }),
     ApiResponse({
       status: 422,
-      description: 'Tipo inmutable (tiene subcampañas) o nombre duplicado.',
+      description:
+        'Tipo inmutable (tiene subcampañas asociadas, incluso soft-deleted) o nombre duplicado.',
     }),
   );
 }
@@ -168,7 +170,7 @@ export function ApiBorrarCampania() {
     ApiOperation({
       summary: 'Eliminar campaña (soft delete)',
       description:
-        'Marca la campaña como eliminada. Rechaza la operación si la campaña tiene subcampañas activas. Solo ADMIN.',
+        'Marca la campaña como eliminada (soft-delete). Permitido si no hay subcampañas asociadas o si todas las subcampañas vivas están en estado CANCELADA (RN-PLA-38). Solo ADMIN.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -185,7 +187,8 @@ export function ApiBorrarCampania() {
     ApiResponse({ status: 404, description: 'Campaña no encontrada.' }),
     ApiResponse({
       status: 422,
-      description: 'La campaña tiene subcampañas activas.',
+      description:
+        'La campaña tiene subcampañas no canceladas (BORRADOR, ACTIVA, COMPLETADA, FINALIZADA_PARCIAL o PAUSADA).',
     }),
   );
 }
@@ -258,5 +261,47 @@ export function ApiDesasociarOrganizacion() {
       status: 404,
       description: 'Campaña u organización no encontrada en la relación.',
     }),
+  );
+}
+
+export function ApiMetricsCampania() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Métricas agregadas de una campaña',
+      description:
+        'Devuelve métricas para el dashboard: supervivencia, hectáreas, comunidades, eventos, última actividad y CO2 proyectado (placeholder MVP).',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({ name: 'id', type: 'integer', description: 'ID de la campaña' }),
+    ApiResponse({ status: 200, description: 'Métricas de la campaña.' }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({ status: 404, description: 'Campaña no encontrada.' }),
+  );
+}
+
+export function ApiActivityCampania() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Actividad reciente de una campaña',
+      description:
+        'Devuelve los eventos recientes de una campaña (plantaciones, activaciones, cancelaciones, cambios de coordinador, nuevas subcampañas) ordenados por timestamp descendente.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({ name: 'id', type: 'integer', description: 'ID de la campaña' }),
+    ApiQuery({
+      name: 'limit',
+      type: 'integer',
+      required: false,
+      description: 'Cantidad máxima de eventos (default 5, rango 1..50).',
+    }),
+    ApiResponse({ status: 200, description: 'Lista de eventos recientes.' }),
+    ApiResponse({
+      status: 400,
+      description: 'limit fuera de rango.',
+    }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({ status: 404, description: 'Campaña no encontrada.' }),
   );
 }

@@ -1,4 +1,8 @@
 import {
+  DesactivacionCampaniaPolicy,
+  DesactivacionCampaniaPolicyError,
+} from '../domain/policies/desactivacion-campania.policy';
+import {
   FechasCampaniaPolicy,
   FechasCampaniaPolicyError,
 } from '../domain/policies/fechas-campania.policy';
@@ -110,5 +114,25 @@ describe('InmutabilidadTipoPolicy', () => {
         10,
       ),
     ).toThrow(InmutabilidadTipoPolicyError);
+  });
+});
+
+describe('DesactivacionCampaniaPolicy (RN-PLA-38)', () => {
+  it('permite desactivar si no hay subcampañas no canceladas', () => {
+    expect(() =>
+      DesactivacionCampaniaPolicy.assertPuedeDesactivar(0),
+    ).not.toThrow();
+  });
+
+  it('bloquea si existe al menos una subcampaña no cancelada', () => {
+    expect(() =>
+      DesactivacionCampaniaPolicy.assertPuedeDesactivar(1),
+    ).toThrow(DesactivacionCampaniaPolicyError);
+  });
+
+  it('bloquea con cualquier cantidad positiva de subcampañas no canceladas', () => {
+    expect(() =>
+      DesactivacionCampaniaPolicy.assertPuedeDesactivar(5),
+    ).toThrow(DesactivacionCampaniaPolicyError);
   });
 });

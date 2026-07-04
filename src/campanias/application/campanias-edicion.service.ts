@@ -8,6 +8,10 @@ import {
 import { SupabaseService } from '../../supabase/supabase.service';
 import { EditarCampaniaDto } from '../api/dto/editar-campania.dto';
 import {
+  DesactivacionCampaniaPolicy,
+  DesactivacionCampaniaPolicyError,
+} from '../domain/policies/desactivacion-campania.policy';
+import {
   FechasCampaniaPolicy,
   FechasCampaniaPolicyError,
 } from '../domain/policies/fechas-campania.policy';
@@ -58,11 +62,12 @@ export class CampaniasEdicionService {
       }
 
       if (dto.tipo !== (actual as any).tipo) {
+        // RN-PLA-38: cualquier subcampaña asociada bloquea el cambio de tipo,
+        // incluidas BORRADOR, CANCELADA e historicas soft-deleted.
         const { count } = await supabase
           .from('subcampania')
           .select('*', { count: 'exact', head: true })
-          .eq('campania_id', id)
-          .is('deleted_at', null);
+          .eq('campania_id', id);
 
         try {
           InmutabilidadTipoPolicy.assertPuedeCambiar(
@@ -144,16 +149,22 @@ export class CampaniasEdicionService {
       throw new NotFoundException(`Campaña con id ${id} no encontrada`);
     }
 
-    const { count } = await supabase
+    // RN-PLA-38: soft-delete permitido si no hay subcampanias vivas o si todas
+    // las vivas estan CANCELADA. Las subcampanias soft-deleted no bloquean.
+    const { count: noCanceladas } = await supabase
       .from('subcampania')
       .select('*', { count: 'exact', head: true })
       .eq('campania_id', id)
-      .is('deleted_at', null);
+      .is('deleted_at', null)
+      .neq('estado', 'CANCELADA');
 
-    if ((count ?? 0) > 0) {
-      throw new UnprocessableEntityException(
-        'No se puede eliminar una campaña con subcampañas activas.',
-      );
+    try {
+      DesactivacionCampaniaPolicy.assertPuedeDesactivar(noCanceladas ?? 0);
+    } catch (err) {
+      if (err instanceof DesactivacionCampaniaPolicyError) {
+        throw new UnprocessableEntityException(err.message);
+      }
+      throw err;
     }
 
     const { error } = await supabase

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Headers,
@@ -9,11 +10,13 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CampaniasService } from '../application/campanias.service';
 import {
+  ApiActivityCampania,
   ApiAsociarOrganizaciones,
   ApiBorrarCampania,
   ApiCrearCampania,
@@ -21,6 +24,7 @@ import {
   ApiDetalleCampania,
   ApiEditarCampania,
   ApiListarCampanias,
+  ApiMetricsCampania,
 } from './docs/campanias.swagger';
 import { AsociarOrganizacionesDto } from './dto/asociar-organizaciones.dto';
 import { CrearCampaniaDto } from './dto/crear-campania.dto';
@@ -61,6 +65,27 @@ export class CampaniasController {
   ) {
     this.requireAuthId(authId);
     return this.campaniasService.listarSubcampanias(id);
+  }
+
+  @Get(':id/metrics')
+  @ApiMetricsCampania()
+  obtenerMetrics(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    this.requireAuthId(authId);
+    return this.campaniasService.obtenerMetrics(id);
+  }
+
+  @Get(':id/activity')
+  @ApiActivityCampania()
+  obtenerActivity(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('limit', new DefaultValuePipe(5), ParseIntPipe) limit: number,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    this.requireAuthId(authId);
+    return this.campaniasService.obtenerActivity(id, limit);
   }
 
   @Patch(':id')

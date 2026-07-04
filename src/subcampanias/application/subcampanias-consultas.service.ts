@@ -11,6 +11,13 @@ export type ListarSubcampaniasFiltros = {
   zona_id?: number;
 };
 
+type EquipoMiembro = {
+  usuario_id: number;
+  nombre_usuario: string | null;
+  rol: string;
+  foto_perfil_url: string | null;
+};
+
 @Injectable()
 export class SubcampaniasConsultasService {
   constructor(private readonly supabaseService: SupabaseService) {}
@@ -21,7 +28,7 @@ export class SubcampaniasConsultasService {
     let query = supabase
       .from('subcampania')
       .select(
-        'id, campania_id, nombre, descripcion, tipo, estado, fase_mantenimiento, zona_id, area_hectareas, meta_total_arboles, codigo_trazabilidad, total_plantado_inicial, total_repuesto, total_muerto_acumulado, saldo_vivo_actual, created_at, updated_at',
+        'id, campania_id, nombre, descripcion, tipo, estado, fase_mantenimiento, zona_id, area_hectareas, meta_total_arboles, codigo_trazabilidad, total_plantado_inicial, total_repuesto, total_muerto_acumulado, saldo_vivo_actual, nombre_zona_snapshot, created_at, updated_at',
       )
       .is('deleted_at', null);
 
@@ -40,45 +47,148 @@ export class SubcampaniasConsultasService {
     if (!subcampanias || subcampanias.length === 0)
       return { success: true, data: [] };
 
-    const ids = (subcampanias as any[]).map((s) => Number(s.id));
+    const rows = subcampanias as any[];
+    const ids = rows.map((s) => Number(s.id));
+    const zonaIds = Array.from(new Set(rows.map((s) => Number(s.zona_id))));
 
-    const { data: coordinadores } = await supabase
-      .from('subcampania_equipo')
-      .select(
-        'subcampania_id, usuario_id, usuario!subcampania_equipo_usuario_fk(id, nombre)',
-      )
-      .in('subcampania_id', ids)
-      .eq('rol', 'COORDINADOR');
+    const [
+      equipoResult,
+      zonasResult,
+      planResult,
+      asignacionesResult,
+      registrosResult,
+      eventosResult,
+    ] = await Promise.all([
+      supabase
+        .from('subcampania_equipo')
+        .select(
+          'subcampania_id, usuario_id, rol, usuario!subcampania_equipo_usuario_fk(id, nombre, foto_perfil_url)',
+        )
+        .in('subcampania_id', ids),
+      supabase
+        .from('division_administrativa')
+        .select('id, nombre')
+        .in('id', zonaIds),
+      supabase
+        .from('subcampania_meta_especie')
+        .select('subcampania_id')
+        .in('subcampania_id', ids),
+      supabase
+        .from('asignacion_vivero_subcampania')
+        .select('subcampania_id')
+        .in('subcampania_id', ids),
+      supabase
+        .from('registro_plantacion')
+        .select('subcampania_id')
+        .in('subcampania_id', ids),
+      supabase
+        .from('evento_plantacion')
+        .select('subcampania_id')
+        .in('subcampania_id', ids),
+    ]);
 
-    const coordinadorMap = new Map<number, { id: number; nombre: string }>();
-    for (const c of coordinadores ?? []) {
-      const subId = Number((c as any).subcampania_id);
-      const usr = (c as any).usuario;
-      if (usr) coordinadorMap.set(subId, { id: usr.id, nombre: usr.nombre });
+    const equipoMap = new Map<number, EquipoMiembro[]>();
+    for (const row of equipoResult.data ?? []) {
+      const subId = Number((row as any).subcampania_id);
+      const usuario = Array.isArray((row as any).usuario)
+        ? (row as any).usuario[0]
+        : (row as any).usuario;
+      const miembro: EquipoMiembro = {
+        usuario_id: Number((row as any).usuario_id),
+        nombre_usuario: usuario?.nombre ?? null,
+        rol: (row as any).rol,
+        foto_perfil_url: usuario?.foto_perfil_url ?? null,
+      };
+      if (!equipoMap.has(subId)) equipoMap.set(subId, []);
+      equipoMap.get(subId)!.push(miembro);
+    }
+
+    const zonaMap = new Map<number, string>();
+    for (const z of zonasResult.data ?? []) {
+      zonaMap.set(Number((z as any).id), (z as any).nombre);
+    }
+
+    const conPlanSet = new Set<number>();
+    for (const row of planResult.data ?? []) {
+      conPlanSet.add(Number((row as any).subcampania_id));
+    }
+
+    const asignacionesCountMap = new Map<number, number>();
+    for (const row of asignacionesResult.data ?? []) {
+      const subId = Number((row as any).subcampania_id);
+      asignacionesCountMap.set(
+        subId,
+        (asignacionesCountMap.get(subId) ?? 0) + 1,
+      );
+    }
+
+    const registrosCountMap = new Map<number, number>();
+    for (const row of registrosResult.data ?? []) {
+      const subId = Number((row as any).subcampania_id);
+      registrosCountMap.set(subId, (registrosCountMap.get(subId) ?? 0) + 1);
+    }
+
+    const eventosCountMap = new Map<number, number>();
+    for (const row of eventosResult.data ?? []) {
+      const subId = Number((row as any).subcampania_id);
+      eventosCountMap.set(subId, (eventosCountMap.get(subId) ?? 0) + 1);
     }
 
     return {
       success: true,
-      data: (subcampanias as any[]).map((s) => ({
-        id: Number(s.id),
-        campania_id: Number(s.campania_id),
-        nombre: s.nombre,
-        descripcion: s.descripcion ?? null,
-        tipo: s.tipo,
-        estado: s.estado,
-        fase_mantenimiento: s.fase_mantenimiento,
-        zona_id: Number(s.zona_id),
-        area_hectareas: s.area_hectareas ?? null,
-        meta_total_arboles: Number(s.meta_total_arboles),
-        codigo_trazabilidad: s.codigo_trazabilidad,
-        total_plantado_inicial: Number(s.total_plantado_inicial),
-        total_repuesto: Number(s.total_repuesto),
-        total_muerto_acumulado: Number(s.total_muerto_acumulado),
-        saldo_vivo_actual: Number(s.saldo_vivo_actual),
-        coordinador: coordinadorMap.get(Number(s.id)) ?? null,
-        created_at: s.created_at,
-        updated_at: s.updated_at,
-      })),
+      data: rows.map((s) => {
+        const subId = Number(s.id);
+        const equipo = equipoMap.get(subId) ?? [];
+        const coordinador =
+          equipo.find((m) => m.rol === 'COORDINADOR') ?? null;
+        const plantados = Number(s.total_plantado_inicial ?? 0);
+        const meta = Number(s.meta_total_arboles ?? 0);
+        const avancePct =
+          meta > 0
+            ? Math.min(100, Math.max(0, (plantados / meta) * 100))
+            : null;
+        const zonaNombre =
+          (s.nombre_zona_snapshot as string | null) ??
+          zonaMap.get(Number(s.zona_id)) ??
+          null;
+        const eventosCount =
+          (registrosCountMap.get(subId) ?? 0) +
+          (eventosCountMap.get(subId) ?? 0);
+
+        return {
+          id: subId,
+          campania_id: Number(s.campania_id),
+          nombre: s.nombre,
+          descripcion: s.descripcion ?? null,
+          tipo: s.tipo,
+          estado: s.estado,
+          fase_mantenimiento: s.fase_mantenimiento,
+          zona_id: Number(s.zona_id),
+          zona_nombre: zonaNombre,
+          area_hectareas: s.area_hectareas ?? null,
+          meta_total_arboles: meta,
+          codigo_trazabilidad: s.codigo_trazabilidad,
+          total_plantado_inicial: plantados,
+          total_repuesto: Number(s.total_repuesto),
+          total_muerto_acumulado: Number(s.total_muerto_acumulado),
+          saldo_vivo_actual: Number(s.saldo_vivo_actual),
+          plantados,
+          avance_pct: avancePct,
+          has_plan_especies: conPlanSet.has(subId),
+          personas_count: equipo.length,
+          lotes_count: asignacionesCountMap.get(subId) ?? 0,
+          eventos_count: eventosCount,
+          equipo,
+          coordinador: coordinador
+            ? {
+                id: coordinador.usuario_id,
+                nombre: coordinador.nombre_usuario ?? '',
+              }
+            : null,
+          created_at: s.created_at,
+          updated_at: s.updated_at,
+        };
+      }),
     };
   }
 
