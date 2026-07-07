@@ -339,7 +339,7 @@ export function ApiCancelarSubcampania() {
     ApiOperation({
       summary: 'Cancelar subcampaña (BORRADOR o ACTIVA sin plantar)',
       description:
-        'Transiciona la subcampaña a CANCELADA (RN-PLA-37). Aplica a BORRADOR y a ACTIVA cuando total_plantado_inicial = 0. Motivo obligatorio (texto libre). Setea deleted_at/deleted_by (inactivación, no borrado físico), libera todas las asignaciones activas como devolución lógica al lote (no genera evento en M2) y registra SUBCAMPANIA_CANCELADA en el historial. Solo ADMIN.',
+        'Transiciona la subcampaña a CANCELADA (RN-PLA-37). Aplica a BORRADOR y a ACTIVA cuando total_plantado_inicial = 0. Motivo obligatorio (texto libre). Setea deleted_at/deleted_by (inactivación, no borrado físico), DEVUELVE FÍSICAMENTE el saldo disponible de todas las asignaciones activas al vivero (RN-VIV-48: aumenta LOTE_VIVERO.saldo_vivo_actual y registra eventos M2 DEVOLUCION_PLANTACION + M3 DEVOLUCION_A_VIVERO con motivo CIERRE_SUBCAMPANIA) y registra SUBCAMPANIA_CANCELADA en el historial. Solo ADMIN.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),

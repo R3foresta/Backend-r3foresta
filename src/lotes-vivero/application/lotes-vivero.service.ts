@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CrearAsignacionDto } from '../api/dto/crear-asignacion.dto';
 import { CrearEvidenciaPendienteViveroDto } from '../api/dto/crear-evidencia-pendiente-vivero.dto';
+import { DevolverAsignacionDto } from '../api/dto/devolver-asignacion.dto';
 import { CrearLoteViveroDto } from '../api/dto/crear-lote-vivero.dto';
 import { FiltrarLotesViveroDto } from '../api/dto/filtrar-lotes-vivero.dto';
 import { FiltrarTimelineLoteDto } from '../api/dto/filtrar-timeline-lote.dto';
@@ -206,10 +207,16 @@ export class LotesViveroService {
     return this.asignacionesService.listarAsignaciones(loteId);
   }
 
-  cancelarAsignacion(loteId: number, asignacionId: number, authId: string) {
-    return this.asignacionesService.cancelarAsignacion(
+  devolverAsignacion(
+    loteId: number,
+    asignacionId: number,
+    dto: DevolverAsignacionDto,
+    authId: string,
+  ) {
+    return this.asignacionesService.devolverAsignacion(
       loteId,
       asignacionId,
+      dto,
       authId,
     );
   }

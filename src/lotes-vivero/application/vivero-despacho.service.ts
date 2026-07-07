@@ -169,17 +169,17 @@ export class ViveroDespachoService {
 
     if ((dto.destino_tipo as string) === 'PLANTACION_CAMPANIA') {
       throw new BadRequestException(
-        'destino_tipo PLANTACION_CAMPANIA esta reservado para despachos automaticos generados desde Modulo 3.',
+        'destino_tipo PLANTACION_CAMPANIA no se admite en el despacho manual. Las salidas hacia subcampanias se registran como asignacion fisica (POST /lotes-vivero/:id/asignaciones).',
       );
     }
 
-    // Valida contra saldo_vivo_disponible_asignacion (saldo_vivo_actual menos reservas
-    // activas de subcampanas). Un DESPACHO MANUAL no puede tocar stock reservado.
-    const saldoDisponible =
-      await this.saldosService.leerSaldoDisponible(loteId);
-    this.saldosService.assertCantidadNoExcedeSaldo(
+    // RN-VIV-56: el despacho manual valida contra el saldo vivo FISICO del
+    // lote. Las asignaciones fisicas ya descontaron el saldo al entregarse,
+    // asi que no existe stock "reservado dentro del vivero" que restar.
+    const saldoFisico = await this.saldosService.leerSaldoFisico(loteId);
+    this.saldosService.assertCantidadNoExcedeSaldoFisico(
       dto.cantidad_afectada,
-      saldoDisponible,
+      saldoFisico,
       loteId,
     );
 

@@ -86,9 +86,9 @@ export function ApiRegistrarPlantacion() {
   return applyDecorators(
     ApiOperation({
       summary:
-        'Registrar plantacion (M3) generando DESPACHO automatico atomico',
+        'Registrar plantacion o reposicion consumiendo stock asignado (M3)',
       description:
-        'Llama a la RPC fn_m3_registrar_plantacion. En una sola transaccion: valida subcampania ACTIVA, GPS contra poligono, equipo (responsable + coresponsables), asignaciones (proposito coherente, saldo) y EMBOLSADO previo de los lotes. Inserta REGISTRO_PLANTACION + DETALLE + CORESPONSABLES; por cada lote inserta evento DESPACHO con origen_despacho=AUTOMATICO_PLANTACION y destino_tipo=PLANTACION_CAMPANIA; descuenta saldos y vincula evidencias.',
+        'Llama a la RPC fn_m3_registrar_plantacion. En una sola transaccion: valida el estado de la subcampania (inicial solo ACTIVA; reposicion tambien COMPLETADA/FINALIZADA_PARCIAL), GPS contra poligono, equipo (responsable + coresponsables), asignaciones ACTIVAS de proposito coherente y su saldo_asignado_disponible, la meta por especie (inicial) y el pendiente de reposicion del grupo origen (reposicion). Inserta REGISTRO_PLANTACION + DETALLE + CORESPONSABLES, aumenta cantidad_consumida de las asignaciones usadas, actualiza contadores de subcampania y vincula evidencias. NO genera eventos en Vivero ni modifica LOTE_VIVERO.saldo_vivo_actual: la salida fisica ocurrio al crear la asignacion (RN-VIV-52/55).',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -162,12 +162,12 @@ export function ApiRegistrarPlantacion() {
     ApiResponse({
       status: 201,
       description:
-        'Plantacion registrada. Devuelve registro_plantacion_id, codigo_trazabilidad y la lista de despachos generados.',
+        'Plantacion registrada. Devuelve registro_plantacion_id, codigo_trazabilidad, cantidad_total_plantada y `consumos` (por asignacion: cantidad_consumida, saldo_asignado_antes/despues y estado_final). No devuelve despachos: plantar no genera eventos M2.',
     }),
     ApiResponse({
       status: 400,
       description:
-        'Validacion fallida: subcampania no ACTIVA, GPS no evaluable, responsable o coresponsable fuera del equipo, saldo de asignacion o de lote insuficiente, lote sin EMBOLSADO previo, etc.',
+        'Validacion fallida: estado de subcampania incompatible, GPS no evaluable, responsable o coresponsable fuera del equipo, saldo asignado insuficiente, proposito incoherente, especie fuera del plan o meta excedida, reposicion mayor al pendiente del grupo origen, etc.',
     }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
     ApiResponse({ status: 403, description: 'Rol global insuficiente' }),

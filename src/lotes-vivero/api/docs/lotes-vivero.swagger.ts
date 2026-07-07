@@ -478,7 +478,7 @@ export function ApiRegistrarDespacho() {
     ApiOperation({
       summary: 'Registrar despacho manual de plantas',
       description:
-        'Registra la salida de plantas del vivero hacia un destino llamando la RPC fn_vivero_registrar_despacho en una sola transaccion. El responsable_id sale del usuario autenticado (x-auth-id), nunca del body. Requiere EMBOLSADO previo y al menos una evidencia. Si el stock llega a cero, el lote se cierra automaticamente. El destino PLANTACION_CAMPANIA esta reservado para despachos automaticos del Modulo 3 y se rechaza en este endpoint.',
+        'Registra la salida de plantas del vivero hacia un destino distinto de una subcampania, llamando la RPC fn_vivero_registrar_despacho en una sola transaccion. El responsable_id sale del usuario autenticado (x-auth-id), nunca del body. Requiere EMBOLSADO previo y al menos una evidencia. Valida contra el saldo vivo FISICO del lote (RN-VIV-56): las asignaciones a subcampanias ya descontaron el saldo, no existe stock reservado que restar. Si el stock llega a cero, el lote se cierra automaticamente. El destino PLANTACION_CAMPANIA se rechaza aqui: las salidas hacia subcampanias se registran con POST /lotes-vivero/:id/asignaciones (asignacion fisica).',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -623,7 +623,7 @@ export function ApiObtenerDespachos() {
     ApiOperation({
       summary: 'Consultar despachos registrados del lote',
       description:
-        'Devuelve todos los eventos DESPACHO del lote en orden cronologico con sus evidencias vinculadas, origen_despacho (MANUAL / AUTOMATICO_PLANTACION) y el saldo vivo actual.',
+        'Devuelve todos los eventos DESPACHO del lote en orden cronologico con sus evidencias vinculadas, origen_despacho (MANUAL / ASIGNACION_SUBCAMPANIA; AUTOMATICO_PLANTACION solo aparece en data legada del flujo anterior) y el saldo vivo actual.',
     }),
     ApiParam({
       name: 'id',
@@ -1068,7 +1068,7 @@ export function ApiObtenerSaldos() {
     ApiOperation({
       summary: 'Consultar saldos derivados del lote',
       description:
-        'Devuelve saldo_vivo_actual, saldo_asignado_total (suma de reservas activas para subcampanas) y saldo_vivo_disponible_asignacion (lo que puede despachar manualmente un operario). Incluye el detalle de cada asignacion ACTIVA con su saldo individual.',
+        'Devuelve los saldos del contrato fisico M2-M3 (RN-VIV-57): saldo_vivo_actual (plantas que siguen FISICAMENTE en el vivero; contra este saldo se validan asignaciones, despachos manuales y mermas) y saldo_asignado_subcampanias (stock ya ENTREGADO a subcampanias con saldo disponible para consumo en M3; no esta en el vivero y no resta disponibilidad). Incluye el detalle de cada asignacion ACTIVA con su saldo individual. La identidad antigua saldo_vivo_disponible_asignacion (vivo - asignado) ya no aplica.',
     }),
     ApiParam({
       name: 'id',
@@ -1078,7 +1078,7 @@ export function ApiObtenerSaldos() {
     ApiResponse({
       status: 200,
       description:
-        'Devuelve { success: true, data } con lote_id, saldo_vivo_actual, saldo_asignado_total, saldo_vivo_disponible_asignacion y asignaciones_activas.',
+        'Devuelve { success: true, data } con lote_id, saldo_vivo_actual (fisico), saldo_asignado_subcampanias y asignaciones_activas.',
     }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
@@ -1112,9 +1112,9 @@ export function ApiObtenerAdaptabilidades() {
 export function ApiCrearAsignacion() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Crear asignación de lote a subcampaña',
+      summary: 'Asignación física de lote a subcampaña (entrega real)',
       description:
-        'Reserva una cantidad del saldo disponible del lote para una subcampaña activa. Valida que el lote esté ACTIVO, la subcampaña exista y el saldo sea suficiente. El campo proposito es opcional (default PLANTACION_INICIAL).',
+        'Registra la ENTREGA FÍSICA de plantas del lote a una subcampaña (RF-VIV-11) llamando la RPC fn_vivero_asignar_stock_subcampania en una sola transacción: crea la asignación, registra el evento DESPACHO con origen ASIGNACION_SUBCAMPANIA, DESCUENTA LOTE_VIVERO.saldo_vivo_actual, vincula la evidencia obligatoria de entrega (RN-VIV-54) y registra ASIGNACION_VIVERO en la línea de tiempo de M3. Valida contra el saldo físico del lote sin restar asignaciones previas (RN-VIV-47/57). Requiere lote ACTIVO con EMBOLSADO y saldo vivo positivo (RN-VIV-61). Permisos: ADMIN o COORDINADOR de la subcampaña. No es una reserva lógica: las plantas salen del vivero al asignar.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -1124,25 +1124,45 @@ export function ApiCrearAsignacion() {
       description: 'ID del lote de vivero',
     }),
     ApiBody({
-      description: 'Datos de la asignación',
+      description: 'Datos de la entrega física',
       schema: {
         type: 'object',
-        required: ['subcampania_id', 'cantidad_asignada'],
+        required: [
+          'subcampania_id',
+          'cantidad_asignada',
+          'proposito',
+          'fecha_asignacion',
+          'evidencia_ids',
+        ],
         properties: {
-          subcampania_id: { type: 'integer', example: 1 },
-          cantidad_asignada: { type: 'integer', minimum: 1, example: 50 },
+          subcampania_id: { type: 'integer', example: 33 },
+          cantidad_asignada: { type: 'integer', minimum: 1, example: 100 },
           proposito: {
             type: 'string',
             enum: ['PLANTACION_INICIAL', 'REPOSICION'],
             example: 'PLANTACION_INICIAL',
           },
+          fecha_asignacion: {
+            type: 'string',
+            format: 'date',
+            example: '2026-07-06',
+          },
+          evidencia_ids: {
+            type: 'array',
+            items: { type: 'integer' },
+            minItems: 1,
+            example: [501],
+            description:
+              'Evidencias pendientes (pre-subidas via /lotes-vivero/evidencias-pendientes) que respaldan la entrega/salida. Obligatorio (RN-VIV-54).',
+          },
+          observaciones: { type: 'string', nullable: true },
         },
       },
     }),
     ApiResponse({
       status: 201,
       description:
-        'Asignación creada. Devuelve { success: true, data } con el registro asignacion_vivero_subcampania.',
+        'Entrega registrada. Devuelve { success: true, data } con asignacion_id, evento_lote_vivero_id, evento_plantacion_id, lote_vivero_id, subcampania_id, cantidad_asignada, saldo_vivo_antes, saldo_vivo_despues, evidencia_ids_vinculadas, lote_finalizado y motivo_cierre.',
     }),
     ApiResponse({ status: 400, description: 'Datos inválidos' }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
@@ -1154,7 +1174,8 @@ export function ApiCrearAsignacion() {
     ApiResponse({ status: 409, description: 'Subcampaña cerrada' }),
     ApiResponse({
       status: 422,
-      description: 'Lote no ACTIVO o saldo insuficiente',
+      description:
+        'Lote no ACTIVO, sin EMBOLSADO, saldo físico insuficiente, evidencia faltante o estado de subcampaña incompatible con el propósito',
     }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
@@ -1182,12 +1203,12 @@ export function ApiListarAsignaciones() {
   );
 }
 
-export function ApiCancelarAsignacion() {
+export function ApiDevolverAsignacion() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Cancelar asignación de lote',
+      summary: 'Devolución física de stock asignado al vivero',
       description:
-        'Cancela una asignación ACTIVA que no haya sido consumida en plantación (cantidad_consumida = 0). Libera el saldo devolviendo la reserva al lote.',
+        'Registra el retorno FÍSICO (parcial o total) de plantas asignadas a una subcampaña que no fueron consumidas (RF-VIV-12) llamando la RPC fn_m3_devolver_asignacion_vivero en una sola transacción: aumenta cantidad_devuelta de la asignación, AUMENTA LOTE_VIVERO.saldo_vivo_actual (RN-VIV-48), registra el evento M2 DEVOLUCION_PLANTACION y el evento M3 DEVOLUCION_A_VIVERO, y reabre el lote si estaba FINALIZADO. La devolución total transiciona la asignación a DEVUELTA por trigger. En MVP no exige evidencia fotográfica. Permisos: ADMIN o COORDINADOR de la subcampaña.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -1199,13 +1220,50 @@ export function ApiCancelarAsignacion() {
     ApiParam({
       name: 'asignacionId',
       type: Number,
-      description: 'ID de la asignación a cancelar',
+      description: 'ID de la asignación a devolver',
+    }),
+    ApiBody({
+      description: 'Datos de la devolución física',
+      schema: {
+        type: 'object',
+        required: [
+          'cantidad_devuelta',
+          'motivo_devolucion',
+          'fecha_devolucion',
+        ],
+        properties: {
+          cantidad_devuelta: { type: 'integer', minimum: 1, example: 25 },
+          motivo_devolucion: {
+            type: 'string',
+            enum: [
+              'SOBRANTE_OPERATIVO',
+              'ERROR_PLANIFICACION',
+              'CAMBIO_SUBCAMPANIA',
+              'CIERRE_SUBCAMPANIA',
+              'PROBLEMAS_CALIDAD_LOTE',
+              'CONDICIONES_CAMPO_NO_APTAS',
+              'ACCESO_RESTRINGIDO',
+              'CANCELACION_ACTIVIDAD',
+              'REASIGNACION_PRIORIDAD',
+              'OTRO',
+            ],
+            example: 'SOBRANTE_OPERATIVO',
+          },
+          fecha_devolucion: {
+            type: 'string',
+            format: 'date',
+            example: '2026-07-06',
+          },
+          observaciones: { type: 'string', nullable: true },
+        },
+      },
     }),
     ApiResponse({
-      status: 200,
+      status: 201,
       description:
-        'Asignación cancelada (estado DEVUELTA). Devuelve { success: true, data }.',
+        'Devolución registrada. Devuelve { success: true, data } con asignacion_id, estado, cantidad_devuelta, cantidad_devuelta_total, saldo_asignado_disponible, lote_vivero_id, saldo_vivo_antes/despues, lote_reabierto, evento_lote_vivero_id y evento_plantacion_id.',
     }),
+    ApiResponse({ status: 400, description: 'Datos inválidos' }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
     ApiResponse({ status: 403, description: 'Sin permisos de escritura' }),
     ApiResponse({
@@ -1215,7 +1273,11 @@ export function ApiCancelarAsignacion() {
     ApiResponse({
       status: 409,
       description:
-        'Asignación ya cancelada/agotada o con consumo en plantación',
+        'Asignación ya DEVUELTA o cantidad mayor al saldo asignado disponible',
+    }),
+    ApiResponse({
+      status: 422,
+      description: 'Fecha fuera de rango operativo o permisos insuficientes',
     }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );

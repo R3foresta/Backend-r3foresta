@@ -108,6 +108,14 @@ type PayloadDespacho = {
   saldo_vivo_despues: number | null;
 };
 
+// Entrada fisica por devolucion de stock asignado desde M3 (RN-VIV-48).
+type PayloadDevolucionPlantacion = {
+  tipo: TipoEventoVivero.DEVOLUCION_PLANTACION;
+  cantidad_afectada: number | null;
+  saldo_vivo_antes: number | null;
+  saldo_vivo_despues: number | null;
+};
+
 type PayloadCierreAutomatico = {
   tipo: TipoEventoVivero.CIERRE_AUTOMATICO;
   motivo_cierre: MotivoCierreLote | null;
@@ -120,6 +128,7 @@ type EventoPayload =
   | PayloadAdaptabilidad
   | PayloadMerma
   | PayloadDespacho
+  | PayloadDevolucionPlantacion
   | PayloadCierreAutomatico;
 
 // ---------------------------------------------------------------------------
@@ -413,6 +422,14 @@ export class ViveroTimelineService {
           cantidad_afectada: num(evento.cantidad_afectada),
           destino_tipo: evento.destino_tipo ?? null,
           destino_referencia: evento.destino_referencia ?? null,
+          saldo_vivo_antes: num(evento.saldo_vivo_antes),
+          saldo_vivo_despues: num(evento.saldo_vivo_despues),
+        };
+
+      case TipoEventoVivero.DEVOLUCION_PLANTACION:
+        return {
+          tipo: TipoEventoVivero.DEVOLUCION_PLANTACION,
+          cantidad_afectada: num(evento.cantidad_afectada),
           saldo_vivo_antes: num(evento.saldo_vivo_antes),
           saldo_vivo_despues: num(evento.saldo_vivo_despues),
         };

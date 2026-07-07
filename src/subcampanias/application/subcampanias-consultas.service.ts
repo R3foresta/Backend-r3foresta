@@ -115,7 +115,7 @@ export class SubcampaniasConsultasService {
     }
 
     // lotes_count = lotes distintos actualmente vinculados (asignacion ACTIVA).
-    // Si el mismo lote se reserva varias veces sigue siendo el mismo lote.
+    // Si el mismo lote se asigna varias veces sigue siendo el mismo lote.
     const lotesPorSubMap = new Map<number, Set<number>>();
     for (const row of asignacionesResult.data ?? []) {
       const subId = Number((row as any).subcampania_id);
@@ -141,8 +141,7 @@ export class SubcampaniasConsultasService {
       data: rows.map((s) => {
         const subId = Number(s.id);
         const equipo = equipoMap.get(subId) ?? [];
-        const coordinador =
-          equipo.find((m) => m.rol === 'COORDINADOR') ?? null;
+        const coordinador = equipo.find((m) => m.rol === 'COORDINADOR') ?? null;
         const plantados = Number(s.total_plantado_inicial ?? 0);
         const meta = Number(s.meta_total_arboles ?? 0);
         const avancePct =

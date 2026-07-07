@@ -5,5 +5,7 @@ export enum TipoEventoVivero {
   ADAPTABILIDAD = 'ADAPTABILIDAD',
   MERMA = 'MERMA',
   DESPACHO = 'DESPACHO',
+  /** Entrada fisica por devolucion de stock asignado desde M3 (RN-VIV-48). */
+  DEVOLUCION_PLANTACION = 'DEVOLUCION_PLANTACION',
   CIERRE_AUTOMATICO = 'CIERRE_AUTOMATICO',
 }

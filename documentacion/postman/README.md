@@ -9,6 +9,7 @@ Cookbooks operativos para probar el backend contra entorno local o staging. Cada
 | Embolsado | [embolsado.md](./embolsado.md) | `POST /api/lotes-vivero/:id/embolsado` |
 | Adaptabilidad | [adaptabilidad.md](./adaptabilidad.md) | `POST /api/lotes-vivero/:id/adaptabilidad` |
 | Merma | [merma.md](./merma.md) | `POST /api/lotes-vivero/:id/merma` |
+| Asignación física + devolución (M2↔M3) | [asignacion-fisica.md](./asignacion-fisica.md) | `POST /api/lotes-vivero/:id/asignaciones` |
 | Timeline | [timeline.md](./timeline.md) | `GET /api/lotes-vivero/:id/timeline` |
 
 ## Catalogos

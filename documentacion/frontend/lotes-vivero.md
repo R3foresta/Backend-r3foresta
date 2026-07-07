@@ -18,11 +18,10 @@ POST /api/lotes-vivero
 GET  /api/lotes-vivero
 GET  /api/lotes-vivero/stock/especies                  ← stock disponible agrupado por especie
 GET  /api/lotes-vivero/:id                              ← detalle con ultimo_evento_por_tipo
-GET  /api/lotes-vivero/:id/saldos                       ← saldo vivo y reservas activas
-POST /api/lotes-vivero/:id/reservas                     ← reserva transaccional para subcampaña
-POST /api/lotes-vivero/:id/asignaciones                 ← alias compatible de reserva/asignación
+GET  /api/lotes-vivero/:id/saldos                       ← saldo físico + stock asignado a subcampañas
+POST /api/lotes-vivero/:id/asignaciones                 ← asignación FÍSICA a subcampaña (descuenta saldo, exige evidencia)
 GET  /api/lotes-vivero/:id/asignaciones
-DELETE /api/lotes-vivero/:id/asignaciones/:asignacionId
+POST /api/lotes-vivero/:id/asignaciones/:asignacionId/devolucion ← devolución física al vivero
 GET  /api/lotes-vivero/:id/embolsado/context
 POST /api/lotes-vivero/:id/embolsado/evidencias-pendientes
 POST /api/lotes-vivero/:id/embolsado
@@ -38,11 +37,7 @@ GET  /api/lotes-vivero/:id/merma
 GET  /api/lotes-vivero/:id/timeline
 ```
 
-Endpoint expuesto pero NO listo todavia:
-
-```txt
-POST /api/lotes-vivero/:id/despacho  -> 501 Not Implemented
-```
+Nota: `POST /api/lotes-vivero/:id/despacho` (despacho manual) ya está implementado vía RPC transaccional; valida contra el saldo vivo físico del lote (RN-VIV-56) y rechaza `destino_tipo = PLANTACION_CAMPANIA` (las salidas hacia subcampañas van por `POST /:id/asignaciones`). Para el flujo de asignación física M2↔M3 ver [modulos/lotes-vivero-m3.md](modulos/lotes-vivero-m3.md) y la [guía de migración](guia-migracion-asignacion-fisica.md).
 
 ## Detalle del lote (`GET /api/lotes-vivero/:id`)
 

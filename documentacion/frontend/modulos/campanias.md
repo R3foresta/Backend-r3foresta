@@ -250,7 +250,7 @@ curl -X GET http://localhost:3000/api/campanias/1 \
 | `avance_pct` | number \| null | `plantados / meta_total_arboles × 100`, acotado a `[0, 100]`; `null` si la meta es 0. |
 | `has_plan_especies` | boolean | `true` si existen filas en `SUBCAMPANIA_META_ESPECIE` para la subcampaña. |
 | `personas_count` | number | Cantidad de miembros en `SUBCAMPANIA_EQUIPO` (COORDINADOR + OPERARIO). |
-| `lotes_count` | number | **Lotes distintos** (`lote_vivero_id` únicos) actualmente reservados en asignaciones con `estado = 'ACTIVA'`. |
+| `lotes_count` | number | **Lotes distintos** (`lote_vivero_id` únicos) actualmente entregados en asignaciones físicas con `estado = 'ACTIVA'`. |
 | `eventos_count` | number | Suma de eventos operativos (`registro_plantacion` + `evento_plantacion`) de la subcampaña. |
 | `equipo` | `EquipoMember[]` | Siempre array, aunque esté vacío. Se recomienda usar esto en el dashboard en lugar de `coordinador`. |
 

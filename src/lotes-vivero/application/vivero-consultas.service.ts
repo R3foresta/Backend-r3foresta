@@ -107,11 +107,13 @@ export class ViveroConsultasService {
     const totalPages = Math.ceil(total / limit);
 
     const loteIds = (data || []).map((row: any) => Number(row.id));
+    // Contrato fisico M2-M3 (RN-VIV-57): saldo_vivo_actual del lote es el
+    // saldo fisico en vivero; saldo_asignado_subcampanias es stock ya
+    // entregado a subcampanias (informativo, NO resta disponibilidad).
     const saldosMap = new Map<
       number,
       {
-        saldo_asignado_total: number;
-        saldo_vivo_disponible_asignacion: number | null;
+        saldo_asignado_subcampanias: number;
       }
     >();
     const countsMap = new Map<number, number>();
@@ -120,19 +122,15 @@ export class ViveroConsultasService {
       // 1. Cargar saldos
       const { data: saldosData, error: saldosError } = await supabase
         .from('v_lote_vivero_saldos')
-        .select(
-          'lote_id, saldo_asignado_total, saldo_vivo_disponible_asignacion',
-        )
+        .select('lote_id, saldo_asignado_subcampanias')
         .in('lote_id', loteIds);
 
       if (!saldosError && saldosData) {
         saldosData.forEach((s: any) => {
           saldosMap.set(Number(s.lote_id), {
-            saldo_asignado_total: Number(s.saldo_asignado_total || 0),
-            saldo_vivo_disponible_asignacion:
-              s.saldo_vivo_disponible_asignacion !== null
-                ? Number(s.saldo_vivo_disponible_asignacion)
-                : null,
+            saldo_asignado_subcampanias: Number(
+              s.saldo_asignado_subcampanias || 0,
+            ),
           });
         });
       }
@@ -160,11 +158,9 @@ export class ViveroConsultasService {
         const activeAsigCount = countsMap.get(mapped.id) || 0;
         return {
           ...mapped,
-          saldo_asignado_total: saldos ? saldos.saldo_asignado_total : 0,
-          saldo_vivo_disponible_asignacion:
-            saldos && saldos.saldo_vivo_disponible_asignacion !== null
-              ? saldos.saldo_vivo_disponible_asignacion
-              : mapped.saldo_vivo_actual,
+          saldo_asignado_subcampanias: saldos
+            ? saldos.saldo_asignado_subcampanias
+            : 0,
           cantidad_asignaciones_activas: activeAsigCount,
         };
       }),
@@ -212,23 +208,21 @@ export class ViveroConsultasService {
       throw new NotFoundException(`Lote de vivero ${loteId} no encontrado`);
     }
 
-    // Obtener saldos y cantidad de asignaciones
-    let saldoAsignadoTotal = 0;
-    let saldoVivoDisponibleAsignacion: number | null = null;
+    // Obtener saldos y cantidad de asignaciones (contrato fisico M2-M3:
+    // saldo_asignado_subcampanias es stock ya entregado, informativo).
+    let saldoAsignadoSubcampanias = 0;
     let activeAsigCount = 0;
 
     const { data: saldosData } = await supabase
       .from('v_lote_vivero_saldos')
-      .select('saldo_asignado_total, saldo_vivo_disponible_asignacion')
+      .select('saldo_asignado_subcampanias')
       .eq('lote_id', loteId)
       .maybeSingle();
 
     if (saldosData) {
-      saldoAsignadoTotal = Number(saldosData.saldo_asignado_total || 0);
-      saldoVivoDisponibleAsignacion =
-        saldosData.saldo_vivo_disponible_asignacion !== null
-          ? Number(saldosData.saldo_vivo_disponible_asignacion)
-          : null;
+      saldoAsignadoSubcampanias = Number(
+        saldosData.saldo_asignado_subcampanias || 0,
+      );
     }
 
     const { data: asigData } = await supabase
@@ -286,11 +280,7 @@ export class ViveroConsultasService {
       success: true,
       data: {
         ...mapped,
-        saldo_asignado_total: saldoAsignadoTotal,
-        saldo_vivo_disponible_asignacion:
-          saldoVivoDisponibleAsignacion !== null
-            ? saldoVivoDisponibleAsignacion
-            : mapped.saldo_vivo_actual,
+        saldo_asignado_subcampanias: saldoAsignadoSubcampanias,
         cantidad_asignaciones_activas: activeAsigCount,
         ultimo_evento_por_tipo: ultimoEventoPorTipo,
       },
@@ -307,6 +297,7 @@ export class ViveroConsultasService {
       [TipoEventoVivero.ADAPTABILIDAD]: null,
       [TipoEventoVivero.MERMA]: null,
       [TipoEventoVivero.DESPACHO]: null,
+      [TipoEventoVivero.DEVOLUCION_PLANTACION]: null,
       [TipoEventoVivero.CIERRE_AUTOMATICO]: null,
     };
 

@@ -8,6 +8,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { CrearAsignacionDto } from '../api/dto/crear-asignacion.dto';
+import { DevolverAsignacionDto } from '../api/dto/devolver-asignacion.dto';
 import { PropositoAsignacion } from '../domain/enums/proposito-asignacion.enum';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { ViveroAuthService } from './vivero-auth.service';
@@ -22,12 +23,12 @@ type SupabaseResult<T> = {
   error: SupabaseErrorLike | null;
 };
 
-type LoteReservaRow = {
+type LoteAsignacionRow = {
   id: number;
   estado_lote: string;
 };
 
-type SubcampaniaReservaRow = {
+type SubcampaniaAsignacionRow = {
   id: number;
   nombre: string;
   estado: string;
@@ -75,6 +76,12 @@ export class ViveroAsignacionesService {
     private readonly authService: ViveroAuthService,
   ) {}
 
+  /**
+   * Asignacion FISICA de stock a una subcampania (RF-VIV-11).
+   * La RPC descuenta LOTE_VIVERO.saldo_vivo_actual, crea el evento M2
+   * DESPACHO/ASIGNACION_SUBCAMPANIA con evidencia obligatoria y registra
+   * ASIGNACION_VIVERO en la linea de tiempo de M3 — todo en una transaccion.
+   */
   async crearAsignacion(
     loteId: number,
     dto: CrearAsignacionDto,
@@ -91,7 +98,7 @@ export class ViveroAsignacionesService {
       .eq('id', loteId)
       .maybeSingle();
 
-    const lote = loteData as LoteReservaRow | null;
+    const lote = loteData as LoteAsignacionRow | null;
     if (loteError) {
       this.logger.error('Error al leer lote_vivero:', loteError);
       throw new InternalServerErrorException('Error al verificar el lote');
@@ -113,7 +120,7 @@ export class ViveroAsignacionesService {
       .is('deleted_at', null)
       .maybeSingle();
 
-    const subcampania = subcampaniaData as SubcampaniaReservaRow | null;
+    const subcampania = subcampaniaData as SubcampaniaAsignacionRow | null;
     if (subError) {
       this.logger.error('Error al leer subcampania:', subError);
       throw new InternalServerErrorException(
@@ -125,7 +132,6 @@ export class ViveroAsignacionesService {
         `Subcampaña ${dto.subcampania_id} no encontrada`,
       );
     }
-    const proposito = dto.proposito ?? PropositoAsignacion.PLANTACION_INICIAL;
 
     // RN-VIV-11 / RF-PLA-04: nunca aceptar BORRADOR ni CANCELADA.
     // PLANTACION_INICIAL requiere ACTIVA. REPOSICION admite ACTIVA/COMPLETADA/FINALIZADA_PARCIAL.
@@ -138,7 +144,7 @@ export class ViveroAsignacionesService {
       );
     }
     if (
-      proposito === PropositoAsignacion.PLANTACION_INICIAL &&
+      dto.proposito === PropositoAsignacion.PLANTACION_INICIAL &&
       subcampania.estado !== 'ACTIVA'
     ) {
       throw new UnprocessableEntityException(
@@ -146,7 +152,7 @@ export class ViveroAsignacionesService {
       );
     }
     if (
-      proposito === PropositoAsignacion.REPOSICION &&
+      dto.proposito === PropositoAsignacion.REPOSICION &&
       !['ACTIVA', 'COMPLETADA', 'FINALIZADA_PARCIAL'].includes(
         subcampania.estado,
       )
@@ -156,20 +162,25 @@ export class ViveroAsignacionesService {
       );
     }
 
-    const rpcResult = (await supabase.rpc('fn_vivero_reservar_stock_lote', {
-      p_lote_vivero_id: loteId,
-      p_subcampania_id: dto.subcampania_id,
-      p_cantidad_asignada: dto.cantidad_asignada,
-      p_proposito: proposito,
-      p_usuario_asignacion_id: usuario.id,
-    })) as unknown as SupabaseResult<
+    const rpcResult = (await supabase.rpc(
+      'fn_vivero_asignar_stock_subcampania',
+      {
+        p_lote_vivero_id: loteId,
+        p_subcampania_id: dto.subcampania_id,
+        p_cantidad_asignada: dto.cantidad_asignada,
+        p_proposito: dto.proposito,
+        p_usuario_asignacion_id: usuario.id,
+        p_fecha_asignacion: dto.fecha_asignacion,
+        p_evidencia_ids: dto.evidencia_ids,
+        p_observaciones: dto.observaciones ?? null,
+      },
+    )) as unknown as SupabaseResult<
       Record<string, unknown> | Record<string, unknown>[]
     >;
-    const asignacion = rpcResult.data;
     const rpcError = rpcResult.error;
 
     if (rpcError) {
-      this.logger.error('Error al reservar stock por lote:', rpcError);
+      this.logger.error('Error al asignar stock a subcampania:', rpcError);
       if (this.esErrorNoEncontradoRpc(rpcError)) {
         throw new NotFoundException(rpcError.message);
       }
@@ -178,19 +189,42 @@ export class ViveroAsignacionesService {
       }
       if (this.esErrorPorRpcAusente(rpcError)) {
         throw new InternalServerErrorException(
-          'La migración de reserva transaccional no está aplicada.',
+          'La migración de asignación física (fn_vivero_asignar_stock_subcampania) no está aplicada.',
         );
       }
       throw new BadRequestException(
-        rpcError.message || 'Error al crear la reserva de stock',
+        rpcError.message || 'Error al crear la asignación física',
       );
     }
+
+    const row = this.normalizarRpcRow(rpcResult.data);
 
     return {
       success: true,
       data: {
-        ...this.normalizarRpcRow(asignacion),
+        asignacion_id: Number(row.asignacion_id),
+        evento_lote_vivero_id: Number(row.evento_lote_vivero_id),
+        evento_plantacion_id: Number(row.evento_plantacion_id),
+        lote_vivero_id: Number(row.lote_vivero_id),
+        codigo_trazabilidad_lote: (row.codigo_trazabilidad_lote ?? null) as
+          | string
+          | null,
+        subcampania_id: Number(row.subcampania_id),
         subcampania_nombre: subcampania.nombre,
+        campania_id:
+          row.campania_id !== null && row.campania_id !== undefined
+            ? Number(row.campania_id)
+            : null,
+        proposito: row.proposito as string,
+        estado: (row.estado_asignacion ?? 'ACTIVA') as string,
+        cantidad_asignada: Number(row.cantidad_asignada),
+        saldo_vivo_antes: Number(row.saldo_vivo_antes),
+        saldo_vivo_despues: Number(row.saldo_vivo_despues),
+        evidencia_ids_vinculadas: (
+          (row.evidencia_ids_vinculadas ?? []) as number[]
+        ).map(Number),
+        lote_finalizado: Boolean(row.lote_finalizado),
+        motivo_cierre: (row.motivo_cierre ?? null) as string | null,
       },
     };
   }
@@ -287,9 +321,16 @@ export class ViveroAsignacionesService {
     };
   }
 
-  async cancelarAsignacion(
+  /**
+   * Devolucion FISICA (parcial o total) de una asignacion al vivero (RF-VIV-12).
+   * La RPC aumenta cantidad_devuelta y LOTE_VIVERO.saldo_vivo_actual, registra
+   * DEVOLUCION_PLANTACION (M2) y DEVOLUCION_A_VIVERO (M3), y reabre el lote si
+   * estaba FINALIZADO — todo en una transaccion. Sin evidencia en MVP.
+   */
+  async devolverAsignacion(
     loteId: number,
     asignacionId: number,
+    dto: DevolverAsignacionDto,
     authId: string,
   ) {
     const supabase = this.supabaseService.getClient();
@@ -320,33 +361,70 @@ export class ViveroAsignacionesService {
         `Asignación ${asignacionId} no pertenece al lote ${loteId}`,
       );
     }
-    if (asignacion.estado !== 'ACTIVA') {
+    if (asignacion.estado === 'DEVUELTA') {
       throw new ConflictException(
-        `La asignación ya está en estado ${asignacion.estado} y no puede cancelarse`,
-      );
-    }
-    if (asignacion.cantidad_consumida > 0) {
-      throw new ConflictException(
-        `No se puede cancelar: la asignación ya tiene ${asignacion.cantidad_consumida} unidades consumidas en plantación`,
+        'La asignación ya está DEVUELTA y no admite más devoluciones',
       );
     }
 
-    // Devolver todo lo asignado → el trigger transiciona a DEVUELTA
-    const updateResult = (await supabase
-      .from('asignacion_vivero_subcampania')
-      .update({ cantidad_devuelta: asignacion.cantidad_asignada })
-      .eq('id', asignacionId)
-      .select()
-      .single()) as unknown as SupabaseResult<Record<string, unknown>>;
-    const actualizada = updateResult.data;
-    const updateError = updateResult.error;
+    const rpcResult = (await supabase.rpc('fn_m3_devolver_asignacion_vivero', {
+      p_asignacion_id: asignacionId,
+      p_cantidad_devuelta: dto.cantidad_devuelta,
+      p_motivo_devolucion: dto.motivo_devolucion,
+      p_usuario_devolucion_id: usuario.id,
+      p_fecha_devolucion: dto.fecha_devolucion,
+      p_observaciones: dto.observaciones ?? null,
+    })) as unknown as SupabaseResult<
+      Record<string, unknown> | Record<string, unknown>[]
+    >;
 
-    if (updateError) {
-      this.logger.error('Error al cancelar asignacion:', updateError);
-      throw new InternalServerErrorException('Error al cancelar la asignación');
+    if (rpcResult.error) {
+      const rpcError = rpcResult.error;
+      this.logger.error('Error al devolver asignacion:', rpcError);
+      if (this.esErrorNoEncontradoRpc(rpcError)) {
+        throw new NotFoundException(rpcError.message);
+      }
+      if (
+        rpcError.message?.includes('ya esta DEVUELTA') === true ||
+        rpcError.message?.includes('excede el saldo asignado') === true
+      ) {
+        throw new ConflictException(rpcError.message);
+      }
+      if (this.esErrorDeValidacionRpc(rpcError)) {
+        throw new UnprocessableEntityException(rpcError.message);
+      }
+      if (
+        rpcError.code === 'PGRST202' ||
+        rpcError.code === '42883' ||
+        rpcError.message?.includes('fn_m3_devolver_asignacion_vivero') === true
+      ) {
+        throw new InternalServerErrorException(
+          'La migración de devolución física (fn_m3_devolver_asignacion_vivero) no está aplicada.',
+        );
+      }
+      throw new BadRequestException(
+        rpcError.message || 'Error al registrar la devolución física',
+      );
     }
 
-    return { success: true, data: actualizada };
+    const row = this.normalizarRpcRow(rpcResult.data);
+
+    return {
+      success: true,
+      data: {
+        asignacion_id: Number(row.asignacion_id),
+        estado: (row.estado_asignacion ?? null) as string | null,
+        cantidad_devuelta: Number(row.cantidad_devuelta_delta),
+        cantidad_devuelta_total: Number(row.cantidad_devuelta_total),
+        saldo_asignado_disponible: Number(row.saldo_asignado_disponible),
+        lote_vivero_id: Number(row.lote_vivero_id),
+        saldo_vivo_antes: Number(row.saldo_vivo_antes),
+        saldo_vivo_despues: Number(row.saldo_vivo_despues),
+        lote_reabierto: Boolean(row.lote_reabierto),
+        evento_lote_vivero_id: Number(row.evento_lote_vivero_id),
+        evento_plantacion_id: Number(row.evento_plantacion_id),
+      },
+    };
   }
 
   private normalizarRpcRow(data: unknown): Record<string, unknown> {
@@ -360,8 +438,11 @@ export class ViveroAsignacionesService {
   }): boolean {
     return (
       error.code === 'P0001' ||
-      error.message?.includes('No se puede reservar') === true ||
-      error.message?.includes('excede el saldo') === true
+      error.message?.includes('No se puede asignar') === true ||
+      error.message?.includes('excede el saldo') === true ||
+      error.message?.includes('requiere al menos una evidencia') === true ||
+      error.message?.includes('Solo ADMIN') === true ||
+      error.message?.includes('EMBOLSADO') === true
     );
   }
 
@@ -382,7 +463,7 @@ export class ViveroAsignacionesService {
     return (
       error.code === 'PGRST202' ||
       error.code === '42883' ||
-      error.message?.includes('fn_vivero_reservar_stock_lote') === true
+      error.message?.includes('fn_vivero_asignar_stock_subcampania') === true
     );
   }
 

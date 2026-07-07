@@ -53,20 +53,20 @@ type CampaniaOrganizacionRow = {
   organizacion: NombreRelacionRow | NombreRelacionRow[] | null;
 };
 
-type PlantaReservaRow = {
+type PlantaAsignacionRow = {
   id: number;
   especie: string | null;
   nombre_cientifico: string | null;
 };
 
-type LoteReservaRow = {
+type LoteAsignacionRow = {
   planta_id: number;
-  planta: PlantaReservaRow | PlantaReservaRow[] | null;
+  planta: PlantaAsignacionRow | PlantaAsignacionRow[] | null;
 };
 
-type ReservaComposicionRow = {
+type AsignacionComposicionRow = {
   saldo_asignado_disponible: number;
-  lote_vivero: LoteReservaRow | LoteReservaRow[] | null;
+  lote_vivero: LoteAsignacionRow | LoteAsignacionRow[] | null;
 };
 
 @Injectable()
@@ -124,7 +124,7 @@ export class SubcampaniasActivacionService {
 
     const coordinadorRow = coordinadorData as CoordinadorRow | null;
     const tieneCoordinador = !!coordinadorRow;
-    const composicion = await this.obtenerComposicionReservada(id);
+    const composicion = await this.obtenerComposicionAsignada(id);
     const planEspecies = await this.obtenerPlan(id);
     const metaTotal = Number(actual.meta_total_arboles ?? 0);
 
@@ -185,8 +185,8 @@ export class SubcampaniasActivacionService {
       );
     }
 
-    const totalReservado = composicion.reduce(
-      (acc, item) => acc + item.saldo_reservado,
+    const totalAsignado = composicion.reduce(
+      (acc, item) => acc + item.saldo_asignado_disponible,
       0,
     );
 
@@ -201,7 +201,7 @@ export class SubcampaniasActivacionService {
         nombre_coordinador_snapshot: nombreCoordinador,
         nombres_organizaciones_snapshot: nombresOrganizaciones,
         meta_total_arboles: metaTotal,
-        total_reservado_al_activar: totalReservado,
+        total_asignado_al_activar: totalAsignado,
         especies_planificadas: planEspecies.length,
       },
     });
@@ -210,7 +210,7 @@ export class SubcampaniasActivacionService {
       success: true,
       data: {
         message: 'Subcampaña activada correctamente.',
-        composicion_reservada: composicion,
+        composicion_asignada: composicion,
         ...(updated as Record<string, unknown>),
       },
     };
@@ -243,12 +243,15 @@ export class SubcampaniasActivacionService {
     }));
   }
 
-  private async obtenerComposicionReservada(subcampaniaId: number): Promise<
+  // Contrato fisico M2-M3: las asignaciones son entregas fisicas, no reservas.
+  // En el flujo vigente no deberia haber asignaciones en BORRADOR (RF-VIV-11),
+  // por lo que esta composicion es informativa y normalmente vacia al activar.
+  private async obtenerComposicionAsignada(subcampaniaId: number): Promise<
     {
       planta_id: number;
       especie: string | null;
       nombre_cientifico: string | null;
-      saldo_reservado: number;
+      saldo_asignado_disponible: number;
     }[]
   > {
     const supabase = this.supabaseService.getClient();
@@ -262,11 +265,11 @@ export class SubcampaniasActivacionService {
 
     if (error) {
       this.logger.error(
-        'Error al leer composicion reservada de subcampania:',
+        'Error al leer composicion asignada de subcampania:',
         error,
       );
       throw new InternalServerErrorException(
-        'Error al verificar reservas de la subcampaña',
+        'Error al verificar asignaciones de la subcampaña',
       );
     }
 
@@ -276,11 +279,11 @@ export class SubcampaniasActivacionService {
         planta_id: number;
         especie: string | null;
         nombre_cientifico: string | null;
-        saldo_reservado: number;
+        saldo_asignado_disponible: number;
       }
     >();
 
-    for (const row of (data ?? []) as ReservaComposicionRow[]) {
+    for (const row of (data ?? []) as AsignacionComposicionRow[]) {
       const lote = this.unwrapRelation(row.lote_vivero);
       const planta = this.unwrapRelation(lote?.planta);
       const plantaId = Number(lote?.planta_id ?? planta?.id);
@@ -290,13 +293,17 @@ export class SubcampaniasActivacionService {
         planta_id: plantaId,
         especie: planta?.especie ?? null,
         nombre_cientifico: planta?.nombre_cientifico ?? null,
-        saldo_reservado: 0,
+        saldo_asignado_disponible: 0,
       };
-      current.saldo_reservado += Number(row.saldo_asignado_disponible ?? 0);
+      current.saldo_asignado_disponible += Number(
+        row.saldo_asignado_disponible ?? 0,
+      );
       porPlanta.set(plantaId, current);
     }
 
-    return [...porPlanta.values()].filter((item) => item.saldo_reservado > 0);
+    return [...porPlanta.values()].filter(
+      (item) => item.saldo_asignado_disponible > 0,
+    );
   }
 
   private unwrapRelation<T>(value: T | T[] | null | undefined): T | null {

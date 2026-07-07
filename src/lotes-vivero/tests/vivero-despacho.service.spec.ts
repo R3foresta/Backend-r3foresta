@@ -17,7 +17,7 @@ describe('ViveroDespachoService', () => {
   let saldosService: jest.Mocked<
     Pick<
       ViveroSaldosService,
-      'leerSaldoDisponible' | 'assertCantidadNoExcedeSaldo'
+      'leerSaldoFisico' | 'assertCantidadNoExcedeSaldoFisico'
     >
   >;
 
@@ -51,8 +51,8 @@ describe('ViveroDespachoService', () => {
     };
 
     saldosService = {
-      leerSaldoDisponible: jest.fn(),
-      assertCantidadNoExcedeSaldo: jest.fn(),
+      leerSaldoFisico: jest.fn(),
+      assertCantidadNoExcedeSaldoFisico: jest.fn(),
     };
 
     service = new ViveroDespachoService(
@@ -63,11 +63,11 @@ describe('ViveroDespachoService', () => {
     );
   });
 
-  it('rechaza el despacho manual si excede el saldo libre sin llamar la RPC', async () => {
-    saldosService.leerSaldoDisponible.mockResolvedValue(30);
-    saldosService.assertCantidadNoExcedeSaldo.mockImplementation(() => {
+  it('rechaza el despacho manual si excede el saldo vivo FISICO sin llamar la RPC (RN-VIV-56)', async () => {
+    saldosService.leerSaldoFisico.mockResolvedValue(30);
+    saldosService.assertCantidadNoExcedeSaldoFisico.mockImplementation(() => {
       throw new UnprocessableEntityException(
-        'La cantidad solicitada excede el saldo vivo disponible para asignacion.',
+        'La cantidad solicitada excede el saldo vivo fisico del lote.',
       );
     });
 
@@ -75,17 +75,15 @@ describe('ViveroDespachoService', () => {
       UnprocessableEntityException,
     );
 
-    expect(saldosService.leerSaldoDisponible).toHaveBeenCalledWith(LOTE_ID);
-    expect(saldosService.assertCantidadNoExcedeSaldo).toHaveBeenCalledWith(
-      dto.cantidad_afectada,
-      30,
-      LOTE_ID,
-    );
+    expect(saldosService.leerSaldoFisico).toHaveBeenCalledWith(LOTE_ID);
+    expect(
+      saldosService.assertCantidadNoExcedeSaldoFisico,
+    ).toHaveBeenCalledWith(dto.cantidad_afectada, 30, LOTE_ID);
     expect(rpcMock).not.toHaveBeenCalled();
   });
 
-  it('registra el despacho cuando la cantidad no excede el saldo libre', async () => {
-    saldosService.leerSaldoDisponible.mockResolvedValue(50);
+  it('registra el despacho cuando la cantidad no excede el saldo fisico', async () => {
+    saldosService.leerSaldoFisico.mockResolvedValue(50);
     rpcMock.mockReturnValue({
       single: jest.fn().mockResolvedValue({
         data: {
@@ -108,11 +106,9 @@ describe('ViveroDespachoService', () => {
 
     const response = await service.registrar(LOTE_ID, dto, AUTH_ID);
 
-    expect(saldosService.assertCantidadNoExcedeSaldo).toHaveBeenCalledWith(
-      dto.cantidad_afectada,
-      50,
-      LOTE_ID,
-    );
+    expect(
+      saldosService.assertCantidadNoExcedeSaldoFisico,
+    ).toHaveBeenCalledWith(dto.cantidad_afectada, 50, LOTE_ID);
     expect(rpcMock).toHaveBeenCalledWith('fn_vivero_registrar_despacho', {
       p_lote_id: LOTE_ID,
       p_fecha_evento: dto.fecha_evento,

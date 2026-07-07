@@ -25,26 +25,25 @@ No confundir con `ubicacion.id`: `ubicacion` es otra tabla usada para registros 
 
 `meta_total_arboles` no puede ser `null` ni `0`. Si el flujo de frontend obtiene comunidad/nombre en paso 1 y define especies/meta en paso 2, la subcampaña solo puede crearse al terminar el paso 2, cuando ya existan los cuatro campos mínimos.
 
-### Plan de metas por especie (planeación) vs. reservas (cumplimiento)
+### Plan de metas por especie (planeación) vs. asignaciones físicas (cumplimiento)
 
-Decisión cerrada 2026-07-01 (`RN-PLA-15..18`, `RN-PLA-36`, `RN-PLA-09`):
+Decisión cerrada 2026-07-01 (`RN-PLA-15..18`, `RN-PLA-36`, `RN-PLA-09`) + contrato físico 2026-07 (`RN-VIV-47`):
 
 - **Plan de metas** (planeación) vive en `SUBCAMPANIA_META_ESPECIE`. Se persiste con `PUT /subcampanias/:id/plan` y se puede editar libremente mientras la subcampaña esté en `BORRADOR`. Cada meta lleva `planta_id`, `porcentaje_objetivo` (0 < x ≤ 100) y `cantidad_objetivo` (> 0).
-- **Reservas de vivero** (cumplimiento) siguen registrándose en `POST /lotes-vivero/:loteId/reservas` y solo se aceptan cuando la subcampaña está `ACTIVA` (o `COMPLETADA` / `FINALIZADA_PARCIAL` para reposición). Ver "Guard de asignación" abajo.
-- Al **activar** (`POST /subcampanias/:id/activar`) el backend valida el plan: `SUM(porcentaje_objetivo) = 100` y `SUM(cantidad_objetivo) = meta_total_arboles`. **Se permite activar con 0% de stock reservado** — la subcampaña puede activarse aunque aún no haya asignaciones de lote (`RN-PLA-09`). El sistema muestra advertencia visual con cobertura, pero no bloquea la activación.
+- **Asignaciones físicas de vivero** (cumplimiento) se registran en `POST /lotes-vivero/:loteId/asignaciones` y representan **entrega real de plantas**: descuentan el saldo del lote y exigen evidencia. Solo se aceptan cuando la subcampaña está `ACTIVA` (o `COMPLETADA` / `FINALIZADA_PARCIAL` para reposición). Ver "Guard de asignación" abajo.
+- Al **activar** (`POST /subcampanias/:id/activar`) el backend valida el plan: `SUM(porcentaje_objetivo) = 100` y `SUM(cantidad_objetivo) = meta_total_arboles`. **Se permite activar con 0% de stock asignado** — la subcampaña puede activarse aunque aún no haya asignaciones de lote (`RN-PLA-09`).
 
 Flujo persistente para frontend:
 
 1. `POST /subcampanias` → crea BORRADOR con `meta_total_arboles`.
 2. `PUT /subcampanias/:id/plan` (opcional al crear, editable mientras BORRADOR) → guarda las metas por especie.
 3. `POST /subcampanias/:id/poligono` + `POST /subcampanias/:id/equipo` (coordinador).
-4. Opcionalmente `POST /lotes-vivero/:loteId/reservas` para pre-cargar stock — **no obligatorio** (el guard actual rechaza reservas mientras la subcampaña siga en BORRADOR; ver siguiente sección).
-5. `POST /subcampanias/:id/activar`.
-6. Reservas reales de stock se hacen tras activar; se pueden ampliar durante toda la vida `ACTIVA`.
+4. `POST /subcampanias/:id/activar`.
+5. Las asignaciones físicas de stock se hacen **tras activar** (`POST /lotes-vivero/:loteId/asignaciones`); se pueden ampliar durante toda la vida `ACTIVA`.
 
 ### Guard de asignación por estado
 
-El endpoint `POST /lotes-vivero/:loteId/reservas` (M2) rechaza reservas contra subcampañas en estos casos:
+El endpoint `POST /lotes-vivero/:loteId/asignaciones` (M2) rechaza asignaciones contra subcampañas en estos casos:
 
 - `estado = BORRADOR` o `estado = CANCELADA` → **409 Conflict** ("No se asignan lotes a una subcampaña en estado …"). Ver `RN-VIV-11` / `RF-PLA-04`.
 - `proposito = PLANTACION_INICIAL` y `estado ≠ ACTIVA` → **422**.
@@ -447,7 +446,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/poligono \
 ## POST /subcampanias/:id/activar
 
 **Rol mínimo**: ADMIN
-**Descripción**: Activa una subcampaña (transición: BORRADOR → ACTIVA). El plan por especie debe estar completo, pero **el stock reservado NO tiene que cubrir la meta** (`RN-PLA-09`).
+**Descripción**: Activa una subcampaña (transición: BORRADOR → ACTIVA). El plan por especie debe estar completo, pero **el stock asignado NO tiene que cubrir la meta** (`RN-PLA-09`).
 
 **Pre-condiciones**:
 
@@ -457,7 +456,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/poligono \
 - `meta_total_arboles > 0`
 - Plan de metas por especie completo (`RN-PLA-16`): ≥1 fila en `SUBCAMPANIA_META_ESPECIE`, `SUM(porcentaje_objetivo) = 100` y `SUM(cantidad_objetivo) = meta_total_arboles`
 
-**Se permite activar con 0 reservas**. La respuesta expone `composicion_reservada` (puede ser `[]`) para que el frontend muestre la brecha de cobertura por especie sin bloquear la activación.
+**Se permite activar con 0 asignaciones**. La respuesta expone `composicion_asignada` (normalmente `[]`, porque las asignaciones físicas recién se aceptan con la subcampaña ACTIVA) para que el frontend muestre la cobertura por especie sin bloquear la activación.
 
 **Headers**
 | Header | Requerido | Descripción |
@@ -481,14 +480,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/poligono \
     "nombre_zona_snapshot": "Zona A",
     "nombre_coordinador_snapshot": "Coord Pepe",
     "nombres_organizaciones_snapshot": ["Org A"],
-    "composicion_reservada": [
-      {
-        "planta_id": 5,
-        "especie": "Aliso",
-        "nombre_cientifico": "Alnus acuminata",
-        "saldo_reservado": 500
-      }
-    ],
+    "composicion_asignada": [],
     "updated_at": "2026-05-28T11:00:00Z"
   }
 }
@@ -500,13 +492,13 @@ curl -X POST http://localhost:3000/api/subcampanias/1/poligono \
 | 401 | Header x-auth-id ausente |
 | 403 | Rol distinto de ADMIN |
 | 404 | Subcampaña no encontrada |
-| 422 | No cumple pre-condiciones: estado no BORRADOR, sin polígono, sin coordinador, sin reservas, o reservas insuficientes |
+| 422 | No cumple pre-condiciones: estado no BORRADOR, sin polígono, sin coordinador, o plan de metas incompleto |
 
 **Notas para frontend**
 
 - Si el backend devuelve `422`, mostrar el mensaje del backend: indica exactamente qué falta.
-- Antes de activar, verificar que ya existan polígono, coordinador y reservas suficientes.
-- Las reservas se crean desde `POST /lotes-vivero/:loteId/reservas`.
+- Antes de activar, verificar que ya existan polígono, coordinador y plan de metas completo.
+- Las asignaciones físicas de stock se crean **después de activar**, desde `POST /lotes-vivero/:loteId/asignaciones`.
 
 **Ejemplo cURL**
 
@@ -1005,14 +997,14 @@ COORDINADOR | OPERARIO
 }
 ```
 
-### ComposicionReservada
+### ComposicionAsignada
 
 ```typescript
 {
   planta_id: number;
   especie: string | null;
   nombre_cientifico: string | null;
-  saldo_reservado: number;
+  saldo_asignado_disponible: number;
 }
 ```
 
@@ -1021,12 +1013,13 @@ COORDINADOR | OPERARIO
 ## Reglas de Negocio
 
 1. **Ciclo de vida**: BORRADOR → ACTIVA → (COMPLETADA | FINALIZADA_PARCIAL)
-2. **Pre-condiciones de activación**: Polígono, ubicación, coordinador, meta >= 1 y reservas activas suficientes
+2. **Pre-condiciones de activación**: Polígono, ubicación, coordinador, meta >= 1 y plan de metas por especie completo. **No** exige stock asignado (`RN-PLA-09`).
 3. **Campos GENERATED**: `saldo_vivo_actual` es calculado en BD
 4. **GeoJSON**: Orden [longitud, latitud]
 5. **Equipo**: Un usuario puede tener rol COORDINADOR o OPERARIO por subcampaña
-6. **Reservas**: La suma de `saldo_reservado` debe cubrir `meta_total_arboles` antes de activar
-7. **Soft delete**: Solo en estado BORRADOR; otros estados se archivan
+6. **Asignaciones físicas**: se registran tras activar (`POST /lotes-vivero/:loteId/asignaciones`); entregan plantas reales y descuentan el saldo del lote (`RN-VIV-47`)
+7. **Cancelación**: devuelve físicamente al vivero el saldo disponible de las asignaciones activas (`RN-VIV-48`) y registra `SUBCAMPANIA_CANCELADA`
+8. **Soft delete**: Solo en estado BORRADOR; otros estados se archivan
 
 ---
 
@@ -1036,6 +1029,7 @@ COORDINADOR | OPERARIO
 2. **PATCH** → Editar detalles
 3. **POST /poligono** → Establecer polígono
 4. **POST /equipo** → Agregar coordinadores y operarios
-5. **POST /lotes-vivero/:loteId/reservas** → Reservar stock suficiente
+5. **PUT /plan** → Completar plan de metas por especie
 6. **POST /activar** → Pasar a ACTIVA
-7. **POST /cerrar** → Cerrar (COMPLETADA o FINALIZADA_PARCIAL)
+7. **POST /lotes-vivero/:loteId/asignaciones** → Recibir stock físico del vivero
+8. **POST /cerrar** → Cerrar (COMPLETADA o FINALIZADA_PARCIAL)

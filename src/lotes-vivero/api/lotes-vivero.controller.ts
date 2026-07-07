@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Delete,
   Get,
   Headers,
   Param,
@@ -17,8 +16,8 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 import { LotesViveroService } from '../application/lotes-vivero.service';
 import {
-  ApiCancelarAsignacion,
   ApiCrearAsignacion,
+  ApiDevolverAsignacion,
   ApiCrearEvidenciaPendiente,
   ApiCrearEvidenciasPendientesDescartePreEmbolsado,
   ApiCrearEvidenciasPendientesAdaptabilidad,
@@ -44,6 +43,7 @@ import {
 } from './docs/lotes-vivero.swagger';
 import { CrearAsignacionDto } from './dto/crear-asignacion.dto';
 import { CrearEvidenciaPendienteViveroDto } from './dto/crear-evidencia-pendiente-vivero.dto';
+import { DevolverAsignacionDto } from './dto/devolver-asignacion.dto';
 import { CrearLoteViveroDto } from './dto/crear-lote-vivero.dto';
 import { FiltrarLotesViveroDto } from './dto/filtrar-lotes-vivero.dto';
 import { FiltrarTimelineLoteDto } from './dto/filtrar-timeline-lote.dto';
@@ -332,35 +332,24 @@ export class LotesViveroController {
     );
   }
 
-  @Post(':id/reservas')
-  reservarStock(
-    @Param('id', ParseIntPipe) loteId: number,
-    @Body() dto: CrearAsignacionDto,
-    @Headers('x-auth-id') authId?: string,
-  ) {
-    return this.lotesViveroService.crearAsignacion(
-      loteId,
-      dto,
-      this.requireAuthId(authId),
-    );
-  }
-
   @Get(':id/asignaciones')
   @ApiListarAsignaciones()
   listarAsignaciones(@Param('id', ParseIntPipe) loteId: number) {
     return this.lotesViveroService.listarAsignaciones(loteId);
   }
 
-  @Delete(':id/asignaciones/:asignacionId')
-  @ApiCancelarAsignacion()
-  cancelarAsignacion(
+  @Post(':id/asignaciones/:asignacionId/devolucion')
+  @ApiDevolverAsignacion()
+  devolverAsignacion(
     @Param('id', ParseIntPipe) loteId: number,
     @Param('asignacionId', ParseIntPipe) asignacionId: number,
+    @Body() dto: DevolverAsignacionDto,
     @Headers('x-auth-id') authId?: string,
   ) {
-    return this.lotesViveroService.cancelarAsignacion(
+    return this.lotesViveroService.devolverAsignacion(
       loteId,
       asignacionId,
+      dto,
       this.requireAuthId(authId),
     );
   }

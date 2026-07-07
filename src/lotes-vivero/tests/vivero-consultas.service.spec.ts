@@ -416,6 +416,7 @@ describe('ViveroConsultasService.obtenerDetalle', () => {
       ADAPTABILIDAD: null,
       MERMA: null,
       DESPACHO: null,
+      DEVOLUCION_PLANTACION: null,
       CIERRE_AUTOMATICO: null,
     });
   });

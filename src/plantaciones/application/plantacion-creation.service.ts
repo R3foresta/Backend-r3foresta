@@ -15,15 +15,13 @@ import {
 } from '../domain/policies/reposicion.policy';
 import { PlantacionAuthService } from './plantacion-auth.service';
 
-type DespachoRow = {
-  evento_id: number;
+type ConsumoAsignacionRow = {
+  asignacion_id: number;
   lote_vivero_id: number;
-  codigo_trazabilidad_lote: string | null;
-  cantidad_afectada: number;
-  saldo_vivo_antes: number;
-  saldo_vivo_despues: number;
-  lote_finalizado: boolean;
-  motivo_cierre: string | null;
+  cantidad_consumida: number;
+  saldo_asignado_antes: number;
+  saldo_asignado_despues: number;
+  estado_final: string | null;
 };
 
 type RpcRegistrarPlantacionResult = {
@@ -32,7 +30,7 @@ type RpcRegistrarPlantacionResult = {
   cantidad_total_plantada: number;
   gps_dentro_poligono: boolean;
   gps_distancia_a_poligono_m: number | null;
-  despachos: DespachoRow[];
+  consumos: ConsumoAsignacionRow[];
   coresponsable_ids_vinculados: number[];
   evidencia_ids_vinculadas: number[];
 };
@@ -123,15 +121,15 @@ export class PlantacionCreationService {
           row.gps_distancia_a_poligono_m !== null
             ? Number(row.gps_distancia_a_poligono_m)
             : null,
-        despachos: (row.despachos ?? []).map((d) => ({
-          evento_id: Number(d.evento_id),
-          lote_vivero_id: Number(d.lote_vivero_id),
-          codigo_trazabilidad_lote: d.codigo_trazabilidad_lote ?? null,
-          cantidad_afectada: Number(d.cantidad_afectada),
-          saldo_vivo_antes: Number(d.saldo_vivo_antes),
-          saldo_vivo_despues: Number(d.saldo_vivo_despues),
-          lote_finalizado: Boolean(d.lote_finalizado),
-          motivo_cierre: d.motivo_cierre ?? null,
+        // Contrato fisico M2-M3: plantar consume asignaciones, no genera
+        // despachos M2 ni toca el saldo del lote (RN-VIV-52).
+        consumos: (row.consumos ?? []).map((c) => ({
+          asignacion_id: Number(c.asignacion_id),
+          lote_vivero_id: Number(c.lote_vivero_id),
+          cantidad_consumida: Number(c.cantidad_consumida),
+          saldo_asignado_antes: Number(c.saldo_asignado_antes),
+          saldo_asignado_despues: Number(c.saldo_asignado_despues),
+          estado_final: c.estado_final ?? null,
         })),
         coresponsable_ids_vinculados: (
           row.coresponsable_ids_vinculados ?? []

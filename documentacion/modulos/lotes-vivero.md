@@ -149,7 +149,8 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 | `EMBOLSADO` | Embolsado de plántulas |
 | `ADAPTABILIDAD` | Cambio de subetapa de adaptabilidad |
 | `MERMA` | Pérdida de plantas |
-| `DESPACHO` | Salida de plantas del vivero |
+| `DESPACHO` | Salida de plantas del vivero (`origen_despacho`: `MANUAL` o `ASIGNACION_SUBCAMPANIA`; `AUTOMATICO_PLANTACION` solo en data legada) |
+| `DEVOLUCION_PLANTACION` | Entrada física por devolución de stock asignado desde una subcampaña (RN-VIV-48). Aumenta el saldo del lote |
 | `CIERRE_AUTOMATICO` | Cierre generado automáticamente al agotar stock |
 
 ---
@@ -1116,7 +1117,7 @@ GET {{base_url}}/lotes-vivero/{{lote_id}}/timeline?responsable_id=77&fecha_inici
 
 **Otros valores válidos para `tipo_evento`**:
 ```
-INICIO | EMBOLSADO | ADAPTABILIDAD | MERMA | DESPACHO | CIERRE_AUTOMATICO
+INICIO | EMBOLSADO | ADAPTABILIDAD | MERMA | DESPACHO | DEVOLUCION_PLANTACION | CIERRE_AUTOMATICO
 ```
 
 ---

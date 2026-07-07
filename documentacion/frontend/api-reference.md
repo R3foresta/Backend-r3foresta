@@ -192,16 +192,17 @@ PLANTACION_INICIAL | REPOSICION
 - `DELETE /subcampanias/:id/equipo/:usuarioId` — Remover miembro
 
 ### [6. Lotes de Vivero (M3)](modulos/lotes-vivero-m3.md)
-Endpoints relevantes para flujo de asignaciones de M3:
-- `GET /lotes-vivero` — Listar lotes disponibles
-- `GET /lotes-vivero/stock/especies` — Stock disponible agrupado por especie
+Endpoints relevantes para el flujo de asignación física de M3 (ver [guía de migración](guia-migracion-asignacion-fisica.md)):
+- `GET /lotes-vivero` — Listar lotes (saldo físico + asignado a subcampañas)
+- `GET /lotes-vivero/stock/especies` — Stock físico asignable agrupado por especie
 - `GET /lotes-vivero/:id` — Detalle del lote
-- `GET /lotes-vivero/:id/saldos` — Saldo disponible para asignación
-- `POST /lotes-vivero/:id/reservas` — Reservar stock transaccionalmente
-- `POST /lotes-vivero/:id/asignaciones` — Asignar a subcampaña
+- `GET /lotes-vivero/:id/saldos` — Saldos del contrato físico (RN-VIV-57)
+- `POST /lotes-vivero/:id/asignaciones` — Entrega física a subcampaña (descuenta saldo, exige evidencia)
 - `GET /lotes-vivero/:id/asignaciones` — Ver asignaciones activas
-- `DELETE /lotes-vivero/:id/asignaciones/:asignacionId` — Cancelar asignación
+- `POST /lotes-vivero/:id/asignaciones/:asignacionId/devolucion` — Devolución física al vivero
 - `GET /lotes-vivero/:id/timeline` — Historial (read-only)
+
+> Removidos (2026-07): `POST /:id/reservas` y `DELETE /:id/asignaciones/:asignacionId`.
 
 ### [7. Plantaciones](modulos/plantaciones.md)
 - `POST /registros-plantacion/evidencias-pendientes` 📎 — Crear evidencias
@@ -237,7 +238,7 @@ Algunos endpoints aceptan `x-auth-id` directamente (sin JWT) en modo dev. Ver `u
 - **Fotos de evidencias**: máx. 5 archivos por request
 
 ### Pre-condiciones (Lifecycle)
-Endpoints como `/activar` y `/cerrar` en subcampañas requieren ciertos estados previos. `POST /subcampanias/:id/activar` exige polígono, coordinador y reservas activas suficientes para cubrir `meta_total_arboles`. Ver detalles en módulo Subcampañas.
+Endpoints como `/activar` y `/cerrar` en subcampañas requieren ciertos estados previos. `POST /subcampanias/:id/activar` exige polígono, coordinador y plan de metas por especie completo; **no** exige stock asignado (la asignación física ocurre después de activar, RF-VIV-11). Ver detalles en módulo Subcampañas.
 
 ---
 

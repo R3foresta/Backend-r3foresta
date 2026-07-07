@@ -55,16 +55,14 @@ describe('PlantacionCreationService', () => {
         cantidad_total_plantada: 50,
         gps_dentro_poligono: true,
         gps_distancia_a_poligono_m: 0,
-        despachos: [
+        consumos: [
           {
-            evento_id: 7001,
+            asignacion_id: 1,
             lote_vivero_id: 2,
-            codigo_trazabilidad_lote: 'VIV-000002-REC-000001',
-            cantidad_afectada: 50,
-            saldo_vivo_antes: 100,
-            saldo_vivo_despues: 50,
-            lote_finalizado: false,
-            motivo_cierre: null,
+            cantidad_consumida: 50,
+            saldo_asignado_antes: 100,
+            saldo_asignado_despues: 50,
+            estado_final: 'ACTIVA',
           },
         ],
         coresponsable_ids_vinculados: [],
@@ -103,15 +101,17 @@ describe('PlantacionCreationService', () => {
     expect(result.data.codigo_trazabilidad).toBe(
       'PLT-001-SUB-001-CMP-2026-001',
     );
-    expect(result.data.despachos).toHaveLength(1);
-    expect(result.data.despachos[0]).toMatchObject({
-      evento_id: 7001,
+    // Contrato fisico (RN-VIV-52): plantar consume asignaciones, no expone
+    // despachos M2. Si `despachos` reaparece en la respuesta, es una regresion.
+    expect(result.data).not.toHaveProperty('despachos');
+    expect(result.data.consumos).toHaveLength(1);
+    expect(result.data.consumos[0]).toMatchObject({
+      asignacion_id: 1,
       lote_vivero_id: 2,
-      cantidad_afectada: 50,
-      saldo_vivo_antes: 100,
-      saldo_vivo_despues: 50,
-      lote_finalizado: false,
-      motivo_cierre: null,
+      cantidad_consumida: 50,
+      saldo_asignado_antes: 100,
+      saldo_asignado_despues: 50,
+      estado_final: 'ACTIVA',
     });
     expect(result.data.evidencia_ids_vinculadas).toEqual([101, 102]);
   });
@@ -125,7 +125,7 @@ describe('PlantacionCreationService', () => {
         cantidad_total_plantada: 50,
         gps_dentro_poligono: true,
         gps_distancia_a_poligono_m: 0,
-        despachos: [],
+        consumos: [],
         coresponsable_ids_vinculados: [3, 4],
         evidencia_ids_vinculadas: [101],
       },

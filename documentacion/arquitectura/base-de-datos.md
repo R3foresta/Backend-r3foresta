@@ -19,8 +19,8 @@ R3foresta utiliza PostgreSQL sobre Supabase como base de datos transaccional pri
 1. Una **recolección** vincula especie, ubicación, responsable y vivero de destino.
 2. Una **recolección** puede dar origen a uno o varios **lotes de vivero**.
 3. Cada **lote de vivero** mantiene su historial mediante **eventos** y control de saldos.
-4. Los **lotes** pueden asignarse a **subcampañas** para reservar stock antes de la plantación.
-5. Los **registros de plantación** consumen asignaciones de vivero y preservan la trazabilidad hasta el lote de origen.
+4. Los **lotes** pueden asignarse físicamente a **subcampañas**; esa entrega descuenta el saldo vivo del lote en vivero.
+5. Los **registros de plantación** consumen stock ya asignado a la subcampaña y preservan la trazabilidad hasta el lote de origen.
 6. Las **evidencias** pueden asociarse a entidades del proceso para soporte documental y auditoría.
 
 ## Criterios del modelo
