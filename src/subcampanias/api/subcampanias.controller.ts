@@ -36,6 +36,7 @@ import {
   ApiListarEquipo,
   ApiListarSubcampanias,
   ApiObtenerPlan,
+  ApiPlantacionContext,
   ApiQuitarMiembroEquipo,
   ApiSetearPoligono,
 } from './docs/subcampanias.swagger';
@@ -168,6 +169,18 @@ export class SubcampaniasController {
     @Headers('x-auth-id') authId?: string,
   ) {
     return this.subcampaniasService.borrar(id, this.requireAuthId(authId));
+  }
+
+  @Get(':id/plantacion/context')
+  @ApiPlantacionContext()
+  obtenerPlantacionContext(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    return this.subcampaniasService.obtenerPlantacionContext(
+      id,
+      this.requireAuthId(authId),
+    );
   }
 
   @Get(':id/equipo')

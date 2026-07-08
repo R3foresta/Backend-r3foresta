@@ -12,6 +12,7 @@ import { SubcampaniasEdicionService } from './application/subcampanias-edicion.s
 import { SubcampaniasEquipoService } from './application/subcampanias-equipo.service';
 import { SubcampaniasHistorialService } from './application/subcampanias-historial.service';
 import { SubcampaniasPlanService } from './application/subcampanias-plan.service';
+import { SubcampaniasPlantacionContextService } from './application/subcampanias-plantacion-context.service';
 import { SubcampaniasPoligonoService } from './application/subcampanias-poligono.service';
 import { SubcampaniasService } from './application/subcampanias.service';
 
@@ -32,6 +33,7 @@ import { SubcampaniasService } from './application/subcampanias.service';
     SubcampaniasEquipoService,
     SubcampaniasHistorialService,
     SubcampaniasPlanService,
+    SubcampaniasPlantacionContextService,
   ],
   exports: [SubcampaniasService],
 })

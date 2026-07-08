@@ -17,6 +17,7 @@ import {
 import { SubcampaniasCreationService } from './subcampanias-creation.service';
 import { SubcampaniasEdicionService } from './subcampanias-edicion.service';
 import { SubcampaniasEquipoService } from './subcampanias-equipo.service';
+import { SubcampaniasPlantacionContextService } from './subcampanias-plantacion-context.service';
 import { SubcampaniasPoligonoService } from './subcampanias-poligono.service';
 
 @Injectable()
@@ -31,6 +32,7 @@ export class SubcampaniasService {
     private readonly cancelacionService: SubcampaniasCancelacionService,
     private readonly equipoService: SubcampaniasEquipoService,
     private readonly planService: SubcampaniasPlanService,
+    private readonly plantacionContextService: SubcampaniasPlantacionContextService,
   ) {}
 
   crear(dto: CrearSubcampaniaDto, authId: string) {
@@ -75,6 +77,10 @@ export class SubcampaniasService {
 
   guardarPlan(id: number, dto: GuardarPlanDto, authId: string) {
     return this.planService.guardar(id, dto, authId);
+  }
+
+  obtenerPlantacionContext(id: number, authId: string) {
+    return this.plantacionContextService.obtener(id, authId);
   }
 
   listarEquipo(subcampaniaId: number) {

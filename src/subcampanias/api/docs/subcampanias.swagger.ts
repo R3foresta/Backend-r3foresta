@@ -550,6 +550,43 @@ export function ApiAgregarMiembrosEquipo() {
   );
 }
 
+export function ApiPlantacionContext() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Contexto para registrar plantación inicial desde campo',
+      description:
+        'Devuelve en una sola llamada todo lo necesario para registrar una plantación inicial: subcampaña (con polígono GeoJSON), permisos del usuario, equipo, plan por especie con avance, stock asignado disponible (asignaciones ACTIVA con propósito PLANTACION_INICIAL, con orden de consumo FIFO resuelto: fecha_asignacion ASC, asignacion_id ASC) y reglas operativas. Requiere pertenecer al equipo como COORDINADOR u OPERARIO (aplica también a ADMIN) y que la subcampaña esté ACTIVA.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({ name: 'id', type: 'integer' }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Contexto de plantación: subcampania, usuario, equipo, plan_por_especie, stock_por_especie (con asignaciones y orden_consumo) y reglas.',
+    }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 403,
+      description:
+        'Usuario sin rol global mínimo o que no pertenece al equipo (COORDINADOR|OPERARIO).',
+    }),
+    ApiResponse({
+      status: 404,
+      description: 'Subcampaña o usuario no encontrado.',
+    }),
+    ApiResponse({
+      status: 409,
+      description: 'La subcampaña no está ACTIVA.',
+    }),
+    ApiResponse({
+      status: 422,
+      description:
+        'La subcampaña no tiene plan por especie, no tiene polígono evaluable o no tiene stock asignado disponible.',
+    }),
+  );
+}
+
 export function ApiQuitarMiembroEquipo() {
   return applyDecorators(
     ApiOperation({
