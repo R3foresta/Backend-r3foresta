@@ -178,3 +178,45 @@ export function ApiRegistrarPlantacion() {
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
 }
+
+export function ApiDescartarEvidenciasPendientesPlantacion() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Descartar evidencias pendientes de REGISTRO_PLANTACION',
+      description:
+        'Marca como eliminadas evidencias pendientes (entidad_id NULL/0) de tipo REGISTRO_PLANTACION y elimina sus archivos de Storage. Es idempotente: los IDs inexistentes, ya eliminados, ya vinculados o no pertenecientes al usuario se devuelven como ignorados.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiBody({
+      description:
+        'IDs devueltos por POST /registros-plantacion/evidencias-pendientes que deben descartarse porque el registro fue cancelado o no se completara.',
+      schema: {
+        type: 'object',
+        required: ['evidencia_ids'],
+        properties: {
+          evidencia_ids: {
+            type: 'array',
+            minItems: 1,
+            items: { type: 'integer', minimum: 1 },
+            example: [101, 102],
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Evidencias pendientes descartadas. Devuelve evidencia_ids_descartadas y evidencia_ids_ignoradas.',
+    }),
+    ApiResponse({ status: 400, description: 'IDs invalidos' }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({ status: 403, description: 'Rol global insuficiente' }),
+    ApiResponse({
+      status: 404,
+      description:
+        'Usuario no encontrado o falta tipo_entidad_evidencia REGISTRO_PLANTACION',
+    }),
+    ApiResponse({ status: 500, description: 'Error interno del servidor' }),
+  );
+}

@@ -9,6 +9,11 @@ function createQueryBuilder(result: { data: any; error: any }) {
     ilike: jest.fn().mockReturnThis(),
     maybeSingle: jest.fn().mockResolvedValue(result),
     insert: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
+    is: jest.fn().mockReturnThis(),
+    or: jest.fn().mockReturnThis(),
     then: (resolve: any, reject: any) =>
       Promise.resolve(result).then(resolve, reject),
   };
@@ -170,5 +175,57 @@ describe('PlantacionEvidenciasService', () => {
     await expect(
       service.crearPendienteParaRegistro({}, 'auth-1', [foto]),
     ).rejects.toThrow(NotFoundException);
+  });
+
+  it('descarta evidencias pendientes del usuario y elimina archivos de storage', async () => {
+    const result = await service.descartarPendientesParaRegistro(
+      { evidencia_ids: [999, 801, 801] },
+      'auth-1',
+    );
+
+    expect(authService.getUserByAuthId).toHaveBeenCalledWith('auth-1');
+    expect(authService.assertCanWrite).toHaveBeenCalledWith('GENERAL');
+
+    const evidenciasQuery = from.mock.results.find(
+      (resultItem: any) =>
+        resultItem.type === 'return' &&
+        resultItem.value.update?.mock?.calls.length > 0,
+    )?.value;
+
+    expect(evidenciasQuery.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eliminado_por_usuario_id: 77,
+        actualizado_por_usuario_id: 77,
+      }),
+    );
+    expect(evidenciasQuery.eq).toHaveBeenCalledWith('tipo_entidad_id', 17);
+    expect(evidenciasQuery.eq).toHaveBeenCalledWith(
+      'creado_por_usuario_id',
+      77,
+    );
+    expect(evidenciasQuery.in).toHaveBeenCalledWith('id', [801, 999]);
+    expect(evidenciasQuery.is).toHaveBeenCalledWith('eliminado_en', null);
+    expect(evidenciasQuery.or).toHaveBeenCalledWith(
+      'entidad_id.is.null,entidad_id.eq.0',
+    );
+    expect(evidenciasQuery.select).toHaveBeenCalledWith(
+      'id, bucket, ruta_archivo',
+    );
+    expect(remove).toHaveBeenCalledWith([
+      'plantaciones/registros/pendientes/77/1_plantacion.jpg',
+    ]);
+    expect(result).toEqual({
+      success: true,
+      data: {
+        evidencia_ids_descartadas: [801],
+        evidencia_ids_ignoradas: [999],
+      },
+    });
+  });
+
+  it('rechaza descarte con IDs invalidos', async () => {
+    await expect(
+      service.descartarPendientesParaRegistro({ evidencia_ids: [0] }, 'auth-1'),
+    ).rejects.toThrow(BadRequestException);
   });
 });

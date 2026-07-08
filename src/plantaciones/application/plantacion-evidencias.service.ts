@@ -9,6 +9,7 @@ import { createHash } from 'crypto';
 import { ImageFilePolicy } from '../../common/files/image-file.policy';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CrearEvidenciaPendientePlantacionDto } from '../api/dto/crear-evidencia-pendiente-plantacion.dto';
+import { DescartarEvidenciasPendientesPlantacionDto } from '../api/dto/descartar-evidencias-pendientes-plantacion.dto';
 import { PlantacionAuthService } from './plantacion-auth.service';
 
 export type PlantacionEvidenceFileInput = {
@@ -25,6 +26,12 @@ type FotoSubidaPlantacion = {
   tamano_bytes: number;
   formato: string;
   hash_sha256: string | null;
+};
+
+type EvidenciaPendienteDescartadaRow = {
+  id: number | string;
+  bucket: string | null;
+  ruta_archivo: string | null;
 };
 
 @Injectable()
@@ -202,6 +209,72 @@ export class PlantacionEvidenciasService {
     }
   }
 
+  async descartarPendientesParaRegistro(
+    dto: DescartarEvidenciasPendientesPlantacionDto,
+    authId: string,
+  ) {
+    const usuario = await this.authService.getUserByAuthId(authId);
+    this.authService.assertCanWrite(usuario.rol);
+
+    const evidenciaIds = this.normalizarEvidenciaIds(dto.evidencia_ids);
+    const supabase = this.supabaseService.getClient();
+    const tipoEntidadId = await this.resolveTipoEntidadRegistroPlantacionId();
+    const now = new Date().toISOString();
+
+    let query = supabase
+      .from('evidencias_trazabilidad')
+      .update({
+        eliminado_en: now,
+        eliminado_por_usuario_id: usuario.id,
+        actualizado_en: now,
+        actualizado_por_usuario_id: usuario.id,
+      })
+      .eq('tipo_entidad_id', tipoEntidadId)
+      .in('id', evidenciaIds)
+      .is('eliminado_en', null)
+      .or('entidad_id.is.null,entidad_id.eq.0');
+
+    if (String(usuario.rol ?? '').toUpperCase() !== 'ADMIN') {
+      query = query.eq('creado_por_usuario_id', usuario.id);
+    }
+
+    const { data, error } = await query.select('id, bucket, ruta_archivo');
+
+    if (error) {
+      this.logger.error(
+        'Error al marcar evidencias pendientes de plantacion como eliminadas:',
+        error,
+      );
+      throw new InternalServerErrorException(
+        'Error al descartar evidencias pendientes de plantacion',
+      );
+    }
+
+    const descartadas = ((data ?? []) as EvidenciaPendienteDescartadaRow[]).map(
+      (evidencia) => ({
+        id: Number(evidencia.id),
+        bucket: evidencia.bucket,
+        ruta_archivo: evidencia.ruta_archivo,
+      }),
+    );
+
+    await this.removerArchivosStorage(descartadas);
+
+    const descartadasSet = new Set(
+      descartadas.map((evidencia) => evidencia.id),
+    );
+
+    return {
+      success: true,
+      data: {
+        evidencia_ids_descartadas: descartadas.map((evidencia) => evidencia.id),
+        evidencia_ids_ignoradas: evidenciaIds.filter(
+          (id) => !descartadasSet.has(id),
+        ),
+      },
+    };
+  }
+
   private async resolveTipoEntidadRegistroPlantacionId(): Promise<number> {
     const { data, error } = await this.supabaseService
       .getClient()
@@ -261,6 +334,60 @@ export class PlantacionEvidenciasService {
       throw new BadRequestException(
         'metadata debe ser un JSON valido serializado como texto',
       );
+    }
+  }
+
+  private normalizarEvidenciaIds(evidenciaIds?: number[]): number[] {
+    if (!Array.isArray(evidenciaIds)) {
+      throw new BadRequestException('evidencia_ids debe ser un arreglo');
+    }
+
+    const normalizados = evidenciaIds.map((id) => Number(id));
+    if (
+      normalizados.length === 0 ||
+      normalizados.some((id) => !Number.isInteger(id) || id <= 0)
+    ) {
+      throw new BadRequestException(
+        'evidencia_ids debe contener enteros positivos',
+      );
+    }
+
+    return Array.from(new Set(normalizados)).sort((a, b) => a - b);
+  }
+
+  private async removerArchivosStorage(
+    evidencias: Array<{
+      bucket: string | null;
+      ruta_archivo: string | null;
+    }>,
+  ): Promise<void> {
+    const rutasPorBucket = new Map<string, string[]>();
+
+    for (const evidencia of evidencias) {
+      if (!evidencia.bucket || !evidencia.ruta_archivo) {
+        continue;
+      }
+
+      const rutas = rutasPorBucket.get(evidencia.bucket) ?? [];
+      rutas.push(evidencia.ruta_archivo);
+      rutasPorBucket.set(evidencia.bucket, rutas);
+    }
+
+    for (const [bucket, rutas] of rutasPorBucket.entries()) {
+      const { error } = await this.supabaseService
+        .getClient()
+        .storage.from(bucket)
+        .remove(rutas);
+
+      if (error) {
+        this.logger.error(
+          'Error al eliminar archivos de evidencias pendientes de plantacion:',
+          error,
+        );
+        throw new InternalServerErrorException(
+          'Error al eliminar archivos de evidencias pendientes de plantacion',
+        );
+      }
     }
   }
 }

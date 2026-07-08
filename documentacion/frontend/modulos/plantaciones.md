@@ -40,6 +40,47 @@ Base URL: `/api/registros-plantacion`
 
 ---
 
+## DELETE /registros-plantacion/evidencias-pendientes
+
+**Rol mínimo**: GENERAL
+**Descripción**: Descarta evidencias pendientes de plantación que ya fueron pre-subidas pero no se usarán en `POST /registros-plantacion` porque el usuario canceló el flujo o el registro final no se completará. El backend marca las evidencias como eliminadas y borra sus archivos de Storage.
+
+Es idempotente: los IDs inexistentes, ya eliminados, ya vinculados a una plantación o no pertenecientes al usuario se devuelven en `evidencia_ids_ignoradas`.
+
+**Headers**
+| Header | Requerido | Descripción |
+|--------|-----------|-------------|
+| x-auth-id | ✓ | Supabase auth_id del usuario |
+| Content-Type | ✓ | `application/json` |
+
+**Body** (`application/json`)
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|------------|
+| evidencia_ids | number[] | ✓ | IDs devueltos por `POST /registros-plantacion/evidencias-pendientes` |
+
+**Respuesta exitosa** `200`
+
+```json
+{
+  "success": true,
+  "data": {
+    "evidencia_ids_descartadas": [50, 51],
+    "evidencia_ids_ignoradas": [999]
+  }
+}
+```
+
+**Errores**
+| Status | Cuándo |
+|--------|--------|
+| 400 | IDs inválidos |
+| 401 | Header x-auth-id ausente |
+| 403 | Rol global insuficiente |
+| 404 | Usuario no encontrado o falta tipo_entidad_evidencia REGISTRO_PLANTACION |
+| 500 | Error al marcar evidencias o borrar archivos de Storage |
+
+---
+
 ## POST /registros-plantacion
 
 **Rol mínimo**: GENERAL (el responsable debe pertenecer al equipo de la subcampaña como COORDINADOR u OPERARIO)
@@ -74,6 +115,7 @@ Base URL: `/api/registros-plantacion`
 | cantidad | number | ✓ | >= 1; por asignación no puede exceder `saldo_asignado_disponible` |
 
 **Respuesta exitosa** `201`
+
 ```json
 {
   "success": true,
@@ -112,6 +154,7 @@ Base URL: `/api/registros-plantacion`
 | 404 | Usuario o subcampaña no encontrada |
 
 **Ejemplo cURL**
+
 ```bash
 curl -X POST http://localhost:3000/api/registros-plantacion \
   -H "Content-Type: application/json" \
@@ -139,6 +182,7 @@ curl -X POST http://localhost:3000/api/registros-plantacion \
 ## Tipos & Estructuras
 
 ### PlantacionDetalle
+
 ```typescript
 {
   asignacion_id: number;
@@ -149,6 +193,7 @@ curl -X POST http://localhost:3000/api/registros-plantacion \
 ```
 
 ### ConsumoAsignacion (respuesta)
+
 ```typescript
 {
   asignacion_id: number;
@@ -180,5 +225,6 @@ curl -X POST http://localhost:3000/api/registros-plantacion \
 
 1. **Vivero entrega stock**: `POST /lotes-vivero/:id/asignaciones` (asignación física; ver módulo lotes-vivero-m3).
 2. **POST /registros-plantacion/evidencias-pendientes** → Subir fotos de la plantación.
-3. **POST /registros-plantacion** → Registrar consumo de las asignaciones.
-4. **Sobrante**: `POST /lotes-vivero/:id/asignaciones/:asignacionId/devolucion` → devolver físicamente lo no plantado.
+3. Si el usuario cancela o el registro no se completará: **DELETE /registros-plantacion/evidencias-pendientes** con los IDs pre-subidos.
+4. **POST /registros-plantacion** → Registrar consumo de las asignaciones.
+5. **Sobrante**: `POST /lotes-vivero/:id/asignaciones/:asignacionId/devolucion` → devolver físicamente lo no plantado.

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Headers,
   Post,
   UnauthorizedException,
@@ -13,9 +14,11 @@ import { ApiTags } from '@nestjs/swagger';
 import { PlantacionesService } from '../application/plantaciones.service';
 import {
   ApiCrearEvidenciaPendientePlantacion,
+  ApiDescartarEvidenciasPendientesPlantacion,
   ApiRegistrarPlantacion,
 } from './docs/plantaciones.swagger';
 import { CrearEvidenciaPendientePlantacionDto } from './dto/crear-evidencia-pendiente-plantacion.dto';
+import { DescartarEvidenciasPendientesPlantacionDto } from './dto/descartar-evidencias-pendientes-plantacion.dto';
 import { RegistrarPlantacionDto } from './dto/registrar-plantacion.dto';
 
 @ApiTags('plantaciones')
@@ -45,6 +48,18 @@ export class PlantacionesController {
     @Headers('x-auth-id') authId?: string,
   ) {
     return this.plantacionesService.registrar(dto, this.requireAuthId(authId));
+  }
+
+  @Delete('evidencias-pendientes')
+  @ApiDescartarEvidenciasPendientesPlantacion()
+  descartarEvidenciasPendientes(
+    @Body() dto: DescartarEvidenciasPendientesPlantacionDto,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    return this.plantacionesService.descartarEvidenciasPendientes(
+      dto,
+      this.requireAuthId(authId),
+    );
   }
 
   private requireAuthId(authId?: string): string {
