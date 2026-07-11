@@ -30,6 +30,11 @@ export class CampaniasService {
     return this.consultasService.listar();
   }
 
+  async obtenerResumenGlobal() {
+    const data = await this.metricsService.obtenerResumenGlobal();
+    return { success: true, data };
+  }
+
   obtenerPorId(id: number) {
     return this.consultasService.obtenerPorId(id);
   }

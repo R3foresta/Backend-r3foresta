@@ -60,7 +60,144 @@ function buildActivityService(items: any[] = []): CampaniasActivityService {
   } as unknown as CampaniasActivityService;
 }
 
+function buildGlobalSupabase(config: {
+  campanias: any[];
+  estados: any[];
+  subcampanias: any[];
+}): SupabaseService {
+  const fromMock = jest.fn((tabla: string) => {
+    if (tabla === 'campania') {
+      return {
+        select: jest.fn().mockReturnValue({
+          is: jest.fn().mockResolvedValue({
+            data: config.campanias,
+            error: null,
+          }),
+        }),
+      } as any;
+    }
+    if (tabla === 'subcampania') {
+      return {
+        select: jest.fn().mockReturnValue({
+          in: jest.fn().mockReturnValue({
+            is: jest.fn().mockResolvedValue({
+              data: config.subcampanias,
+              error: null,
+            }),
+          }),
+        }),
+      } as any;
+    }
+    if (tabla === 'campania_estado') {
+      return {
+        select: jest.fn().mockReturnValue({
+          in: jest.fn().mockResolvedValue({
+            data: config.estados,
+            error: null,
+          }),
+        }),
+      } as any;
+    }
+    throw new Error(`Tabla no mockeada: ${tabla}`);
+  });
+
+  return {
+    getClient: jest.fn().mockReturnValue({ from: fromMock }),
+  } as unknown as SupabaseService;
+}
+
 describe('CampaniasMetricsService', () => {
+  it('calcula el resumen global y diferencia activas de totales', async () => {
+    const supabase = buildGlobalSupabase({
+      campanias: [{ id: 1 }, { id: 2 }, { id: 3 }],
+      estados: [
+        { campania_id: 1, estado_derivado: 'ACTIVA' },
+        { campania_id: 2, estado_derivado: 'BORRADOR' },
+        { campania_id: 3, estado_derivado: 'EN_MANTENIMIENTO' },
+      ],
+      subcampanias: [
+        {
+          estado: 'ACTIVA',
+          area_hectareas: 2.25,
+          meta_total_arboles: 100,
+          total_plantado_inicial: 80,
+          total_repuesto: 20,
+          saldo_vivo_actual: 75,
+        },
+        {
+          estado: 'COMPLETADA',
+          area_hectareas: 1.5,
+          meta_total_arboles: 50,
+          total_plantado_inicial: 50,
+          total_repuesto: 0,
+          saldo_vivo_actual: 45,
+        },
+      ],
+    });
+    const service = new CampaniasMetricsService(
+      supabase,
+      buildConsultasService(),
+      buildActivityService(),
+    );
+
+    await expect(service.obtenerResumenGlobal()).resolves.toEqual({
+      arboles_plantados_total: 130,
+      avance_meta_pct: 86.67,
+      supervivencia_pct: 80,
+      hectareas_total: 3.75,
+      campanias_activas: 1,
+      campanias_totales: 3,
+      subcampanias_activas: 1,
+      subcampanias_totales: 2,
+    });
+  });
+
+  it('devuelve porcentajes en cero cuando no hay campañas', async () => {
+    const supabase = buildGlobalSupabase({
+      campanias: [],
+      estados: [],
+      subcampanias: [],
+    });
+    const service = new CampaniasMetricsService(
+      supabase,
+      buildConsultasService(),
+      buildActivityService(),
+    );
+
+    const metrics = await service.obtenerResumenGlobal();
+    expect(metrics).toMatchObject({
+      avance_meta_pct: 0,
+      supervivencia_pct: 0,
+      campanias_totales: 0,
+      subcampanias_totales: 0,
+    });
+  });
+
+  it('acota los porcentajes globales a 100 ante datos por encima de la meta', async () => {
+    const service = new CampaniasMetricsService(
+      buildGlobalSupabase({
+        campanias: [{ id: 1 }],
+        estados: [{ campania_id: 1, estado_derivado: 'ACTIVA' }],
+        subcampanias: [
+          {
+            estado: 'ACTIVA',
+            area_hectareas: 1,
+            meta_total_arboles: 10,
+            total_plantado_inicial: 12,
+            total_repuesto: 0,
+            saldo_vivo_actual: 15,
+          },
+        ],
+      }),
+      buildConsultasService(),
+      buildActivityService(),
+    );
+
+    const metrics = await service.obtenerResumenGlobal();
+    expect(metrics.avance_meta_pct).toBe(100);
+    expect(metrics.supervivencia_pct).toBe(100);
+  });
+
   it('calcula supervivencia = 0 cuando plantado_total = 0', async () => {
     const supabase = buildSupabase({ subcampanias: [] });
     const service = new CampaniasMetricsService(

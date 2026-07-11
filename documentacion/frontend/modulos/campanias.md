@@ -121,6 +121,54 @@ curl -X GET http://localhost:3000/api/campanias \
 
 ---
 
+## GET /campanias/resumen
+
+**Autenticación**: header `x-auth-id`
+
+**Descripción**: Resumen global para las tarjetas del dashboard. Considera campañas vigentes y sus subcampañas no eliminadas.
+
+**Headers**
+| Header | Requerido |
+|--------|-----------|
+| x-auth-id | ✓ |
+
+**Respuesta exitosa** `200`
+
+```json
+{
+  "success": true,
+  "data": {
+    "arboles_plantados_total": 12500,
+    "avance_meta_pct": 80,
+    "supervivencia_pct": 88,
+    "hectareas_total": 42.75,
+    "campanias_activas": 3,
+    "campanias_totales": 5,
+    "subcampanias_activas": 8,
+    "subcampanias_totales": 12
+  }
+}
+```
+
+**Reglas de cálculo**
+
+| Campo | Regla |
+|-------|-------|
+| `arboles_plantados_total` | Suma de `total_plantado_inicial`; no incluye reposiciones. |
+| `avance_meta_pct` | Plantación inicial / meta total × 100. No cuenta reposiciones y se acota a 0–100. |
+| `supervivencia_pct` | Árboles vivos / (plantación inicial + reposiciones) × 100, acotado a 0–100. |
+| `hectareas_total` | Suma de `area_hectareas`; `null` cuenta como 0. |
+| `campanias_activas` | Campañas cuyo estado derivado es `ACTIVA`. |
+| `subcampanias_activas` | Subcampañas cuyo estado es `ACTIVA`. |
+| Totales | Excluyen registros con soft-delete. |
+
+```bash
+curl http://localhost:3000/api/campanias/resumen \
+  -H "x-auth-id: <tu-auth-id>"
+```
+
+---
+
 ## GET /campanias/:id
 
 **Rol mínimo**: GENERAL  

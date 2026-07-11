@@ -25,6 +25,7 @@ import {
   ApiEditarCampania,
   ApiListarCampanias,
   ApiMetricsCampania,
+  ApiResumenGlobalCampanias,
 } from './docs/campanias.swagger';
 import { AsociarOrganizacionesDto } from './dto/asociar-organizaciones.dto';
 import { CrearCampaniaDto } from './dto/crear-campania.dto';
@@ -46,6 +47,13 @@ export class CampaniasController {
   listar(@Headers('x-auth-id') authId?: string) {
     this.requireAuthId(authId);
     return this.campaniasService.listar();
+  }
+
+  @Get('resumen')
+  @ApiResumenGlobalCampanias()
+  obtenerResumenGlobal(@Headers('x-auth-id') authId?: string) {
+    this.requireAuthId(authId);
+    return this.campaniasService.obtenerResumenGlobal();
   }
 
   @Get(':id')

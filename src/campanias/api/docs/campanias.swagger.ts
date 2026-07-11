@@ -280,6 +280,39 @@ export function ApiMetricsCampania() {
   );
 }
 
+export function ApiResumenGlobalCampanias() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Resumen global de campañas para el dashboard',
+      description:
+        'Agrega campañas vigentes y sus subcampañas no eliminadas. Plantados y avance usan plantación inicial; supervivencia incluye reposiciones. Los porcentajes están entre 0 y 100.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiResponse({
+      status: 200,
+      description: 'Resumen global calculado correctamente.',
+      schema: {
+        example: {
+          success: true,
+          data: {
+            arboles_plantados_total: 12500,
+            avance_meta_pct: 80,
+            supervivencia_pct: 88,
+            hectareas_total: 42.75,
+            campanias_activas: 3,
+            campanias_totales: 5,
+            subcampanias_activas: 8,
+            subcampanias_totales: 12,
+          },
+        },
+      },
+    }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({ status: 400, description: 'Error al consultar métricas.' }),
+  );
+}
+
 export function ApiActivityCampania() {
   return applyDecorators(
     ApiOperation({

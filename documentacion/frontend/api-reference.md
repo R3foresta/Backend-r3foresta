@@ -1,6 +1,6 @@
 # API Reference — Reforesta Backend
 
-**Última actualización**: 2026-06-25
+**Última actualización**: 2026-07-11
 
 ## Tabla de Contenidos
 
@@ -171,8 +171,11 @@ PLANTACION_INICIAL | REPOSICION
 ### [4. Campañas](modulos/campanias.md)
 - `POST /campanias` — Crear
 - `GET /campanias` — Listar
+- `GET /campanias/resumen` — Métricas globales para el dashboard
 - `GET /campanias/:id` — Detalle
 - `GET /campanias/:id/subcampanias` — Listar subcampañas de la campaña
+- `GET /campanias/:id/metrics` — Métricas de una campaña
+- `GET /campanias/:id/activity` — Actividad reciente de una campaña
 - `PATCH /campanias/:id` — Editar
 - `DELETE /campanias/:id` — Borrar
 - `POST /campanias/:id/organizaciones` — Asociar orgs

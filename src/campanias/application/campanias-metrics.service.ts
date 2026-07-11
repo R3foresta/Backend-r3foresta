@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CampaniasActivityService } from './campanias-activity.service';
 import { CampaniasConsultasService } from './campanias-consultas.service';
@@ -16,6 +16,31 @@ export type CampaniaMetrics = {
   } | null;
 };
 
+export type CampaniasResumenGlobal = {
+  arboles_plantados_total: number;
+  avance_meta_pct: number;
+  supervivencia_pct: number;
+  hectareas_total: number;
+  campanias_activas: number;
+  campanias_totales: number;
+  subcampanias_activas: number;
+  subcampanias_totales: number;
+};
+
+type SubcampaniaResumenRow = {
+  estado: string;
+  area_hectareas: number | string | null;
+  meta_total_arboles: number | string | null;
+  total_plantado_inicial: number | string | null;
+  total_repuesto: number | string | null;
+  saldo_vivo_actual: number | string | null;
+};
+
+type CampaniaEstadoRow = {
+  campania_id: number | string;
+  estado_derivado: string;
+};
+
 @Injectable()
 export class CampaniasMetricsService {
   constructor(
@@ -23,6 +48,84 @@ export class CampaniasMetricsService {
     private readonly consultasService: CampaniasConsultasService,
     private readonly activityService: CampaniasActivityService,
   ) {}
+
+  async obtenerResumenGlobal(): Promise<CampaniasResumenGlobal> {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: campaniasRows, error: campaniasError } = await supabase
+      .from('campania')
+      .select('id')
+      .is('deleted_at', null);
+
+    if (campaniasError) {
+      throw new BadRequestException(campaniasError.message);
+    }
+
+    const campaniaIds = (campaniasRows ?? []).map((c) => Number(c.id));
+    const [subcampaniasResult, estadosResult] = await Promise.all([
+      campaniaIds.length > 0
+        ? supabase
+            .from('subcampania')
+            .select(
+              'estado, area_hectareas, meta_total_arboles, total_plantado_inicial, total_repuesto, saldo_vivo_actual',
+            )
+            .in('campania_id', campaniaIds)
+            .is('deleted_at', null)
+        : Promise.resolve({ data: [], error: null }),
+      campaniaIds.length > 0
+        ? supabase
+            .from('campania_estado')
+            .select('campania_id, estado_derivado')
+            .in('campania_id', campaniaIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (subcampaniasResult.error) {
+      throw new BadRequestException(subcampaniasResult.error.message);
+    }
+    if (estadosResult.error) {
+      throw new BadRequestException(estadosResult.error.message);
+    }
+
+    const subcampanias = (subcampaniasResult.data ??
+      []) as SubcampaniaResumenRow[];
+    const estados = (estadosResult.data ?? []) as CampaniaEstadoRow[];
+    let plantadoInicialTotal = 0;
+    let plantadoConReposicionesTotal = 0;
+    let metaTotal = 0;
+    let saldoVivoTotal = 0;
+    let hectareasTotal = 0;
+
+    for (const subcampania of subcampanias) {
+      const plantadoInicial = Number(subcampania.total_plantado_inicial ?? 0);
+      plantadoInicialTotal += plantadoInicial;
+      plantadoConReposicionesTotal +=
+        plantadoInicial + Number(subcampania.total_repuesto ?? 0);
+      metaTotal += Number(subcampania.meta_total_arboles ?? 0);
+      saldoVivoTotal += Number(subcampania.saldo_vivo_actual ?? 0);
+      hectareasTotal += Number(subcampania.area_hectareas ?? 0);
+    }
+
+    return {
+      // La tarjeta de plantados representa el avance inicial de la meta.
+      arboles_plantados_total: plantadoInicialTotal,
+      avance_meta_pct: this.porcentaje(plantadoInicialTotal, metaTotal),
+      // Supervivencia sí considera todas las plantaciones físicas, incluidas reposiciones.
+      supervivencia_pct: this.porcentaje(
+        saldoVivoTotal,
+        plantadoConReposicionesTotal,
+      ),
+      hectareas_total: this.round(hectareasTotal, 4),
+      campanias_activas: estados.filter(
+        (estado) => estado.estado_derivado === 'ACTIVA',
+      ).length,
+      campanias_totales: campaniaIds.length,
+      subcampanias_activas: subcampanias.filter(
+        (subcampania) => subcampania.estado === 'ACTIVA',
+      ).length,
+      subcampanias_totales: subcampanias.length,
+    };
+  }
 
   async obtener(campaniaId: number): Promise<CampaniaMetrics> {
     await this.consultasService.asegurarExiste(campaniaId);
@@ -99,5 +202,13 @@ export class CampaniasMetricsService {
   private round(value: number, decimals: number): number {
     const factor = Math.pow(10, decimals);
     return Math.round(value * factor) / factor;
+  }
+
+  private porcentaje(numerador: number, denominador: number): number {
+    if (denominador <= 0) return 0;
+    return this.round(
+      Math.min(100, Math.max(0, (numerador / denominador) * 100)),
+      2,
+    );
   }
 }
