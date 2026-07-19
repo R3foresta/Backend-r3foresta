@@ -29,14 +29,14 @@ Las 7 tareas estan **implementadas en el repo**:
 | M2-M3-01 | `migrations/051_m2_m3_asignacion_fisica_schema.sql` (enum `ASIGNACION_SUBCAMPANIA`, evento `DEVOLUCION_PLANTACION`, columna `evento_lote_vivero.asignacion_id`, FKs M3, CHECK NOT VALID que bloquea nuevas escrituras `AUTOMATICO_PLANTACION`, vista `v_lote_vivero_saldos` fisica) |
 | M2-M3-02 | `migrations/052_vivero_asignar_stock_subcampania_rpc.sql` (+ DROP de `fn_vivero_reservar_stock_lote`), DTO/servicio/controller/Swagger de `POST /lotes-vivero/:id/asignaciones`; alias `POST :id/reservas` eliminado |
 | M2-M3-03 | `migrations/053_m3_registrar_plantacion_sin_despacho.sql`, servicio de plantacion con `consumos` (sin `despachos`) |
-| M2-M3-04 | `migrations/054_m3_devolucion_fisica.sql` (`fn_m3_devolver_asignacion_vivero`, `fn_subcampania_cancelar` v2 fisica), `POST /:id/asignaciones/:asignacionId/devolucion`; `DELETE` eliminado |
+| M2-M3-04 | `migrations/054_m3_devolucion_fisica.sql` + fix incremental `056_fix_devolucion_saldo_constraint.sql` (`fn_m3_devolver_asignacion_vivero`, `fn_subcampania_cancelar` v2 fisica), `POST /:id/asignaciones/:asignacionId/devolucion`; `DELETE` eliminado |
 | M2-M3-05 | `migrations/055_vivero_merma_fisica.sql`, saldos/consultas/despacho manual con semantica fisica (`saldo_asignado_subcampanias`) |
 | M2-M3-06 | Swagger actualizado, docs frontend (`modulos/lotes-vivero-m3.md`, `modulos/plantaciones.md`, `modulos/subcampanias.md`, `api-reference.md`), [guia de migracion frontend](../frontend/guia-migracion-asignacion-fisica.md), receta [postman/asignacion-fisica.md](../postman/asignacion-fisica.md) |
 | M2-M3-07 | Unit specs actualizados (asignaciones, despacho, plantacion); e2e DB nuevos `test/e2e/db/asignacion_fisica.e2e-spec.ts` y `test/e2e/db/plantacion_fisica.e2e-spec.ts` (reemplazan `reserva_requiere_embolsado` y `merma_lifo`, que probaban el contrato viejo) |
 
 **Pendiente fuera del repo:**
 
-1. Aplicar las migraciones `051` a `055` en Supabase, **en orden y cada una como
+1. Aplicar las migraciones `051` a `056` en Supabase, **en orden y cada una como
    transaccion separada** (051 agrega valores de enum que 052+ usan; el SQL
    Editor de Supabase corre cada script en su propia transaccion, suficiente).
 2. Correr `npm run test:e2e:db` contra el entorno con las migraciones aplicadas.

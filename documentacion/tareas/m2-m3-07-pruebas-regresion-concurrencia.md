@@ -80,4 +80,3 @@ La suite e2e puede requerir Supabase real o entorno de pruebas con variables `.e
 - comando intentado,
 - razon del bloqueo,
 - cobertura unitaria que queda como respaldo temporal.
-

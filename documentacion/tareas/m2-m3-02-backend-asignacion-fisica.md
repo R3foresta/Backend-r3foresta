@@ -105,4 +105,3 @@ Response minimo:
 
 - El frontend actual puede seguir mandando solo `subcampania_id` y `cantidad_asignada`; coordinar `M2-M3-06`.
 - Si el endpoint cambia response shape, actualizar consumidores antes de cortar compatibilidad.
-

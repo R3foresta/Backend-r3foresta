@@ -1,5 +1,5 @@
 // E2E DB de fn_m3_registrar_plantacion bajo el contrato fisico (M2-M3-03/07).
-// Requiere Supabase real con las migraciones 051-055 aplicadas.
+// Requiere Supabase real con las migraciones 051-056 aplicadas.
 //
 // Cubre:
 //   - plantar consume asignaciones (cantidad_consumida) SIN generar eventos M2
@@ -131,9 +131,7 @@ describe('fn_m3_registrar_plantacion — consumo de asignaciones (RN-VIV-52)', (
       });
       // Falla por meta (25 > 20) o por saldo asignado (25 > 15): ambas guardas
       // son del contrato; el mensaje debe mencionar alguna de las dos.
-      expect(excesoMeta.error?.message ?? '').toMatch(
-        /meta|saldo asignado/i,
-      );
+      expect(excesoMeta.error?.message ?? '').toMatch(/meta|saldo asignado/i);
 
       const inicial = unwrapRpcRow(
         await client.rpc('fn_m3_registrar_plantacion', {
@@ -225,7 +223,11 @@ describe('fn_m3_registrar_plantacion — consumo de asignaciones (RN-VIV-52)', (
       unwrap(
         await client
           .from('subcampania')
-          .update({ estado: 'COMPLETADA' })
+          .update({
+            estado: 'COMPLETADA',
+            fecha_cierre_operativo: new Date().toISOString(),
+            fecha_fin_mantenimiento: hoy(),
+          })
           .eq('id', sub.subcampaniaId)
           .select('id')
           .single(),
@@ -279,7 +281,9 @@ describe('fn_m3_registrar_plantacion — consumo de asignaciones (RN-VIV-52)', (
         ],
         p_evidencia_ids: [created.evidenciaIds[3]],
       });
-      expect(excesoRepo.error?.message ?? '').toMatch(/pendiente de reposicion/i);
+      expect(excesoRepo.error?.message ?? '').toMatch(
+        /pendiente de reposicion/i,
+      );
 
       // Reposicion valida de 4 <= 5.
       const reposicion = unwrapRpcRow(
@@ -377,6 +381,7 @@ async function createSubcampaniaConPoligono(
       .insert({
         nombre: `[${tag}] Campania`,
         descripcion: 'Campania de prueba',
+        tipo: 'REFORESTACION',
         fecha_estimada_inicio: hoy(),
         fecha_estimada_fin: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
           .toISOString()
@@ -419,6 +424,7 @@ async function createSubcampaniaConPoligono(
         subcampania_id: subcampania.id,
         usuario_id: ref.userId,
         rol: 'COORDINADOR',
+        agregado_by: ref.userId,
       })
       .select('id')
       .single(),

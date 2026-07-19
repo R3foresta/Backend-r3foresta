@@ -23,6 +23,9 @@ export type P0Refs = {
     id: number;
     nombre: string;
   };
+  planta: {
+    id: number;
+  };
 };
 
 export type P0CreatedIds = {
@@ -150,6 +153,17 @@ export async function loadP0References(
     'cargar zona/division administrativa',
   );
 
+  const planta = unwrap(
+    await client
+      .from('planta')
+      .select('id')
+      .eq('activo', true)
+      .order('id', { ascending: true })
+      .limit(1)
+      .single(),
+    'cargar planta activa para el plan de subcampania',
+  );
+
   return {
     admin: mapUser(admin),
     nonAdmin: mapUser(nonAdmin),
@@ -157,6 +171,9 @@ export async function loadP0References(
     zona: {
       id: Number(zona.id),
       nombre: String(zona.nombre),
+    },
+    planta: {
+      id: Number(planta.id),
     },
   };
 }

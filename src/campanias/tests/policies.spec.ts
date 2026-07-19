@@ -125,14 +125,14 @@ describe('DesactivacionCampaniaPolicy (RN-PLA-38)', () => {
   });
 
   it('bloquea si existe al menos una subcampaña no cancelada', () => {
-    expect(() =>
-      DesactivacionCampaniaPolicy.assertPuedeDesactivar(1),
-    ).toThrow(DesactivacionCampaniaPolicyError);
+    expect(() => DesactivacionCampaniaPolicy.assertPuedeDesactivar(1)).toThrow(
+      DesactivacionCampaniaPolicyError,
+    );
   });
 
   it('bloquea con cualquier cantidad positiva de subcampañas no canceladas', () => {
-    expect(() =>
-      DesactivacionCampaniaPolicy.assertPuedeDesactivar(5),
-    ).toThrow(DesactivacionCampaniaPolicyError);
+    expect(() => DesactivacionCampaniaPolicy.assertPuedeDesactivar(5)).toThrow(
+      DesactivacionCampaniaPolicyError,
+    );
   });
 });

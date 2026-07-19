@@ -78,7 +78,7 @@ Para cambiar coordinador:
 
 ## POST /subcampanias
 
-**Rol mínimo**: ADMIN  
+**Rol mínimo**: ADMIN
 **Descripción**: Crea una subcampaña en estado BORRADOR dentro de una campaña.
 
 **Headers**
@@ -242,7 +242,7 @@ curl -X GET "http://localhost:3000/api/subcampanias?campania_id=1&estado=ACTIVA"
 
 ## GET /subcampanias/:id
 
-**Rol mínimo**: usuario autenticado  
+**Rol mínimo**: usuario autenticado
 **Descripción**: Obtiene detalle completo de una subcampaña.
 
 **Headers**
@@ -300,7 +300,7 @@ curl -X GET http://localhost:3000/api/subcampanias/1 \
 
 ## PATCH /subcampanias/:id
 
-**Rol mínimo**: ADMIN  
+**Rol mínimo**: ADMIN
 **Descripción**: Edita datos de una subcampaña (solo en estado BORRADOR o PAUSADA).
 
 **Headers**
@@ -366,7 +366,7 @@ curl -X PATCH http://localhost:3000/api/subcampanias/1 \
 
 ## POST /subcampanias/:id/poligono
 
-**Rol mínimo**: ADMIN  
+**Rol mínimo**: ADMIN
 **Descripción**: Establece el polígono GeoJSON de la zona de la subcampaña.
 
 **Headers**
@@ -511,7 +511,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/activar \
 
 ## POST /subcampanias/:id/cerrar
 
-**Rol mínimo**: ADMIN  
+**Rol mínimo**: ADMIN
 **Descripción**: Cierra una subcampaña (transición: ACTIVA → COMPLETADA o FINALIZADA_PARCIAL).
 
 **Pre-condiciones**:
@@ -582,8 +582,8 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 
 ## POST /subcampanias/:id/cancelar
 
-**Rol mínimo**: ADMIN  
-**Descripción**: Cancela una subcampaña sin plantaciones (`RN-PLA-37`). Aplica a `BORRADOR` (siempre) y a `ACTIVA` cuyo `total_plantado_inicial = 0`. Deja `estado = CANCELADA`, setea `deleted_at`/`deleted_by` (inactivación, no borrado físico), libera todas las asignaciones activas como devolución lógica al lote (no genera evento en M2) y registra `SUBCAMPANIA_CANCELADA` en el historial. Si `total_plantado_inicial > 0`, responde 409 sugiriendo `FINALIZADA_PARCIAL`. Atómico.
+**Rol mínimo**: ADMIN
+**Descripción**: Cancela una subcampaña sin plantaciones (`RN-PLA-37`). Aplica a `BORRADOR` (siempre) y a `ACTIVA` cuyo `total_plantado_inicial = 0`. Deja `estado = CANCELADA`, setea `deleted_at`/`deleted_by` (inactivación, no borrado físico), devuelve físicamente al vivero el saldo disponible de todas las asignaciones activas y registra los eventos `DEVOLUCION_PLANTACION` (M2), `DEVOLUCION_A_VIVERO` (M3) y `SUBCAMPANIA_CANCELADA` en el historial. Si `total_plantado_inicial > 0`, responde 409 sugiriendo `FINALIZADA_PARCIAL`. Atómico.
 
 **Body** (`application/json`)
 
@@ -627,7 +627,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 
 ## GET /subcampanias/:id/plan
 
-**Rol mínimo**: cualquier usuario autenticado.  
+**Rol mínimo**: cualquier usuario autenticado.
 **Descripción**: Devuelve el plan de metas por especie (`SUBCAMPANIA_META_ESPECIE`). Vacío si aún no se cargó.
 
 **Respuesta exitosa** `200`
@@ -661,7 +661,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 
 ## PUT /subcampanias/:id/plan
 
-**Rol mínimo**: ADMIN  
+**Rol mínimo**: ADMIN
 **Descripción**: Reemplazo bulk del plan de metas por especie. Solo permitido en `BORRADOR` (`RN-PLA-17`). Cada `planta_id` una sola vez, `porcentaje_objetivo ∈ (0, 100]`, `cantidad_objetivo > 0`. La consistencia total (`SUM(%) = 100`, `SUM(cantidad) = meta_total_arboles`) se verifica al activar (`RN-PLA-16`), no aquí.
 
 **Body** (`application/json`)
@@ -704,7 +704,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 
 ## DELETE /subcampanias/:id
 
-**Rol mínimo**: ADMIN  
+**Rol mínimo**: ADMIN
 **Descripción**: Elimina una subcampaña (solo en estado BORRADOR).
 
 **Headers**
@@ -747,7 +747,7 @@ curl -X DELETE http://localhost:3000/api/subcampanias/1 \
 
 ## GET /subcampanias/:id/equipo
 
-**Rol mínimo**: usuario autenticado  
+**Rol mínimo**: usuario autenticado
 **Descripción**: Lista miembros del equipo de la subcampaña.
 
 **Headers**
@@ -803,7 +803,7 @@ curl -X GET http://localhost:3000/api/subcampanias/1/equipo \
 
 ## POST /subcampanias/:id/equipo
 
-**Rol mínimo**: ADMIN  
+**Rol mínimo**: ADMIN
 **Descripción**: Agrega uno o más miembros al equipo de la subcampaña. La operación recibe un arreglo y se inserta de forma atómica: si un miembro falla, no se agrega ninguno.
 
 **Headers**
@@ -892,7 +892,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/equipo \
 
 ## DELETE /subcampanias/:id/equipo/:usuarioId
 
-**Rol mínimo**: ADMIN  
+**Rol mínimo**: ADMIN
 **Descripción**: Remueve un miembro del equipo.
 
 **Headers**

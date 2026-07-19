@@ -1,5 +1,5 @@
 // E2E DB del contrato fisico M2 <-> M3 (tareas M2-M3-02/04/05/07).
-// Requiere Supabase real con las migraciones 051-055 aplicadas.
+// Requiere Supabase real con las migraciones 051-056 aplicadas.
 //
 // Cubre:
 //   - guard EMBOLSADO (RN-VIV-61) — reemplaza reserva_requiere_embolsado.e2e-spec.ts
@@ -204,7 +204,9 @@ describe('Contrato fisico M2-M3: asignacion, devolucion y merma', () => {
       const eventoM3 = unwrap(
         await client
           .from('evento_plantacion')
-          .select('tipo_evento, subcampania_id, asignacion_id, cantidad_asignada_evento')
+          .select(
+            'tipo_evento, subcampania_id, asignacion_id, cantidad_asignada_evento',
+          )
           .eq('id', row.evento_plantacion_id)
           .single(),
         'leer evento M3 de la asignacion',
@@ -483,7 +485,9 @@ describe('Contrato fisico M2-M3: asignacion, devolucion y merma', () => {
       const eventoM2 = unwrap(
         await client
           .from('evento_lote_vivero')
-          .select('tipo_evento, asignacion_id, subcampania_id, cantidad_afectada, origen_despacho, registro_plantacion_id')
+          .select(
+            'tipo_evento, asignacion_id, subcampania_id, cantidad_afectada, origen_despacho, registro_plantacion_id',
+          )
           .eq('id', parcial.evento_lote_vivero_id)
           .single(),
         'evento M2 de devolucion',
@@ -608,7 +612,9 @@ describe('Contrato fisico M2-M3: asignacion, devolucion y merma', () => {
       const asigFinal = unwrap(
         await client
           .from('asignacion_vivero_subcampania')
-          .select('estado, cantidad_asignada, cantidad_mermada, saldo_asignado_disponible')
+          .select(
+            'estado, cantidad_asignada, cantidad_mermada, saldo_asignado_disponible',
+          )
           .eq('id', asignacion.asignacion_id)
           .single(),
         'asignacion tras merma',
@@ -648,6 +654,7 @@ async function createCampania(
       .insert({
         nombre: `[${tag}] Campania`,
         descripcion: 'Campania de prueba',
+        tipo: 'REFORESTACION',
         fecha_estimada_inicio: hoy(),
         fecha_estimada_fin: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
           .toISOString()
@@ -679,6 +686,8 @@ async function createSubcampaniaActiva(
         zona_id: ref.divisionId,
         meta_total_arboles: 100,
         codigo_trazabilidad: `SUB-QA-${tag}`,
+        poligono_geom:
+          'SRID=4326;POLYGON((-68.2 -16.6,-68.0 -16.6,-68.0 -16.4,-68.2 -16.4,-68.2 -16.6))',
         created_by: ref.userId,
         updated_by: ref.userId,
       })
@@ -695,6 +704,7 @@ async function createSubcampaniaActiva(
         subcampania_id: subcampania.id,
         usuario_id: ref.userId,
         rol: 'COORDINADOR',
+        agregado_by: ref.userId,
       })
       .select('id')
       .single(),

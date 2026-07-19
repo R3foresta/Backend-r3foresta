@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  OnModuleDestroy,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { server } from '@passwordless-id/webauthn';
@@ -11,17 +12,26 @@ import { LoginDto } from './dto/login.dto';
 import { Credential } from '../users/entities/credential.entity';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleDestroy {
   // Almacenamiento temporal de challenges (usar Redis en producción)
   private challenges: Map<string, { challenge: string; expiresAt: number }> =
     new Map();
+  private readonly challengeCleanupTimer: ReturnType<typeof setInterval>;
 
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
   ) {
     // Limpiar challenges expirados cada 5 minutos
-    setInterval(() => this.cleanExpiredChallenges(), 5 * 60 * 1000);
+    this.challengeCleanupTimer = setInterval(
+      () => this.cleanExpiredChallenges(),
+      5 * 60 * 1000,
+    );
+    this.challengeCleanupTimer.unref();
+  }
+
+  onModuleDestroy(): void {
+    clearInterval(this.challengeCleanupTimer);
   }
 
   /**

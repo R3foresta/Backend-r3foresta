@@ -70,4 +70,3 @@ Actualizar la documentacion de API, Swagger y contratos consumidos por frontend 
 ## Riesgos
 
 - Si se actualiza Swagger antes de implementar backend, el frontend puede integrarse contra una API que aun no existe. Marcar cada seccion como "requiere M2-M3-02/03/04/05" hasta que este cerrada.
-

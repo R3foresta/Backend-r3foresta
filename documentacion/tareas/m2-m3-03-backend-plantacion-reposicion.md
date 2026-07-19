@@ -80,4 +80,3 @@ Ajustar `fn_m3_registrar_plantacion` y el servicio NestJS para que plantacion in
 
 - Si el frontend depende de `despachos`, coordinar con `M2-M3-06`.
 - La validacion por especie puede requerir queries agregadas nuevas si no existen vistas/materializados.
-

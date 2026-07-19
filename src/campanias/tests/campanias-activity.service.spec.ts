@@ -36,9 +36,10 @@ function buildSupabase(config: {
         select: jest.fn().mockReturnValue({
           in: jest.fn().mockReturnValue({
             order: jest.fn().mockReturnValue({
-              limit: jest
-                .fn()
-                .mockResolvedValue({ data: config.registros ?? [], error: null }),
+              limit: jest.fn().mockResolvedValue({
+                data: config.registros ?? [],
+                error: null,
+              }),
             }),
           }),
         }),

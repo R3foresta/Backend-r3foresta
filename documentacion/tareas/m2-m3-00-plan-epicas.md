@@ -92,4 +92,3 @@ M2-M3-01
 - Mermas M2 solo afectan saldo fisico en vivero.
 - Las APIs de consulta no presentan la identidad antigua como saldo vigente.
 - Tests unitarios y e2e cubren el flujo completo.
-

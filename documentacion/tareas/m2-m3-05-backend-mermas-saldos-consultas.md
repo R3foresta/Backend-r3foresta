@@ -76,4 +76,3 @@ Alinear mermas y consultas de saldos con el modelo fisico: el saldo del lote rep
 
 - Cambiar nombres de campos puede romper frontend; coordinar con `M2-M3-06`.
 - Si se mantiene compatibilidad de campos antiguos, marcarlos como legado o derivado no vigente.
-

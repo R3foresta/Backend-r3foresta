@@ -80,4 +80,3 @@ Implementar devolucion fisica de stock asignado al vivero y ajustar cancelacion 
 
 - Si se permite `DELETE` como devolucion total, se pierde la semantica de motivo obligatorio salvo que se cambie contrato.
 - La cancelacion debe bloquear filas de subcampania, asignaciones y lote en orden estable para evitar carreras.
-

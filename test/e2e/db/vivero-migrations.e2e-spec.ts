@@ -156,6 +156,24 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
         evidencia_inicio_ids: [evidenciaInicio.id],
       });
 
+      const evidenciaEmbolsado = await createPendingInicioEvidence(client, {
+        userId: ref.userId,
+        tag: `${tag}-embolsado`,
+      });
+      const evidenciaMerma = await createPendingInicioEvidence(client, {
+        userId: ref.userId,
+        tag: `${tag}-merma`,
+      });
+      const evidenciaDespacho = await createPendingInicioEvidence(client, {
+        userId: ref.userId,
+        tag: `${tag}-despacho`,
+      });
+      created.evidenciaIds.push(
+        evidenciaEmbolsado.id,
+        evidenciaMerma.id,
+        evidenciaDespacho.id,
+      );
+
       unwrap(
         await client.rpc('fn_vivero_registrar_embolsado', {
           p_lote_id: created.loteId,
@@ -163,6 +181,7 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
           p_responsable_id: ref.userId,
           p_plantas_vivas_iniciales: 10,
           p_observaciones: `[${tag}] embolsado`,
+          p_evidencia_ids: [evidenciaEmbolsado.id],
         }),
         'registrar EMBOLSADO',
       );
@@ -186,11 +205,12 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
           p_cantidad_perdida: 3,
           p_causa_merma: 'OTRO',
           p_observaciones: `[${tag}] merma`,
+          p_evidencia_ids: [evidenciaMerma.id],
         }),
         'registrar MERMA',
       );
 
-      const despachoId = unwrap(
+      const despacho = unwrapRpcRow(
         await client.rpc('fn_vivero_registrar_despacho', {
           p_lote_id: created.loteId,
           p_fecha_evento: fechaEvento,
@@ -199,9 +219,10 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
           p_destino_tipo: 'OTRO',
           p_destino_referencia: `[${tag}] destino`,
           p_observaciones: `[${tag}] despacho`,
+          p_evidencia_ids: [evidenciaDespacho.id],
         }),
         'registrar DESPACHO',
-      );
+      ) as { evento_despacho_id: number };
 
       const loteFinal = unwrap(
         await client
@@ -297,7 +318,9 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
         (evento) => evento.tipo_evento === 'CIERRE_AUTOMATICO',
       );
       expect(cierreAutomatico).toBeDefined();
-      expect(cierreAutomatico?.ref_evento_trigger_id).toBe(despachoId);
+      expect(cierreAutomatico?.ref_evento_trigger_id).toBe(
+        despacho.evento_despacho_id,
+      );
       expect(cierreAutomatico?.motivo_cierre_calculado).toBe('MIXTO');
 
       expect(movimientos).toHaveLength(1);
@@ -424,7 +447,7 @@ async function createPendingInicioEvidence(
           estado: 'PENDIENTE_VINCULACION',
           origen: 'QA_VIVERO_INICIO',
         },
-        es_principal: true,
+        es_principal: false,
         orden: 0,
         creado_por_usuario_id: params.userId,
       })

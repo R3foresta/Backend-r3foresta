@@ -68,4 +68,3 @@ Alinear la base de datos con el contrato vigente M2 Vivero - M3 Plantacion para 
 
 - Si hay data historica con `AUTOMATICO_PLANTACION`, el CHECK nuevo puede romper migraciones. Revisar datos antes del ALTER o hacer CHECK compatible con legado.
 - Supabase puede requerir separar `ALTER TYPE ADD VALUE` y uso del valor en transacciones distintas.
-

@@ -153,6 +153,13 @@ describe('P0 Subcampanias - contrato HTTP', () => {
       teamResponse.body.data.map((m: any) => Number(m.usuario_id)),
     ).toEqual(expect.arrayContaining([refs.admin.id, refs.operario.id]));
 
+    const activateWithoutPlan = await request(app.getHttpServer())
+      .post(`/api/subcampanias/${sub1.id}/activar`)
+      .set('x-auth-id', refs.admin.authId);
+    expect(activateWithoutPlan.status).toBe(422);
+
+    await setPlan(sub1.id);
+
     const activateSub1 = await request(app.getHttpServer())
       .post(`/api/subcampanias/${sub1.id}/activar`)
       .set('x-auth-id', refs.admin.authId);
@@ -199,6 +206,7 @@ describe('P0 Subcampanias - contrato HTTP', () => {
     await addTeamMembers(sub2.id, [
       { usuario_id: refs.admin.id, rol: 'COORDINADOR' },
     ]);
+    await setPlan(sub2.id);
 
     const activateSub2 = await request(app.getHttpServer())
       .post(`/api/subcampanias/${sub2.id}/activar`)
@@ -287,6 +295,23 @@ describe('P0 Subcampanias - contrato HTTP', () => {
 
     expect(response.status).toBe(201);
     return response.body.data;
+  }
+
+  async function setPlan(subcampaniaId: number) {
+    const response = await request(app.getHttpServer())
+      .put(`/api/subcampanias/${subcampaniaId}/plan`)
+      .set('x-auth-id', refs.admin.authId)
+      .send({
+        metas: [
+          {
+            planta_id: refs.planta.id,
+            porcentaje_objetivo: 100,
+            cantidad_objetivo: 100,
+          },
+        ],
+      });
+
+    expect(response.status).toBe(200);
   }
 
   function getCampania(campaniaId: number) {
