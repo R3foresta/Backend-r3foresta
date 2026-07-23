@@ -6,7 +6,7 @@ Base URL: `/api/campanias`
 
 ## POST /campanias
 
-**Rol mínimo**: ADMIN  
+**Rol mínimo**: ADMIN
 **Descripción**: Crea una campaña. El código de trazabilidad (`CMP-YYYY-NNN`) se genera automáticamente.
 
 **Headers**
@@ -562,6 +562,118 @@ curl -X DELETE http://localhost:3000/api/campanias/1 \
 
 ---
 
+## GET /campanias/:id/desactivacion/preview
+
+**Rol mínimo**: ADMIN
+**Descripción**: Previsualiza la elegibilidad y los efectos de desactivar una campaña cancelando automáticamente sus subcampañas sin plantaciones. Es una lectura informativa y no modifica datos.
+
+Una campaña es elegible si todas sus subcampañas vivas están en uno de estos casos:
+
+- `BORRADOR` o `ACTIVA` con `total_plantado_inicial = 0`;
+- `CANCELADA`, que ya satisface la postcondición.
+
+Una campaña sin subcampañas vivas también es elegible.
+
+**Respuesta exitosa** `200`
+
+```json
+{
+  "success": true,
+  "data": {
+    "campania_id": 15,
+    "elegible": true,
+    "subcampanias_vivas": 20,
+    "subcampanias_a_cancelar": 20,
+    "borradores": 18,
+    "activas_sin_plantar": 2,
+    "ya_canceladas": 0,
+    "asignaciones_con_saldo": 3,
+    "unidades_a_devolver": 450,
+    "bloqueos": []
+  }
+}
+```
+
+Si no es elegible, el status sigue siendo `200` y `bloqueos` identifica cada causa:
+
+```json
+{
+  "subcampania_id": 27,
+  "estado": "COMPLETADA",
+  "total_plantado_inicial": 80,
+  "codigo": "SUBCAMPANIA_CON_PLANTACIONES",
+  "mensaje": "La subcampaña tiene plantaciones iniciales y no puede cancelarse."
+}
+```
+
+Los códigos posibles son `SUBCAMPANIA_CON_PLANTACIONES` y `ESTADO_NO_ELEGIBLE`.
+
+**Errores**
+
+| Status | Cuándo |
+|--------|--------|
+| 401 | Header `x-auth-id` ausente. |
+| 403 | Rol distinto de ADMIN. |
+| 404 | Campaña inexistente o ya desactivada. |
+
+---
+
+## POST /campanias/:id/desactivar
+
+**Rol mínimo**: ADMIN
+**Descripción**: Cancela todas las subcampañas elegibles y desactiva la campaña en una única transacción. La ejecución repite la validación bajo locks; el preview no reserva ni garantiza elegibilidad futura.
+
+Por cada `BORRADOR` o `ACTIVA` sin plantaciones:
+
+- aplica la cancelación canónica de `RN-PLA-37`;
+- conserva la fila con `estado = CANCELADA` y soft-delete;
+- devuelve físicamente el saldo asignado disponible al vivero (`RN-VIV-48`);
+- registra `DEVOLUCION_PLANTACION`, `DEVOLUCION_A_VIVERO` y `SUBCAMPANIA_CANCELADA`;
+- agrega al historial `origen = DESACTIVACION_CAMPANIA` y `campania_id`.
+
+Al final aplica soft-delete a la campaña. Si falla una validación o devolución, se revierte toda la campaña.
+
+**Body**
+
+```json
+{
+  "motivo": "Limpieza de campañas creadas por pruebas automatizadas"
+}
+```
+
+`motivo` es obligatorio, se normaliza con `trim` y debe tener entre 3 y 1000 caracteres.
+
+**Respuesta exitosa** `200`
+
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Campaña desactivada correctamente.",
+    "campania_id": 15,
+    "deleted_at": "2026-07-23T18:00:00.000Z",
+    "subcampanias_canceladas": 20,
+    "asignaciones_devueltas": 3,
+    "unidades_devueltas": 450
+  }
+}
+```
+
+**Errores**
+
+| Status | Cuándo |
+|--------|--------|
+| 400 | Motivo ausente, vacío o fuera de rango. |
+| 401 | Header `x-auth-id` ausente. |
+| 403 | Rol distinto de ADMIN. |
+| 404 | Campaña inexistente o ya desactivada. |
+| 409 | Conflicto concurrente o fallo durante cancelación/devolución; rollback completo. |
+| 422 | Alguna subcampaña tiene plantaciones o estado no elegible. |
+
+> `DELETE /campanias/:id` conserva su contrato estricto: no cancela subcampañas implícitamente. La acción masiva solo existe en este endpoint explícito.
+
+---
+
 ## POST /campanias/:id/organizaciones
 
 **Rol mínimo**: ADMIN  
@@ -686,12 +798,13 @@ REFORESTACION | ARBORIZACION | FORESTACION
 2. **Código automático**: Generado como `CMP-YYYY-NNN` (ej. CMP-2026-001).
 3. **Fechas coherentes**: `fecha_fin >= fecha_inicio` si ambas se envían.
 4. **ADMIN only**: Creación, edición, borrado y asociaciones requieren rol ADMIN.
-5. **RN-PLA-38 — Edición y borrado (2026-07-04)**:
+5. **RN-PLA-38 — Edición y desactivación**:
    - `nombre`, `descripcion` y fechas se editan sin cascada.
    - `tipo` sólo se puede cambiar si no existe **ninguna** subcampaña asociada (incluye soft-deleted).
    - `codigo_trazabilidad` no se edita.
    - Soft-delete (`DELETE /campanias/:id`) permitido si no hay subcampañas o si todas están `CANCELADA`.
-   - Sin cascada a subcampañas: cancelar la campaña no cancela sus subcampañas.
+   - `POST /campanias/:id/desactivar` permite la variante explícita y atómica que cancela `BORRADOR`/`ACTIVA` sin plantaciones y luego desactiva la campaña.
+   - `DELETE /campanias/:id` no adquiere efectos en cascada.
 6. **Organizaciones editables**: se asocian/desasocian en cualquier estado con endpoints dedicados; los `nombres_organizaciones_snapshot` de subcampañas ya activas no se reescriben.
 7. **`meta_planificada_campania` derivado** (`RN-PLA-36`): suma de `meta_total_arboles` de subcampañas cuyo `estado <> CANCELADA`.
 
@@ -707,4 +820,6 @@ REFORESTACION | ARBORIZACION | FORESTACION
 6. **GET /:id/activity** → Feed de actividad reciente
 7. **PATCH** → Corrige nombre/descripción/fechas (o `tipo` si aún no hay subcampañas)
 8. **DELETE /organizaciones/:orgId** → Desasocia una org
-9. **DELETE** → Soft-delete de la campaña (solo si RN-PLA-38 lo permite)
+9. **GET /desactivacion/preview** → Revisa elegibilidad y efectos de la acción masiva
+10. **POST /desactivar** → Cancela subcampañas elegibles y aplica soft-delete atómico
+11. **DELETE** → Soft-delete estricto de la campaña ya vacía/cancelada

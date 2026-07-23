@@ -24,7 +24,7 @@ function buildAuthService(rol: string): SubcampaniasAuthService {
 
 function buildSupabase(rpcResult: { data: any; error: any }): SupabaseService {
   return {
-    getClient: jest.fn().mockReturnValue({
+    getAdminClient: jest.fn().mockReturnValue({
       rpc: jest.fn().mockResolvedValue(rpcResult),
     }),
   } as unknown as SupabaseService;
@@ -49,7 +49,7 @@ describe('SubcampaniasCancelacionService', () => {
     expect(result.success).toBe(true);
     expect(result.data.estado).toBe('CANCELADA');
     expect(result.data.motivo).toBe(dto.motivo);
-    expect(supabase.getClient().rpc).toHaveBeenCalledWith(
+    expect(supabase.getAdminClient().rpc).toHaveBeenCalledWith(
       'fn_subcampania_cancelar',
       { p_id: 5, p_actor_user_id: 42, p_motivo: dto.motivo },
     );
@@ -138,6 +138,20 @@ describe('SubcampaniasCancelacionService', () => {
     const supabase = buildSupabase({
       data: null,
       error: { code: 'PGRST202', message: 'fn_subcampania_cancelar not found' },
+    });
+    const service = new SubcampaniasCancelacionService(
+      supabase,
+      buildAuthService('ADMIN'),
+    );
+    await expect(service.cancelar(5, dto, 'auth-1')).rejects.toThrow(
+      InternalServerErrorException,
+    );
+  });
+
+  it('lanza 500 si falta service_role para ejecutar la RPC', async () => {
+    const supabase = buildSupabase({
+      data: null,
+      error: { code: '42501', message: 'permission denied for function' },
     });
     const service = new SubcampaniasCancelacionService(
       supabase,

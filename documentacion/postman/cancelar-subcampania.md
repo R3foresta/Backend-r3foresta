@@ -4,7 +4,7 @@ Endpoint que implementa `RN-PLA-37`: cancelación de subcampaña sin plantacione
 
 ## Contexto
 
-- **Cuándo usarlo:** para descartar un `BORRADOR` que ya no se va a ejecutar, o para cancelar una subcampaña `ACTIVA` que **aún no plantó nada** (`total_plantado_inicial = 0`). Si ya hay plantaciones, usar cierre `FINALIZADA_PARCIAL` (`POST /subcampanias/:id/cerrar`).
+- **Cuándo usarlo:** para descartar un `BORRADOR` que ya no se va a ejecutar, aunque todavía no tenga polígono, o para cancelar una subcampaña `ACTIVA` que **aún no plantó nada** (`total_plantado_inicial = 0`). El polígono es requisito de activación, no de cancelación. Si ya hay plantaciones, usar cierre `FINALIZADA_PARCIAL` (`POST /subcampanias/:id/cerrar`).
 - **Efectos atómicos (`fn_subcampania_cancelar`, contrato físico 2026-07):**
   1. `estado = 'CANCELADA'`, `deleted_at = NOW()`, `deleted_by = actor` (inactivación, no borrado físico).
   2. Todas las asignaciones activas se **devuelven físicamente** (`RN-VIV-48`): `cantidad_devuelta += saldo_asignado_disponible` (el trigger las pasa a `DEVUELTA`), `LOTE_VIVERO.saldo_vivo_actual` **aumenta** en lo devuelto (reabriendo el lote si estaba FINALIZADO), y se registran los eventos `DEVOLUCION_PLANTACION` (M2) y `DEVOLUCION_A_VIVERO` (M3, motivo `CIERRE_SUBCAMPANIA`) por cada asignación.
@@ -59,7 +59,8 @@ Body:
 | 404 | `"Subcampania 99 no encontrada."` | `id` no existe o ya está eliminada físicamente. |
 | 409 | `"La subcampania ya tiene plantaciones registradas (total_plantado_inicial = 3). Usar cierre FINALIZADA_PARCIAL."` | Ya hay `PLANTACION_INICIAL` registrada — camino incorrecto. |
 | 409 | `"Solo se puede cancelar una subcampania en BORRADOR o ACTIVA (estado actual: COMPLETADA)."` | Estado no permite cancelar (ya cerrada / cancelada). |
-| 500 | `"La migración fn_subcampania_cancelar no está aplicada."` | Las migraciones `047_m3_cancelacion_subcampania_y_plan.sql` / `054_m3_devolucion_fisica.sql` no corrieron en la BD. |
+| 500 | `"La migración fn_subcampania_cancelar no está aplicada."` | Las migraciones `047_m3_cancelacion_subcampania_y_plan.sql` / `054_m3_devolucion_fisica.sql` / `057_m3_campania_desactivacion_masiva.sql` no corrieron en la BD. |
+| 500 | `"La cancelación requiere SUPABASE_SERVICE_ROLE_KEY."` | Backend no tiene configurado el cliente de servicio requerido por la RPC mutadora. |
 
 ## Verificaciones QA
 

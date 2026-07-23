@@ -140,6 +140,97 @@ describe('P0 Campanias - contrato HTTP', () => {
 
     expect(response.status).toBe(403);
   });
+
+  it('previsualiza una campaña con borrador sin polígono sin modificar datos', async () => {
+    const tag = uniqueP0Tag('qa_p0_campania_preview');
+    const createCampaniaResponse = await request(app.getHttpServer())
+      .post('/api/campanias')
+      .set('x-auth-id', refs.admin.authId)
+      .send(buildCampaniaPayload(tag));
+
+    expect(createCampaniaResponse.status).toBe(201);
+    const campaniaId = Number(createCampaniaResponse.body.data.id);
+    created.campaniaIds.push(campaniaId);
+
+    const createSubcampaniaResponse = await request(app.getHttpServer())
+      .post('/api/subcampanias')
+      .set('x-auth-id', refs.admin.authId)
+      .send({
+        campania_id: campaniaId,
+        nombre: `[${tag}] Borrador sin poligono`,
+        descripcion: `[${tag}] elegibilidad`,
+        zona_id: refs.zona.id,
+        meta_total_arboles: 100,
+        tolerancia_gps_metros: 50,
+      });
+
+    expect(createSubcampaniaResponse.status).toBe(201);
+    const subcampaniaId = Number(createSubcampaniaResponse.body.data.id);
+    created.subcampaniaIds.push(subcampaniaId);
+
+    const previewResponse = await request(app.getHttpServer())
+      .get(`/api/campanias/${campaniaId}/desactivacion/preview`)
+      .set('x-auth-id', refs.admin.authId);
+
+    expect(previewResponse.status).toBe(200);
+    expect(previewResponse.body.data).toMatchObject({
+      campania_id: campaniaId,
+      elegible: true,
+      subcampanias_vivas: 1,
+      subcampanias_a_cancelar: 1,
+      borradores: 1,
+      activas_sin_plantar: 0,
+      ya_canceladas: 0,
+      asignaciones_con_saldo: 0,
+      unidades_a_devolver: 0,
+      bloqueos: [],
+    });
+
+    const subcampania = await client
+      .from('subcampania')
+      .select('estado, poligono_geom, deleted_at')
+      .eq('id', subcampaniaId)
+      .single();
+    expect(subcampania.error).toBeNull();
+    expect(subcampania.data).toMatchObject({
+      estado: 'BORRADOR',
+      poligono_geom: null,
+      deleted_at: null,
+    });
+  });
+
+  it('desactiva atómicamente una campaña sin subcampañas y rechaza el reintento', async () => {
+    const tag = uniqueP0Tag('qa_p0_campania_desactivar');
+    const createResponse = await request(app.getHttpServer())
+      .post('/api/campanias')
+      .set('x-auth-id', refs.admin.authId)
+      .send(buildCampaniaPayload(tag));
+
+    expect(createResponse.status).toBe(201);
+    const campaniaId = Number(createResponse.body.data.id);
+    created.campaniaIds.push(campaniaId);
+
+    const deactivateResponse = await request(app.getHttpServer())
+      .post(`/api/campanias/${campaniaId}/desactivar`)
+      .set('x-auth-id', refs.admin.authId)
+      .send({ motivo: 'Limpieza de datos de prueba P0' });
+
+    expect(deactivateResponse.status).toBe(200);
+    expect(deactivateResponse.body.data).toMatchObject({
+      campania_id: campaniaId,
+      subcampanias_canceladas: 0,
+      asignaciones_devueltas: 0,
+      unidades_devueltas: 0,
+    });
+    expect(deactivateResponse.body.data.deleted_at).toEqual(expect.any(String));
+
+    const retryResponse = await request(app.getHttpServer())
+      .post(`/api/campanias/${campaniaId}/desactivar`)
+      .set('x-auth-id', refs.admin.authId)
+      .send({ motivo: 'Segundo intento de desactivacion' });
+
+    expect(retryResponse.status).toBe(404);
+  });
 });
 
 function buildCampaniaPayload(tag: string, organizacionIds: number[] = []) {

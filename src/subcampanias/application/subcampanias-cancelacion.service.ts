@@ -38,7 +38,9 @@ export class SubcampaniasCancelacionService {
       throw new BadRequestException('motivo es obligatorio.');
     }
 
-    const supabase = this.supabaseService.getClient();
+    // La RPC acepta el id interno del actor, por lo que solo se invoca con
+    // service_role despues de resolver y autorizar x-auth-id en backend.
+    const supabase = this.supabaseService.getAdminClient();
     const rpc = (await supabase.rpc('fn_subcampania_cancelar', {
       p_id: id,
       p_actor_user_id: usuario.id,
@@ -63,6 +65,11 @@ export class SubcampaniasCancelacionService {
       if (this.esRpcAusente(rpc.error)) {
         throw new InternalServerErrorException(
           'La migración fn_subcampania_cancelar no está aplicada.',
+        );
+      }
+      if (rpc.error.code === '42501') {
+        throw new InternalServerErrorException(
+          'La cancelación requiere SUPABASE_SERVICE_ROLE_KEY.',
         );
       }
       throw new BadRequestException(message);

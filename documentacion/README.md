@@ -47,6 +47,7 @@ Ver detalle en [arquitectura/flujo-end-to-end.md](./arquitectura/flujo-end-to-en
 - [frontend/webauthn.md](./frontend/webauthn.md) — registro y login con passkey
 - [frontend/recolecciones.md](./frontend/recolecciones.md) — crear, editar, enviar a validación, listar
 - [frontend/lotes-vivero.md](./frontend/lotes-vivero.md) — crear lote, eventos de vivero, timeline
+- [frontend/desactivacion-campania-cancelacion-masiva.md](./frontend/desactivacion-campania-cancelacion-masiva.md) — preview, confirmación y manejo frontend de la desactivación atómica de campañas
 
 ### Arquitectura y decisiones
 

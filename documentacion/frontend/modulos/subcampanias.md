@@ -583,7 +583,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 ## POST /subcampanias/:id/cancelar
 
 **Rol mínimo**: ADMIN
-**Descripción**: Cancela una subcampaña sin plantaciones (`RN-PLA-37`). Aplica a `BORRADOR` (siempre) y a `ACTIVA` cuyo `total_plantado_inicial = 0`. Deja `estado = CANCELADA`, setea `deleted_at`/`deleted_by` (inactivación, no borrado físico), devuelve físicamente al vivero el saldo disponible de todas las asignaciones activas y registra los eventos `DEVOLUCION_PLANTACION` (M2), `DEVOLUCION_A_VIVERO` (M3) y `SUBCAMPANIA_CANCELADA` en el historial. Si `total_plantado_inicial > 0`, responde 409 sugiriendo `FINALIZADA_PARCIAL`. Atómico.
+**Descripción**: Cancela una subcampaña sin plantaciones (`RN-PLA-37`). Aplica a `BORRADOR` (siempre, incluso si todavía no tiene polígono) y a `ACTIVA` cuyo `total_plantado_inicial = 0`. El polígono es requisito de activación, no de cancelación; la operación no inventa ni modifica geometría. Deja `estado = CANCELADA`, setea `deleted_at`/`deleted_by` (inactivación, no borrado físico), devuelve físicamente al vivero el saldo disponible de todas las asignaciones activas y registra los eventos `DEVOLUCION_PLANTACION` (M2), `DEVOLUCION_A_VIVERO` (M3) y `SUBCAMPANIA_CANCELADA` en el historial. Si `total_plantado_inicial > 0`, responde 409 sugiriendo `FINALIZADA_PARCIAL`. Atómico.
 
 **Body** (`application/json`)
 

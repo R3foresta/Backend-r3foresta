@@ -193,6 +193,122 @@ export function ApiBorrarCampania() {
   );
 }
 
+export function ApiDesactivacionCampaniaPreview() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Previsualizar desactivación masiva de una campaña',
+      description:
+        'Evalúa si todas las subcampañas vivas pueden cancelarse sin plantaciones y resume subcampañas, asignaciones y unidades que volverían al vivero. No modifica datos. Solo ADMIN.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({ name: 'id', type: 'integer', description: 'ID de la campaña' }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Previsualización calculada. elegible=false se devuelve como respuesta válida con bloqueos estructurados.',
+      schema: {
+        example: {
+          success: true,
+          data: {
+            campania_id: 15,
+            elegible: true,
+            subcampanias_vivas: 20,
+            subcampanias_a_cancelar: 20,
+            borradores: 18,
+            activas_sin_plantar: 2,
+            ya_canceladas: 0,
+            asignaciones_con_saldo: 3,
+            unidades_a_devolver: 450,
+            bloqueos: [],
+          },
+        },
+      },
+    }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 403,
+      description: 'Solo el rol ADMIN puede previsualizar la operación.',
+    }),
+    ApiResponse({
+      status: 404,
+      description: 'Campaña no encontrada o ya desactivada.',
+    }),
+  );
+}
+
+export function ApiDesactivarCampaniaMasivamente() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Desactivar campaña y cancelar subcampañas sin plantaciones',
+      description:
+        'En una única transacción bloquea la campaña y sus subcampañas vivas, revalida elegibilidad, cancela BORRADOR/ACTIVA sin plantaciones mediante RN-PLA-37, devuelve físicamente el saldo asignado al vivero y aplica soft-delete a la campaña. DELETE /campanias/:id conserva su comportamiento estricto. Solo ADMIN.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({ name: 'id', type: 'integer', description: 'ID de la campaña' }),
+    ApiBody({
+      schema: {
+        type: 'object',
+        required: ['motivo'],
+        properties: {
+          motivo: {
+            type: 'string',
+            minLength: 3,
+            maxLength: 1000,
+            example: 'Limpieza de campañas creadas por pruebas automatizadas',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 200,
+      description: 'Campaña desactivada atómicamente.',
+      schema: {
+        example: {
+          success: true,
+          data: {
+            message: 'Campaña desactivada correctamente.',
+            campania_id: 15,
+            deleted_at: '2026-07-23T18:00:00.000Z',
+            subcampanias_canceladas: 20,
+            asignaciones_devueltas: 3,
+            unidades_devueltas: 450,
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      description: 'Motivo ausente, vacío o fuera de 3–1000 caracteres.',
+    }),
+    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 403,
+      description: 'Solo el rol ADMIN puede ejecutar la operación.',
+    }),
+    ApiResponse({
+      status: 404,
+      description: 'Campaña no encontrada o ya desactivada.',
+    }),
+    ApiResponse({
+      status: 409,
+      description:
+        'Conflicto concurrente o fallo durante la cancelación/devolución. La transacción se revierte.',
+    }),
+    ApiResponse({
+      status: 422,
+      description:
+        'Existe al menos una subcampaña con plantaciones o estado no elegible.',
+    }),
+    ApiResponse({
+      status: 500,
+      description:
+        'Migración no aplicada o SUPABASE_SERVICE_ROLE_KEY no configurada.',
+    }),
+  );
+}
+
 export function ApiAsociarOrganizaciones() {
   return applyDecorators(
     ApiOperation({

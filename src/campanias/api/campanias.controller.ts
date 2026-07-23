@@ -6,6 +6,8 @@ import {
   Delete,
   Get,
   Headers,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -20,6 +22,8 @@ import {
   ApiAsociarOrganizaciones,
   ApiBorrarCampania,
   ApiCrearCampania,
+  ApiDesactivarCampaniaMasivamente,
+  ApiDesactivacionCampaniaPreview,
   ApiDesasociarOrganizacion,
   ApiDetalleCampania,
   ApiEditarCampania,
@@ -29,6 +33,7 @@ import {
 } from './docs/campanias.swagger';
 import { AsociarOrganizacionesDto } from './dto/asociar-organizaciones.dto';
 import { CrearCampaniaDto } from './dto/crear-campania.dto';
+import { DesactivarCampaniaDto } from './dto/desactivar-campania.dto';
 import { EditarCampaniaDto } from './dto/editar-campania.dto';
 
 @ApiTags('campanias')
@@ -113,6 +118,33 @@ export class CampaniasController {
     @Headers('x-auth-id') authId?: string,
   ) {
     return this.campaniasService.borrar(id, this.requireAuthId(authId));
+  }
+
+  @Get(':id/desactivacion/preview')
+  @ApiDesactivacionCampaniaPreview()
+  previewDesactivacion(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    return this.campaniasService.previewDesactivacion(
+      id,
+      this.requireAuthId(authId),
+    );
+  }
+
+  @Post(':id/desactivar')
+  @HttpCode(HttpStatus.OK)
+  @ApiDesactivarCampaniaMasivamente()
+  desactivarMasivamente(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: DesactivarCampaniaDto,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    return this.campaniasService.desactivarMasivamente(
+      id,
+      dto,
+      this.requireAuthId(authId),
+    );
   }
 
   @Post(':id/organizaciones')

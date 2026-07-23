@@ -1,6 +1,6 @@
 # API Reference — Reforesta Backend
 
-**Última actualización**: 2026-07-11
+**Última actualización**: 2026-07-23
 
 ## Tabla de Contenidos
 
@@ -169,6 +169,7 @@ PLANTACION_INICIAL | REPOSICION
 - `DELETE /organizaciones/:id/logo` — Eliminar logo
 
 ### [4. Campañas](modulos/campanias.md)
+- [Guía de desactivación con cancelación masiva](desactivacion-campania-cancelacion-masiva.md)
 - `POST /campanias` — Crear
 - `GET /campanias` — Listar
 - `GET /campanias/resumen` — Métricas globales para el dashboard
@@ -177,7 +178,9 @@ PLANTACION_INICIAL | REPOSICION
 - `GET /campanias/:id/metrics` — Métricas de una campaña
 - `GET /campanias/:id/activity` — Actividad reciente de una campaña
 - `PATCH /campanias/:id` — Editar
-- `DELETE /campanias/:id` — Borrar
+- `DELETE /campanias/:id` — Soft-delete estricto, sin cascada
+- `GET /campanias/:id/desactivacion/preview` — Previsualizar elegibilidad y devoluciones
+- `POST /campanias/:id/desactivar` — Cancelar subcampañas sin plantaciones y desactivar atómicamente
 - `POST /campanias/:id/organizaciones` — Asociar orgs
 - `DELETE /campanias/:id/organizaciones/:orgId` — Desasociar
 
@@ -190,6 +193,7 @@ PLANTACION_INICIAL | REPOSICION
 - `POST /subcampanias/:id/poligono` — Establecer polígono GeoJSON
 - `POST /subcampanias/:id/activar` — Activar
 - `POST /subcampanias/:id/cerrar` — Cerrar
+- `POST /subcampanias/:id/cancelar` — Cancelar sin plantaciones (admite BORRADOR sin polígono)
 - `GET /subcampanias/:id/equipo` — Listar equipo
 - `POST /subcampanias/:id/equipo` — Agregar miembro
 - `DELETE /subcampanias/:id/equipo/:usuarioId` — Remover miembro

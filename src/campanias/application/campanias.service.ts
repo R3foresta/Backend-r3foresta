@@ -2,10 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { SubcampaniasService } from '../../subcampanias/application/subcampanias.service';
 import { AsociarOrganizacionesDto } from '../api/dto/asociar-organizaciones.dto';
 import { CrearCampaniaDto } from '../api/dto/crear-campania.dto';
+import { DesactivarCampaniaDto } from '../api/dto/desactivar-campania.dto';
 import { EditarCampaniaDto } from '../api/dto/editar-campania.dto';
 import { CampaniasActivityService } from './campanias-activity.service';
 import { CampaniasConsultasService } from './campanias-consultas.service';
 import { CampaniasCreationService } from './campanias-creation.service';
+import { CampaniasDesactivacionService } from './campanias-desactivacion.service';
 import { CampaniasEdicionService } from './campanias-edicion.service';
 import { CampaniasMetricsService } from './campanias-metrics.service';
 import { CampaniasOrganizacionesService } from './campanias-organizaciones.service';
@@ -16,6 +18,7 @@ export class CampaniasService {
     private readonly creationService: CampaniasCreationService,
     private readonly consultasService: CampaniasConsultasService,
     private readonly edicionService: CampaniasEdicionService,
+    private readonly desactivacionService: CampaniasDesactivacionService,
     private readonly organizacionesService: CampaniasOrganizacionesService,
     private readonly subcampaniasService: SubcampaniasService,
     private readonly metricsService: CampaniasMetricsService,
@@ -60,6 +63,18 @@ export class CampaniasService {
 
   borrar(id: number, authId: string) {
     return this.edicionService.borrar(id, authId);
+  }
+
+  previewDesactivacion(id: number, authId: string) {
+    return this.desactivacionService.preview(id, authId);
+  }
+
+  desactivarMasivamente(
+    id: number,
+    dto: DesactivarCampaniaDto,
+    authId: string,
+  ) {
+    return this.desactivacionService.desactivar(id, dto, authId);
   }
 
   asociarOrganizaciones(

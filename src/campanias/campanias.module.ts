@@ -7,6 +7,7 @@ import { CampaniasAuthService } from './application/campanias-auth.service';
 import { CampaniasCodigosService } from './application/campanias-codigos.service';
 import { CampaniasConsultasService } from './application/campanias-consultas.service';
 import { CampaniasCreationService } from './application/campanias-creation.service';
+import { CampaniasDesactivacionService } from './application/campanias-desactivacion.service';
 import { CampaniasEdicionService } from './application/campanias-edicion.service';
 import { CampaniasMetricsService } from './application/campanias-metrics.service';
 import { CampaniasOrganizacionesService } from './application/campanias-organizaciones.service';
@@ -22,6 +23,7 @@ import { CampaniasService } from './application/campanias.service';
     CampaniasCreationService,
     CampaniasConsultasService,
     CampaniasEdicionService,
+    CampaniasDesactivacionService,
     CampaniasOrganizacionesService,
     CampaniasMetricsService,
     CampaniasActivityService,
