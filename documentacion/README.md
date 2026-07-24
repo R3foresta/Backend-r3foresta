@@ -1,85 +1,137 @@
-# Documentación — Backend Reforesta
+# Documentación — Backend R3Foresta
 
-Backend NestJS + Supabase + ethers.js para el sistema de trazabilidad forestal **Reforesta**: registra material vegetal desde la recolección en campo hasta el despacho de plantas, con evidencias fotográficas en Supabase Storage + IPFS (Pinata) y anclaje on-chain de eventos validados.
+Guías de implementación y consumo de la API NestJS/Supabase de R3Foresta.
 
-> Para una visión de arquitectura del repo y comandos de desarrollo, ver [CLAUDE.md](../CLAUDE.md) en la raíz.
+> La arquitectura implementada y sus riesgos están en
+> [ARCHITECTURE.md](../ARCHITECTURE.md). Los requerimientos, reglas de negocio,
+> contratos entre módulos, esquema canónico y estado de producción viven en
+> [`R3foresta/r3foresta-docs`](https://github.com/R3foresta/r3foresta-docs).
+> Esta carpeta no reemplaza esas fuentes.
 
-## 🗺️ Flujo end-to-end
+## Flujo end-to-end
 
+```text
+RECOLECCIÓN
+  BORRADOR → PENDIENTE_VALIDACION → VALIDADO
+                                        │
+                                        ▼
+VIVERO
+  INICIO → EMBOLSADO → saldo_vivo_actual
+               │
+               ├─ MERMA
+               ├─ DESPACHO MANUAL
+               └─ ASIGNACIÓN FÍSICA A SUBCAMPAÑA
+                                │ descuenta el lote y crea stock M3
+                                ▼
+PLANTACIÓN
+  PLANTACION_INICIAL / REPOSICION
+  consume saldo_asignado_disponible; no vuelve a descontar Vivero
 ```
-[Recolección en campo]
-        │
-        │ POST /api/recolecciones        (BORRADOR)
-        │ PATCH /:id/submit              (PENDIENTE_VALIDACION)
-        │ PATCH /:id/approve             (VALIDADO) ──► IPFS + NFT mint
-        │
-        ▼
-[Lote de vivero]
-        │
-        │ POST /api/lotes-vivero/evidencias-pendientes
-        │ POST /api/lotes-vivero                       (INICIO, consume saldo)
-        │ POST /:id/embolsado                          (EMBOLSADO)
-        │ POST /:id/adaptabilidad   SOMBRA → MEDIA_SOMBRA → SOL_DIRECTO
-        │ POST /:id/merma                              (opcional)
-        │ POST /:id/despacho                           (pendiente de implementar)
-        │
-        ▼
-[Plantas despachadas]
-```
 
-Ver detalle en [arquitectura/flujo-end-to-end.md](./arquitectura/flujo-end-to-end.md).
+El detalle completo está en
+[arquitectura/flujo-end-to-end.md](arquitectura/flujo-end-to-end.md).
 
-## 📚 Índice
+## Índice
 
-### Por módulo del backend
+### Arquitectura
 
-| Módulo | Documentación | Código fuente |
-|---|---|---|
-| Recolecciones | [modulos/recolecciones.md](./modulos/recolecciones.md) | [src/recolecciones/](../src/recolecciones/) |
-| Lotes de Vivero | [modulos/lotes-vivero.md](./modulos/lotes-vivero.md) | [src/lotes-vivero/](../src/lotes-vivero/) |
-| Plantas (catálogo) | [modulos/plantas.md](./modulos/plantas.md) + [storage](./modulos/plantas-storage.md) | [src/plantas/](../src/plantas/) |
-| Autenticación WebAuthn | [modulos/auth-webauthn.md](./modulos/auth-webauthn.md) | [src/auth/](../src/auth/) |
-| Blockchain (NFT) | [modulos/blockchain.md](./modulos/blockchain.md) | [src/blockchain/](../src/blockchain/) |
-| Pinata / IPFS | [modulos/pinata.md](./modulos/pinata.md) + [integración automática](./modulos/pinata-integracion.md) | [src/pinata/](../src/pinata/) |
+- [Flujo end-to-end](arquitectura/flujo-end-to-end.md)
+- [Resumen de base de datos](arquitectura/base-de-datos.md)
+- [ADR-001: saldo operativo de Recolección](arquitectura/adr/001-saldo-operativo-recoleccion.md)
+- [ADR-002: decisiones de BD](arquitectura/adr/002-decisiones-db.md)
 
-### Para frontend (consumo de la API)
+### Módulos
 
-- [frontend/webauthn.md](./frontend/webauthn.md) — registro y login con passkey
-- [frontend/recolecciones.md](./frontend/recolecciones.md) — crear, editar, enviar a validación, listar
-- [frontend/lotes-vivero.md](./frontend/lotes-vivero.md) — crear lote, eventos de vivero, timeline
-- [frontend/desactivacion-campania-cancelacion-masiva.md](./frontend/desactivacion-campania-cancelacion-masiva.md) — preview, confirmación y manejo frontend de la desactivación atómica de campañas
+- [Recolecciones](modulos/recolecciones.md)
+- [Lotes de Vivero](modulos/lotes-vivero.md)
+- [Plantas](modulos/plantas.md) y [Storage de plantas](modulos/plantas-storage.md)
+- [WebAuthn](modulos/auth-webauthn.md)
+- [Pinata](modulos/pinata.md) e [integración Pinata](modulos/pinata-integracion.md)
+- [Blockchain](modulos/blockchain.md)
 
-### Arquitectura y decisiones
+Los contratos M3 más recientes se mantienen junto a las guías de frontend y en
+Swagger. La fuente canónica de M3 sigue siendo `r3foresta-docs`.
 
-- [arquitectura/base-de-datos.md](./arquitectura/base-de-datos.md) — esquema completo (tablas, enums, RPCs, buckets de storage)
-- [arquitectura/flujo-end-to-end.md](./arquitectura/flujo-end-to-end.md) — diagrama del flujo completo
-- [arquitectura/adr/001-saldo-operativo-recoleccion.md](./arquitectura/adr/001-saldo-operativo-recoleccion.md) — por qué materializamos `saldo_actual` en la tabla
-- [arquitectura/adr/002-decisiones-db.md](./arquitectura/adr/002-decisiones-db.md) — decisiones de diseño previas
+### Frontend
 
-### Pruebas manuales (Postman)
+- [Referencia general de API](frontend/api-reference.md)
+- [Recolecciones](frontend/recolecciones.md)
+- [Lotes de Vivero](frontend/lotes-vivero.md)
+- [Asignación física M2→M3](frontend/guia-migracion-asignacion-fisica.md)
+- [WebAuthn](frontend/webauthn.md)
+- [Desactivación masiva de Campaña](frontend/desactivacion-campania-cancelacion-masiva.md)
+- `frontend/modulos/`: contratos de Campañas, Subcampañas, Plantaciones,
+  Organizaciones, Ubicaciones y Usuarios.
 
-- [postman/README.md](./postman/README.md) — índice
-- [postman/embolsado.md](./postman/embolsado.md), [adaptabilidad.md](./postman/adaptabilidad.md), [merma.md](./postman/merma.md), [timeline.md](./postman/timeline.md)
+### Postman
 
-## 🔑 Convenciones que aplican a toda la API
+Ver [postman/README.md](postman/README.md). Incluye recetas para embolsado,
+adaptabilidad, merma, despacho, asignación física, devolución, plantación,
+timeline y cancelación.
 
-- **Prefijo global**: todas las rutas viven bajo `/api/...`.
-- **Swagger UI**: `http://localhost:3000/api/docs`.
-- **Autenticación de endpoints**: header `x-auth-id: <auth_id_de_supabase>`. Algunos endpoints también requieren `x-user-role: GENERAL | VALIDADOR | ADMIN`. El módulo `auth` emite JWT (passkey), pero **el resto del backend identifica al caller por `x-auth-id`**, no por JWT bearer.
-- **Idioma**: identificadores, DTOs, enums, mensajes y campos están en **español**. No traducir al consumir la API.
-- **Validación**: `ValidationPipe` global con `whitelist + forbidNonWhitelisted + transform`. Cualquier campo extra devuelve 400.
-- **Fotos**: nunca en base64 dentro del JSON. Subir como `multipart/form-data` al endpoint correspondiente, que las almacena en Supabase Storage.
+### Tareas históricas de integración
 
-## ⚠️ Pendientes / TODO
+`tareas/` conserva el plan M2↔M3 y sus criterios de cierre. Describe el cambio
+desde reserva lógica/despacho automático hacia asignación física. Las secciones
+“antes” y las menciones a `AUTOMATICO_PLANTACION` son contexto histórico, no el
+flujo vigente.
 
-- **`POST /api/lotes-vivero/:id/despacho`** — endpoint expuesto pero el backend lanza `NotImplementedException`. La RPC `fn_vivero_registrar_despacho` existe en migración 020 pero no está conectada al servicio.
-- **Decorador Swagger `ApiObtenerMermas`** — declara `x-auth-id` como requerido para un `GET /lotes-vivero/:id/merma` que en realidad no valida el header. Ajustar el decorador a la realidad.
-- **Storage de challenges WebAuthn en memoria** — `AuthService` mantiene los challenges en un `Map` con TTL de 5 min. No es seguro para despliegues multi-instancia; reemplazar por Redis antes de escalar horizontalmente.
-- **`JWT_SECRET` con default en código** — `auth.module.ts` cae a `'your-secret-key-change-in-production'` si la variable no está definida. Exigir override en producción.
+## Convenciones HTTP reales
 
-## 🤖 Notas para agentes de IA
+- Prefijo: `/api`.
+- Swagger: `/api/docs`.
+- DTOs: `ValidationPipe` rechaza campos no declarados.
+- Imágenes: `multipart/form-data`, nunca base64 en JSON.
+- Identidad heredada: snapshots en los módulos operativos.
+- Saldos y escrituras múltiples: RPC PostgreSQL cuando la atomicidad es una
+  invariante.
 
-- **Antes de inventar un campo**: leer el DTO real en `src/<modulo>/api/dto/` o `src/<modulo>/dto/`. El `ValidationPipe` rechaza cualquier extra.
-- **Antes de inventar un endpoint**: el inventario real está en cada `modulos/*.md`; lo que no figure ahí, no existe (o está marcado como TODO arriba).
-- **Idioma del código**: respeta `tipo_material`, `cantidad_inicial_canonica`, `auth_id`, etc. No anglicizar.
-- **Migraciones**: la BD se versiona en `migrations/` (001 → 021). Las RPCs pueden ser redefinidas por migraciones posteriores; gana la última aplicada.
+## Autenticación: estado actual
+
+WebAuthn emite JWT, pero la mayoría de endpoints operativos identifica al
+solicitante mediante `x-auth-id`. Los services por capas consultan el usuario y rol
+en BD; `x-user-role` no debe considerarse una autoridad.
+
+No existe aún un guard JWT global y varios GET son públicos. También hay
+endpoints privilegiados o de diagnóstico sin protección. Ver el P0 de
+`ARCHITECTURE.md` antes de ampliar la exposición de la API.
+
+## Estado vigente M2↔M3
+
+- `POST /api/lotes-vivero/:id/despacho` está implementado para salidas
+  manuales y rechaza `PLANTACION_CAMPANIA`.
+- `POST /api/lotes-vivero/:id/asignaciones` realiza la entrega física a una
+  Subcampaña, exige evidencia y descuenta `saldo_vivo_actual`.
+- Plantar consume asignaciones; no genera un nuevo despacho M2.
+- La devolución física repone el lote origen.
+- `POST /:id/reservas` fue retirado.
+- `AUTOMATICO_PLANTACION` queda solo para historial legado.
+
+## Deuda que debe permanecer visible
+
+1. Autenticación JWT no aplicada globalmente y endpoints privilegiados sin
+   guard.
+2. Challenges WebAuthn en memoria; no soportan despliegue multiinstancia.
+3. `JWT_SECRET` conserva un fallback inseguro en código.
+4. El esquema no es reproducible desde cero:
+   - falta la migración que crea/alinea `tipo_planta` y
+     `planta.tipo_planta_id`;
+   - la migración `006` conserva `DONACION_COMUNIDAD`, mientras el contrato
+     actual usa `PLANTACION_COMUNIDAD` y `DONACION`.
+5. `RF-VIV-05` no está completamente reflejado por el backend: el DTO/RPC
+   exige `destino_referencia` para todos los destinos y no exige
+   `comunidad_destino_id` para `DONACION`.
+6. Algunos GET y sus decoradores Swagger discrepan sobre si requieren
+   `x-auth-id`.
+
+## Regla para mantener sincronía
+
+Un cambio de contrato debe actualizar, en el mismo trabajo:
+
+1. DTO y controller;
+2. service y migración/RPC;
+3. Swagger;
+4. guía frontend y receta Postman;
+5. requerimiento/regla/decisión en `r3foresta-docs`;
+6. `r3foresta-docs/ESTADO.md` cuando haya evidencia de implementación o
+   despliegue.

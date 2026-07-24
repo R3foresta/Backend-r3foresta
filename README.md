@@ -1,112 +1,100 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Backend R3Foresta
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST de trazabilidad forestal construida con NestJS y Supabase. Modela la
+cadena completa:
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
-
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
-```bash
-$ npm install
+```text
+Recolección → Lote de vivero → Asignación física → Plantación
 ```
 
-## Compile and run the project
+Incluye evidencia en Supabase Storage, metadata NFT en Pinata/IPFS y anclaje
+blockchain de recolecciones validadas.
+
+## Documentación
+
+- [ARCHITECTURE.md](ARCHITECTURE.md): arquitectura implementada, invariantes,
+  límites transaccionales y riesgos.
+- [documentacion/README.md](documentacion/README.md): índice de contratos,
+  guías de frontend, Postman y decisiones del backend.
+- [test/README.md](test/README.md): estructura y alcance de pruebas.
+- [R3foresta/r3foresta-docs](https://github.com/R3foresta/r3foresta-docs):
+  requerimientos, reglas de negocio, contratos entre módulos, esquema canónico
+  y estado de despliegue.
+
+Si una guía contradice el contrato de producto, revisar el orden de fuentes de
+verdad definido en `ARCHITECTURE.md`.
+
+## Requisitos
+
+- Node.js compatible con ES2023.
+- npm.
+- Proyecto Supabase con las migraciones requeridas.
+- Credenciales de Pinata y blockchain: en la implementación actual ambos
+  módulos se inicializan al arrancar la aplicación.
+
+Copiar `.env.example` a `.env` y reemplazar todos los valores de ejemplo. No
+usar el fallback de `JWT_SECRET` en producción.
+
+## Instalación y ejecución
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
+npm run start:dev
 ```
 
-## Run tests
+La API queda, por defecto, en `http://localhost:3000/api` y Swagger en
+`http://localhost:3000/api/docs`.
+
+Comandos:
 
 ```bash
-# unit tests
-$ npm test
-
-# unit tests using explicit config
-$ npm run test:unit
-
-# integration tests against real external services
-$ npm run test:integration
-
-# all e2e tests
-$ npm run test:e2e
-
-# P0 HTTP e2e tests
-$ npm run test:e2e:p0
-
-# DB/RPC e2e tests
-$ npm run test:e2e:db
-
-# test coverage
-$ npm run test:cov
+npm run build
+npm run start:prod
+npm run lint
+npm run format
 ```
 
-See `test/README.md` for the folder map.
+`npm run lint` y `npm run format` modifican archivos.
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Pruebas
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm test
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+npm run test:e2e:p0
+npm run test:e2e:db
+npm run test:cov
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Integración y e2e pueden depender de Supabase real y escribir datos. Revisar
+`test/README.md` y las variables de entorno antes de ejecutarlas.
 
-## Resources
+## Variables de entorno
 
-Check out a few resources that may come in handy when working with NestJS:
+| Variable | Uso |
+|---|---|
+| `SUPABASE_URL` | URL del proyecto Supabase |
+| `SUPABASE_KEY` | Cliente Supabase usado por la mayoría de servicios |
+| `SUPABASE_SERVICE_ROLE_KEY` | Operaciones administrativas/RPC restringidas |
+| `JWT_SECRET` | Firma de tokens emitidos por WebAuthn |
+| `PINATA_JWT` | Escritura de metadata en Pinata |
+| `GATEWAY_URL` | Gateway IPFS |
+| `RPC_URL` | Nodo blockchain |
+| `PRIVATE_KEY` | Wallet firmante del backend |
+| `CONTRACT_ADDRESS` | Contrato NFT |
+| `CORS_ORIGINS` | Orígenes adicionales separados por coma |
+| `UBICACION_VIEW_NAME` | Vista alternativa de ubicaciones, opcional |
+| `PORT` | Puerto HTTP, por defecto `3000` |
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Nunca publicar `.env`, `PRIVATE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
+`PINATA_JWT` ni `JWT_SECRET`.
 
-## Support
+## Advertencia de seguridad
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+El backend emite JWT, pero gran parte de la API todavía identifica al solicitante
+mediante `x-auth-id` sin validar globalmente el token. Además existen endpoints
+de diagnóstico e integración privilegiada sin guard. Esta situación está
+registrada como P0 en `ARCHITECTURE.md`; no se debe considerar `x-auth-id` un
+mecanismo suficiente para clientes no confiables.

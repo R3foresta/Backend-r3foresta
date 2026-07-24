@@ -136,7 +136,7 @@ GET http://localhost:3000/api/lotes-vivero/1/timeline
         "payload": {
           "tipo": "DESPACHO",
           "cantidad_afectada": 18,
-          "destino_tipo": "DONACION_COMUNIDAD",
+          "destino_tipo": "DONACION",
           "destino_referencia": "Comunidad Llachon",
           "saldo_vivo_antes": 30,
           "saldo_vivo_despues": 12
@@ -331,7 +331,7 @@ Cada evento incluye un campo `payload` con información específica según su ti
 {
   "tipo": "DESPACHO",
   "cantidad_afectada": 18,
-  "destino_tipo": "DONACION_COMUNIDAD",
+  "destino_tipo": "DONACION",
   "destino_referencia": "Comunidad Llachon",
   "saldo_vivo_antes": 30,
   "saldo_vivo_despues": 12
@@ -339,7 +339,7 @@ Cada evento incluye un campo `payload` con información específica según su ti
 ```
 | Campo | Valores posibles para `destino_tipo` |
 |---|---|
-| `destino_tipo` | `PLANTACION_PROPIA`, `DONACION_COMUNIDAD`, `VENTA`, `OTRO` |
+| `destino_tipo` | `PLANTACION_PROPIA`, `PLANTACION_COMUNIDAD`, `DONACION`, `VENTA`, `OTRO`, `PLANTACION_CAMPANIA` |
 
 ---
 

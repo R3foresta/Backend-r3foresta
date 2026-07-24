@@ -125,7 +125,8 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 | Valor | Descripción |
 |-------|-------------|
 | `PLANTACION_PROPIA` | Plantación interna de la organización |
-| `DONACION_COMUNIDAD` | Donación a una comunidad registrada |
+| `PLANTACION_COMUNIDAD` | Reservado; no se expone en la UI MVP |
+| `DONACION` | Donación a una comunidad registrada |
 | `VENTA` | Venta a terceros |
 | `OTRO` | Destino no categorizado |
 
@@ -372,7 +373,12 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 
 ### 6️⃣ POST /lotes-vivero/:id/despacho
 
-**Descripción**: Registra la salida de plantas del vivero hacia un destino. Si tras el despacho el stock vivo llega a cero, el lote se cierra automáticamente. Si `destino_tipo` es `DONACION_COMUNIDAD`, el campo `comunidad_destino_id` es obligatorio.
+**Descripción**: Registra la salida manual de plantas del vivero hacia un
+destino que no es una Subcampaña M3. Si tras el despacho el stock vivo llega a
+cero, el lote se cierra automáticamente. El contrato canónico exige
+`comunidad_destino_id` cuando `destino_tipo` es `DONACION`; la divergencia
+actual del DTO/RPC está registrada en `ARCHITECTURE.md` y debe corregirse en
+conjunto.
 
 **Autenticación**: Header `x-auth-id` requerido. Solo roles `ADMIN` y `GENERAL`.
 
@@ -389,7 +395,7 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 | `cantidad_afectada` | integer (≥1) | ✅ | Número de plantas despachadas |
 | `destino_tipo` | enum | ✅ | Tipo de destino (ver enumeraciones) |
 | `destino_referencia` | string | ✅ | Descripción del lugar de destino (máx. 500 chars) |
-| `comunidad_destino_id` | integer | Condicional | Requerido si `destino_tipo` es `DONACION_COMUNIDAD` |
+| `comunidad_destino_id` | integer | Condicional | Requerido por contrato si `destino_tipo` es `DONACION` |
 | `observaciones` | string | No | Texto libre (máx. 1000 chars) |
 
 **Respuesta exitosa (201)**:
@@ -993,14 +999,14 @@ x-auth-id: {{auth_id}}
 Content-Type: application/json
 ```
 
-> 💡 En Postman: pestaña **Body → raw → JSON**. Cuando `destino_tipo` es `DONACION_COMUNIDAD`, el campo `comunidad_destino_id` es **obligatorio**.
+> 💡 En Postman: pestaña **Body → raw → JSON**. Cuando `destino_tipo` es `DONACION`, el campo `comunidad_destino_id` es **obligatorio por contrato**.
 
 **Body (raw JSON)**:
 ```json
 {
   "fecha_evento": "2026-06-15",
   "cantidad_afectada": 60,
-  "destino_tipo": "DONACION_COMUNIDAD",
+  "destino_tipo": "DONACION",
   "destino_referencia": "Comunidad Achocalla - Zona Centro",
   "comunidad_destino_id": 3,
   "observaciones": "Donación coordinada con líder comunal Doña Rosa Quispe"

@@ -1,125 +1,79 @@
-# CLAUDE.md
+# Guía de trabajo para agentes — Backend R3Foresta
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Antes de cambiar código
 
-## Project overview
+1. Leer [ARCHITECTURE.md](ARCHITECTURE.md).
+2. Consultar el requerimiento y la regla de negocio vigentes en
+   [`R3foresta/r3foresta-docs`](https://github.com/R3foresta/r3foresta-docs).
+3. Confirmar el contrato real en controller, DTO, Swagger y última migración
+   aplicable. No inferir campos a partir de una guía antigua.
+4. Revisar `r3foresta-docs/ESTADO.md` antes de afirmar que algo está desplegado
+   o aplicado en producción.
 
-Backend REST API (NestJS 11 + TypeScript) for **Reforesta**, a forestry traceability system. Tracks material vegetal from field collection (`recolecciones`) through nursery batches (`lotes-vivero`) until dispatch, with photo evidence stored in Supabase Storage + Pinata/IPFS, plus on-chain anchoring of validated events via an ethers.js smart contract.
+Idioma de trabajo: español para dominio, DTOs, enums, mensajes, Swagger y
+documentación.
 
-Primary persistence is **Supabase** (PostgreSQL + Auth + Storage). Authentication is **WebAuthn/passkeys** issuing a JWT; downstream endpoints identify the caller via the `x-auth-id` header (Supabase `auth_id`).
-
-Spanish is the working language for code identifiers, DTOs, comments, swagger tags, and documentation — keep new code consistent with that convention.
-
-## Commands
+## Comandos
 
 ```bash
-npm run start:dev          # watch-mode dev server on PORT (default 3000)
-npm run start:prod         # run compiled dist/main.js
-npm run build              # nest build → ./dist
-npm run lint               # eslint --fix on src/, apps/, libs/, test/
-npm run format             # prettier write
-npm test                   # unit tests via test/jest-unit.json
-npm run test:unit          # src/**/*.spec.ts + test/unit/**/*.spec.ts
-npm run test:integration   # test/integration/**/*.spec.ts; may need real Supabase env
-npm run test:watch         # unit tests in watch mode
-npm run test:cov           # unit coverage
-npm run test:e2e           # all test/e2e/**/*.e2e-spec.ts
-npm run test:e2e:p0        # P0 HTTP flows
-npm run test:e2e:db        # DB/RPC flows
-npx jest path/to/file.spec.ts            # single test file
-npx jest -t "name of test"               # single test by name
+npm run start:dev
+npm run build
+npm test
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+npm run test:e2e:p0
+npm run test:e2e:db
+npm run test:cov
 ```
 
-API mounts at `/api`. Swagger UI at `/api/docs` (uses `x-auth-id` apiKey scheme).
+`npm run lint` y `npm run format` escriben sobre el código. Integración y e2e
+pueden usar servicios reales y escribir datos.
 
-## Environment
+La API usa el prefijo `/api`; Swagger vive en `/api/docs`.
 
-Required env vars (see `.env.example`):
-- `SUPABASE_URL`, `SUPABASE_KEY`, optionally `SUPABASE_SERVICE_ROLE_KEY` (admin client falls back to anon if missing — `src/supabase/supabase.service.ts`)
-- `JWT_SECRET` (defaulted in code; **must override in prod**)
-- `RPC_URL`, `PRIVATE_KEY`, `CONTRACT_ADDRESS` — required at boot by `BlockchainService`; the app will fail to start without them
-- `PINATA_JWT`, `GATEWAY_URL`
-- `CORS_ORIGINS` (comma-separated, optional — adds to the hardcoded localhost + `pwa-r3foresta.vercel.app` + any `*.vercel.app` subdomain)
-- `PORT`
+## Reglas de implementación
 
-## Architecture
+- Mantener delgado el service orquestador en los módulos por capas.
+- Crear o extender un service de aplicación enfocado por caso de uso.
+- Llevar reglas puras a `domain/policies/` y cubrirlas con unitarios.
+- Tratar DTO, Swagger, documentación frontend y Postman como un único contrato.
+- Una operación que conserva saldos entre varias filas debe ser una RPC
+  PostgreSQL y tener pruebas de concurrencia.
+- Cambiar juntos el service llamador y una nueva migración. No reescribir una
+  migración ya desplegada para corregir producción.
+- Recorrer las redefiniciones de RPC en orden: la última migración gana.
+- Subir imágenes como `multipart/form-data`; nunca base64 en JSON.
+- Mantener snapshots históricos; no recalcular identidad pasada desde maestros.
+- Mantener eventos e historiales append-only.
+- Propagar cambios de dominio a `r3foresta-docs` sin renumerar reglas.
+- Actualizar `r3foresta-docs/ESTADO.md` solo con evidencia de implementación o
+  despliegue.
 
-### Module layout
-Each top-level feature is a Nest module under `src/`. Two of the core domains use a layered structure; the rest are flat (controller + service in the module root):
+## Invariantes de dominio
 
-```
-src/
-├── app.module.ts                # composition root
-├── main.ts                      # CORS, ValidationPipe (whitelist+transform), /api prefix, Swagger
-├── supabase/                    # SupabaseService.getClient() / getAdminClient()
-├── auth/                        # WebAuthn registration + login + JWT issuance
-├── users/
-├── recolecciones/               # LAYERED: api/ application/ domain/ tests/
-├── lotes-vivero/                # LAYERED: api/ application/ domain/ tests/
-├── viveros/                     # flat
-├── plantas/                     # flat
-├── metodos-recoleccion/
-├── ubicaciones/  +  common/ubicaciones/
-├── comunidades/
-├── evidencias-trazabilidad/
-├── blockchain/                  # ethers v6 + TokenJhamABI.json
-├── pinata/                      # IPFS pinning
-└── pingrepet/                   # health/ping
-```
+- Un lote de vivero tiene una única Recolección origen.
+- `INICIO` no crea saldo vivo; `EMBOLSADO` lo inaugura.
+- Antes de `EMBOLSADO`, una pérdida total es
+  `DESCARTE_PRE_EMBOLSADO`, no `MERMA`.
+- Asignar a una subcampaña es entregar físicamente: descuenta el lote en ese
+  momento.
+- Plantar consume `saldo_asignado_disponible`; no vuelve a descontar Vivero.
+- `cantidad_asignada` es inmutable.
+- Una devolución física aumenta `cantidad_devuelta` y repone el lote origen.
+- `AUTOMATICO_PLANTACION` es legado y no admite nuevas escrituras.
+- `COORDINADOR` es membresía de Subcampaña, no rol global.
+- El estado de Campaña se deriva; no se persiste como columna.
+- PostGIS es la autoridad para la validación GPS.
 
-### Layered modules (`recolecciones`, `lotes-vivero`)
+## Seguridad: no normalizar la deuda actual
 
-These two are the heart of the system and follow a deliberate split. **When adding behaviour, place it in the right layer rather than fattening the orchestrator service.**
+- El JWT se emite, pero la mayoría de rutas usa `x-auth-id` sin guard global.
+- CORS no autentica.
+- No añadir endpoints que confíen en `x-user-role`.
+- No copiar el fallback actual de `JWT_SECRET`.
+- No exponer nuevas operaciones de Pinata, wallet o blockchain sin
+  autenticación y autorización.
+- No registrar secretos, payloads WebAuthn completos ni datos sensibles.
 
-- `api/` — Controller + DTOs (`class-validator`) + Swagger decorators in `api/docs/*.swagger.ts` + multipart parsers (e.g. `recoleccion-formdata.parser.ts`).
-- `application/` — Many small single-responsibility services. The top-level service (`RecoleccionesService`, `LotesViveroService`) is an **orchestrator** that delegates to feature-specific services:
-  - `*-auth.service.ts` — resolves `x-auth-id` → user/role/permisos
-  - `*-creation.service.ts` / `*-inicio.service.ts` — atomic create paths (often call Supabase RPC functions defined in `migrations/`)
-  - `*-consultas.service.ts` — read/list queries
-  - `*-evidencias.service.ts` — Supabase Storage uploads (buckets created in migrations 002–004)
-  - `*-snapshots.service.ts` — saldo / lote snapshots for traceability
-  - `*-codigos.service.ts` — traceability code generation
-  - `*-historial.service.ts` / `*-timeline.service.ts` / `*-eventos.service.ts` — event log views
-  - `recoleccion-blockchain.service.ts` — minting on validation
-  - `recoleccion-elegibilidad.service.ts`, `recoleccion-completitud.service.ts`, `recoleccion-validacion.service.ts`, `recoleccion-draft.service.ts` — state-machine checks
-  - `vivero-embolsado.service.ts`, `vivero-adaptabilidad.service.ts`, `vivero-merma.service.ts` — per-event flows
-- `domain/` — `enums/` and `policies/` (pure TypeScript, no Nest decorators). Policies hold business rules tested in isolation (see `recolecciones/tests/cantidad-unidad.policy.spec.ts`).
-- `tests/` — colocated `*.spec.ts` for that module's services and policies. Picked up by the root jest config (`rootDir: src`).
-
-### Lote-vivero lifecycle (drives most of the domain)
-
-`recolección VALIDADA con saldo` → `POST /lotes-vivero/evidencias-pendientes` (pre-upload photos) → `POST /lotes-vivero` (create lote, decrements recolección saldo via RPC) → `POST /:id/embolsado` → `POST /:id/adaptabilidad` (SOMBRA → MEDIA_SOMBRA → SOL_DIRECTO) → optional `POST /:id/merma` → `POST /:id/despacho` (auto-closes when stock hits 0). `GET /:id/timeline` returns the full event history.
-
-### Database & migrations
-
-SQL migrations in `migrations/` are numbered and must be applied to Supabase in order. Several flows are implemented as Supabase **RPC functions** (e.g. `017_vivero_inicio_lote_rpc.sql`, `019_vivero_embolsado_rpc.sql`, `020_vivero_merma_rpc.sql`, `021_vivero_adaptabilidad_rpc.sql`) — the corresponding service calls `supabase.rpc('...')` for atomicity. When changing one of these flows, update both the SQL migration and the calling service.
-
-Storage buckets are also provisioned via migrations (002–004). Image uploads must go through Supabase Storage using `multipart/form-data` — never base64 in the JSON body. main.ts caps body at 5 MB; multipart bypasses that limit and is the pattern used across `recolecciones`, `lotes-vivero`, `users/profile/photo` and `plantas`.
-
-#### Known migration drift
-
-- `planta.tipo_planta` / `tipo_planta_otro` (defined in `005`) are no longer used. The live Supabase schema has `planta.tipo_planta_id BIGINT REFERENCES tipo_planta(id)` and a separate `tipo_planta` table that **do not exist in this repo's migrations** — the ALTER was applied directly. A `023_tipo_planta_table_alignment.sql` is pending to restore reproducibility (see TODO at the bottom of `022_planta_soft_delete.sql`). Confirm the live schema before writing it.
-
-### Authentication contract
-
-- Registration/login go through `auth/auth.service.ts` using `@passwordless-id/webauthn`. Challenges are kept in an **in-memory Map** with a 5-min TTL — not safe for multi-instance deploys; replace with Redis before horizontal scaling.
-- All other endpoints expect the `x-auth-id` header. Each layered module has its own `*-auth.service.ts` that converts that header into user + role + permissions; controllers throw `UnauthorizedException` if it's missing (see `LotesViveroController.requireAuthId`).
-
-### Documentation
-
-The `documentacion/` folder is the canonical narrative reference and is kept in sync with the code:
-- `documentacion/README.md` — entry point with the end-to-end flow diagram
-- `documentacion/arquitectura/` — cross-cutting architecture (auth, blockchain, evidencias, flujo end-to-end)
-- `documentacion/modulos/<modulo>.md` — per-module spec (recolecciones, lotes-vivero, plantas, auth-webauthn, blockchain, pinata, plantas-storage)
-- `documentacion/postman/<evento>.md` — request/response examples for each lote-vivero event (embolsado, adaptabilidad, merma, timeline)
-- `documentacion/frontend/` — contract notes for PWA consumers
-
-When changing a flow, update both the module spec under `documentacion/modulos/` and the Postman recipe if the request shape changes.
-
-### Conventions to preserve
-
-- **Spanish identifiers everywhere** (services, DTOs, enums, swagger tags). Don't anglicise.
-- **DTOs use `class-validator`** and the global `ValidationPipe` is configured with `whitelist: true, forbidNonWhitelisted: true, transform: true` — unknown fields are rejected, so keep DTOs accurate.
-- **Swagger decorators live in `api/docs/*.swagger.ts`** as named decorator factories (e.g. `ApiRegistrarEmbolsado()`) rather than inline on the controller. Follow this pattern when adding endpoints to the layered modules.
-- **Orchestrator services stay thin.** New behaviour in `recolecciones` / `lotes-vivero` should go in a new or existing `*-<feature>.service.ts`, not in `recolecciones.service.ts` / `lotes-vivero.service.ts`.
-- TypeScript is configured with `strictNullChecks: true` but `noImplicitAny: false` and `strictBindCallApply: false` — be aware when touching legacy code.
+Los P0 y el drift de migraciones están detallados en `ARCHITECTURE.md`.

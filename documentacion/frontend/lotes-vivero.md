@@ -34,6 +34,9 @@ GET  /api/lotes-vivero/:id/adaptabilidad
 POST /api/lotes-vivero/:id/merma/evidencias-pendientes
 POST /api/lotes-vivero/:id/merma
 GET  /api/lotes-vivero/:id/merma
+POST /api/lotes-vivero/:id/despacho/evidencias-pendientes
+POST /api/lotes-vivero/:id/despacho                    ← despacho MANUAL; no admite PLANTACION_CAMPANIA
+GET  /api/lotes-vivero/:id/despacho
 GET  /api/lotes-vivero/:id/timeline
 ```
 
@@ -58,6 +61,7 @@ La respuesta combina el lote + relaciones + un **snapshot del último evento por
       ADAPTABILIDAD:      EventoSnapshot | null,
       MERMA:              EventoSnapshot | null,
       DESPACHO:           EventoSnapshot | null,
+      DEVOLUCION_PLANTACION: EventoSnapshot | null,
       CIERRE_AUTOMATICO:  EventoSnapshot | null,
     }
   }
@@ -75,7 +79,7 @@ type EventoSnapshot = {
   subetapa_destino: 'SOMBRA' | 'MEDIA_SOMBRA' | 'SOL_DIRECTO' | null,
   causa_merma: 'PLAGA' | 'ENFERMEDAD' | 'SEQUIA' | 'DANO_FISICO' | 'MUERTE_NATURAL' | 'OTRO' | null,
   causa_descarte_pre_embolsado: 'NO_GERMINACION' | 'NO_ENRAIZAMIENTO' | 'CONTAMINACION' | 'PERDIDA_TOTAL_MATERIAL' | 'MATERIAL_NO_VIABLE' | 'DANO_PRE_EMBOLSADO' | 'OTRO' | null,
-  destino_tipo: 'PLANTACION_PROPIA' | 'DONACION_COMUNIDAD' | 'VENTA' | 'OTRO' | null,
+  destino_tipo: 'PLANTACION_PROPIA' | 'PLANTACION_COMUNIDAD' | 'DONACION' | 'VENTA' | 'OTRO' | 'PLANTACION_CAMPANIA' | null,
   destino_referencia: string | null,
   motivo_cierre_calculado: 'DESPACHO_TOTAL' | 'PERDIDA_TOTAL' | 'MIXTO' | 'DESCARTE_PRE_EMBOLSADO' | null,
 }
@@ -107,7 +111,9 @@ Todos los eventos también respetan la **ventana retroactiva de 10 días** (back
 
 No requiere `x-auth-id` por ahora (consistente con el resto de GET). Esto está bajo revisión — ver TODO en el controller y `documentacion/README.md` sección Pendientes.
 
-El resto del ciclo (inicio, embolsado, descarte pre-embolsado, adaptabilidad, merma, timeline) ya esta operativo. Solo el despacho queda pendiente de implementar en backend.
+El ciclo de inicio, embolsado, descarte pre-embolsado, adaptabilidad, merma,
+despacho manual, asignación física, devolución y timeline está implementado.
+La plantación consume el stock asignado y no genera un despacho M2 adicional.
 
 ## Regla de autenticacion
 
