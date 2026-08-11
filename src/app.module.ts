@@ -20,6 +20,7 @@ import { PlantacionesModule } from './plantaciones/plantaciones.module';
 import { CampaniasModule } from './campanias/campanias.module';
 import { OrganizacionesModule } from './organizaciones/organizaciones.module';
 import { SubcampaniasModule } from './subcampanias/subcampanias.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { SubcampaniasModule } from './subcampanias/subcampanias.module';
     CampaniasModule,
     OrganizacionesModule,
     SubcampaniasModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

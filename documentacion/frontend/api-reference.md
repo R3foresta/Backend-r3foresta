@@ -1,6 +1,6 @@
 # API Reference — Reforesta Backend
 
-**Última actualización**: 2026-07-23
+**Última actualización**: 2026-08-11
 
 ## Tabla de Contenidos
 
@@ -15,6 +15,21 @@
 ### URLs Base
 - **Desarrollo**: `http://localhost:3000/api`
 - **Producción**: `https://<dominio>/api`
+
+### Salud del backend
+
+`GET /health` es público y no usa el prefijo `/api`. Sirve para comprobar o
+despertar el proceso antes del login; no consulta Supabase ni otros servicios
+externos.
+
+```json
+{
+  "status": "ok",
+  "service": "r3foresta-backend",
+  "timestamp": "2026-08-11T12:00:00.000Z",
+  "uptimeSeconds": 42
+}
+```
 
 ### Autenticación
 

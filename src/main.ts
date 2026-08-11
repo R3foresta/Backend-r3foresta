@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
+import { configureGlobalRoutes } from './app.routes';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -87,8 +88,9 @@ async function bootstrap() {
     }),
   );
 
-  // Prefijo global para todas las rutas
-  app.setGlobalPrefix('api');
+  // Prefijo global para las rutas de negocio. /health queda fuera para que
+  // Render y el frontend puedan despertar el servicio antes del login.
+  configureGlobalRoutes(app);
 
   // Configuración de Swagger
   const config = new DocumentBuilder()
@@ -97,6 +99,7 @@ async function bootstrap() {
       'API REST para el sistema de gestión de recolecciones y viveros forestales',
     )
     .setVersion('1.0')
+    .addTag('health', 'Estado público del proceso del backend')
     .addTag(
       'recolecciones',
       'Endpoints para gestión de recolecciones de material vegetal',
