@@ -23,6 +23,7 @@ import {
   ApiFindByViveroRecolecciones,
   ApiFindOneRecoleccion,
   ApiFindPendingValidationRecolecciones,
+  ApiRegistrarDesecho,
   ApiRejectRecoleccionValidation,
   ApiSubmitRecoleccionValidation,
   ApiUpdateDraftRecoleccion,
@@ -30,6 +31,7 @@ import {
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 import { RecoleccionElegibilidadViveroQueryDto } from './dto/recoleccion-elegibilidad-vivero-query.dto';
 import { RejectValidationDto } from './dto/reject-validation.dto';
+import { RegistrarDesechoDto } from './dto/registrar-desecho.dto';
 import { RecoleccionFormDataParser } from './parsers/recoleccion-formdata.parser';
 
 @ApiTags('recolecciones')
@@ -149,6 +151,20 @@ export class RecoleccionesController {
       userRole,
       dto,
     );
+  }
+
+  @Post(':id/desecho')
+  @ApiRegistrarDesecho()
+  async registrarDesecho(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: RegistrarDesechoDto,
+    @Headers('x-auth-id') authId?: string,
+  ) {
+    if (!authId) {
+      throw new UnauthorizedException('Header x-auth-id es requerido');
+    }
+
+    return this.recoleccionesService.registrarDesecho(id, dto, authId);
   }
 
   @Get('pending-validation')

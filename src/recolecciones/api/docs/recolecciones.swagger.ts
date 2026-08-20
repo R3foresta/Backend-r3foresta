@@ -271,6 +271,50 @@ export function ApiRejectRecoleccionValidation() {
   );
 }
 
+export function ApiRegistrarDesecho() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Registrar descarte parcial o total de una recoleccion',
+      description:
+        'Registra un movimiento DESECHO sobre el saldo disponible de una recoleccion VALIDADO. Solo puede hacerlo el creador o un ADMIN. No requiere fotos ni motivo en el body; el backend usa DESECHO_OTRO.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiParam({ name: 'id', type: Number, description: 'ID de la recoleccion' }),
+    ApiBody({
+      schema: {
+        type: 'object',
+        required: ['cantidad'],
+        properties: {
+          cantidad: {
+            type: 'number',
+            minimum: 0.000001,
+            example: 50,
+            description:
+              'Cantidad a desechar en la unidad canonica de la recoleccion (G o UNIDAD).',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 201,
+      description:
+        'Descarte registrado. Devuelve movimiento, saldos antes/despues y estado operativo.',
+    }),
+    ApiResponse({
+      status: 400,
+      description:
+        'Recoleccion no validada, cerrada, saldo insuficiente o cantidad invalida.',
+    }),
+    ApiResponse({
+      status: 403,
+      description:
+        'Solo el creador de la recoleccion o ADMIN pueden descartar.',
+    }),
+    ApiResponse({ status: 404, description: 'Recoleccion no encontrada' }),
+  );
+}
+
 export function ApiFindPendingValidationRecolecciones() {
   return applyDecorators(
     ApiOperation({

@@ -17,6 +17,7 @@ import { RecoleccionCompletitudService } from './application/recoleccion-complet
 import { RecoleccionConsultasService } from './application/recoleccion-consultas.service';
 import { RecoleccionCreationService } from './application/recoleccion-creation.service';
 import { RecoleccionDraftService } from './application/recoleccion-draft.service';
+import { RecoleccionDesechoService } from './application/recoleccion-desecho.service';
 import { RecoleccionEvidenciasService } from './application/recoleccion-evidencias.service';
 import { RecoleccionUbicacionService } from './application/recoleccion-ubicacion.service';
 import { RecoleccionValidacionService } from './application/recoleccion-validacion.service';
@@ -43,6 +44,7 @@ import { RecoleccionFormDataParser } from './api/parsers/recoleccion-formdata.pa
     RecoleccionConsultasService,
     RecoleccionCreationService,
     RecoleccionDraftService,
+    RecoleccionDesechoService,
     RecoleccionEvidenciasService,
     RecoleccionUbicacionService,
     RecoleccionValidacionService,

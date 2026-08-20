@@ -9,11 +9,13 @@ import {
 import { FiltersRecoleccionDto } from '../api/dto/filters-recoleccion.dto';
 import { RejectValidationDto } from '../api/dto/reject-validation.dto';
 import { UpdateDraftDto } from '../api/dto/update-draft.dto';
+import { RegistrarDesechoDto } from '../api/dto/registrar-desecho.dto';
 import { CantidadUnidadPolicy } from '../domain/policies/cantidad-unidad.policy';
 import type { RecoleccionFotoInput } from '../domain/policies/evidencia-completitud.policy';
 import { RecoleccionConsultasService } from './recoleccion-consultas.service';
 import { RecoleccionCreationService } from './recoleccion-creation.service';
 import { RecoleccionDraftService } from './recoleccion-draft.service';
+import { RecoleccionDesechoService } from './recoleccion-desecho.service';
 import { RecoleccionValidacionService } from './recoleccion-validacion.service';
 
 @Injectable()
@@ -21,6 +23,7 @@ export class RecoleccionesService {
   constructor(
     private readonly creationService: RecoleccionCreationService,
     private readonly draftService: RecoleccionDraftService,
+    private readonly desechoService: RecoleccionDesechoService,
     private readonly validacionService: RecoleccionValidacionService,
     private readonly consultasService: RecoleccionConsultasService,
   ) {}
@@ -47,6 +50,10 @@ export class RecoleccionesService {
     files: RecoleccionFotoInput[] = [],
   ) {
     return this.draftService.updateDraft(id, dto, authId, userRole, files);
+  }
+
+  registrarDesecho(id: number, dto: RegistrarDesechoDto, authId: string) {
+    return this.desechoService.registrar(id, dto, authId);
   }
 
   submitForValidation(id: number, authId: string, userRole: string) {
