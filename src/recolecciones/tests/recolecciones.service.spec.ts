@@ -191,6 +191,7 @@ describe('RecoleccionesService', () => {
     expect(select).toContain('variedad_snapshot');
     expect(select).toContain('nombre_comunidad_snapshot');
     expect(select).toContain('nombre_recolector_snapshot');
+    expect(select).toContain('motivo_rechazo');
 
     // Verificar que NO tenga aliases incorrectos
     expect(select).not.toContain('cantidad:cantidad_inicial_canonica');

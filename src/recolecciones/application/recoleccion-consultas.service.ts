@@ -330,6 +330,7 @@ export class RecoleccionConsultasService {
       token_id,
       transaction_hash,
       estado_registro,
+      motivo_rechazo,
       unidad_canonica,
       cantidad_inicial_canonica,
       saldo_actual,
