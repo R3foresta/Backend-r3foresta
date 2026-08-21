@@ -24,6 +24,7 @@ import {
   ApiFindOneRecoleccion,
   ApiFindPendingValidationRecolecciones,
   ApiRejectRecoleccionValidation,
+  ApiFindStockSummaryRecolecciones,
   ApiSubmitRecoleccionValidation,
   ApiUpdateDraftRecoleccion,
 } from './docs/recolecciones.swagger';
@@ -171,6 +172,16 @@ export class RecoleccionesController {
       authId,
       userRole,
     );
+  }
+
+  @Get('stock-summary')
+  @ApiFindStockSummaryRecolecciones()
+  async findStockSummary(@Headers('x-auth-id') authId?: string) {
+    if (!authId) {
+      throw new UnauthorizedException('Header x-auth-id es requerido');
+    }
+
+    return this.recoleccionesService.findStockSummary(authId);
   }
 
   @Get()
