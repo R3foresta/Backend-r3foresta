@@ -82,6 +82,10 @@ export class RecoleccionesService {
     return this.consultasService.findAll(authId, filters);
   }
 
+  findStockSummary(authId: string) {
+    return this.consultasService.findStockSummary(authId);
+  }
+
   findByVivero(viveroId: number, filters: FiltersRecoleccionDto) {
     return this.consultasService.findByVivero(viveroId, filters);
   }

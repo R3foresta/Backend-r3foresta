@@ -4,6 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { FiltersRecoleccionDto } from '../api/dto/filters-recoleccion.dto';
 import { EstadoRegistro } from '../domain/enums/estado-registro.enum';
@@ -12,6 +13,22 @@ import { RecoleccionElegibilidadService } from './recoleccion-elegibilidad.servi
 import { RecoleccionEvidenciasService } from './recoleccion-evidencias.service';
 import { RecoleccionUbicacionService } from './recoleccion-ubicacion.service';
 import { mapRecoleccionToCanonicalResponse } from './mappers/recoleccion-response.mapper';
+
+type StockPlantRow = {
+  id: number;
+  especie: string;
+  nombre_cientifico: string | null;
+  variedad: string | null;
+  nombre_comun_principal: string | null;
+  imagen_url: string | null;
+};
+
+type StockRecoleccionRow = {
+  planta_id: number | null;
+  unidad_canonica: string | null;
+  saldo_actual: number | null;
+  estado_registro: string | null;
+};
 
 @Injectable()
 export class RecoleccionConsultasService {
@@ -144,6 +161,148 @@ export class RecoleccionConsultasService {
       limit,
       filters,
     );
+  }
+
+  async findStockSummary(authId: string) {
+    const supabase = this.supabaseService.getClient();
+    const usuario = await this.authService.getUserByAuthId(authId);
+    this.authService.assertAdminRole(usuario.rol);
+
+    const recoleccionesPromise = this.fetchStockRows(supabase);
+    const [plantasResponse, recoleccionesResponse] = await Promise.all([
+      supabase
+        .from('planta')
+        .select(
+          'id, especie, nombre_cientifico, variedad, nombre_comun_principal, imagen_url',
+        )
+        .eq('activo', true)
+        .order('especie', { ascending: true }),
+      recoleccionesPromise,
+    ]);
+
+    const plantas = (plantasResponse.data ?? []) as unknown as StockPlantRow[];
+    const recolecciones = recoleccionesResponse.data ?? [];
+    const plantasError = plantasResponse.error;
+    const recoleccionesError = recoleccionesResponse.error;
+
+    if (plantasError) {
+      this.logger.error(
+        '❌ Error al obtener plantas activas para el resumen de stock:',
+        plantasError,
+      );
+      throw new InternalServerErrorException(
+        'Error al obtener plantas activas para el resumen de stock',
+      );
+    }
+
+    if (recoleccionesError) {
+      this.logger.error(
+        '❌ Error al obtener saldos de recolecciones para el resumen de stock:',
+        recoleccionesError,
+      );
+      throw new InternalServerErrorException(
+        'Error al obtener saldos de recolecciones para el resumen de stock',
+      );
+    }
+
+    const stockByPlant = new Map<
+      number,
+      {
+        gramos_disponibles: number;
+        unidades_disponibles: number;
+        pendientes_validacion: number;
+      }
+    >();
+
+    for (const row of recolecciones ?? []) {
+      const plantaId = Number(row.planta_id);
+      const saldo = Number(row.saldo_actual);
+      const unidad = String(row.unidad_canonica ?? '').toUpperCase();
+      const estadoRegistro = String(row.estado_registro ?? '').toUpperCase();
+
+      if (!Number.isFinite(plantaId)) {
+        continue;
+      }
+
+      const current = stockByPlant.get(plantaId) ?? {
+        gramos_disponibles: 0,
+        unidades_disponibles: 0,
+        pendientes_validacion: 0,
+      };
+
+      if (estadoRegistro === EstadoRegistro.PENDIENTE_VALIDACION) {
+        current.pendientes_validacion += 1;
+      } else if (
+        estadoRegistro === EstadoRegistro.VALIDADO &&
+        Number.isFinite(saldo) &&
+        saldo > 0
+      ) {
+        if (unidad === 'G') {
+          current.gramos_disponibles += saldo;
+        } else if (unidad === 'UNIDAD') {
+          current.unidades_disponibles += saldo;
+        }
+      }
+
+      stockByPlant.set(plantaId, current);
+    }
+
+    return {
+      success: true,
+      data: plantas.map((planta) => {
+        const stock = stockByPlant.get(Number(planta.id));
+
+        return {
+          planta_id: Number(planta.id),
+          especie: planta.especie,
+          nombre_cientifico: planta.nombre_cientifico,
+          variedad: planta.variedad,
+          nombre_comun_principal: planta.nombre_comun_principal,
+          imagen_url: planta.imagen_url,
+          gramos_disponibles: stock?.gramos_disponibles ?? 0,
+          unidades_disponibles: stock?.unidades_disponibles ?? 0,
+          pendientes_validacion: stock?.pendientes_validacion ?? 0,
+        };
+      }),
+      actualizado_en: new Date().toISOString(),
+    };
+  }
+
+  private async fetchStockRows(
+    supabase: SupabaseClient,
+  ): Promise<{ data: StockRecoleccionRow[] | null; error: unknown }> {
+    const pageSize = 1000;
+    const rows: StockRecoleccionRow[] = [];
+    let offset = 0;
+
+    while (true) {
+      const response = await supabase
+        .from('recoleccion')
+        .select('planta_id, unidad_canonica, saldo_actual, estado_registro')
+        .eq('tipo_material', 'SEMILLA')
+        .in('estado_registro', [
+          EstadoRegistro.VALIDADO,
+          EstadoRegistro.PENDIENTE_VALIDACION,
+        ])
+        .not('planta_id', 'is', null)
+        .order('id', { ascending: true })
+        .range(offset, offset + pageSize - 1);
+
+      const error = response.error;
+      const page = (response.data ?? []) as unknown as StockRecoleccionRow[];
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      rows.push(...page);
+
+      if (page.length < pageSize) {
+        return { data: rows, error: null };
+      }
+
+      offset += pageSize;
+    }
   }
 
   async findByVivero(viveroId: number, filters: FiltersRecoleccionDto) {
