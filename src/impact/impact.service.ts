@@ -114,7 +114,7 @@ type ImpactDataset = {
   campaigns: CampaignRow[];
   statusByCampaign: Map<number, string>;
   subcampaigns: SubcampaignRow[];
-  locationNameById: Map<number, string>;
+  currentLocationNameById: Map<number, string>;
   polygonBySubcampaign: Map<number, GeoJsonGeometry | null>;
   plantings: PlantingRow[];
   detailsByPlanting: Map<number, ImpactSpecies[]>;
@@ -199,7 +199,7 @@ export class ImpactService {
   }
 
   async getCampaignDetail(organizationId: number, campaignId: number) {
-    const dataset = await this.loadDataset(organizationId, campaignId);
+    const dataset = await this.loadDataset(organizationId, campaignId, true);
     const campaign = dataset.campaigns[0];
     if (!campaign) {
       throw new NotFoundException(
@@ -237,6 +237,7 @@ export class ImpactService {
   private async loadDataset(
     organizationId: number,
     campaignId?: number,
+    includePlantingDetails = false,
   ): Promise<ImpactDataset> {
     const organization = await this.requireOrganization(organizationId);
     const campaigns = await this.loadCampaigns(organizationId, campaignId);
@@ -253,7 +254,7 @@ export class ImpactService {
         campaigns: [],
         statusByCampaign: new Map(),
         subcampaigns: [],
-        locationNameById: new Map(),
+        currentLocationNameById: new Map(),
         polygonBySubcampaign: new Map(),
         plantings: [],
         detailsByPlanting: new Map(),
@@ -274,7 +275,8 @@ export class ImpactService {
         )
         .in('campania_id', campaignIds)
         .is('deleted_at', null)
-        .order('created_at', { ascending: false }),
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false }),
     ]);
 
     if (statesResult.error || subcampaignResult.error) {
@@ -293,14 +295,16 @@ export class ImpactService {
 
     const subcampaigns = (subcampaignResult.data ?? []) as SubcampaignRow[];
     const subcampaignIds = subcampaigns.map((row) => Number(row.id));
-    const [locationNameById, polygonBySubcampaign] = await Promise.all([
-      this.loadLocationNames(subcampaigns),
+    const [currentLocationNameById, polygonBySubcampaign] = await Promise.all([
+      this.loadCurrentLocationNames(subcampaigns),
       this.loadPolygons(subcampaignIds),
     ]);
     const plantings = await this.loadPlantings(subcampaignIds);
     const plantingIds = plantings.map((row) => Number(row.id));
     const [detailsByPlanting, evidenceByPlanting] = await Promise.all([
-      this.loadPlantingDetails(plantingIds),
+      includePlantingDetails
+        ? this.loadPlantingDetails(plantingIds)
+        : Promise.resolve(new Map<number, ImpactSpecies[]>()),
       this.loadEvidence(plantings, subcampaigns),
     ]);
 
@@ -309,7 +313,7 @@ export class ImpactService {
       campaigns,
       statusByCampaign,
       subcampaigns,
-      locationNameById,
+      currentLocationNameById,
       polygonBySubcampaign,
       plantings,
       detailsByPlanting,
@@ -374,7 +378,8 @@ export class ImpactService {
       )
       .in('id', campaignIds)
       .is('deleted_at', null)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
 
     if (error) {
       throw new InternalServerErrorException(
@@ -405,16 +410,10 @@ export class ImpactService {
     return new Map(entries);
   }
 
-  private async loadLocationNames(
+  private async loadCurrentLocationNames(
     subcampaigns: SubcampaignRow[],
   ): Promise<Map<number, string>> {
     const result = new Map<number, string>();
-    for (const row of subcampaigns) {
-      if (row.nombre_zona_snapshot) {
-        result.set(Number(row.zona_id), row.nombre_zona_snapshot);
-      }
-    }
-
     const missingIds = Array.from(
       new Set(
         subcampaigns
@@ -454,6 +453,7 @@ export class ImpactService {
         )
         .in('subcampania_id', subcampaignIds)
         .order('fecha_plantacion', { ascending: false })
+        .order('id', { ascending: false })
         .range(from, to);
     }, 'No se pudieron consultar los registros de plantación.');
   }
@@ -493,7 +493,17 @@ export class ImpactService {
         quantity: Number(row.cantidad ?? 0),
       };
       if (!result.has(plantingId)) result.set(plantingId, []);
-      result.get(plantingId)!.push(species);
+      const plantingSpecies = result.get(plantingId)!;
+      const existingSpecies = plantingSpecies.find(
+        (item) => item.id === species.id,
+      );
+      if (existingSpecies) {
+        existingSpecies.quantity += species.quantity;
+        existingSpecies.commonName ??= species.commonName;
+        existingSpecies.scientificName ??= species.scientificName;
+      } else {
+        plantingSpecies.push(species);
+      }
     }
     return result;
   }
@@ -534,6 +544,7 @@ export class ImpactService {
           .is('eliminado_en', null)
           .order('es_principal', { ascending: false })
           .order('orden', { ascending: true })
+          .order('id', { ascending: true })
           .range(from, to),
       'No se pudieron consultar las evidencias de plantación.',
     );
@@ -628,7 +639,7 @@ export class ImpactService {
       maintenancePhase: row.fase_mantenimiento,
       location: {
         id: Number(row.zona_id),
-        name: dataset.locationNameById.get(Number(row.zona_id)) ?? null,
+        name: this.resolveLocationName(row, dataset),
       },
       hectares: this.round(Number(row.area_hectareas ?? 0), 4),
       impact: this.calculateMetrics([row]),
@@ -703,7 +714,7 @@ export class ImpactService {
       campaignId: Number(row.campania_id),
       subcampaignId: Number(row.id),
       name: row.nombre,
-      locationName: dataset.locationNameById.get(Number(row.zona_id)) ?? null,
+      locationName: this.resolveLocationName(row, dataset),
       hectares: this.round(Number(row.area_hectareas ?? 0), 4),
       polygon: dataset.polygonBySubcampaign.get(Number(row.id)) ?? null,
     }));
@@ -722,7 +733,7 @@ export class ImpactService {
       } else {
         locations.set(id, {
           id,
-          name: dataset.locationNameById.get(id) ?? `Ubicación ${id}`,
+          name: this.resolveLocationName(row, dataset) ?? `Ubicación ${id}`,
           subcampaignsCount: 1,
         });
       }
@@ -781,6 +792,17 @@ export class ImpactService {
       logo: row.logo_url ?? null,
       description: null,
     };
+  }
+
+  private resolveLocationName(
+    row: SubcampaignRow,
+    dataset: ImpactDataset,
+  ): string | null {
+    return (
+      row.nombre_zona_snapshot ??
+      dataset.currentLocationNameById.get(Number(row.zona_id)) ??
+      null
+    );
   }
 
   private sortEvidence(rows: ImpactEvidence[]): ImpactEvidence[] {

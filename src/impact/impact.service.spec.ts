@@ -119,7 +119,7 @@ describe('ImpactService', () => {
   });
 
   it('agrega impacto y publica GPS/evidencia sin datos operativos internos', async () => {
-    const { supabase } = makeSupabase(
+    const { supabase, client } = makeSupabase(
       {
         organizacion: {
           data: { id: 3, nombre: 'Bosque SA', logo_url: null },
@@ -256,11 +256,134 @@ describe('ImpactService', () => {
       imageUrl: 'https://storage.example/plantacion.jpg',
       title: 'Jornada de plantación',
     });
+    expect(client.from).not.toHaveBeenCalledWith('registro_plantacion_detalle');
 
     const serialized = JSON.stringify(response);
     expect(serialized).not.toContain('responsable');
     expect(serialized).not.toContain('hash_sha256');
     expect(serialized).not.toContain('private-name');
     expect(serialized).not.toContain('ruta_archivo');
+  });
+
+  it('carga especies en el detalle y resuelve una ubicación sin snapshot', async () => {
+    const { supabase, client } = makeSupabase({
+      organizacion: {
+        data: { id: 3, nombre: 'Bosque SA', logo_url: null },
+        error: null,
+      },
+      campania_organizacion: {
+        data: [{ campania_id: 8 }],
+        error: null,
+      },
+      campania: {
+        data: [
+          {
+            id: 8,
+            nombre: 'Campaña Norte',
+            tipo: 'REFORESTACION',
+            descripcion: null,
+            fecha_estimada_inicio: null,
+            fecha_estimada_fin: null,
+            updated_at: '2026-08-01T00:00:00Z',
+          },
+        ],
+        error: null,
+      },
+      campania_estado: {
+        data: [{ campania_id: 8, estado_derivado: 'ACTIVA' }],
+        error: null,
+      },
+      subcampania: {
+        data: [
+          {
+            id: 21,
+            campania_id: 8,
+            nombre: 'Zona en planificación',
+            descripcion: null,
+            estado: 'ACTIVA',
+            fase_mantenimiento: 'NO_APLICA',
+            zona_id: 4,
+            nombre_zona_snapshot: null,
+            area_hectareas: 2,
+            meta_total_arboles: 100,
+            total_plantado_inicial: 10,
+            total_repuesto: 0,
+            saldo_vivo_actual: 10,
+            updated_at: '2026-08-02T00:00:00Z',
+          },
+        ],
+        error: null,
+      },
+      division_administrativa: {
+        data: [{ id: 4, nombre: 'Tiquipaya' }],
+        error: null,
+      },
+      registro_plantacion: {
+        data: [
+          {
+            id: 31,
+            subcampania_id: 21,
+            fecha_plantacion: '2026-07-15',
+            latitud: -17.338,
+            longitud: -66.215,
+            cantidad_total_plantada: 10,
+            es_reposicion: false,
+            gps_dentro_poligono: true,
+            gps_distancia_a_poligono_m: 0,
+            created_at: '2026-07-15T15:00:00Z',
+          },
+        ],
+        error: null,
+      },
+      registro_plantacion_detalle: {
+        data: [
+          {
+            registro_plantacion_id: 31,
+            planta_id: 5,
+            cantidad: 6,
+            nombre_cientifico_snapshot: 'Polylepis subtusalbida',
+            nombre_comercial_snapshot: 'Kewiña histórica',
+            planta: {
+              id: 5,
+              especie: 'Kewiña actual',
+              nombre_cientifico: 'Nombre actual',
+              nombre_comun_principal: 'Kewiña actual',
+            },
+          },
+          {
+            registro_plantacion_id: 31,
+            planta_id: 5,
+            cantidad: 4,
+            nombre_cientifico_snapshot: 'Polylepis subtusalbida',
+            nombre_comercial_snapshot: 'Kewiña histórica',
+            planta: {
+              id: 5,
+              especie: 'Kewiña actual',
+              nombre_cientifico: 'Nombre actual',
+              nombre_comun_principal: 'Kewiña actual',
+            },
+          },
+        ],
+        error: null,
+      },
+      tipos_entidad_evidencia: { data: null, error: null },
+    });
+    const service = new ImpactService(supabase);
+
+    const response = await service.getCampaignDetail(3, 8);
+
+    expect(response.data.subcampaigns[0].location).toEqual({
+      id: 4,
+      name: 'Tiquipaya',
+    });
+    expect(response.data.plantingRecords[0].species).toEqual([
+      {
+        id: 5,
+        commonName: 'Kewiña histórica',
+        scientificName: 'Polylepis subtusalbida',
+        quantity: 10,
+      },
+    ]);
+    expect(client.from).toHaveBeenCalledWith('registro_plantacion_detalle');
   });
 });
