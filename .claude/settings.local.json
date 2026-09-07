@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git mv *)",
+      "Read(//Users/pabloandresfernandezcari/Projects/R3foresta/r3foresta-docs/tareas/modulo-2-integracion-modulo-3/**)",
+      "Read(//Users/pabloandresfernandezcari/Projects/R3foresta/r3foresta-docs/tareas/modulo-2-integracion-modulo-3/completadas/**)",
+      "Read(//Users/pabloandresfernandezcari/Projects/R3foresta/r3foresta-docs/**)",
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Bash(npx jest *)",
+      "Bash(git stash *)",
+      "Bash(awk '/^\\\\/Users.*lotes-vivero\\\\/\\(application\\\\/vivero-despacho|api\\\\/lotes-vivero\\\\.controller|api\\\\/docs\\\\/lotes-vivero\\\\.swagger|application\\\\/vivero-eventos|application\\\\/lotes-vivero|domain\\\\/enums\\\\/destino-tipo-vivero|api\\\\/dto\\\\/registrar-despacho|lotes-vivero\\\\.module|tests\\\\/lotes-vivero\\\\.swagger\\)/{flag=1; print; next} /^\\\\/Users/{flag=0} flag')",
+      "Bash(awk '/^\\\\/Users.*lotes-vivero\\\\/application\\\\/vivero-merma/{flag=1; print; next} /^\\\\/Users/{flag=0} flag')",
+      "Bash(awk '/^\\\\/Users.*lotes-vivero\\\\/application\\\\/vivero-embolsado/{flag=1; print; next} /^\\\\/Users/{flag=0} flag')",
+      "Bash(awk '/^\\\\/Users.*lotes-vivero\\\\/application\\\\/vivero-despacho/{flag=1; print; next} /^\\\\/Users/{flag=0} flag')",
+      "Bash(python3 -c \"import json; json.load\\(open\\('/Users/pabloandresfernandezcari/Projects/R3foresta/r3foresta-docs/plantacion-module/00_Requerimientos_Modulo_3_Plantacion.json'\\)\\); print\\('JSON OK'\\)\")",
+      "Read(//Users/pabloandresfernandezcari/Projects/R3foresta/**)",
+      "Read(//Users/pabloandresfernandezcari/Projects/**)",
+      "Read(//Users/pabloandresfernandezcari/.claude/**)",
+      "Bash(gh pr *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ],
+    "additionalDirectories": [
+      "/Users/pabloandresfernandezcari/Projects/R3foresta/r3foresta-docs/vivero-module",
+      "/Users/pabloandresfernandezcari/Projects/R3foresta/r3foresta-docs/plantacion-module",
+      "/Users/pabloandresfernandezcari/Projects/R3foresta/r3foresta-docs"
+    ]
+  }
+}
