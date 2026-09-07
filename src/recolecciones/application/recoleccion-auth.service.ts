@@ -63,6 +63,15 @@ export class RecoleccionAuthService {
     }
   }
 
+  assertAdminRole(userRole: string): void {
+    const role = String(userRole ?? '').toUpperCase();
+    if (role !== 'ADMIN') {
+      throw new ForbiddenException(
+        'Solo usuarios con rol ADMIN pueden consultar el dashboard global de recolección.',
+      );
+    }
+  }
+
   isGlobalReviewer(userRole: string): boolean {
     return ['VALIDADOR', 'ADMIN'].includes(
       String(userRole ?? '').toUpperCase(),

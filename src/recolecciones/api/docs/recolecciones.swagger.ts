@@ -357,6 +357,30 @@ export function ApiFindAllRecolecciones() {
   );
 }
 
+export function ApiFindStockSummaryRecolecciones() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Obtener stock de semillas por planta',
+      description:
+        'Dashboard global exclusivo para ADMIN. Devuelve todas las plantas activas del catálogo, incluyendo las que tienen saldo cero, suma el saldo actual de todas las recolecciones de semillas validadas por unidad canónica (G y UNIDAD) y cuenta pendientes de validación.',
+    }),
+    ApiSecurity('x-auth-id'),
+    ApiHeader(AUTH_ID_HEADER),
+    ApiResponse({
+      status: 200,
+      description: 'Resumen de stock obtenido correctamente',
+    }),
+    ApiResponse({
+      status: 401,
+      description: 'No autorizado - falta header x-auth-id',
+    }),
+    ApiResponse({
+      status: 403,
+      description: 'El usuario autenticado no tiene rol ADMIN',
+    }),
+  );
+}
+
 export function ApiFindByViveroRecolecciones() {
   return applyDecorators(
     ApiOperation({
