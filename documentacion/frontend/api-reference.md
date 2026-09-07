@@ -13,6 +13,7 @@
 ## Convenciones Globales
 
 ### URLs Base
+
 - **Desarrollo**: `http://localhost:3000/api`
 - **Producción**: `https://<dominio>/api`
 
@@ -34,6 +35,7 @@ externos.
 ### Autenticación
 
 Todos los endpoints requieren el header:
+
 ```
 x-auth-id: <supabase_auth_id>
 ```
@@ -41,30 +43,33 @@ x-auth-id: <supabase_auth_id>
 **Excepciones**: Endpoints de auth (login, registro) — ver módulo Usuarios.
 
 **Roles válidos**:
+
 - `ADMIN` — Acceso total, creación de campañas/organizaciones
 - `VALIDADOR` — Valida recolecciones, acceso a datos operativos
 - `GENERAL` — Acceso básico, lectura/escritura en módulos asignados
 - `VOLUNTARIO` — Acceso limitado, solo lectura en vistas públicas
 
 ### Content-Type
+
 - **JSON**: `application/json` (default)
 - **Multipart**: `multipart/form-data` — Indicado en cada endpoint con 📎
 
 ### Errores Comunes
 
-| Status | Escenario |
-|--------|-----------|
+| Status  | Escenario                                                                       |
+| ------- | ------------------------------------------------------------------------------- |
 | **400** | Validación fallida: datos inválidos, formato incorrecto, parámetros malformados |
-| **401** | Header `x-auth-id` ausente, vacío o token JWT inválido |
-| **403** | Rol insuficiente para la acción solicitada |
-| **404** | Recurso no encontrado |
-| **409** | Conflicto: duplicado (ej. email, username, nombre único ya existe) |
-| **422** | Violación de regla de negocio (estado inválido, falta de datos, etc.) |
-| **500** | Error interno del servidor |
+| **401** | Header `x-auth-id` ausente, vacío o token JWT inválido                          |
+| **403** | Rol insuficiente para la acción solicitada                                      |
+| **404** | Recurso no encontrado                                                           |
+| **409** | Conflicto: duplicado (ej. email, username, nombre único ya existe)              |
+| **422** | Violación de regla de negocio (estado inválido, falta de datos, etc.)           |
+| **500** | Error interno del servidor                                                      |
 
 ### Respuestas
 
 **Éxito (GET list)**:
+
 ```json
 {
   "success": true,
@@ -76,6 +81,7 @@ x-auth-id: <supabase_auth_id>
 ```
 
 **Éxito (GET detail / POST / PATCH / DELETE)**:
+
 ```json
 {
   "success": true,
@@ -88,6 +94,7 @@ x-auth-id: <supabase_auth_id>
 ```
 
 **Error**:
+
 ```json
 {
   "statusCode": 400,
@@ -101,19 +108,25 @@ x-auth-id: <supabase_auth_id>
 ## Enums de Referencia
 
 ### TipoCampania
+
 Clasificación de campañas:
+
 ```
 REFORESTACION | ARBORIZACION | FORESTACION
 ```
 
 ### TipoOrganizacion
+
 Clasificación de organizaciones:
+
 ```
 ONG | EMPRESA_PRIVADA | EMPRESA_PUBLICA | FUNDACION | ETFs | ALCALDIA | ASOCIACION_CIUDADANA | OTRO
 ```
 
 ### EstadoSubcampania
+
 Estados del ciclo de vida de una subcampaña:
+
 ```
 BORRADOR       — Creada, no activada
 ACTIVA         — En ejecución
@@ -124,7 +137,9 @@ CANCELADA      — Cancelada
 ```
 
 ### FaseMantenimientoSubcampania
+
 Fase post-plantación:
+
 ```
 NO_APLICA            — Sin mantenimiento previsto
 MANTENIMIENTO_ACTIVO — En mantenimiento activo
@@ -132,7 +147,9 @@ MONITOREO_HISTORICO  — Monitoreo sin intervención
 ```
 
 ### MotivoCierreParcial
+
 Razones de cierre parcial:
+
 ```
 FALTA_STOCK
 PROBLEMAS_CLIMATICOS
@@ -147,13 +164,17 @@ OTRO
 ```
 
 ### RolEnSubcampania
+
 Roles dentro de una subcampaña:
+
 ```
 COORDINADOR | OPERARIO
 ```
 
 ### PropositoAsignacion
+
 Propósito al asignar un lote:
+
 ```
 PLANTACION_INICIAL | REPOSICION
 ```
@@ -163,6 +184,7 @@ PLANTACION_INICIAL | REPOSICION
 ## Módulos Documentados
 
 ### [1. Usuarios](modulos/usuarios.md)
+
 - `GET /users` — Listar usuarios (selector)
 - `GET /users/rol/:rol` — Listar usuarios por rol
 - `GET /users/profile` — Perfil del usuario autenticado
@@ -170,11 +192,13 @@ PLANTACION_INICIAL | REPOSICION
 - `PATCH /users/profile/photo` 📎 — Subir foto de perfil
 
 ### [2. Ubicaciones](modulos/ubicaciones.md)
+
 - `GET /ubicaciones/paises` — Listar países
 - `GET /ubicaciones/divisiones` — Listar divisiones administrativas
 - `POST /ubicaciones/divisiones/flexible` — Crear/recuperar división flexible
 
 ### [3. Organizaciones](modulos/organizaciones.md)
+
 - `POST /organizaciones` 📎 — Crear organización
 - `GET /organizaciones` — Listar
 - `GET /organizaciones/:id` — Detalle
@@ -184,6 +208,7 @@ PLANTACION_INICIAL | REPOSICION
 - `DELETE /organizaciones/:id/logo` — Eliminar logo
 
 ### [4. Campañas](modulos/campanias.md)
+
 - [Guía de desactivación con cancelación masiva](desactivacion-campania-cancelacion-masiva.md)
 - `POST /campanias` — Crear
 - `GET /campanias` — Listar
@@ -200,6 +225,7 @@ PLANTACION_INICIAL | REPOSICION
 - `DELETE /campanias/:id/organizaciones/:orgId` — Desasociar
 
 ### [5. Subcampañas](modulos/subcampanias.md)
+
 - `POST /subcampanias` — Crear
 - `GET /subcampanias` — Listar
 - `GET /subcampanias/:id` — Detalle
@@ -214,7 +240,9 @@ PLANTACION_INICIAL | REPOSICION
 - `DELETE /subcampanias/:id/equipo/:usuarioId` — Remover miembro
 
 ### [6. Lotes de Vivero (M3)](modulos/lotes-vivero-m3.md)
+
 Endpoints relevantes para el flujo de asignación física de M3 (ver [guía de migración](guia-migracion-asignacion-fisica.md)):
+
 - `GET /lotes-vivero` — Listar lotes (saldo físico + asignado a subcampañas)
 - `GET /lotes-vivero/stock/especies` — Stock físico asignable agrupado por especie
 - `GET /lotes-vivero/:id` — Detalle del lote
@@ -227,18 +255,28 @@ Endpoints relevantes para el flujo de asignación física de M3 (ver [guía de m
 > Removidos (2026-07): `POST /:id/reservas` y `DELETE /:id/asignaciones/:asignacionId`.
 
 ### [7. Plantaciones](modulos/plantaciones.md)
+
 - `POST /registros-plantacion/evidencias-pendientes` 📎 — Crear evidencias
 - `POST /registros-plantacion` — Registrar plantación
+
+### [8. Impact Portal](impact-portal.md)
+
+- `GET /v1/impact/organizations` — Selector público de organizaciones
+- `GET /v1/impact/organizations/:organizationId/dashboard` — Impacto agregado y mapa
+- `GET /v1/impact/organizations/:organizationId/campaigns/:campaignId` — Detalle público de campaña
 
 ---
 
 ## Notas Importantes
 
 ### Campos GENERATED (Calculados en BD)
+
 Campos como `saldo_vivo_actual`, `estado_derivado`, `cantidad_asignada` son **generados/calculados por vistas o triggers** en Supabase. **El frontend nunca los envía**, solo los lee.
 
 ### GeoJSON Polígono
+
 Formato exacto para subcampañas:
+
 ```json
 {
   "poligono": {
@@ -249,17 +287,21 @@ Formato exacto para subcampañas:
   }
 }
 ```
+
 ⚠️ Orden es **[longitud, latitud]**, no latitud/longitud.
 
 ### Autenticación en Desarrollo
+
 Algunos endpoints aceptan `x-auth-id` directamente (sin JWT) en modo dev. Ver `users.controller.ts`.
 
 ### Límites de Archivos
+
 - **Foto de perfil**: máx. 2 MB, PNG/JPEG/WebP
 - **Logo de organización**: máx. 2 MB, PNG/JPEG/WebP
 - **Fotos de evidencias**: máx. 5 archivos por request
 
 ### Pre-condiciones (Lifecycle)
+
 Endpoints como `/activar` y `/cerrar` en subcampañas requieren ciertos estados previos. `POST /subcampanias/:id/activar` exige polígono, coordinador y plan de metas por especie completo; **no** exige stock asignado (la asignación física ocurre después de activar, RF-VIV-11). Ver detalles en módulo Subcampañas.
 
 ---
