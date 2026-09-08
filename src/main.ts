@@ -116,6 +116,10 @@ async function bootstrap() {
       'evidencias-trazabilidad',
       'Endpoints para consultar evidencias de trazabilidad',
     )
+    .addTag(
+      'impact-publico',
+      'Consultas públicas y agregadas para el portal de impacto',
+    )
     .addTag('blockchain', 'Endpoints para integración con blockchain')
     .addTag('pinata', 'Endpoints para gestión de IPFS/Pinata')
     .addApiKey(

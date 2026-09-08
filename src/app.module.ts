@@ -21,6 +21,7 @@ import { CampaniasModule } from './campanias/campanias.module';
 import { OrganizacionesModule } from './organizaciones/organizaciones.module';
 import { SubcampaniasModule } from './subcampanias/subcampanias.module';
 import { HealthModule } from './health/health.module';
+import { ImpactModule } from './impact/impact.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { HealthModule } from './health/health.module';
     OrganizacionesModule,
     SubcampaniasModule,
     HealthModule,
+    ImpactModule,
   ],
   controllers: [AppController],
   providers: [AppService],
