@@ -2,6 +2,9 @@
 
 Base URL: `/api/v1/impact`
 
+Estado al 9 de septiembre de 2026: los cinco endpoints descritos en este
+documento están implementados en la rama `impacto`.
+
 Esta API es pública, de solo lectura y usa la información operativa existente.
 No requiere `x-auth-id` y no crea una fuente de datos paralela.
 
@@ -207,6 +210,32 @@ interface MonitoringTimelinePoint {
 }
 ```
 
+Estructura completa:
+
+```ts
+interface MonitoringTimelineResponse {
+  success: true;
+  data: {
+    organization: ImpactOrganization;
+    campaignId: number | null;
+    points: MonitoringTimelinePoint[];
+    dataAvailability: {
+      plantingRecordsCount: number;
+      mortalityReportsCount: number;
+      hasMortalityMonitoring: boolean;
+    };
+    generatedAt: string;
+  };
+}
+```
+
+`treesMonitored` representa el total acumulado incorporado al seguimiento
+(plantación inicial más reposiciones), no una afirmación de que todos esos
+árboles hayan sido inspeccionados físicamente. `monitoringRecordId` identifica
+el registro que originó el punto: un `registro_plantacion` para fuentes
+`PLANTING_*` o un `evento_plantacion` para `MORTALITY_REPORT`; debe interpretarse
+junto con `source`.
+
 La respuesta incluye `dataAvailability.hasMortalityMonitoring`. Cuando es
 `false`, los puntos de plantación siguen siendo válidos, pero el frontend no
 debe presentar la serie como monitoreo de supervivencia realizado.
@@ -238,9 +267,33 @@ interface PaginatedEvidence {
 }
 ```
 
+La respuesta HTTP envuelve ese objeto como `{ success: true, data: ... }`.
+
+```ts
+interface ImpactEvidence {
+  id: number;
+  plantingRecordId: number;
+  campaignId: number;
+  subcampaignId: number;
+  publicTraceabilityCode: string | null;
+  title: string | null;
+  imageUrl: string;
+  takenAt: string | null;
+  isPrimary: boolean;
+  species: Array<{
+    id: number;
+    commonName: string | null;
+    scientificName: string | null;
+    quantity: number;
+  }>;
+}
+```
+
 El orden es `takenAt DESC, id DESC`. Cada evidencia incluye
 `publicTraceabilityCode` y las `species` agregadas de su registro de
-plantación. No expone hashes ni rutas internas de Storage.
+plantación. Los filtros `from` y `to` se aplican sobre `takenAt`, que usa la
+fecha de captura y, si falta, la fecha de creación. No expone hashes ni rutas
+internas de Storage.
 
 ## Alcance y privacidad
 
