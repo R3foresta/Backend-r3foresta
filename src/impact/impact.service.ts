@@ -1,9 +1,14 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import {
+  ImpactEvidenceQueryDto,
+  ImpactMonitoringTimelineQueryDto,
+} from './impact-query.dto';
 import {
   GeoJsonGeometry,
   ImpactArea,
@@ -11,10 +16,12 @@ import {
   ImpactEvidence,
   ImpactLocation,
   ImpactMetrics,
+  ImpactMonitoringTimelinePoint,
   ImpactOrganization,
   ImpactPlantingPoint,
   ImpactPlantingRecord,
   ImpactSpecies,
+  ImpactSpeciesMixItem,
   ImpactSubcampaign,
 } from './impact.types';
 
@@ -101,12 +108,39 @@ type PlantingDetailRow = {
 type EvidenceRow = {
   id: number | string;
   entidad_id: number | string;
+  codigo_trazabilidad: string | null;
   bucket: string;
   ruta_archivo: string;
   titulo: string | null;
   es_principal: boolean;
   tomado_en: string | null;
   creado_en: string;
+};
+
+type MortalityEventRow = {
+  id: number | string;
+  subcampania_id: number | string;
+  registro_plantacion_id: number | string;
+  fecha_evento: string;
+  cantidad_muerta_delta: number | string;
+  created_at: string;
+};
+
+type ImpactDatasetOptions = {
+  includePlantingDetails?: boolean;
+  includeEvidence?: boolean;
+  includePolygons?: boolean;
+};
+
+type TimelineSourceEvent = {
+  date: string;
+  campaignId: number;
+  recordId: number;
+  sequence: number;
+  initialNew: number;
+  replacementsNew: number;
+  deathsNew: number;
+  source: ImpactMonitoringTimelinePoint['source'];
 };
 
 type ImpactDataset = {
@@ -150,7 +184,9 @@ export class ImpactService {
   }
 
   async getOrganizationDashboard(organizationId: number) {
-    const dataset = await this.loadDataset(organizationId);
+    const dataset = await this.loadDataset(organizationId, undefined, {
+      includePlantingDetails: true,
+    });
     const campaigns = dataset.campaigns.map((campaign) =>
       this.mapCampaignCard(campaign, dataset),
     );
@@ -192,6 +228,7 @@ export class ImpactService {
           plantingPoints: this.mapPlantingPoints(dataset),
           areas: this.mapAreas(dataset),
         },
+        speciesMix: this.mapSpeciesMix(dataset),
         evidencePreview: this.sortEvidence(allEvidence).slice(0, 12),
         generatedAt: new Date().toISOString(),
       },
@@ -199,7 +236,9 @@ export class ImpactService {
   }
 
   async getCampaignDetail(organizationId: number, campaignId: number) {
-    const dataset = await this.loadDataset(organizationId, campaignId, true);
+    const dataset = await this.loadDataset(organizationId, campaignId, {
+      includePlantingDetails: true,
+    });
     const campaign = dataset.campaigns[0];
     if (!campaign) {
       throw new NotFoundException(
@@ -234,11 +273,86 @@ export class ImpactService {
     };
   }
 
+  async getMonitoringTimeline(
+    organizationId: number,
+    query: ImpactMonitoringTimelineQueryDto,
+  ) {
+    const dataset = await this.loadDataset(organizationId, query.campaignId, {
+      includeEvidence: false,
+      includePolygons: false,
+    });
+    const subcampaignIds = dataset.subcampaigns.map((row) => Number(row.id));
+    const mortalityEvents = await this.loadMortalityEvents(subcampaignIds);
+    const points = this.mapMonitoringTimeline(dataset, mortalityEvents);
+
+    return {
+      success: true,
+      data: {
+        organization: dataset.organization,
+        campaignId: query.campaignId ?? null,
+        points,
+        dataAvailability: {
+          plantingRecordsCount: dataset.plantings.length,
+          mortalityReportsCount: mortalityEvents.length,
+          hasMortalityMonitoring: mortalityEvents.length > 0,
+        },
+        generatedAt: new Date().toISOString(),
+      },
+    };
+  }
+
+  async getEvidenceGallery(
+    organizationId: number,
+    query: ImpactEvidenceQueryDto,
+  ) {
+    this.assertDateRange(query.from, query.to);
+    const dataset = await this.loadDataset(organizationId, query.campaignId, {
+      includePlantingDetails: true,
+      includePolygons: false,
+    });
+    const allowedPlantingIds = new Set(
+      dataset.plantings
+        .filter((planting) => {
+          if (query.speciesId === undefined) return true;
+          return (
+            dataset.detailsByPlanting.get(Number(planting.id)) ?? []
+          ).some((species) => species.id === query.speciesId);
+        })
+        .map((planting) => Number(planting.id)),
+    );
+    const allEvidence = this.sortEvidenceChronologically(
+      Array.from(dataset.evidenceByPlanting.entries()).flatMap(
+        ([plantingId, rows]) =>
+          allowedPlantingIds.has(plantingId) ? rows : [],
+      ),
+    ).filter((evidence) =>
+      this.isEvidenceWithinRange(evidence, query.from, query.to),
+    );
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 24;
+    const total = allEvidence.length;
+    const offset = (page - 1) * pageSize;
+
+    return {
+      success: true,
+      data: {
+        items: allEvidence.slice(offset, offset + pageSize),
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
+  }
+
   private async loadDataset(
     organizationId: number,
     campaignId?: number,
-    includePlantingDetails = false,
+    options: ImpactDatasetOptions = {},
   ): Promise<ImpactDataset> {
+    const includePlantingDetails = options.includePlantingDetails ?? false;
+    const includeEvidence = options.includeEvidence ?? true;
+    const includePolygons = options.includePolygons ?? true;
     const organization = await this.requireOrganization(organizationId);
     const campaigns = await this.loadCampaigns(organizationId, campaignId);
     if (campaignId !== undefined && campaigns.length === 0) {
@@ -297,7 +411,9 @@ export class ImpactService {
     const subcampaignIds = subcampaigns.map((row) => Number(row.id));
     const [currentLocationNameById, polygonBySubcampaign] = await Promise.all([
       this.loadCurrentLocationNames(subcampaigns),
-      this.loadPolygons(subcampaignIds),
+      includePolygons
+        ? this.loadPolygons(subcampaignIds)
+        : Promise.resolve(new Map<number, GeoJsonGeometry | null>()),
     ]);
     const plantings = await this.loadPlantings(subcampaignIds);
     const plantingIds = plantings.map((row) => Number(row.id));
@@ -305,8 +421,15 @@ export class ImpactService {
       includePlantingDetails
         ? this.loadPlantingDetails(plantingIds)
         : Promise.resolve(new Map<number, ImpactSpecies[]>()),
-      this.loadEvidence(plantings, subcampaigns),
+      includeEvidence
+        ? this.loadEvidence(plantings, subcampaigns)
+        : Promise.resolve(new Map<number, ImpactEvidence[]>()),
     ]);
+
+    for (const [plantingId, evidence] of evidenceByPlanting) {
+      const species = detailsByPlanting.get(plantingId) ?? [];
+      for (const item of evidence) item.species = species;
+    }
 
     return {
       organization,
@@ -458,6 +581,26 @@ export class ImpactService {
     }, 'No se pudieron consultar los registros de plantación.');
   }
 
+  private async loadMortalityEvents(
+    subcampaignIds: number[],
+  ): Promise<MortalityEventRow[]> {
+    if (subcampaignIds.length === 0) return [];
+
+    return this.fetchAll<MortalityEventRow>(async (from, to) => {
+      const supabase = this.supabaseService.getClient();
+      return supabase
+        .from('evento_plantacion')
+        .select(
+          'id, subcampania_id, registro_plantacion_id, fecha_evento, cantidad_muerta_delta, created_at',
+        )
+        .eq('tipo_evento', 'MORTANDAD_REPORTADA')
+        .in('subcampania_id', subcampaignIds)
+        .order('fecha_evento', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, to);
+    }, 'No se pudieron consultar los eventos de mortandad.');
+  }
+
   private async loadPlantingDetails(
     plantingIds: number[],
   ): Promise<Map<number, ImpactSpecies[]>> {
@@ -537,7 +680,7 @@ export class ImpactService {
         supabase
           .from('evidencias_trazabilidad')
           .select(
-            'id, entidad_id, bucket, ruta_archivo, titulo, es_principal, tomado_en, creado_en',
+            'id, entidad_id, codigo_trazabilidad, bucket, ruta_archivo, titulo, es_principal, tomado_en, creado_en',
           )
           .eq('tipo_entidad_id', Number(evidenceType.id))
           .in('entidad_id', plantingIds)
@@ -569,10 +712,12 @@ export class ImpactService {
         plantingRecordId: plantingId,
         campaignId: Number(subcampaign.campania_id),
         subcampaignId: Number(subcampaign.id),
+        publicTraceabilityCode: row.codigo_trazabilidad ?? null,
         title: row.titulo ?? null,
         imageUrl: publicUrl.publicUrl,
         takenAt: row.tomado_en ?? row.creado_en,
         isPrimary: Boolean(row.es_principal),
+        species: [],
       };
       if (!result.has(plantingId)) result.set(plantingId, []);
       result.get(plantingId)!.push(evidence);
@@ -720,6 +865,112 @@ export class ImpactService {
     }));
   }
 
+  private mapSpeciesMix(dataset: ImpactDataset): ImpactSpeciesMixItem[] {
+    const result = new Map<number, ImpactSpeciesMixItem>();
+    for (const speciesRows of dataset.detailsByPlanting.values()) {
+      for (const species of speciesRows) {
+        const current = result.get(species.id);
+        if (current) {
+          current.quantity += species.quantity;
+          current.commonName ??= species.commonName;
+          current.scientificName ??= species.scientificName;
+          continue;
+        }
+        result.set(species.id, {
+          speciesId: species.id,
+          commonName: species.commonName,
+          scientificName: species.scientificName,
+          taxonomyId: null,
+          ecologicalCategory: null,
+          origin: 'UNKNOWN',
+          quantity: species.quantity,
+          quantityStage: 'PLANTED',
+        });
+      }
+    }
+    return Array.from(result.values()).sort(
+      (a, b) => b.quantity - a.quantity || a.speciesId - b.speciesId,
+    );
+  }
+
+  private mapMonitoringTimeline(
+    dataset: ImpactDataset,
+    mortalityEvents: MortalityEventRow[],
+  ): ImpactMonitoringTimelinePoint[] {
+    const campaignBySubcampaign = new Map(
+      dataset.subcampaigns.map((row) => [
+        Number(row.id),
+        Number(row.campania_id),
+      ]),
+    );
+    const events: TimelineSourceEvent[] = [];
+
+    for (const planting of dataset.plantings) {
+      const campaignId = campaignBySubcampaign.get(
+        Number(planting.subcampania_id),
+      );
+      if (campaignId === undefined) continue;
+      const replacement = Boolean(planting.es_reposicion);
+      const quantity = Number(planting.cantidad_total_plantada ?? 0);
+      events.push({
+        date: this.toDateOnly(planting.fecha_plantacion),
+        campaignId,
+        recordId: Number(planting.id),
+        sequence: replacement ? 1 : 0,
+        initialNew: replacement ? 0 : quantity,
+        replacementsNew: replacement ? quantity : 0,
+        deathsNew: 0,
+        source: replacement ? 'PLANTING_REPLACEMENT' : 'PLANTING_INITIAL',
+      });
+    }
+
+    for (const event of mortalityEvents) {
+      const campaignId = campaignBySubcampaign.get(
+        Number(event.subcampania_id),
+      );
+      if (campaignId === undefined) continue;
+      events.push({
+        date: this.toDateOnly(event.fecha_evento),
+        campaignId,
+        recordId: Number(event.id),
+        sequence: 2,
+        initialNew: 0,
+        replacementsNew: 0,
+        deathsNew: Number(event.cantidad_muerta_delta ?? 0),
+        source: 'MORTALITY_REPORT',
+      });
+    }
+
+    events.sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) ||
+        a.sequence - b.sequence ||
+        a.recordId - b.recordId,
+    );
+
+    let initialAccumulated = 0;
+    let replacementsAccumulated = 0;
+    let deathsAccumulated = 0;
+    return events.map((event) => {
+      initialAccumulated += event.initialNew;
+      replacementsAccumulated += event.replacementsNew;
+      deathsAccumulated += event.deathsNew;
+      const treesMonitored = initialAccumulated + replacementsAccumulated;
+      return {
+        date: event.date,
+        campaignId: event.campaignId,
+        monitoringRecordId: event.recordId,
+        treesMonitored,
+        treesAlive: Math.max(0, treesMonitored - deathsAccumulated),
+        deathsNew: event.deathsNew,
+        deathsAccumulated,
+        replacementsNew: event.replacementsNew,
+        replacementsAccumulated,
+        source: event.source,
+      };
+    });
+  }
+
   private mapLocations(
     rows: SubcampaignRow[],
     dataset: ImpactDataset,
@@ -808,8 +1059,54 @@ export class ImpactService {
   private sortEvidence(rows: ImpactEvidence[]): ImpactEvidence[] {
     return [...rows].sort((a, b) => {
       if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
-      return String(b.takenAt ?? '').localeCompare(String(a.takenAt ?? ''));
+      return (
+        String(b.takenAt ?? '').localeCompare(String(a.takenAt ?? '')) ||
+        b.id - a.id
+      );
     });
+  }
+
+  private sortEvidenceChronologically(
+    rows: ImpactEvidence[],
+  ): ImpactEvidence[] {
+    return [...rows].sort(
+      (a, b) =>
+        String(b.takenAt ?? '').localeCompare(String(a.takenAt ?? '')) ||
+        b.id - a.id,
+    );
+  }
+
+  private assertDateRange(from?: string, to?: string): void {
+    if (!from || !to) return;
+    if (this.dateBoundary(from, false) > this.dateBoundary(to, true)) {
+      throw new BadRequestException('from no puede ser posterior a to.');
+    }
+  }
+
+  private isEvidenceWithinRange(
+    evidence: ImpactEvidence,
+    from?: string,
+    to?: string,
+  ): boolean {
+    if (!from && !to) return true;
+    if (!evidence.takenAt) return false;
+    const timestamp = Date.parse(evidence.takenAt);
+    if (from && timestamp < this.dateBoundary(from, false)) return false;
+    if (to && timestamp > this.dateBoundary(to, true)) return false;
+    return true;
+  }
+
+  private dateBoundary(value: string, endOfDay: boolean): number {
+    const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+    return Date.parse(
+      dateOnly
+        ? `${value}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}Z`
+        : value,
+    );
+  }
+
+  private toDateOnly(value: string): string {
+    return value.slice(0, 10);
   }
 
   private latestTimestamp(values: Array<string | null | undefined>) {
