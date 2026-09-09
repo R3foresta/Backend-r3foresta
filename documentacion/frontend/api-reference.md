@@ -263,6 +263,8 @@ Endpoints relevantes para el flujo de asignación física de M3 (ver [guía de m
 
 - `GET /v1/impact/organizations` — Selector público de organizaciones
 - `GET /v1/impact/organizations/:organizationId/dashboard` — Impacto agregado y mapa
+- `GET /v1/impact/organizations/:organizationId/monitoring-timeline` — Serie histórica de plantación, reposición y mortandad
+- `GET /v1/impact/organizations/:organizationId/evidence` — Galería pública paginada y filtrable
 - `GET /v1/impact/organizations/:organizationId/campaigns/:campaignId` — Detalle público de campaña
 
 ---

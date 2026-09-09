@@ -31,10 +31,12 @@ export type ImpactEvidence = {
   plantingRecordId: number;
   campaignId: number;
   subcampaignId: number;
+  publicTraceabilityCode: string | null;
   title: string | null;
   imageUrl: string;
   takenAt: string | null;
   isPrimary: boolean;
+  species: ImpactSpecies[];
 };
 
 export type ImpactPlantingPoint = {
@@ -81,6 +83,30 @@ export type ImpactSpecies = {
   commonName: string | null;
   scientificName: string | null;
   quantity: number;
+};
+
+export type ImpactSpeciesMixItem = {
+  speciesId: number;
+  commonName: string | null;
+  scientificName: string | null;
+  taxonomyId: string | null;
+  ecologicalCategory: string | null;
+  origin: 'NATIVE' | 'INTRODUCED' | 'URBAN_TOLERANT' | 'UNKNOWN';
+  quantity: number;
+  quantityStage: 'PLANTED';
+};
+
+export type ImpactMonitoringTimelinePoint = {
+  date: string;
+  campaignId: number;
+  monitoringRecordId: number;
+  treesMonitored: number;
+  treesAlive: number;
+  deathsNew: number;
+  deathsAccumulated: number;
+  replacementsNew: number;
+  replacementsAccumulated: number;
+  source: 'PLANTING_INITIAL' | 'PLANTING_REPLACEMENT' | 'MORTALITY_REPORT';
 };
 
 export type ImpactPlantingRecord = {
