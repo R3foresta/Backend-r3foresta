@@ -4,7 +4,7 @@ Base URL: `/api/v1/impact`
 
 Estado al 9 de septiembre de 2026: los cinco endpoints descritos en este
 documento están implementados en la rama `impacto`.
-
+https://github.com/R3foresta/Backend-r3foresta/pull/33/conflict?name=src%252Fimpact%252Fimpact.controller.ts&base_oid=ffb8a016d99aa101b0f6417fe6987631d6a2fbbd&head_oid=13b6e3a00e1452b02ef77bda6c7c4d2cecb890fb
 Esta API es pública, de solo lectura y usa la información operativa existente.
 No requiere `x-auth-id` y no crea una fuente de datos paralela.
 
