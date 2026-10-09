@@ -28,7 +28,7 @@ export class SubcampaniasConsultasService {
     let query = supabase
       .from('subcampania')
       .select(
-        'id, campania_id, nombre, descripcion, tipo, estado, fase_mantenimiento, zona_id, area_hectareas, meta_total_arboles, codigo_trazabilidad, total_plantado_inicial, total_repuesto, total_muerto_acumulado, saldo_vivo_actual, nombre_zona_snapshot, created_at, updated_at',
+        'id, campania_id, nombre, descripcion, tipo, estado, fase_mantenimiento, zona_id, area_hectareas, meta_total_arboles, plan_revision, codigo_trazabilidad, total_plantado_inicial, total_repuesto, total_muerto_acumulado, saldo_vivo_actual, nombre_zona_snapshot, created_at, updated_at',
       )
       .is('deleted_at', null);
 
@@ -145,9 +145,7 @@ export class SubcampaniasConsultasService {
         const plantados = Number(s.total_plantado_inicial ?? 0);
         const meta = Number(s.meta_total_arboles ?? 0);
         const avancePct =
-          meta > 0
-            ? Math.min(100, Math.max(0, (plantados / meta) * 100))
-            : null;
+          meta > 0 ? Math.max(0, (plantados / meta) * 100) : null;
         const zonaNombre =
           (s.nombre_zona_snapshot as string | null) ??
           zonaMap.get(Number(s.zona_id)) ??
@@ -168,6 +166,7 @@ export class SubcampaniasConsultasService {
           zona_nombre: zonaNombre,
           area_hectareas: s.area_hectareas ?? null,
           meta_total_arboles: meta,
+          plan_revision: Number(s.plan_revision ?? 0),
           codigo_trazabilidad: s.codigo_trazabilidad,
           total_plantado_inicial: plantados,
           total_repuesto: Number(s.total_repuesto),
@@ -199,7 +198,7 @@ export class SubcampaniasConsultasService {
     const { data: subcampania, error } = await supabase
       .from('subcampania')
       .select(
-        'id, campania_id, nombre, descripcion, tipo, estado, fase_mantenimiento, zona_id, area_hectareas, meta_total_arboles, fecha_estimada_inicio, fecha_estimada_fin, fecha_cierre_operativo, fecha_fin_mantenimiento, motivo_cierre_parcial, observaciones_cierre, tolerancia_gps_metros, nombre_zona_snapshot, nombre_coordinador_snapshot, nombres_organizaciones_snapshot, codigo_trazabilidad, total_plantado_inicial, total_repuesto, total_muerto_acumulado, saldo_vivo_actual, created_at, updated_at',
+        'id, campania_id, nombre, descripcion, tipo, estado, fase_mantenimiento, zona_id, area_hectareas, meta_total_arboles, plan_revision, fecha_estimada_inicio, fecha_estimada_fin, fecha_cierre_operativo, fecha_fin_mantenimiento, motivo_cierre_parcial, observaciones_cierre, tolerancia_gps_metros, nombre_zona_snapshot, nombre_coordinador_snapshot, nombres_organizaciones_snapshot, codigo_trazabilidad, total_plantado_inicial, total_repuesto, total_muerto_acumulado, saldo_vivo_actual, created_at, updated_at',
       )
       .eq('id', id)
       .is('deleted_at', null)
@@ -247,6 +246,7 @@ export class SubcampaniasConsultasService {
         zona_id: Number((subcampania as any).zona_id),
         area_hectareas: (subcampania as any).area_hectareas ?? null,
         meta_total_arboles: Number((subcampania as any).meta_total_arboles),
+        plan_revision: Number((subcampania as any).plan_revision ?? 0),
         fecha_estimada_inicio:
           (subcampania as any).fecha_estimada_inicio ?? null,
         fecha_estimada_fin: (subcampania as any).fecha_estimada_fin ?? null,

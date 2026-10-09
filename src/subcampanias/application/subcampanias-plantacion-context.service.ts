@@ -23,11 +23,13 @@ type SubcampaniaRow = {
   fase_mantenimiento: string;
   zona_id: number;
   meta_total_arboles: number;
+  plan_revision: number;
   total_plantado_inicial: number;
   tolerancia_gps_metros: number;
   nombre_zona_snapshot: string | null;
   codigo_trazabilidad: string;
   campania: CampaniaEmbed | CampaniaEmbed[];
+  metas: MetaEspecieRow[];
 };
 
 type EquipoRow = {
@@ -48,6 +50,7 @@ type PlantaEmbed = {
 
 type MetaEspecieRow = {
   planta_id: number;
+  porcentaje_objetivo: number;
   cantidad_objetivo: number;
   planta: PlantaEmbed | PlantaEmbed[];
 };
@@ -100,11 +103,12 @@ export class SubcampaniasPlantacionContextService {
   async obtener(subcampaniaId: number, authId: string) {
     const supabase = this.supabaseService.getClient();
 
-    // 1. Subcampaña existe y no está eliminada (404).
+    // 1. Leer meta, revisión y especies en el mismo snapshot. Una revisión
+    // concurrente no debe mezclar la meta anterior con el nuevo plan.
     const { data: subData, error: subError } = await supabase
       .from('subcampania')
       .select(
-        'id, campania_id, nombre, estado, fase_mantenimiento, zona_id, meta_total_arboles, total_plantado_inicial, tolerancia_gps_metros, nombre_zona_snapshot, codigo_trazabilidad, campania:campania_id(id, nombre)',
+        'id, campania_id, nombre, estado, fase_mantenimiento, zona_id, meta_total_arboles, plan_revision, total_plantado_inicial, tolerancia_gps_metros, nombre_zona_snapshot, codigo_trazabilidad, campania:campania_id(id, nombre), metas:subcampania_meta_especie(planta_id, porcentaje_objetivo, cantidad_objetivo, planta:planta_id(id, especie, nombre_cientifico, nombre_comun_principal))',
       )
       .eq('id', subcampaniaId)
       .is('deleted_at', null)
@@ -164,18 +168,11 @@ export class SubcampaniasPlantacionContextService {
     }
 
     // 5. Datos operativos en paralelo.
-    const [poligonoResult, planResult, asignacionesResult, registrosResult] =
+    const [poligonoResult, asignacionesResult, registrosResult] =
       await Promise.all([
         supabase.rpc('fn_subcampania_poligono_geojson', {
           p_id: subcampaniaId,
         }),
-        supabase
-          .from('subcampania_meta_especie')
-          .select(
-            'planta_id, cantidad_objetivo, planta:planta_id(id, especie, nombre_cientifico, nombre_comun_principal)',
-          )
-          .eq('subcampania_id', subcampaniaId)
-          .order('planta_id', { ascending: true }),
         // Solo asignaciones ACTIVA con proposito PLANTACION_INICIAL, en el
         // orden de consumo del contrato: fecha_asignacion ASC, asignacion_id ASC.
         supabase
@@ -195,12 +192,6 @@ export class SubcampaniasPlantacionContextService {
           .eq('es_reposicion', false),
       ]);
 
-    if (planResult.error) {
-      this.logger.error('Error al leer plan por especie:', planResult.error);
-      throw new InternalServerErrorException(
-        'Error al leer el plan por especie.',
-      );
-    }
     if (asignacionesResult.error) {
       this.logger.error(
         'Error al leer asignaciones:',
@@ -221,7 +212,9 @@ export class SubcampaniasPlantacionContextService {
     }
 
     const poligono: unknown = poligonoResult.data ?? null;
-    const metas = (planResult.data ?? []) as unknown as MetaEspecieRow[];
+    const metas = [...(sub.metas ?? [])].sort(
+      (a, b) => Number(a.planta_id) - Number(b.planta_id),
+    );
     const asignaciones = (
       (asignacionesResult.data ?? []) as unknown as AsignacionRow[]
     ).filter((a) => Number(a.saldo_asignado_disponible) > 0);
@@ -301,6 +294,7 @@ export class SubcampaniasPlantacionContextService {
         nombre_comun_principal:
           planta?.nombre_comun_principal ?? planta?.especie ?? null,
         nombre_cientifico: planta?.nombre_cientifico ?? null,
+        porcentaje_objetivo: Number(meta.porcentaje_objetivo),
         cantidad_objetivo: objetivo,
         plantado_inicial: plantado,
         pendiente_meta: Math.max(0, objetivo - plantado),
@@ -323,6 +317,7 @@ export class SubcampaniasPlantacionContextService {
           zona_id: Number(sub.zona_id),
           zona_nombre: zonaNombre,
           meta_total_arboles: Number(sub.meta_total_arboles),
+          plan_revision: Number(sub.plan_revision ?? 0),
           total_plantado_inicial: Number(sub.total_plantado_inicial),
           tolerancia_gps_metros: Number(sub.tolerancia_gps_metros),
           poligono,

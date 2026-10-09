@@ -12,6 +12,7 @@ export enum TipoHistorialSubcampania {
   EQUIPO_AMPLIADO = 'EQUIPO_AMPLIADO',
   EQUIPO_REDUCIDO = 'EQUIPO_REDUCIDO',
   COORDINADOR_CAMBIADO = 'COORDINADOR_CAMBIADO',
+  PLAN_REVISADO = 'PLAN_REVISADO',
 }
 
 export type RegistrarEventoParams = {
@@ -31,6 +32,11 @@ export class SubcampaniasHistorialService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   async registrar(params: RegistrarEventoParams): Promise<void> {
+    // Este evento es obligatorio y solo puede insertarse dentro de la RPC que
+    // persiste la revisión. Nunca debe pasar por el historial best-effort.
+    if (params.tipo === TipoHistorialSubcampania.PLAN_REVISADO) {
+      throw new Error('PLAN_REVISADO requiere fn_subcampania_revisar_plan.');
+    }
     const supabase = this.supabaseService.getClient();
 
     const { error } = await supabase.from('subcampania_historial').insert({

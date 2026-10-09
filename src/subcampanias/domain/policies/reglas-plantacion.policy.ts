@@ -15,8 +15,9 @@
  * - requiere_evidencia / min_fotos: la RPC 053 y RegistrarPlantacionDto exigen
  *   al menos una evidencia previamente subida.
  * - max_fotos: tope de PlantacionEvidenciasService ('Maximo 10 fotos permitidas').
- * - permite_exceder_meta_especie: la RPC 053 (sección 11) rechaza plantaciones
- *   iniciales que excedan cantidad_objetivo de SUBCAMPANIA_META_ESPECIE.
+ * - permite_exceder_meta_especie: la RPC vigente (migrations/061) trata
+ *   cantidad_objetivo como meta orientativa. La cantidad inicial puede
+ *   excederla, sin superar el stock asignado disponible.
  * - orden_consumo_asignaciones: orden FIFO con el que el frontend debe consumir
  *   asignaciones de una misma especie (índice FIFO de migrations/024).
  */
@@ -27,7 +28,7 @@ export const REGLAS_PLANTACION_INICIAL = {
   requiere_evidencia: true,
   min_fotos: 1,
   max_fotos: 10,
-  permite_exceder_meta_especie: false,
+  permite_exceder_meta_especie: true,
   orden_consumo_asignaciones: 'fecha_asignacion ASC, asignacion_id ASC',
 } as const;
 

@@ -29,6 +29,8 @@ export class EditarSubcampaniaDto {
   @IsOptional()
   @IsInt()
   @Min(1)
+  // Se reconoce para rechazar explícitamente el contrato anterior de PATCH.
+  // Las revisiones de meta y especies usan GuardarPlanDto.
   meta_total_arboles?: number;
 
   @IsOptional()

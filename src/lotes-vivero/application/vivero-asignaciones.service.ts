@@ -26,6 +26,7 @@ type SupabaseResult<T> = {
 type LoteAsignacionRow = {
   id: number;
   estado_lote: string;
+  planta_id: number;
 };
 
 type SubcampaniaAsignacionRow = {
@@ -94,7 +95,7 @@ export class ViveroAsignacionesService {
 
     const { data: loteData, error: loteError } = await supabase
       .from('lote_vivero')
-      .select('id, estado_lote')
+      .select('id, estado_lote, planta_id')
       .eq('id', loteId)
       .maybeSingle();
 
@@ -160,6 +161,29 @@ export class ViveroAsignacionesService {
       throw new UnprocessableEntityException(
         `REPOSICION solo se admite con la subcampaña en ACTIVA, COMPLETADA o FINALIZADA_PARCIAL (estado actual: ${subcampania.estado}).`,
       );
+    }
+
+    // Validar antes de entregar: M3 solo permite plantar inicialmente las
+    // especies del plan. La RPC repite el guard dentro de la transaccion.
+    if (dto.proposito === PropositoAsignacion.PLANTACION_INICIAL) {
+      const { data: meta, error: metaError } = await supabase
+        .from('subcampania_meta_especie')
+        .select('planta_id')
+        .eq('subcampania_id', dto.subcampania_id)
+        .eq('planta_id', lote.planta_id)
+        .maybeSingle();
+
+      if (metaError) {
+        this.logger.error('Error al leer plan de especies:', metaError);
+        throw new InternalServerErrorException(
+          'Error al verificar el plan de especies de la subcampaña',
+        );
+      }
+      if (!meta) {
+        throw new UnprocessableEntityException(
+          `La especie de este lote no está en el plan de especies de la subcampaña "${subcampania.nombre}". Selecciona un lote de una especie incluida en el plan.`,
+        );
+      }
     }
 
     const rpcResult = (await supabase.rpc(

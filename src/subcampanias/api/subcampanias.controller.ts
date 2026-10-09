@@ -150,6 +150,7 @@ export class SubcampaniasController {
 
   @Put(':id/plan')
   @ApiGuardarPlan()
+  // Único contrato para revisar la meta y las especies, también en ACTIVA.
   guardarPlan(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: GuardarPlanDto,

@@ -16,6 +16,12 @@ function buildSupabase(config: {
       chain.select = jest.fn().mockReturnValue(chain);
       chain.is = jest.fn().mockReturnValue(chain);
       chain.eq = jest.fn().mockReturnValue(chain);
+      chain.single = jest
+        .fn()
+        .mockResolvedValue({
+          data: config.subcampanias[0] ?? null,
+          error: null,
+        });
       chain.order = jest
         .fn()
         .mockResolvedValue({ data: config.subcampanias, error: null });
@@ -25,6 +31,9 @@ function buildSupabase(config: {
       return {
         select: jest.fn().mockReturnValue({
           in: jest
+            .fn()
+            .mockResolvedValue({ data: config.equipo ?? [], error: null }),
+          eq: jest
             .fn()
             .mockResolvedValue({ data: config.equipo ?? [], error: null }),
         }),
@@ -83,7 +92,10 @@ function buildSupabase(config: {
   });
 
   return {
-    getClient: jest.fn().mockReturnValue({ from: fromMock }),
+    getClient: jest.fn().mockReturnValue({
+      from: fromMock,
+      rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
+    }),
   } as unknown as SupabaseService;
 }
 
@@ -168,7 +180,7 @@ describe('SubcampaniasConsultasService.listar (payload enriquecido)', () => {
     expect(item.area_hectareas).toBeNull();
   });
 
-  it('avance_pct queda acotado a 100 cuando plantados supera meta', async () => {
+  it('muestra avance sobre 100 con la meta revisada sin cambiar los contadores físicos ni el estado', async () => {
     const supabase = buildSupabase({
       subcampanias: [
         {
@@ -182,11 +194,12 @@ describe('SubcampaniasConsultasService.listar (payload enriquecido)', () => {
           zona_id: 100,
           area_hectareas: 1,
           meta_total_arboles: 100,
+          plan_revision: 3,
           codigo_trazabilidad: 'SUB-001',
           total_plantado_inicial: 150,
-          total_repuesto: 0,
-          total_muerto_acumulado: 0,
-          saldo_vivo_actual: 150,
+          total_repuesto: 12,
+          total_muerto_acumulado: 10,
+          saldo_vivo_actual: 152,
           nombre_zona_snapshot: null,
           created_at: '2026-01-01T00:00:00Z',
           updated_at: '2026-01-01T00:00:00Z',
@@ -195,7 +208,17 @@ describe('SubcampaniasConsultasService.listar (payload enriquecido)', () => {
     });
     const service = new SubcampaniasConsultasService(supabase);
     const result = await service.listar({ campania_id: 1 });
-    expect((result.data[0] as any).avance_pct).toBe(100);
+    expect(result.data[0]).toMatchObject({
+      estado: 'ACTIVA',
+      meta_total_arboles: 100,
+      plan_revision: 3,
+      avance_pct: 150,
+      plantados: 150,
+      total_plantado_inicial: 150,
+      total_repuesto: 12,
+      total_muerto_acumulado: 10,
+      saldo_vivo_actual: 152,
+    });
   });
 
   it('cuenta miembros del equipo (COORDINADOR + OPERARIO), has_plan_especies=true, lotes_count totales y eventos operativos', async () => {
@@ -258,5 +281,43 @@ describe('SubcampaniasConsultasService.listar (payload enriquecido)', () => {
     expect(item.zona_nombre).toBe('Zona Snapshot');
     expect(item.equipo).toHaveLength(2);
     expect(item.coordinador).toEqual({ id: 1, nombre: 'Coord' });
+  });
+});
+
+describe('SubcampaniasConsultasService.obtenerPorId', () => {
+  it('devuelve la meta vigente y su revisión junto a los contadores originales', async () => {
+    const supabase = buildSupabase({
+      subcampanias: [
+        {
+          id: 10,
+          campania_id: 1,
+          nombre: 'Sub A',
+          tipo: 'REFORESTACION',
+          estado: 'ACTIVA',
+          fase_mantenimiento: 'NO_APLICA',
+          zona_id: 100,
+          meta_total_arboles: 60,
+          plan_revision: 2,
+          total_plantado_inicial: 50,
+          total_repuesto: 5,
+          total_muerto_acumulado: 3,
+          saldo_vivo_actual: 52,
+          tolerancia_gps_metros: 30,
+        },
+      ],
+    });
+    const service = new SubcampaniasConsultasService(supabase);
+
+    const result = await service.obtenerPorId(10);
+
+    expect(result.data).toMatchObject({
+      estado: 'ACTIVA',
+      meta_total_arboles: 60,
+      plan_revision: 2,
+      total_plantado_inicial: 50,
+      total_repuesto: 5,
+      total_muerto_acumulado: 3,
+      saldo_vivo_actual: 52,
+    });
   });
 });

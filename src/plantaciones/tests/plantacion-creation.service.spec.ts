@@ -26,10 +26,25 @@ function buildDto(
 function buildSupabaseWithRpc(result: { data: any; error: any }) {
   const single = jest.fn().mockResolvedValue(result);
   const rpc = jest.fn().mockReturnValue({ single });
+  const from = jest.fn();
   const supabase = {
-    getClient: jest.fn().mockReturnValue({ rpc }),
+    getClient: jest.fn().mockReturnValue({ rpc, from }),
   } as unknown as SupabaseService;
-  return { supabase, rpc, single };
+  return { supabase, rpc, single, from };
+}
+
+function buildRpcRow(overrides: Record<string, unknown> = {}) {
+  return {
+    registro_plantacion_id: 500,
+    codigo_trazabilidad: 'PLT-001-SUB-001-CMP-2026-001',
+    cantidad_total_plantada: 50,
+    gps_dentro_poligono: true,
+    gps_distancia_a_poligono_m: 0,
+    consumos: [],
+    coresponsable_ids_vinculados: [],
+    evidencia_ids_vinculadas: [101, 102],
+    ...overrides,
+  };
 }
 
 function buildAuthService(): jest.Mocked<
@@ -211,5 +226,167 @@ describe('PlantacionCreationService', () => {
     ).rejects.toThrow(BadRequestException);
 
     expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('envia la especie incorporada al plan vigente sin una lectura previa del plan', async () => {
+    const auth = buildAuthService();
+    const detalles = [
+      { asignacion_id: 20, lote_vivero_id: 21, planta_id: 8, cantidad: 12 },
+    ];
+    const { supabase, rpc, from } = buildSupabaseWithRpc({
+      data: buildRpcRow({
+        cantidad_total_plantada: 12,
+        consumos: [
+          {
+            asignacion_id: 20,
+            lote_vivero_id: 21,
+            cantidad_consumida: 12,
+            saldo_asignado_antes: 20,
+            saldo_asignado_despues: 8,
+            estado_final: 'ACTIVA',
+          },
+        ],
+      }),
+      error: null,
+    });
+    const service = new PlantacionCreationService(
+      supabase,
+      auth as unknown as PlantacionAuthService,
+    );
+
+    const result = await service.registrar(buildDto({ detalles }), 'auth-99');
+
+    // La RPC consulta el plan bajo el mismo lock de subcampania que su revision.
+    // Una comprobacion previa en la aplicacion podria usar una version obsoleta.
+    expect(from).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith(
+      'fn_m3_registrar_plantacion',
+      expect.objectContaining({ p_detalles: detalles, p_responsable_id: 99 }),
+    );
+    expect(result.data.cantidad_total_plantada).toBe(12);
+    expect(result.data.consumos[0]).toMatchObject({
+      asignacion_id: 20,
+      saldo_asignado_despues: 8,
+    });
+  });
+
+  it('acepta plantacion inicial autorizada por la RPC sin modificar metas ni cerrar', async () => {
+    const auth = buildAuthService();
+    const { supabase, rpc, from } = buildSupabaseWithRpc({
+      data: buildRpcRow(),
+      error: null,
+    });
+    const service = new PlantacionCreationService(
+      supabase,
+      auth as unknown as PlantacionAuthService,
+    );
+
+    // ADR-PLA-04/05: la RPC puede aceptar 50 con una meta vigente de 40.
+    // El servicio no debe introducir otra escritura ni usar la meta como tope.
+    const result = await service.registrar(buildDto(), 'auth-99');
+
+    expect(result.data.cantidad_total_plantada).toBe(50);
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith(
+      'fn_m3_registrar_plantacion',
+      expect.objectContaining({ p_es_reposicion: false }),
+    );
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'especie fuera del plan',
+      'La especie (planta_id 8) no esta en el plan de especies de la subcampania 10 (SUBCAMPANIA_META_ESPECIE).',
+    ],
+    [
+      'stock inicial insuficiente',
+      'Saldo asignado insuficiente en alguna asignacion (pedido excede saldo_asignado_disponible).',
+    ],
+    [
+      'proposito de asignacion incorrecto',
+      'Proposito incoherente: para es_reposicion=false se requiere asignaciones con proposito PLANTACION_INICIAL.',
+    ],
+    [
+      'cierre manual ya realizado',
+      'La subcampania 10 no esta ACTIVA (estado actual: COMPLETADA). La plantacion inicial solo se permite en ACTIVA.',
+    ],
+    [
+      'responsable fuera del equipo',
+      'El responsable 99 no pertenece al equipo (COORDINADOR|OPERARIO) de la subcampania 10.',
+    ],
+  ])(
+    'propaga el rechazo atomico por %s tras una revision',
+    async (_, message) => {
+      const auth = buildAuthService();
+      const { supabase, rpc, from } = buildSupabaseWithRpc({
+        data: null,
+        error: { message },
+      });
+      const service = new PlantacionCreationService(
+        supabase,
+        auth as unknown as PlantacionAuthService,
+      );
+
+      await expect(
+        service.registrar(
+          buildDto({
+            detalles: [
+              {
+                asignacion_id: 20,
+                lote_vivero_id: 21,
+                planta_id: 8,
+                cantidad: 50,
+              },
+            ],
+          }),
+          'auth-99',
+        ),
+      ).rejects.toThrow(new BadRequestException(message));
+
+      expect(rpc).toHaveBeenCalledTimes(1);
+      expect(from).not.toHaveBeenCalled();
+    },
+  );
+
+  it('conserva el origen de reposicion y el rechazo del limite de mortandad', async () => {
+    const auth = buildAuthService();
+    const message =
+      'La reposicion (6) excede el pendiente de reposicion del grupo origen 400 (muertas acumuladas 7 - repuestas acumuladas 2 = pendiente 5).';
+    const { supabase, rpc } = buildSupabaseWithRpc({
+      data: null,
+      error: { message },
+    });
+    const service = new PlantacionCreationService(
+      supabase,
+      auth as unknown as PlantacionAuthService,
+    );
+
+    await expect(
+      service.registrar(
+        buildDto({
+          es_reposicion: true,
+          registro_plantacion_origen_id: 400,
+          detalles: [
+            {
+              asignacion_id: 20,
+              lote_vivero_id: 21,
+              planta_id: 8,
+              cantidad: 6,
+            },
+          ],
+        }),
+        'auth-99',
+      ),
+    ).rejects.toThrow(new BadRequestException(message));
+
+    expect(rpc).toHaveBeenCalledWith(
+      'fn_m3_registrar_plantacion',
+      expect.objectContaining({
+        p_es_reposicion: true,
+        p_registro_plantacion_origen_id: 400,
+      }),
+    );
   });
 });

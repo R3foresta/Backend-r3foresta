@@ -1114,7 +1114,7 @@ export function ApiCrearAsignacion() {
     ApiOperation({
       summary: 'Asignación física de lote a subcampaña (entrega real)',
       description:
-        'Registra la ENTREGA FÍSICA de plantas del lote a una subcampaña (RF-VIV-11) llamando la RPC fn_vivero_asignar_stock_subcampania en una sola transacción: crea la asignación, registra el evento DESPACHO con origen ASIGNACION_SUBCAMPANIA, DESCUENTA LOTE_VIVERO.saldo_vivo_actual, vincula la evidencia obligatoria de entrega (RN-VIV-54) y registra ASIGNACION_VIVERO en la línea de tiempo de M3. Valida contra el saldo físico del lote sin restar asignaciones previas (RN-VIV-47/57). Requiere lote ACTIVO con EMBOLSADO y saldo vivo positivo (RN-VIV-61). Permisos: ADMIN o COORDINADOR de la subcampaña. No es una reserva lógica: las plantas salen del vivero al asignar.',
+        'Registra la ENTREGA FÍSICA de plantas del lote a una subcampaña (RF-VIV-11) llamando la RPC fn_vivero_asignar_stock_subcampania en una sola transacción: crea la asignación, registra el evento DESPACHO con origen ASIGNACION_SUBCAMPANIA, DESCUENTA LOTE_VIVERO.saldo_vivo_actual, vincula la evidencia obligatoria de entrega (RN-VIV-54) y registra ASIGNACION_VIVERO en la línea de tiempo de M3. Valida contra el saldo físico del lote sin restar asignaciones previas (RN-VIV-47/57). Requiere lote ACTIVO con EMBOLSADO y saldo vivo positivo (RN-VIV-61). Para PLANTACION_INICIAL, la especie del lote debe pertenecer al plan de especies de la subcampaña; se rechaza antes de entregar si no pertenece. Permisos: ADMIN o COORDINADOR de la subcampaña. No es una reserva lógica: las plantas salen del vivero al asignar.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -1175,7 +1175,7 @@ export function ApiCrearAsignacion() {
     ApiResponse({
       status: 422,
       description:
-        'Lote no ACTIVO, sin EMBOLSADO, saldo físico insuficiente, evidencia faltante o estado de subcampaña incompatible con el propósito',
+        'Lote no ACTIVO, sin EMBOLSADO, saldo físico insuficiente, evidencia faltante, estado de subcampaña incompatible con el propósito o especie fuera del plan para PLANTACION_INICIAL',
     }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );

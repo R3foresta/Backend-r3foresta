@@ -6,7 +6,6 @@ const CAMPOS_BORRADOR = new Set<string>([
   'nombre',
   'descripcion',
   'zona_id',
-  'meta_total_arboles',
   'fecha_estimada_inicio',
   'fecha_estimada_fin',
   'tolerancia_gps_metros',

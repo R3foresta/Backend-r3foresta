@@ -247,14 +247,14 @@ describe('CierrePolicy', () => {
 });
 
 describe('EdicionPorEstadoPolicy', () => {
-  it('en BORRADOR permite nombre, descripcion, zona_id, meta_total_arboles, fechas y tolerancia', () => {
+  it('en BORRADOR permite datos generales y reserva la meta para la revisión del plan', () => {
     const permitidos = EdicionPorEstadoPolicy.getCamposPermitidos(
       EstadoSubcampania.BORRADOR,
     );
     expect(permitidos.has('nombre')).toBe(true);
     expect(permitidos.has('descripcion')).toBe(true);
     expect(permitidos.has('zona_id')).toBe(true);
-    expect(permitidos.has('meta_total_arboles')).toBe(true);
+    expect(permitidos.has('meta_total_arboles')).toBe(false);
     expect(permitidos.has('fecha_estimada_inicio')).toBe(true);
     expect(permitidos.has('fecha_estimada_fin')).toBe(true);
     expect(permitidos.has('tolerancia_gps_metros')).toBe(true);

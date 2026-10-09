@@ -120,7 +120,7 @@ export function ApiEditarSubcampania() {
     ApiOperation({
       summary: 'Editar subcampaña',
       description:
-        'Edita una subcampaña. Los campos permitidos dependen del estado actual: BORRADOR (nombre, descripcion, zona_id, meta_total_arboles, fechas, tolerancia), ACTIVA (descripcion, fecha_fin, tolerancia), COMPLETADA/FINALIZADA_PARCIAL (solo observaciones_cierre). Nunca editable: tipo, campania_id, codigo_trazabilidad, polígono (endpoint separado). Solo ADMIN.',
+        'Edita una subcampaña. Los campos permitidos dependen del estado actual: BORRADOR (nombre, descripcion, zona_id, fechas, tolerancia), ACTIVA (descripcion, fecha_fin, tolerancia), COMPLETADA/FINALIZADA_PARCIAL (solo observaciones_cierre). meta_total_arboles se revisa junto con las especies mediante PUT /subcampanias/:id/plan; PATCH la rechaza. Nunca editable: tipo, campania_id, codigo_trazabilidad, polígono (endpoint separado). Solo ADMIN.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -132,7 +132,6 @@ export function ApiEditarSubcampania() {
           nombre: { type: 'string', minLength: 3, maxLength: 200 },
           descripcion: { type: 'string', maxLength: 1000, nullable: true },
           zona_id: { type: 'integer', minimum: 1 },
-          meta_total_arboles: { type: 'integer', minimum: 1 },
           fecha_estimada_inicio: {
             type: 'string',
             format: 'date',
@@ -386,7 +385,7 @@ export function ApiObtenerPlan() {
     ApiOperation({
       summary: 'Obtener plan de metas por especie',
       description:
-        'Devuelve el plan (SUBCAMPANIA_META_ESPECIE) de la subcampaña: filas con planta_id, porcentaje_objetivo y cantidad_objetivo. Vacío si aún no se cargó.',
+        'Devuelve un snapshot coherente de meta_total_arboles, plan_revision y metas por especie con datos de catálogo. plan_revision se envía como revision_esperada al revisar. Metas vacío si aún no se cargó.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -400,9 +399,9 @@ export function ApiObtenerPlan() {
 export function ApiGuardarPlan() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Guardar (reemplazo bulk) plan de metas por especie',
+      summary: 'Revisar atómicamente meta total y especies',
       description:
-        'Sustituye todo el plan de la subcampaña por el arreglo enviado. Solo permitido en estado BORRADOR (RN-PLA-17). Cada planta aparece una vez, porcentaje ∈ (0, 100], cantidad > 0. La consistencia total (SUM(%)=100, SUM(cantidad)=meta_total) se verifica al activar (RN-PLA-16). Solo ADMIN.',
+        'Solo ADMIN global, en BORRADOR o ACTIVA (ADR-PLA-05). Guarda meta_total_arboles, todas las especies y auditoría anterior/nueva en una transacción. En ACTIVA exige meta_total_arboles y revision_esperada (plan_revision leído); una versión obsoleta devuelve 409. En BORRADOR conserva {metas} contra la meta vigente y vincula la versión al inicio de la petición si se omite. Si se envía meta_total_arboles, revision_esperada es obligatoria también en BORRADOR. Se recomienda enviar la versión leída en el editor en todos los casos. Al menos una especie de catálogo, sin duplicados, objetivos positivos, porcentajes con hasta dos decimales que suman 100 y cantidades que suman la meta. No permite quitar especies con plantación inicial registrada o stock inicial disponible. Las metas siguen siendo orientativas; no altera registros, saldos ni estado/cierre.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -412,6 +411,21 @@ export function ApiGuardarPlan() {
         type: 'object',
         required: ['metas'],
         properties: {
+          meta_total_arboles: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 2147483647,
+            example: 500,
+            description:
+              'Obligatoria en ACTIVA; BORRADOR puede conservar la meta vigente.',
+          },
+          revision_esperada: {
+            type: 'integer',
+            minimum: 0,
+            example: 0,
+            description:
+              'plan_revision leído. Obligatoria en ACTIVA o al enviar meta_total_arboles; previene sobrescrituras concurrentes.',
+          },
           metas: {
             type: 'array',
             minItems: 1,
@@ -441,7 +455,11 @@ export function ApiGuardarPlan() {
         },
       },
     }),
-    ApiResponse({ status: 200, description: 'Plan guardado correctamente.' }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Revisión guardada: meta_total_arboles, plan_revision incrementada y metas.',
+    }),
     ApiResponse({ status: 400, description: 'Datos inválidos.' }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
     ApiResponse({
@@ -450,8 +468,14 @@ export function ApiGuardarPlan() {
     }),
     ApiResponse({ status: 404, description: 'Subcampaña no encontrada.' }),
     ApiResponse({
+      status: 409,
+      description:
+        'Revisión obsoleta: volver a leer el plan y conciliar los cambios.',
+    }),
+    ApiResponse({
       status: 422,
-      description: 'Estado ≠ BORRADOR o planta_id repetido en el payload.',
+      description:
+        'Estado no editable, plan incoherente, contrato de revisión incompleto o especie protegida.',
     }),
   );
 }

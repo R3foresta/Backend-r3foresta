@@ -27,6 +27,12 @@ export class SubcampaniasEdicionService {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertAdmin(usuario.rol);
 
+    if (dto.meta_total_arboles !== undefined) {
+      throw new UnprocessableEntityException(
+        'meta_total_arboles se revisa junto con las especies mediante PUT /subcampanias/:id/plan.',
+      );
+    }
+
     const supabase = this.supabaseService.getClient();
 
     const { data: actual, error: fetchError } = await supabase

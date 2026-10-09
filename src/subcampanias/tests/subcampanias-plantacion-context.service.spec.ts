@@ -66,7 +66,13 @@ function buildSupabase(opts: {
       case 'subcampania':
         return chain(
           opts.subcampania
-            ? { data: opts.subcampania, error: null }
+            ? {
+                data: {
+                  ...opts.subcampania,
+                  metas: opts.subcampania.metas ?? opts.metas ?? [],
+                },
+                error: null,
+              }
             : { data: null, error: { message: 'not found' } },
         );
       case 'subcampania_equipo':
@@ -105,6 +111,7 @@ const SUBCAMPANIA_ACTIVA = {
   fase_mantenimiento: 'NO_APLICA',
   zona_id: 44,
   meta_total_arboles: 500,
+  plan_revision: 1,
   total_plantado_inicial: 120,
   tolerancia_gps_metros: 30,
   nombre_zona_snapshot: 'Comunidad X',
@@ -132,7 +139,14 @@ const PLANTA_MOLLE = {
   nombre_comun_principal: 'Molle',
 };
 
-const METAS = [{ planta_id: 5, cantidad_objetivo: 200, planta: PLANTA_MOLLE }];
+const METAS = [
+  {
+    planta_id: 5,
+    porcentaje_objetivo: 100,
+    cantidad_objetivo: 200,
+    planta: PLANTA_MOLLE,
+  },
+];
 
 const ASIGNACIONES = [
   {
@@ -290,6 +304,7 @@ describe('SubcampaniasPlantacionContextService.obtener', () => {
       zona_id: 44,
       zona_nombre: 'Comunidad X',
       meta_total_arboles: 500,
+      plan_revision: 1,
       total_plantado_inicial: 120,
       tolerancia_gps_metros: 30,
       poligono: POLIGONO,
@@ -317,6 +332,7 @@ describe('SubcampaniasPlantacionContextService.obtener', () => {
         planta_id: 5,
         nombre_comun_principal: 'Molle',
         nombre_cientifico: 'Schinus molle',
+        porcentaje_objetivo: 100,
         cantidad_objetivo: 200,
         plantado_inicial: 80,
         pendiente_meta: 120,
@@ -369,9 +385,104 @@ describe('SubcampaniasPlantacionContextService.obtener', () => {
       requiere_evidencia: true,
       min_fotos: 1,
       max_fotos: 10,
-      permite_exceder_meta_especie: false,
+      permite_exceder_meta_especie: true,
       orden_consumo_asignaciones: 'fecha_asignacion ASC, asignacion_id ASC',
     });
+  });
+
+  it('mantiene meta, revisión y especies del mismo snapshot frente a una revisión posterior', async () => {
+    const service = buildService({
+      subcampania: {
+        ...SUBCAMPANIA_ACTIVA,
+        meta_total_arboles: 60,
+        plan_revision: 2,
+        total_plantado_inicial: 50,
+        metas: [{ ...METAS[0], cantidad_objetivo: 60 }],
+      },
+      equipo: EQUIPO,
+      poligono: POLIGONO,
+      // Un segundo SELECT separado vería el plan de una revisión posterior.
+      metas: [{ ...METAS[0], cantidad_objetivo: 90 }],
+      asignaciones: ASIGNACIONES,
+      registros: [{ id: 900 }],
+      detalles: [{ planta_id: 5, cantidad: 50 }],
+    });
+
+    const result = await service.obtener(123, 'auth-1');
+
+    expect(result.data.subcampania).toMatchObject({
+      estado: 'ACTIVA',
+      meta_total_arboles: 60,
+      plan_revision: 2,
+      total_plantado_inicial: 50,
+    });
+    expect(result.data.plan_por_especie[0]).toMatchObject({
+      porcentaje_objetivo: 100,
+      cantidad_objetivo: 60,
+      plantado_inicial: 50,
+      pendiente_meta: 10,
+    });
+    expect(result.data.stock_por_especie[0].stock_asignado_disponible).toBe(
+      150,
+    );
+  });
+
+  it('incluye la especie agregada al plan vigente con su stock inicial y avance', async () => {
+    const plantaNueva = {
+      id: 6,
+      especie: 'Tara',
+      nombre_cientifico: 'Caesalpinia spinosa',
+      nombre_comun_principal: 'Tara',
+    };
+    const service = buildService({
+      subcampania: {
+        ...SUBCAMPANIA_ACTIVA,
+        meta_total_arboles: 60,
+        plan_revision: 3,
+        total_plantado_inicial: 35,
+      },
+      equipo: EQUIPO,
+      poligono: POLIGONO,
+      metas: [
+        {
+          planta_id: 6,
+          porcentaje_objetivo: 50,
+          cantidad_objetivo: 30,
+          planta: plantaNueva,
+        },
+        { ...METAS[0], porcentaje_objetivo: 50, cantidad_objetivo: 30 },
+      ],
+      asignaciones: [
+        {
+          ...ASIGNACIONES[0],
+          lote: {
+            ...ASIGNACIONES[0].lote,
+            planta_id: 6,
+            planta: plantaNueva,
+          },
+        },
+      ],
+      registros: [{ id: 900 }],
+      detalles: [{ planta_id: 6, cantidad: 35 }],
+    });
+
+    const result = await service.obtener(123, 'auth-1');
+
+    expect(result.data.plan_por_especie.map((meta) => meta.planta_id)).toEqual([
+      5, 6,
+    ]);
+    expect(result.data.plan_por_especie[1]).toMatchObject({
+      planta_id: 6,
+      porcentaje_objetivo: 50,
+      cantidad_objetivo: 30,
+      plantado_inicial: 35,
+      pendiente_meta: 0,
+    });
+    expect(result.data.stock_por_especie[0]).toMatchObject({
+      planta_id: 6,
+      stock_asignado_disponible: 80,
+    });
+    expect(result.data.usuario.puede_registrar).toBe(true);
   });
 
   it('usa pendiente_meta = 0 cuando el plantado alcanzó el objetivo', async () => {
@@ -387,6 +498,31 @@ describe('SubcampaniasPlantacionContextService.obtener', () => {
 
     const res = await service.obtener(123, 'auth-1');
     expect(res.data.plan_por_especie[0].pendiente_meta).toBe(0);
+  });
+
+  it('permite consumir stock asignado aunque la meta ya esté superada', async () => {
+    const service = buildService({
+      subcampania: SUBCAMPANIA_ACTIVA,
+      equipo: EQUIPO,
+      poligono: POLIGONO,
+      metas: METAS,
+      asignaciones: ASIGNACIONES,
+      registros: [{ id: 900 }],
+      detalles: [{ planta_id: 5, cantidad: 250 }],
+    });
+
+    const res = await service.obtener(123, 'auth-1');
+
+    expect(res.data.plan_por_especie[0]).toEqual(
+      expect.objectContaining({
+        cantidad_objetivo: 200,
+        plantado_inicial: 250,
+        pendiente_meta: 0,
+      }),
+    );
+    expect(res.data.stock_por_especie[0].stock_asignado_disponible).toBe(150);
+    expect(res.data.reglas.permite_exceder_meta_especie).toBe(true);
+    expect(res.data.usuario.puede_registrar).toBe(true);
   });
 
   it('resuelve zona_nombre desde division_administrativa si no hay snapshot', async () => {

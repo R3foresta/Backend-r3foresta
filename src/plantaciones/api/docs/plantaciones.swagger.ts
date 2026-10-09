@@ -88,7 +88,7 @@ export function ApiRegistrarPlantacion() {
       summary:
         'Registrar plantacion o reposicion consumiendo stock asignado (M3)',
       description:
-        'Llama a la RPC fn_m3_registrar_plantacion. En una sola transaccion: valida el estado de la subcampania (inicial solo ACTIVA; reposicion tambien COMPLETADA/FINALIZADA_PARCIAL), GPS contra poligono, equipo (responsable + coresponsables), asignaciones ACTIVAS de proposito coherente y su saldo_asignado_disponible, la meta por especie (inicial) y el pendiente de reposicion del grupo origen (reposicion). Inserta REGISTRO_PLANTACION + DETALLE + CORESPONSABLES, aumenta cantidad_consumida de las asignaciones usadas, actualiza contadores de subcampania y vincula evidencias. NO genera eventos en Vivero ni modifica LOTE_VIVERO.saldo_vivo_actual: la salida fisica ocurrio al crear la asignacion (RN-VIV-52/55).',
+        'Llama a la RPC fn_m3_registrar_plantacion. En una sola transaccion: valida el estado de la subcampania (inicial solo ACTIVA; reposicion tambien COMPLETADA/FINALIZADA_PARCIAL), GPS contra poligono, equipo (responsable + coresponsables), asignaciones ACTIVAS de proposito coherente y su saldo_asignado_disponible, las especies del plan (inicial) y el pendiente de reposicion del grupo origen (reposicion). La cantidad inicial puede superar la meta por especie, pero nunca el stock asignado disponible; la subcampania permanece ACTIVA hasta cierre manual. Inserta REGISTRO_PLANTACION + DETALLE + CORESPONSABLES, aumenta cantidad_consumida de las asignaciones usadas, actualiza contadores de subcampania y vincula evidencias. NO genera eventos en Vivero ni modifica LOTE_VIVERO.saldo_vivo_actual: la salida fisica ocurrio al crear la asignacion (RN-VIV-52/55).',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
@@ -167,7 +167,7 @@ export function ApiRegistrarPlantacion() {
     ApiResponse({
       status: 400,
       description:
-        'Validacion fallida: estado de subcampania incompatible, GPS no evaluable, responsable o coresponsable fuera del equipo, saldo asignado insuficiente, proposito incoherente, especie fuera del plan o meta excedida, reposicion mayor al pendiente del grupo origen, etc.',
+        'Validacion fallida: estado de subcampania incompatible, GPS no evaluable, responsable o coresponsable fuera del equipo, saldo asignado insuficiente, proposito incoherente, especie fuera del plan, reposicion mayor al pendiente del grupo origen, etc.',
     }),
     ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
     ApiResponse({ status: 403, description: 'Rol global insuficiente' }),
