@@ -90,7 +90,7 @@ x-auth-id: {{auth_id}}
       "requiere_evidencia": true,
       "min_fotos": 1,
       "max_fotos": 10,
-      "permite_exceder_meta_especie": false,
+      "permite_exceder_meta_especie": true,
       "orden_consumo_asignaciones": "fecha_asignacion ASC, asignacion_id ASC"
     }
   }

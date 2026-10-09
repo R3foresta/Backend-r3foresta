@@ -29,14 +29,14 @@ No confundir con `ubicacion.id`: `ubicacion` es otra tabla usada para registros 
 
 Decisión cerrada 2026-07-01 (`RN-PLA-15..18`, `RN-PLA-36`, `RN-PLA-09`) + contrato físico 2026-07 (`RN-VIV-47`):
 
-- **Plan de metas** (planeación) vive en `SUBCAMPANIA_META_ESPECIE`. Se persiste con `PUT /subcampanias/:id/plan` y se puede editar libremente mientras la subcampaña esté en `BORRADOR`. Cada meta lleva `planta_id`, `porcentaje_objetivo` (0 < x ≤ 100) y `cantidad_objetivo` (> 0).
+- **Plan de metas** (planeación) vive en `SUBCAMPANIA_META_ESPECIE`. Se revisa atómicamente con `PUT /subcampanias/:id/plan` por ADMIN global en `BORRADOR` o `ACTIVA` (ADR-PLA-05). Meta total, especies e historial anterior/nuevo se guardan juntos. Cada meta lleva `planta_id`, `porcentaje_objetivo` (0 < x ≤ 100) y `cantidad_objetivo` (> 0).
 - **Asignaciones físicas de vivero** (cumplimiento) se registran en `POST /lotes-vivero/:loteId/asignaciones` y representan **entrega real de plantas**: descuentan el saldo del lote y exigen evidencia. Solo se aceptan cuando la subcampaña está `ACTIVA` (o `COMPLETADA` / `FINALIZADA_PARCIAL` para reposición). Ver "Guard de asignación" abajo.
 - Al **activar** (`POST /subcampanias/:id/activar`) el backend valida el plan: `SUM(porcentaje_objetivo) = 100` y `SUM(cantidad_objetivo) = meta_total_arboles`. **Se permite activar con 0% de stock asignado** — la subcampaña puede activarse aunque aún no haya asignaciones de lote (`RN-PLA-09`).
 
 Flujo persistente para frontend:
 
 1. `POST /subcampanias` → crea BORRADOR con `meta_total_arboles`.
-2. `PUT /subcampanias/:id/plan` (opcional al crear, editable mientras BORRADOR) → guarda las metas por especie.
+2. `PUT /subcampanias/:id/plan` (opcional al crear) → guarda un plan coherente; ADMIN también puede revisarlo en ACTIVA.
 3. `POST /subcampanias/:id/poligono` + `POST /subcampanias/:id/equipo` (coordinador).
 4. `POST /subcampanias/:id/activar`.
 5. Las asignaciones físicas de stock se hacen **tras activar** (`POST /lotes-vivero/:loteId/asignaciones`); se pueden ampliar durante toda la vida `ACTIVA`.
@@ -224,7 +224,7 @@ curl -X POST http://localhost:3000/api/subcampanias \
 |-------|------|-----------|
 | `zona_nombre` | string \| null | Snapshot si existe, si no `division_administrativa.nombre`. |
 | `plantados` | number | Alias de `total_plantado_inicial`. |
-| `avance_pct` | number \| null | `plantados / meta × 100` acotado a `[0, 100]`; `null` si meta = 0. |
+| `avance_pct` | number \| null | `plantados / meta vigente × 100`, puede superar 100; `null` si meta = 0. |
 | `has_plan_especies` | boolean | `SUBCAMPANIA_META_ESPECIE` tiene filas para la subcampaña. |
 | `personas_count` | number | Total de miembros (COORDINADOR + OPERARIO). |
 | `lotes_count` | number | `lote_vivero_id` distintos con asignación `ACTIVA`. |
@@ -301,7 +301,7 @@ curl -X GET http://localhost:3000/api/subcampanias/1 \
 ## PATCH /subcampanias/:id
 
 **Rol mínimo**: ADMIN
-**Descripción**: Edita datos de una subcampaña (solo en estado BORRADOR o PAUSADA).
+**Descripción**: Edita datos generales según estado: BORRADOR (nombre, descripción, zona, fechas, tolerancia), ACTIVA (descripción, fecha fin, tolerancia), COMPLETADA/FINALIZADA_PARCIAL (observaciones de cierre). `meta_total_arboles` se rechaza con 422: usar la revisión conjunta con especies en `PUT /subcampanias/:id/plan`.
 
 **Headers**
 | Header | Requerido | Descripción |
@@ -320,7 +320,6 @@ curl -X GET http://localhost:3000/api/subcampanias/1 \
 | nombre | string | — | min 3, max 200 |
 | descripcion | string | — | max 1000 |
 | zona_id | number | — | ID válido de `division_administrativa` |
-| meta_total_arboles | number | — | >= 1 |
 | fecha_estimada_inicio | string | — | ISO date |
 | fecha_estimada_fin | string | — | ISO date |
 | tolerancia_gps_metros | number | — | >= 1 |
@@ -357,8 +356,7 @@ curl -X PATCH http://localhost:3000/api/subcampanias/1 \
   -H "Content-Type: application/json" \
   -H "x-auth-id: <tu-auth-id>" \
   -d '{
-    "nombre": "Subcampaña Zona A - Nueva",
-    "meta_total_arboles": 1200
+    "nombre": "Subcampaña Zona A - Nueva"
   }'
 ```
 
@@ -628,7 +626,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 ## GET /subcampanias/:id/plan
 
 **Rol mínimo**: cualquier usuario autenticado.
-**Descripción**: Devuelve el plan de metas por especie (`SUBCAMPANIA_META_ESPECIE`). Vacío si aún no se cargó.
+**Descripción**: Devuelve en el mismo snapshot meta total, `plan_revision` y especies con datos de catálogo. Metas vacío si aún no se cargó. Usar `plan_revision` como `revision_esperada` al guardar.
 
 **Respuesta exitosa** `200`
 
@@ -639,6 +637,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
     "subcampania_id": 1,
     "estado": "BORRADOR",
     "meta_total_arboles": 500,
+    "plan_revision": 0,
     "metas": [
       {
         "planta_id": 5,
@@ -662,12 +661,18 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 ## PUT /subcampanias/:id/plan
 
 **Rol mínimo**: ADMIN
-**Descripción**: Reemplazo bulk del plan de metas por especie. Solo permitido en `BORRADOR` (`RN-PLA-17`). Cada `planta_id` una sola vez, `porcentaje_objetivo ∈ (0, 100]`, `cantidad_objetivo > 0`. La consistencia total (`SUM(%) = 100`, `SUM(cantidad) = meta_total_arboles`) se verifica al activar (`RN-PLA-16`), no aquí.
+**Descripción**: Revisión atómica por ADMIN global en BORRADOR o ACTIVA (ADR-PLA-05). Cada `planta_id` debe existir en catálogo y aparecer una sola vez; objetivos enteros positivos y porcentajes con hasta dos decimales, mayores a cero y hasta 100. Al guardar se exige `SUM(%) = 100` y `SUM(cantidad) = meta_total_arboles`.
+
+Enviar meta total, todas las especies y la versión leída. En ACTIVA son obligatorias meta y versión. Si se envía la meta total, también se exige versión en BORRADOR. BORRADOR conserva el payload histórico `{metas}`, usando la meta vigente; al omitir la versión el backend la fija al inicio de la petición para evitar sobrescrituras solapadas. Este cliente histórico no puede expresar la versión leída en el editor: enviar `revision_esperada` en todos los clientes nuevos permite detectar también formularios obsoletos. Si recibe 409, volver a leer y conciliar los cambios antes de reenviar. No reintentar automáticamente con la versión nueva.
+
+No se puede quitar una especie con plantación inicial registrada o stock inicial disponible. Ajustar metas conserva registros, autorías, contadores, saldos y estado. Las metas son orientativas, el avance puede superar 100% y el cierre sigue siendo manual. Las especies nuevas se incorporan antes de asignarlas o plantarlas inicialmente.
 
 **Body** (`application/json`)
 
 ```json
 {
+  "meta_total_arboles": 500,
+  "revision_esperada": 0,
   "metas": [
     { "planta_id": 5, "porcentaje_objetivo": 60, "cantidad_objetivo": 300 },
     { "planta_id": 8, "porcentaje_objetivo": 40, "cantidad_objetivo": 200 }
@@ -683,6 +688,9 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
   "data": {
     "message": "Plan de metas guardado correctamente.",
     "subcampania_id": 1,
+    "estado": "ACTIVA",
+    "meta_total_arboles": 500,
+    "plan_revision": 1,
     "metas": [
       { "planta_id": 5, "porcentaje_objetivo": 60, "cantidad_objetivo": 300 },
       { "planta_id": 8, "porcentaje_objetivo": 40, "cantidad_objetivo": 200 }
@@ -698,7 +706,9 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 | 401 | Header x-auth-id ausente |
 | 403 | Rol distinto de ADMIN |
 | 404 | Subcampaña no encontrada |
-| 422 | Estado ≠ BORRADOR o `planta_id` repetido en el payload |
+| 409 | `revision_esperada` obsoleta |
+| 422 | Estado no editable, contrato incompleto, plan incoherente o especie protegida |
+| 500 | Fallo transaccional/auditoría: ningún cambio queda guardado |
 
 ---
 
@@ -985,6 +995,7 @@ COORDINADOR | OPERARIO
   descripcion?: string;
   zona_id: number;
   meta_total_arboles: number;
+  plan_revision: number;
   fecha_estimada_inicio?: string;
   fecha_estimada_fin?: string;
   tolerancia_gps_metros: number;

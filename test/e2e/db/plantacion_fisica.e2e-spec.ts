@@ -1,5 +1,5 @@
 // E2E DB de fn_m3_registrar_plantacion bajo el contrato fisico (M2-M3-03/07).
-// Requiere Supabase real con las migraciones 051-056 aplicadas.
+// Requiere Supabase real con las migraciones 051-056, 060 y 061 aplicadas.
 //
 // Cubre:
 //   - plantar consume asignaciones (cantidad_consumida) SIN generar eventos M2
@@ -7,7 +7,8 @@
 //   - detalle con evento_lote_vivero_despacho_id = NULL
 //   - contadores: subcampania.total_plantado_inicial / total_repuesto y
 //     registro origen.cantidad_repuesta_acumulada
-//   - meta por especie bloquea exceso (plantacion inicial)
+//   - meta orientativa: admite cantidades extra de especies del plan
+//   - permanece ACTIVA hasta cierre manual; nunca supera stock asignado
 //   - reposicion permitida en COMPLETADA y bloqueada si excede el pendiente
 //     (muertas - repuestas) del grupo origen
 
@@ -75,6 +76,156 @@ describe('fn_m3_registrar_plantacion — consumo de asignaciones (RN-VIV-52)', (
     ref = await loadReferences(client);
   });
 
+  it.each([
+    { escenario: 'plantar 50 con meta 40', cantidades: [50] },
+    {
+      escenario: 'plantar 40 y despues las 10 restantes',
+      cantidades: [40, 10],
+    },
+  ])(
+    '$escenario: consume stock y permanece ACTIVA',
+    async ({ cantidades }) => {
+      const tag = `qa_meta_orientativa_${cantidades.length}_${Date.now()}`;
+      const created: CreatedIds = {
+        evidenciaIds: [],
+        subcampaniaIds: [],
+        registroIds: [],
+      };
+
+      try {
+        Object.assign(created, await createLote(client, ref, tag, 50, 4));
+        const sub = await createSubcampaniaConPoligono(client, ref, tag, 40);
+        created.campaniaId = sub.campaniaId;
+        created.subcampaniaIds.push(sub.subcampaniaId);
+
+        const asignacion = unwrapRpcRow(
+          await client.rpc('fn_vivero_asignar_stock_subcampania', {
+            p_lote_vivero_id: created.loteId,
+            p_subcampania_id: sub.subcampaniaId,
+            p_cantidad_asignada: 50,
+            p_proposito: 'PLANTACION_INICIAL',
+            p_usuario_asignacion_id: ref.userId,
+            p_fecha_asignacion: hoy(),
+            p_evidencia_ids: [created.evidenciaIds[0]],
+          }),
+          'asignar 50 para una meta de 40',
+        ) as { asignacion_id: number };
+        const eventosAntes = await contarEventosM2(client, created.loteId!);
+
+        const registrar = (cantidad: number, evidenciaId: number) =>
+          client.rpc('fn_m3_registrar_plantacion', {
+            p_subcampania_id: sub.subcampaniaId,
+            p_es_reposicion: false,
+            p_registro_plantacion_origen_id: null,
+            p_fecha_plantacion: hoy(),
+            p_responsable_id: ref.userId,
+            p_latitud: GPS.lat,
+            p_longitud: GPS.lng,
+            p_observaciones: `[${tag}]`,
+            p_coresponsable_ids: [],
+            p_detalles: [
+              {
+                asignacion_id: asignacion.asignacion_id,
+                lote_vivero_id: created.loteId,
+                planta_id: ref.plantaId,
+                cantidad,
+              },
+            ],
+            p_evidencia_ids: [evidenciaId],
+          });
+
+        const excesoStock = await registrar(51, created.evidenciaIds[3]);
+        expect(excesoStock.error?.message).toMatch(/saldo asignado/i);
+        const evidenciaRechazada = unwrap<{ entidad_id: number | null }>(
+          await client
+            .from('evidencias_trazabilidad')
+            .select('entidad_id')
+            .eq('id', created.evidenciaIds[3])
+            .single(),
+          'verificar evidencia sin consumir tras exceso de stock',
+        );
+        expect(evidenciaRechazada.entidad_id ?? 0).toBe(0);
+        const registrosRechazo = unwrap(
+          await client
+            .from('registro_plantacion')
+            .select('id')
+            .eq('subcampania_id', sub.subcampaniaId),
+          'verificar rechazo sin crear registro',
+        );
+        expect(registrosRechazo).toHaveLength(0);
+
+        let plantado = 0;
+        for (const [indice, cantidad] of cantidades.entries()) {
+          const registro = unwrapRpcRow(
+            await registrar(cantidad, created.evidenciaIds[indice + 1]),
+            'plantar con meta orientativa',
+          ) as {
+            registro_plantacion_id: number;
+            cantidad_total_plantada: number;
+          };
+          created.registroIds.push(registro.registro_plantacion_id);
+          expect(registro.cantidad_total_plantada).toBe(cantidad);
+          plantado += cantidad;
+
+          const estado = unwrap<{
+            estado: string;
+            meta_total_arboles: number;
+            total_plantado_inicial: number;
+            fecha_cierre_operativo: string | null;
+          }>(
+            await client
+              .from('subcampania')
+              .select(
+                'estado, meta_total_arboles, total_plantado_inicial, fecha_cierre_operativo',
+              )
+              .eq('id', sub.subcampaniaId)
+              .single(),
+            'leer avance sin cierre automatico',
+          );
+          expect(estado).toEqual({
+            estado: 'ACTIVA',
+            meta_total_arboles: 40,
+            total_plantado_inicial: plantado,
+            fecha_cierre_operativo: null,
+          });
+        }
+
+        const saldo = unwrap<{
+          cantidad_consumida: number;
+          saldo_asignado_disponible: number;
+          estado: string;
+        }>(
+          await client
+            .from('asignacion_vivero_subcampania')
+            .select('cantidad_consumida, saldo_asignado_disponible, estado')
+            .eq('id', asignacion.asignacion_id)
+            .single(),
+          'leer asignacion agotada',
+        );
+        expect(saldo).toEqual({
+          cantidad_consumida: 50,
+          saldo_asignado_disponible: 0,
+          estado: 'AGOTADA',
+        });
+        expect(await contarEventosM2(client, created.loteId!)).toBe(
+          eventosAntes,
+        );
+        const lote = unwrap<{ saldo_vivo_actual: number }>(
+          await client
+            .from('lote_vivero')
+            .select('saldo_vivo_actual')
+            .eq('id', created.loteId)
+            .single(),
+          'verificar vivero sin cambios al plantar',
+        );
+        expect(lote.saldo_vivo_actual).toBe(0);
+      } finally {
+        await cleanup(client, created);
+      }
+    },
+    30000,
+  );
+
   it('plantacion inicial: consume la asignacion, cero eventos M2, saldo del lote intacto y reposicion posterior con tope', async () => {
     const tag = `qa_plantacion_fisica_${Date.now()}`;
     const created: CreatedIds = {
@@ -108,8 +259,8 @@ describe('fn_m3_registrar_plantacion — consumo de asignaciones (RN-VIV-52)', (
 
       const eventosAntes = await contarEventosM2(client, created.loteId!);
 
-      // Meta por especie: objetivo 20. Plantar 25 debe fallar; plantar 12 pasa.
-      const excesoMeta = await client.rpc('fn_m3_registrar_plantacion', {
+      // Objetivo orientativo 20. Plantar 25 falla porque solo se asignaron 15.
+      const excesoStock = await client.rpc('fn_m3_registrar_plantacion', {
         p_subcampania_id: sub.subcampaniaId,
         p_es_reposicion: false,
         p_registro_plantacion_origen_id: null,
@@ -117,7 +268,7 @@ describe('fn_m3_registrar_plantacion — consumo de asignaciones (RN-VIV-52)', (
         p_responsable_id: ref.userId,
         p_latitud: GPS.lat,
         p_longitud: GPS.lng,
-        p_observaciones: `[${tag}] exceso meta`,
+        p_observaciones: `[${tag}] exceso stock`,
         p_coresponsable_ids: [],
         p_detalles: [
           {
@@ -129,9 +280,7 @@ describe('fn_m3_registrar_plantacion — consumo de asignaciones (RN-VIV-52)', (
         ],
         p_evidencia_ids: [created.evidenciaIds[1]],
       });
-      // Falla por meta (25 > 20) o por saldo asignado (25 > 15): ambas guardas
-      // son del contrato; el mensaje debe mencionar alguna de las dos.
-      expect(excesoMeta.error?.message ?? '').toMatch(/meta|saldo asignado/i);
+      expect(excesoStock.error?.message ?? '').toMatch(/saldo asignado/i);
 
       const inicial = unwrapRpcRow(
         await client.rpc('fn_m3_registrar_plantacion', {

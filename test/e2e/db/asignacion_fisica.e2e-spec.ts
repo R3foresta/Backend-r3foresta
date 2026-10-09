@@ -1,11 +1,12 @@
 // E2E DB del contrato fisico M2 <-> M3 (tareas M2-M3-02/04/05/07).
-// Requiere Supabase real con las migraciones 051-056 aplicadas.
+// Requiere Supabase real con las migraciones 051-056 y 060 aplicadas.
 //
 // Cubre:
 //   - guard EMBOLSADO (RN-VIV-61) — reemplaza reserva_requiere_embolsado.e2e-spec.ts
 //   - asignacion fisica exitosa: descuenta saldo, evento M2 ASIGNACION_SUBCAMPANIA,
 //     evento M3 ASIGNACION_VIVERO, evidencia vinculada (RN-VIV-47/54)
 //   - evidencia obligatoria y saldo fisico insuficiente
+//   - PLANTACION_INICIAL rechaza especies fuera del plan sin efectos fisicos
 //   - concurrencia: dos asignaciones simultaneas no dejan saldo negativo
 //   - CHECKs: AUTOMATICO_PLANTACION bloqueado para nuevas escrituras (RN-VIV-55)
 //     y DESPACHO MANUAL no puede usar PLANTACION_CAMPANIA
@@ -135,6 +136,102 @@ describe('Contrato fisico M2-M3: asignacion, devolucion y merma', () => {
       await cleanup(client, created);
     }
   }, 30000);
+
+  // -------------------------------------------------------------------
+  // Especie del plan: rechazar antes de entregar plantas incompatibles.
+  // -------------------------------------------------------------------
+  it.each(['otra especie', 'sin plan'] as const)(
+    'rechaza PLANTACION_INICIAL con %s sin descontar saldo ni vincular evidencia',
+    async (caso) => {
+      const tag = `qa_asig_plan_${caso.replace(' ', '_')}_${Date.now()}`;
+      const created = nuevoRegistro();
+
+      try {
+        Object.assign(created, await createLote(client, ref, tag, 20, true, 1));
+        const plantaPlanId =
+          caso === 'otra especie'
+            ? unwrap<{ id: number }>(
+                await client
+                  .from('planta')
+                  .select('id')
+                  .neq('id', ref.plantaId)
+                  .limit(1)
+                  .single(),
+                'cargar otra especie para el plan',
+              ).id
+            : null;
+        const sub = await createSubcampaniaActiva(
+          client,
+          ref,
+          tag,
+          plantaPlanId,
+        );
+        created.campaniaId = sub.campaniaId;
+        created.subcampaniaIds.push(sub.subcampaniaId);
+
+        const result = await client.rpc('fn_vivero_asignar_stock_subcampania', {
+          p_lote_vivero_id: created.loteId,
+          p_subcampania_id: sub.subcampaniaId,
+          p_cantidad_asignada: 20,
+          p_proposito: 'PLANTACION_INICIAL',
+          p_usuario_asignacion_id: ref.userId,
+          p_fecha_asignacion: hoy(),
+          p_evidencia_ids: [created.evidenciaIds[0]],
+        });
+
+        expect(result.error?.code).toBe('P0001');
+        expect(result.error?.message).toMatch(
+          /no esta en el plan de especies/i,
+        );
+
+        const lote = unwrap(
+          await client
+            .from('lote_vivero')
+            .select('saldo_vivo_actual, estado_lote')
+            .eq('id', created.loteId)
+            .single(),
+          'leer lote tras rechazar especie',
+        );
+        expect(lote).toEqual({ saldo_vivo_actual: 20, estado_lote: 'ACTIVO' });
+
+        for (const table of [
+          'asignacion_vivero_subcampania',
+          'evento_plantacion',
+        ]) {
+          const rows = unwrap(
+            await client
+              .from(table)
+              .select('id')
+              .eq('subcampania_id', sub.subcampaniaId),
+            `verificar ${table} sin escrituras`,
+          );
+          expect(rows).toHaveLength(0);
+        }
+        const despachos = unwrap(
+          await client
+            .from('evento_lote_vivero')
+            .select('id')
+            .eq('lote_id', created.loteId)
+            .eq('tipo_evento', 'DESPACHO'),
+          'verificar ausencia de despacho',
+        );
+        expect(despachos).toHaveLength(0);
+
+        const evidencia = unwrap<{ entidad_id: number | null }>(
+          await client
+            .from('evidencias_trazabilidad')
+            .select('entidad_id')
+            .eq('id', created.evidenciaIds[0])
+            .single(),
+          'verificar evidencia pendiente',
+        );
+        expect(evidencia.entidad_id ?? 0).toBe(0);
+      } finally {
+        await cleanup(client, created);
+      }
+    },
+    30000,
+  );
 
   // -------------------------------------------------------------------
   // RN-VIV-47/54: asignacion fisica exitosa
@@ -673,9 +770,10 @@ async function createSubcampaniaActiva(
   client: SupabaseClient,
   ref: RefData,
   tag: string,
+  plantaPlanId: number | null = ref.plantaId,
 ): Promise<{ campaniaId: number; subcampaniaId: number }> {
   const campania = await createCampania(client, ref, tag);
-  const subcampania = unwrap(
+  const subcampania = unwrap<{ id: number }>(
     await client
       .from('subcampania')
       .insert({
@@ -695,6 +793,24 @@ async function createSubcampaniaActiva(
       .single(),
     'crear subcampania activa',
   );
+
+  if (plantaPlanId !== null) {
+    unwrap(
+      await client
+        .from('subcampania_meta_especie')
+        .insert({
+          subcampania_id: subcampania.id,
+          planta_id: plantaPlanId,
+          porcentaje_objetivo: 100,
+          cantidad_objetivo: 100,
+          created_by: ref.userId,
+          updated_by: ref.userId,
+        })
+        .select('id')
+        .single(),
+      'crear plan de la subcampania activa',
+    );
+  }
 
   // El usuario QA actua como COORDINADOR (permiso de asignacion/devolucion).
   unwrap(

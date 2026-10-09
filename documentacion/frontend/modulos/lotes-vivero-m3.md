@@ -154,6 +154,8 @@ Base URL: `/api/lotes-vivero`
 
 **Prerequisito**: subir las fotos de la entrega vía `POST /lotes-vivero/evidencias-pendientes` y enviar sus IDs en `evidencia_ids`.
 
+**Especie de destino**: para `PLANTACION_INICIAL`, el `planta_id` del lote debe estar en el plan de la subcampaña (`SUBCAMPANIA_META_ESPECIE`). Se valida en la API y en la transacción de BD (migración 060). Una especie fuera del plan devuelve 422 antes de descontar saldo, cerrar el lote o vincular evidencias. El formulario puede anticipar esta validación consultando `GET /subcampanias/:id/plan` y comparando los IDs del catálogo.
+
 **Headers**
 | Header | Requerido | Descripción |
 |--------|-----------|-------------|
@@ -208,7 +210,7 @@ Base URL: `/api/lotes-vivero`
 | 403 | Rol global sin permiso de escritura |
 | 404 | Lote o subcampaña no encontrados |
 | 409 | Subcampaña en BORRADOR o CANCELADA |
-| 422 | Lote no ACTIVO, sin EMBOLSADO, saldo físico insuficiente, evidencia faltante, estado incompatible con el propósito, o usuario sin permiso ADMIN/COORDINADOR |
+| 422 | Lote no ACTIVO, sin EMBOLSADO, saldo físico insuficiente, evidencia faltante, estado incompatible con el propósito, especie fuera del plan para PLANTACION_INICIAL, o usuario sin permiso ADMIN/COORDINADOR |
 | 500 | RPC no aplicada o no visible en schema cache |
 
 **Ejemplo cURL**

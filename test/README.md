@@ -18,5 +18,6 @@ Comandos:
 - `npm run test:e2e`: todos los e2e.
 - `npm run test:e2e:p0`: solo flujos P0 HTTP.
 - `npm run test:e2e:db`: solo flujos DB/RPC.
+- `npm run test:db:plan`: ADR-PLA-05 contra un cluster PostgreSQL temporal aislado (sin `.env` ni Supabase compartido). Requiere `initdb`, `pg_ctl`, `createdb` y `psql` locales.
 
 Regla practica: si un test necesita `.env`, Supabase real o datos semilla, no va en unit.

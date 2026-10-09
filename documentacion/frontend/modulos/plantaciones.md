@@ -84,7 +84,9 @@ Es idempotente: los IDs inexistentes, ya eliminados, ya vinculados a una plantac
 ## POST /registros-plantacion
 
 **Rol mínimo**: GENERAL (el responsable debe pertenecer al equipo de la subcampaña como COORDINADOR u OPERARIO)
-**Descripción**: Registra una plantación inicial o una reposición **consumiendo stock ya asignado físicamente** a la subcampaña. En una sola transacción (RPC `fn_m3_registrar_plantacion`): valida estado de la subcampaña, GPS contra polígono, equipo, asignaciones ACTIVAS de propósito coherente y su `saldo_asignado_disponible`, la meta por especie (inicial) y el pendiente de reposición del grupo origen (reposición); inserta el registro + detalles + coresponsables, aumenta `cantidad_consumida` de las asignaciones, actualiza contadores de la subcampaña y vincula evidencias. **No crea eventos en Vivero ni cambia el saldo del lote.**
+**Descripción**: Registra una plantación inicial o una reposición **consumiendo stock ya asignado físicamente** a la subcampaña. En una sola transacción (RPC `fn_m3_registrar_plantacion`): valida estado de la subcampaña, GPS contra polígono, equipo, asignaciones ACTIVAS de propósito coherente y su `saldo_asignado_disponible`, las especies del plan (inicial) y el pendiente de reposición del grupo origen (reposición); inserta el registro + detalles + coresponsables, aumenta `cantidad_consumida` de las asignaciones, actualiza contadores de la subcampaña y vincula evidencias. **No crea eventos en Vivero ni cambia el saldo del lote.**
+
+Desde la migración 061, `cantidad_objetivo` es una meta orientativa: una especie incluida en el plan puede superar su objetivo si existe stock asignado. Por ejemplo, meta 40 y asignación 50 permiten plantar 50 de una vez, o 40 y luego 10. Alcanzar o superar la meta no cierra la subcampaña; el cierre es manual. El contexto entrega `reglas.permite_exceder_meta_especie: true`, que el frontend usa para limitar la entrada al stock, sin limitarla al pendiente de la meta.
 
 **Headers**
 | Header | Requerido | Descripción |
@@ -148,7 +150,7 @@ Es idempotente: los IDs inexistentes, ya eliminados, ya vinculados a una plantac
 **Errores**
 | Status | Cuándo |
 |--------|--------|
-| 400 | Estado de subcampaña incompatible, GPS no evaluable, responsable/coresponsable fuera del equipo, saldo asignado insuficiente, propósito incoherente, especie fuera del plan o meta excedida, reposición mayor al pendiente del grupo origen, evidencias inválidas |
+| 400 | Estado de subcampaña incompatible, GPS no evaluable, responsable/coresponsable fuera del equipo, saldo asignado insuficiente, propósito incoherente, especie fuera del plan, reposición mayor al pendiente del grupo origen, evidencias inválidas |
 | 401 | Header x-auth-id ausente |
 | 403 | Rol global insuficiente |
 | 404 | Usuario o subcampaña no encontrada |
@@ -212,7 +214,7 @@ curl -X POST http://localhost:3000/api/registros-plantacion \
 1. **Consumo de asignaciones** (RN-VIV-52): la plantación consume `saldo_asignado_disponible` de asignaciones ACTIVAS de la subcampaña. No genera despachos M2 ni toca `LOTE_VIVERO.saldo_vivo_actual`.
 2. **Propósito tipado** (RN-VIV-58): inicial consume asignaciones PLANTACION_INICIAL; reposición consume REPOSICION. Nunca cruzados.
 3. **Estados**: inicial solo con subcampaña ACTIVA; reposición también en COMPLETADA y FINALIZADA_PARCIAL.
-4. **Meta por especie** (inicial): la especie debe existir en el plan (`SUBCAMPANIA_META_ESPECIE`) y el acumulado de plantaciones iniciales no puede exceder `cantidad_objetivo`.
+4. **Meta por especie** (inicial): la especie debe existir en el plan (`SUBCAMPANIA_META_ESPECIE`). `cantidad_objetivo` orienta la planificación; se permiten cantidades mayores hasta consumir el stock asignado disponible. La subcampaña permanece ACTIVA hasta el cierre manual.
 5. **Tope de reposición**: la cantidad total no puede exceder `cantidad_muerta_acumulada - cantidad_repuesta_acumulada` del grupo origen. La reposición **no** avanza la meta.
 6. **Reposición libre de especie** (RN-VIV-60): puede usar cualquier especie disponible en asignaciones REPOSICION.
 7. **Conservación** (RN-VIV-53): `SUM(detalles.cantidad) = cantidad_total_plantada`.
@@ -227,4 +229,5 @@ curl -X POST http://localhost:3000/api/registros-plantacion \
 2. **POST /registros-plantacion/evidencias-pendientes** → Subir fotos de la plantación.
 3. Si el usuario cancela o el registro no se completará: **DELETE /registros-plantacion/evidencias-pendientes** con los IDs pre-subidos.
 4. **POST /registros-plantacion** → Registrar consumo de las asignaciones.
-5. **Sobrante**: `POST /lotes-vivero/:id/asignaciones/:asignacionId/devolucion` → devolver físicamente lo no plantado.
+5. **Stock restante**: mientras la subcampaña esté ACTIVA, puede consumirse en otra plantación inicial de esa especie aunque su meta ya esté cumplida. También puede devolverse físicamente con `POST /lotes-vivero/:id/asignaciones/:asignacionId/devolucion`.
+6. **Cierre manual**: `POST /subcampanias/:id/cerrar` → cerrar cuando termine la actividad. Después del cierre ya no se admite plantación inicial; la reposición conserva su flujo y su límite por mortandad pendiente.

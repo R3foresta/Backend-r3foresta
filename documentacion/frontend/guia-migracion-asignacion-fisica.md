@@ -43,7 +43,8 @@ RN-VIV-47..61). Esta guía resume todo lo que el cliente PWA debe cambiar.
 - **Cantidad máxima al asignar**: ya no es `vivo - asignado`; es directamente `saldo_vivo_actual` del lote.
 - **Asignar exige evidencia**: flujo de dos pasos — subir fotos (`/lotes-vivero/evidencias-pendientes`) y luego asignar con `evidencia_ids`. Un 422 con "evidencia" indica fotos faltantes o ya vinculadas.
 - **Permisos**: asignar y devolver requieren ADMIN global o COORDINADOR de la subcampaña (422 si no).
-- **Plantación inicial valida meta por especie**: 400 si la especie no está en el plan o si el acumulado supera `cantidad_objetivo`.
+- **Plantación inicial valida especies del plan**: 400 si la especie no está en el plan. Desde la migración 061, `cantidad_objetivo` es orientativa y puede superarse usando stock asignado disponible. El contexto devuelve `permite_exceder_meta_especie: true`; la subcampaña permanece ACTIVA hasta el cierre manual.
+- **Asignación para plantación inicial valida la especie antes de entregar** (migración 060): 422 si el `planta_id` del lote no está en el plan de la subcampaña. El frontend puede filtrar destinos mediante `GET /subcampanias/:id/plan`; el backend impide la salida aunque el cliente no filtre.
 - **Reposición valida pendiente**: 400 si la cantidad excede `muertas - repuestas` del grupo origen.
 - **Lote cerrado por asignación total**: si `lote_finalizado: true` en la response de asignación, el lote quedó FINALIZADO (saldo 0). Una devolución posterior puede reabrirlo (`lote_reabierto: true`).
 
