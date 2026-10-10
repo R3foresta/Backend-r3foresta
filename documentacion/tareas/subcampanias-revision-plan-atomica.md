@@ -12,20 +12,38 @@ Meta, especies, versión, actor, fecha y snapshots anterior/nuevo se escriben ju
 
 La revisión no modifica plantaciones, contadores, autores, saldos físicos ni fechas/estado de cierre. Las metas siguen siendo orientativas, la pertenencia al plan se comprueba al asignar y plantar inicialmente, y el cierre continúa siendo manual. Los límites de reposición conservan su contrato. La lista devuelve progreso superior al 100% cuando corresponde; el contexto lee meta, versión y especies en un mismo snapshot.
 
+## Refuerzo posterior a la revisión
+
+`GET/PUT /plan` ahora verifican el JWT emitido por el login WebAuthn. Cualquier usuario registrado con sesión válida puede leer, sin pertenecer al equipo. Solo ADMIN global puede guardar; el actor se resuelve en la base y un `x-auth-id` distinto del JWT se rechaza. El header de identidad es opcional para estas dos rutas. Configurar `JWT_SECRET` y coordinar `Authorization: Bearer <token>` en el frontend.
+
+La nueva migración 063 restringe también la RPC de lectura a `service_role`; debe aplicarse manualmente después de 062. Las migraciones 060–062 ya aplicadas conservan sus archivos. La selección del cliente administrativo exige `SUPABASE_SERVICE_ROLE_KEY` explícita en lugar de reutilizar el cliente normal cuando falta.
+
+Se elimina la prelectura del plan en asignaciones: 060 valida la pertenencia de especies bajo el bloqueo compartido con la revisión y evita rechazos basados en un plan anterior. Las devoluciones conservan su RPC actual; una devolución sin commit puede provocar un rechazo conservador de retirada, que se puede reevaluar después del commit. Las pruebas cubren ese caso y el ajuste de metas concurrente con devolución sin alterar cantidades físicas.
+
+El diagnóstico manual de la base compartida está en `documentacion/sql/verificar_subcampania_plan_062_063.sql`, con instrucciones en `documentacion/tareas/verificacion-supabase-plan-062-063.md`. Solo lee datos y no acredita el despliegue remoto.
+
 ## Verificación reproducible
 
 ```bash
-npm run test:unit -- --runInBand src/subcampanias src/plantaciones src/lotes-vivero/tests/vivero-asignaciones.service.spec.ts
+npm run test:unit -- --runInBand src/subcampanias src/plantaciones src/lotes-vivero/tests/vivero-asignaciones.service.spec.ts src/supabase/supabase.service.spec.ts
 npm run test:db:plan
 npm run build
 ```
 
-Resultado local: 16 suites enfocadas / 214 pruebas unitarias aprobadas, 36 pruebas PostgreSQL aisladas aprobadas y compilación Nest completada. `git diff --check` sin errores.
+La implementación inicial verificó 16 suites / 214 pruebas unitarias y 36 pruebas PostgreSQL aisladas. El refuerzo amplía la cobertura con pruebas HTTP de sesión, configuración administrativa, devoluciones concurrentes, permisos 063 y el diagnóstico manual.
 
-La nueva suite DB crea y destruye un cluster PostgreSQL propio en un directorio temporal, con socket privado y TCP deshabilitado. Requiere `initdb`, `pg_ctl`, `createdb` y `psql` disponibles. No carga `.env` ni utiliza la base Supabase compartida. Aplica las migraciones reales 024, 030, 047, 060, 061 y 062 sobre una fixture acotada; GPS usa un helper fijo porque PostGIS y la validación geográfica no cambian en este ADR.
+Verificación del refuerzo: 49 suites / 531 pruebas unitarias y HTTP aprobadas, 46 pruebas PostgreSQL aisladas aprobadas (incluido el SQL de diagnóstico), compilación Nest y `git diff --check` correctos. Las pruebas que abren sockets locales o memoria compartida requieren ejecutarse fuera de un sandbox que bloquee esas operaciones.
+
+La suite DB crea y destruye un cluster PostgreSQL propio en un directorio temporal, con socket privado y TCP deshabilitado. Requiere `initdb`, `pg_ctl`, `createdb` y `psql` disponibles. No carga `.env` ni utiliza la base Supabase compartida. Aplica las migraciones reales 024, 030, 047, 054, 056 y 060–063 sobre una fixture acotada; GPS usa un helper fijo porque PostGIS y la validación geográfica no cambian en este ADR.
 
 La cobertura incluye revisiones activas y BORRADOR, roles y estados rechazados, planes inválidos, incorporación de especies y plantación por encima del objetivo, retiradas protegidas, conservación de datos físicos/autores, fallo de auditoría, revisiones concurrentes y espera entre revisión/asignación/plantación. Comprueba también los permisos de ejecución y reaplicación de 062 dentro de una transacción sin perder datos.
 
 ## Aplicación en un entorno
 
-Aplicar 060, 061 y 062 antes de desplegar este backend. Configurar `SUPABASE_SERVICE_ROLE_KEY` para el guardado. Coordinar los clientes para que envíen meta, plan y versión juntos; los cambios de meta mediante PATCH ya no se aceptan. La verificación local no aplica migraciones en bases compartidas ni acredita un despliegue.
+Aplicar 060–063 antes de desplegar este backend. Configurar `SUPABASE_SERVICE_ROLE_KEY` y `JWT_SECRET`. Coordinar los clientes para que envíen el JWT, meta, plan y versión juntos; los cambios de meta mediante PATCH ya no se aceptan. La verificación local no aplica migraciones en bases compartidas ni acredita un despliegue.
+
+## Cierre del acceso al plan en el entorno local — 2026-10-10
+
+Se configuró una clave privada propia del backend en `JWT_SECRET` dentro del `.env` local, ignorado por Git y con permisos `600`, conservando la configuración de Supabase. Se reinició el backend con `npm run start:dev`. Las comprobaciones locales devolvieron `200` en `/health` y `/api/auth/challenge`, y `401` al consultar el plan sin sesión o con un token inválido, en lugar del `500` por la variable ausente.
+
+Tras renovar la sesión con passkey, el usuario confirmó que la consulta del plan devuelve `200` con datos y que el mix de especies se muestra correctamente. El problema de acceso local queda resuelto. El mensaje amigable del frontend ante errores `500` y la investigación de posibles `GET` repetidos quedan como tareas separadas; las peticiones `OPTIONS` de CORS no son lecturas adicionales del plan. Este cierre local no acredita un despliegue remoto.
