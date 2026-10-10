@@ -131,6 +131,7 @@ async function bootstrap() {
       },
       'x-auth-id',
     )
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

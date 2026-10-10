@@ -1,11 +1,15 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class SupabaseService implements OnModuleInit {
   private supabase: SupabaseClient;
-  private supabaseAdmin: SupabaseClient;
+  private supabaseAdmin: SupabaseClient | undefined;
 
   constructor(private configService: ConfigService) {}
 
@@ -24,10 +28,10 @@ export class SupabaseService implements OnModuleInit {
 
     this.supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (supabaseServiceKey) {
+    if (supabaseServiceKey?.trim()) {
       this.supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     } else {
-      this.supabaseAdmin = this.supabase;
+      this.supabaseAdmin = undefined;
     }
 
     console.log('✅ Supabase client inicializado correctamente');
@@ -38,6 +42,11 @@ export class SupabaseService implements OnModuleInit {
   }
 
   getAdminClient(): SupabaseClient {
+    if (!this.supabaseAdmin) {
+      throw new InternalServerErrorException(
+        'SUPABASE_SERVICE_ROLE_KEY no está configurado para las operaciones administrativas.',
+      );
+    }
     return this.supabaseAdmin;
   }
 }

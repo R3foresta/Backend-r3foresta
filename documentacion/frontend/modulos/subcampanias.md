@@ -626,6 +626,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 ## GET /subcampanias/:id/plan
 
 **Rol mínimo**: cualquier usuario autenticado.
+**Autenticación**: `Authorization: Bearer <token>` con el JWT del login WebAuthn. `x-auth-id` es opcional; si se envía, debe coincidir con el `sub` del JWT. Un header de identidad por sí solo no permite consultar el plan.
 **Descripción**: Devuelve en el mismo snapshot meta total, `plan_revision` y especies con datos de catálogo. Metas vacío si aún no se cargó. Usar `plan_revision` como `revision_esperada` al guardar.
 
 **Respuesta exitosa** `200`
@@ -661,6 +662,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 ## PUT /subcampanias/:id/plan
 
 **Rol mínimo**: ADMIN
+**Autenticación**: `Authorization: Bearer <token>`, igual que GET /plan. El backend verifica la sesión y resuelve el rol ADMIN desde `usuario`. `x-auth-id` es opcional y debe coincidir con la sesión.
 **Descripción**: Revisión atómica por ADMIN global en BORRADOR o ACTIVA (ADR-PLA-05). Cada `planta_id` debe existir en catálogo y aparecer una sola vez; objetivos enteros positivos y porcentajes con hasta dos decimales, mayores a cero y hasta 100. Al guardar se exige `SUM(%) = 100` y `SUM(cantidad) = meta_total_arboles`.
 
 Enviar meta total, todas las especies y la versión leída. En ACTIVA son obligatorias meta y versión. Si se envía la meta total, también se exige versión en BORRADOR. BORRADOR conserva el payload histórico `{metas}`, usando la meta vigente; al omitir la versión el backend la fija al inicio de la petición para evitar sobrescrituras solapadas. Este cliente histórico no puede expresar la versión leída en el editor: enviar `revision_esperada` en todos los clientes nuevos permite detectar también formularios obsoletos. Si recibe 409, volver a leer y conciliar los cambios antes de reenviar. No reintentar automáticamente con la versión nueva.
@@ -703,7 +705,7 @@ No se puede quitar una especie con plantación inicial registrada o stock inicia
 | Status | Cuándo |
 |--------|--------|
 | 400 | Datos inválidos o `planta_id` inexistente en catálogo |
-| 401 | Header x-auth-id ausente |
+| 401 | JWT ausente/inválido/expirado, usuario inexistente o `x-auth-id` distinto de la sesión |
 | 403 | Rol distinto de ADMIN |
 | 404 | Subcampaña no encontrada |
 | 409 | `revision_esperada` obsoleta |

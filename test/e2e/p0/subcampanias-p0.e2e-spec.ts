@@ -1,4 +1,6 @@
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { SupabaseClient } from '@supabase/supabase-js';
 import request from 'supertest';
 import {
@@ -298,8 +300,18 @@ describe('P0 Subcampanias - contrato HTTP', () => {
   }
 
   async function setPlan(subcampaniaId: number) {
+    const secret = app.get(ConfigService).get<string>('JWT_SECRET');
+    if (!secret?.trim())
+      throw new Error(
+        'Las pruebas P0 de plan requieren JWT_SECRET configurado.',
+      );
+    const token = new JwtService({ secret }).sign(
+      { sub: refs.admin.authId },
+      { expiresIn: '5m' },
+    );
     const response = await request(app.getHttpServer())
       .put(`/api/subcampanias/${subcampaniaId}/plan`)
+      .set('Authorization', `Bearer ${token}`)
       .set('x-auth-id', refs.admin.authId)
       .send({
         metas: [

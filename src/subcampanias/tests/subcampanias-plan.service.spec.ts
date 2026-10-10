@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
@@ -43,14 +44,19 @@ function setup(
     getClient: jest.fn().mockReturnValue({ from }),
   } as unknown as SupabaseService;
   const auth = {
-    getUserByAuthId: jest
+    getAuthenticatedUser: jest
       .fn()
       .mockResolvedValue({ id: 3, nombre: 'Admin', rol }),
     assertAdmin: jest.fn().mockImplementation((r: string) => {
       if (r !== 'ADMIN') throw new ForbiddenException();
     }),
   } as unknown as SubcampaniasAuthService;
-  return { service: new SubcampaniasPlanService(supabase, auth), rpc, from };
+  return {
+    service: new SubcampaniasPlanService(supabase, auth),
+    rpc,
+    from,
+    auth,
+  };
 }
 
 describe('SubcampaniasPlanService', () => {
@@ -87,7 +93,7 @@ describe('SubcampaniasPlanService', () => {
 
   it('lee meta, versión y especies mediante un único snapshot', async () => {
     const { service, rpc, from } = setup();
-    await expect(service.obtener(1)).resolves.toEqual({
+    await expect(service.obtener(1, 'auth-1')).resolves.toEqual({
       success: true,
       data: snapshot,
     });
@@ -100,8 +106,39 @@ describe('SubcampaniasPlanService', () => {
   it('devuelve 404 si el snapshot no encuentra la subcampaña', async () => {
     const { service, rpc } = setup();
     rpc.mockResolvedValue({ data: null, error: null });
-    await expect(service.obtener(99)).rejects.toThrow(NotFoundException);
+    await expect(service.obtener(99, 'auth-1')).rejects.toThrow(
+      NotFoundException,
+    );
   });
+
+  it.each(['ADMIN', 'GENERAL', 'VALIDADOR', 'VOLUNTARIO', 'COORDINADOR'])(
+    'permite leer el plan a un usuario existente con rol %s',
+    async (rol) => {
+      const { service, auth } = setup(null, rol);
+      await expect(service.obtener(1, 'auth-1')).resolves.toHaveProperty(
+        'data',
+        snapshot,
+      );
+      expect(auth.getAuthenticatedUser).toHaveBeenCalledWith('auth-1');
+      expect(auth.assertAdmin).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['lectura', 'escritura'])(
+    'no accede al plan si la sesión tiene un usuario inexistente en %s',
+    async (operacion) => {
+      const { service, rpc, auth } = setup();
+      jest
+        .mocked(auth.getAuthenticatedUser)
+        .mockRejectedValue(new UnauthorizedException());
+      await expect(
+        operacion === 'lectura'
+          ? service.obtener(1, 'ghost')
+          : service.guardar(1, revision, 'ghost'),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(rpc).not.toHaveBeenCalled();
+    },
+  );
 
   it.each(['GENERAL', 'VALIDADOR', 'VOLUNTARIO', 'COORDINADOR'])(
     'rechaza rol %s antes de acceder a la RPC',

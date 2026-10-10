@@ -35,7 +35,12 @@ export class SubcampaniasPlanService {
     private readonly authService: SubcampaniasAuthService,
   ) {}
 
-  async obtener(id: number) {
+  async obtener(id: number, authId: string) {
+    await this.authService.getAuthenticatedUser(authId);
+    return { success: true, data: await this.leerSnapshot(id) };
+  }
+
+  private async leerSnapshot(id: number): Promise<PlanSnapshot> {
     // Una sola sentencia entrega meta, versión y especies del mismo snapshot.
     const result = (await this.supabaseService
       .getAdminClient()
@@ -45,11 +50,11 @@ export class SubcampaniasPlanService {
     if (!result.error && !result.data) {
       throw new NotFoundException(`Subcampaña con id ${id} no encontrada`);
     }
-    return { success: true, data: this.leerResultado(result) };
+    return this.leerResultado(result);
   }
 
   async guardar(id: number, dto: GuardarPlanDto, authId: string) {
-    const usuario = await this.authService.getUserByAuthId(authId);
+    const usuario = await this.authService.getAuthenticatedUser(authId);
     this.authService.assertAdmin(usuario.rol);
     this.validarPlan(dto);
 
@@ -61,8 +66,8 @@ export class SubcampaniasPlanService {
       revisionEsperada === undefined &&
       dto.meta_total_arboles === undefined
     ) {
-      const snapshot = await this.obtener(id);
-      revisionEsperada = snapshot.data.plan_revision;
+      const snapshot = await this.leerSnapshot(id);
+      revisionEsperada = snapshot.plan_revision;
     }
 
     // Estado, versión y protecciones se comprueban dentro del bloqueo

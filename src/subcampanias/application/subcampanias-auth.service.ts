@@ -1,7 +1,9 @@
 import {
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 
@@ -23,6 +25,11 @@ export class SubcampaniasAuthService {
       .eq('auth_id', authId)
       .single();
 
+    if (error && error.code !== 'PGRST116') {
+      throw new InternalServerErrorException(
+        'No se pudo verificar el usuario.',
+      );
+    }
     if (error || !data) {
       throw new NotFoundException(
         `Usuario con auth_id ${authId} no encontrado`,
@@ -30,6 +37,20 @@ export class SubcampaniasAuthService {
     }
 
     return data as SubcampaniaUsuario;
+  }
+
+  async getAuthenticatedUser(authId: string): Promise<SubcampaniaUsuario> {
+    if (!authId?.trim()) {
+      throw new UnauthorizedException('La sesión no identifica a un usuario.');
+    }
+    try {
+      return await this.getUserByAuthId(authId);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new UnauthorizedException('El usuario de la sesión no existe.');
+      }
+      throw error;
+    }
   }
 
   assertAdmin(userRole: string): void {

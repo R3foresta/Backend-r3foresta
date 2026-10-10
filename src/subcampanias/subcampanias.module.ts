@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { SubcampaniasController } from './api/subcampanias.controller';
+import { SubcampaniaPlanAuthGuard } from './api/guards/subcampania-plan-auth.guard';
 import { SubcampaniasActivacionService } from './application/subcampanias-activacion.service';
 import { SubcampaniasAuthService } from './application/subcampanias-auth.service';
 import { SubcampaniasCancelacionService } from './application/subcampanias-cancelacion.service';
@@ -17,9 +19,10 @@ import { SubcampaniasPoligonoService } from './application/subcampanias-poligono
 import { SubcampaniasService } from './application/subcampanias.service';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [SupabaseModule, AuthModule],
   controllers: [SubcampaniasController],
   providers: [
+    SubcampaniaPlanAuthGuard,
     SubcampaniasService,
     SubcampaniasAuthService,
     SubcampaniasCodigosService,

@@ -1,6 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import {
   ApiBody,
+  ApiBearerAuth,
   ApiHeader,
   ApiOperation,
   ApiParam,
@@ -385,13 +386,21 @@ export function ApiObtenerPlan() {
     ApiOperation({
       summary: 'Obtener plan de metas por especie',
       description:
-        'Devuelve un snapshot coherente de meta_total_arboles, plan_revision y metas por especie con datos de catálogo. plan_revision se envía como revision_esperada al revisar. Metas vacío si aún no se cargó.',
+        'Disponible para cualquier usuario registrado con JWT válido del login WebAuthn, sin restricción de rol ni pertenencia al equipo. Requiere Authorization: Bearer <token>; x-auth-id es opcional y debe coincidir con el sub del JWT. Devuelve un snapshot coherente de meta_total_arboles, plan_revision y metas por especie con datos de catálogo. plan_revision se envía como revision_esperada al revisar. Metas vacío si aún no se cargó.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
+    ApiBearerAuth(),
+    ApiHeader({
+      ...AUTH_ID_HEADER,
+      required: false,
+      description: 'Opcional. Debe coincidir con la identidad del JWT.',
+    }),
     ApiParam({ name: 'id', type: 'integer' }),
     ApiResponse({ status: 200, description: 'Plan de metas por especie.' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 401,
+      description:
+        'JWT ausente, inválido o expirado, usuario inexistente o x-auth-id distinto de la sesión.',
+    }),
     ApiResponse({ status: 404, description: 'Subcampaña no encontrada.' }),
   );
 }
@@ -403,8 +412,12 @@ export function ApiGuardarPlan() {
       description:
         'Solo ADMIN global, en BORRADOR o ACTIVA (ADR-PLA-05). Guarda meta_total_arboles, todas las especies y auditoría anterior/nueva en una transacción. En ACTIVA exige meta_total_arboles y revision_esperada (plan_revision leído); una versión obsoleta devuelve 409. En BORRADOR conserva {metas} contra la meta vigente y vincula la versión al inicio de la petición si se omite. Si se envía meta_total_arboles, revision_esperada es obligatoria también en BORRADOR. Se recomienda enviar la versión leída en el editor en todos los casos. Al menos una especie de catálogo, sin duplicados, objetivos positivos, porcentajes con hasta dos decimales que suman 100 y cantidades que suman la meta. No permite quitar especies con plantación inicial registrada o stock inicial disponible. Las metas siguen siendo orientativas; no altera registros, saldos ni estado/cierre.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
+    ApiBearerAuth(),
+    ApiHeader({
+      ...AUTH_ID_HEADER,
+      required: false,
+      description: 'Opcional. Debe coincidir con la identidad del JWT.',
+    }),
     ApiParam({ name: 'id', type: 'integer' }),
     ApiBody({
       schema: {
@@ -461,7 +474,11 @@ export function ApiGuardarPlan() {
         'Revisión guardada: meta_total_arboles, plan_revision incrementada y metas.',
     }),
     ApiResponse({ status: 400, description: 'Datos inválidos.' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 401,
+      description:
+        'JWT ausente, inválido o expirado, usuario inexistente o x-auth-id distinto de la sesión.',
+    }),
     ApiResponse({
       status: 403,
       description: 'Solo el rol ADMIN puede editar el plan.',

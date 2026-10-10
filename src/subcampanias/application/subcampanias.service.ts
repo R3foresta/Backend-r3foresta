@@ -71,8 +71,8 @@ export class SubcampaniasService {
     return this.cancelacionService.cancelar(id, dto, authId);
   }
 
-  obtenerPlan(id: number) {
-    return this.planService.obtener(id);
+  obtenerPlan(id: number, authId: string) {
+    return this.planService.obtener(id, authId);
   }
 
   guardarPlan(id: number, dto: GuardarPlanDto, authId: string) {

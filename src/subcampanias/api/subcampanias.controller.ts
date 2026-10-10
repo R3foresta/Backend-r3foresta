@@ -12,7 +12,9 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { SubcampaniasService } from '../application/subcampanias.service';
@@ -23,6 +25,8 @@ import { CrearSubcampaniaDto } from './dto/crear-subcampania.dto';
 import { EditarSubcampaniaDto } from './dto/editar-subcampania.dto';
 import { GuardarPlanDto } from './dto/guardar-plan.dto';
 import { SetearPoligonoDto } from './dto/setear-poligono.dto';
+import { SubcampaniaPlanAuthGuard } from './guards/subcampania-plan-auth.guard';
+import type { PlanAuthenticatedRequest } from './guards/subcampania-plan-auth.guard';
 import {
   ApiActivarSubcampania,
   ApiAgregarMiembrosEquipo,
@@ -139,28 +143,25 @@ export class SubcampaniasController {
   }
 
   @Get(':id/plan')
+  @UseGuards(SubcampaniaPlanAuthGuard)
   @ApiObtenerPlan()
   obtenerPlan(
     @Param('id', ParseIntPipe) id: number,
-    @Headers('x-auth-id') authId?: string,
+    @Req() request: PlanAuthenticatedRequest,
   ) {
-    this.requireAuthId(authId);
-    return this.subcampaniasService.obtenerPlan(id);
+    return this.subcampaniasService.obtenerPlan(id, request.planAuthId);
   }
 
   @Put(':id/plan')
+  @UseGuards(SubcampaniaPlanAuthGuard)
   @ApiGuardarPlan()
   // Único contrato para revisar la meta y las especies, también en ACTIVA.
   guardarPlan(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: GuardarPlanDto,
-    @Headers('x-auth-id') authId?: string,
+    @Req() request: PlanAuthenticatedRequest,
   ) {
-    return this.subcampaniasService.guardarPlan(
-      id,
-      dto,
-      this.requireAuthId(authId),
-    );
+    return this.subcampaniasService.guardarPlan(id, dto, request.planAuthId);
   }
 
   @Delete(':id')

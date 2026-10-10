@@ -1,4 +1,9 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { SubcampaniasAuthService } from '../application/subcampanias-auth.service';
 
@@ -36,12 +41,49 @@ describe('SubcampaniasAuthService', () => {
     );
   });
 
-  it('lanza NotFoundException si hay error de Supabase', async () => {
+  it('distingue un fallo de Supabase de un usuario inexistente', async () => {
     const supabase = createSupabase({ data: null, error: { message: 'boom' } });
     const service = new SubcampaniasAuthService(supabase);
 
     await expect(service.getUserByAuthId('x')).rejects.toThrow(
-      NotFoundException,
+      InternalServerErrorException,
+    );
+  });
+
+  it('rechaza una sesión cuyo usuario ya no existe', async () => {
+    const service = new SubcampaniasAuthService(
+      createSupabase({ data: null, error: null }),
+    );
+    await expect(service.getAuthenticatedUser('ghost')).rejects.toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  it('rechaza un auth_id vacío sin consultar la base', async () => {
+    const supabase = createSupabase({ data: null, error: null });
+    const service = new SubcampaniasAuthService(supabase);
+    await expect(service.getAuthenticatedUser('  ')).rejects.toThrow(
+      UnauthorizedException,
+    );
+    expect(supabase.getClient).not.toHaveBeenCalled();
+  });
+
+  it('mantiene 500 al fallar la verificación de una sesión por un error de base de datos', async () => {
+    const service = new SubcampaniasAuthService(
+      createSupabase({ data: null, error: { code: 'XX000' } }),
+    );
+    await expect(service.getAuthenticatedUser('auth-1')).rejects.toThrow(
+      InternalServerErrorException,
+    );
+  });
+
+  it('permite una sesión válida de un usuario GENERAL', async () => {
+    const usuario = { id: 5, nombre: 'General', rol: 'GENERAL' };
+    const service = new SubcampaniasAuthService(
+      createSupabase({ data: usuario, error: null }),
+    );
+    await expect(service.getAuthenticatedUser('auth-1')).resolves.toEqual(
+      usuario,
     );
   });
 
