@@ -12,7 +12,13 @@ CREATE TYPE public.rol_en_subcampania AS ENUM ('COORDINADOR', 'OPERARIO');
 CREATE TYPE public.motivo_cierre_lote AS ENUM ('AGOTADO', 'MIXTO');
 CREATE TYPE public.destino_tipo_vivero AS ENUM ('PLANTACION_CAMPANIA');
 CREATE TYPE public.origen_despacho_vivero AS ENUM ('ASIGNACION_SUBCAMPANIA');
-CREATE TYPE public.tipo_evento_plantacion AS ENUM ('ASIGNACION_VIVERO');
+CREATE TYPE public.tipo_evento_plantacion AS ENUM ('ASIGNACION_VIVERO', 'DEVOLUCION_A_VIVERO');
+CREATE TYPE public.tipo_evento_vivero AS ENUM ('EMBOLSADO', 'DESPACHO', 'DEVOLUCION_PLANTACION');
+CREATE TYPE public.motivo_devolucion_plantacion AS ENUM (
+  'SOBRANTE_OPERATIVO', 'ERROR_PLANIFICACION', 'CAMBIO_SUBCAMPANIA',
+  'CIERRE_SUBCAMPANIA', 'PROBLEMAS_CALIDAD_LOTE', 'CONDICIONES_CAMPO_NO_APTAS',
+  'ACCESO_RESTRINGIDO', 'CANCELACION_ACTIVIDAD', 'REASIGNACION_PRIORIDAD', 'OTRO'
+);
 
 CREATE TABLE public.usuario (id BIGINT PRIMARY KEY, nombre TEXT, rol TEXT);
 CREATE TABLE public.planta (
@@ -63,7 +69,7 @@ CREATE TABLE public.lote_vivero (
 CREATE TABLE public.evento_lote_vivero (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   lote_id BIGINT REFERENCES public.lote_vivero(id),
-  tipo_evento TEXT,
+  tipo_evento public.tipo_evento_vivero,
   fecha_evento DATE,
   responsable_id BIGINT REFERENCES public.usuario(id),
   cantidad_afectada INTEGER,
@@ -89,6 +95,8 @@ CREATE TABLE public.evento_plantacion (
   responsable_id BIGINT,
   observaciones TEXT,
   cantidad_asignada_evento INTEGER,
+  cantidad_devuelta INTEGER,
+  motivo_devolucion public.motivo_devolucion_plantacion,
   created_by BIGINT
 );
 CREATE TABLE public.tipos_entidad_evidencia (

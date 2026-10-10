@@ -20,4 +20,6 @@ Comandos:
 - `npm run test:e2e:db`: solo flujos DB/RPC.
 - `npm run test:db:plan`: ADR-PLA-05 contra un cluster PostgreSQL temporal aislado (sin `.env` ni Supabase compartido). Requiere `initdb`, `pg_ctl`, `createdb` y `psql` locales.
 
+`src/subcampanias/tests/subcampanias-plan.http.spec.ts` ejecuta el controlador, JWT y servicios reales sobre una API temporal en `127.0.0.1`, con Supabase sustituido. Necesita permiso local para abrir un socket, pero no usa `.env` ni un servicio externo. La suite DB aislada verifica también devoluciones concurrentes, permisos de lectura 063 y el SQL de diagnóstico manual. Las pruebas P0 contra Supabase real requieren `JWT_SECRET` y `SUPABASE_SERVICE_ROLE_KEY` y siguen siendo una ejecución aparte que escribe datos de prueba; no ejecutar sin un entorno autorizado.
+
 Regla practica: si un test necesita `.env`, Supabase real o datos semilla, no va en unit.

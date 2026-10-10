@@ -44,12 +44,10 @@ const rpcAsignacionOk = {
 function buildSupabase(opts: {
   loteEstado?: string;
   lotePlantaId?: number;
-  meta?: { planta_id: number } | null;
-  metaError?: { code: string; message: string };
   subcampania?: { id: number; nombre: string; estado: string } | null;
   asignacion?: Record<string, unknown> | null;
   rpcResult?: { data: unknown; error: unknown };
-}): { supabase: SupabaseService; rpc: jest.Mock; planEq: jest.Mock } {
+}): { supabase: SupabaseService; rpc: jest.Mock; from: jest.Mock } {
   const loteMaybeSingle = jest.fn().mockResolvedValue({
     data: {
       id: 55,
@@ -71,17 +69,6 @@ function buildSupabase(opts: {
   const subIs = jest.fn().mockReturnValue({ maybeSingle: subMaybeSingle });
   const subEq = jest.fn().mockReturnValue({ is: subIs });
   const subSelect = jest.fn().mockReturnValue({ eq: subEq });
-
-  const metaMaybeSingle = jest.fn().mockResolvedValue({
-    data: opts.meta === undefined ? { planta_id: 42 } : opts.meta,
-    error: opts.metaError ?? null,
-  });
-  const metaQuery = {
-    eq: jest.fn(),
-    maybeSingle: metaMaybeSingle,
-  };
-  metaQuery.eq.mockReturnValue(metaQuery);
-  const metaSelect = jest.fn().mockReturnValue(metaQuery);
 
   const asigMaybeSingle = jest.fn().mockResolvedValue({
     data:
@@ -105,21 +92,21 @@ function buildSupabase(opts: {
       opts.rpcResult ?? { data: rpcAsignacionOk, error: null },
     );
 
+  const from = jest.fn().mockImplementation((table: string) => {
+    if (table === 'lote_vivero') return { select: loteSelect };
+    if (table === 'subcampania') return { select: subSelect };
+    if (table === 'asignacion_vivero_subcampania')
+      return { select: asigSelect };
+    throw new Error(`Lectura no esperada: ${table}`);
+  });
   const supabase = {
     getClient: jest.fn().mockReturnValue({
       rpc,
-      from: jest.fn().mockImplementation((table: string) => {
-        if (table === 'lote_vivero') return { select: loteSelect };
-        if (table === 'subcampania') return { select: subSelect };
-        if (table === 'subcampania_meta_especie') return { select: metaSelect };
-        if (table === 'asignacion_vivero_subcampania')
-          return { select: asigSelect };
-        return {};
-      }),
+      from,
     }),
   } as unknown as SupabaseService;
 
-  return { supabase, rpc, planEq: metaQuery.eq };
+  return { supabase, rpc, from };
 }
 
 const baseDto: CrearAsignacionDto = {
@@ -168,39 +155,14 @@ describe('ViveroAsignacionesService — asignacion fisica (RF-VIV-11)', () => {
     expect(result.data.evidencia_ids_vinculadas).toEqual([501]);
   });
 
-  it('consulta el plan usando la especie del lote y la subcampaña destino', async () => {
-    const { supabase, planEq } = buildSupabase({});
+  it('acepta una especie recién incorporada usando la validación transaccional sin preleer el plan', async () => {
+    const { supabase, rpc, from } = buildSupabase({});
     const service = new ViveroAsignacionesService(supabase, buildAuthService());
 
     await service.crearAsignacion(55, baseDto, 'auth-1');
 
-    expect(planEq).toHaveBeenCalledWith('subcampania_id', 33);
-    expect(planEq).toHaveBeenCalledWith('planta_id', 42);
-  });
-
-  it('rechaza con 422 una especie fuera del plan antes de descontar stock', async () => {
-    const { supabase, rpc } = buildSupabase({ lotePlantaId: 13, meta: null });
-    const service = new ViveroAsignacionesService(supabase, buildAuthService());
-
-    const action = service.crearAsignacion(55, baseDto, 'auth-1');
-
-    await expect(action).rejects.toThrow(UnprocessableEntityException);
-    await expect(action).rejects.toThrow('Sub QA');
-    await expect(action).rejects.toThrow('no está en el plan');
-    expect(rpc).not.toHaveBeenCalled();
-  });
-
-  it('no entrega plantas si falla la lectura del plan', async () => {
-    const { supabase, rpc } = buildSupabase({
-      meta: null,
-      metaError: { code: 'XX000', message: 'Error de lectura' },
-    });
-    const service = new ViveroAsignacionesService(supabase, buildAuthService());
-
-    await expect(
-      service.crearAsignacion(55, baseDto, 'auth-1'),
-    ).rejects.toThrow(InternalServerErrorException);
-    expect(rpc).not.toHaveBeenCalled();
+    expect(from).not.toHaveBeenCalledWith('subcampania_meta_especie');
+    expect(rpc).toHaveBeenCalledTimes(1);
   });
 
   it('propaga como 422 el guard transaccional de especie fuera del plan', async () => {
@@ -253,7 +215,6 @@ describe('ViveroAsignacionesService — asignacion fisica (RF-VIV-11)', () => {
   it('acepta REPOSICION contra subcampaña COMPLETADA', async () => {
     const { supabase } = buildSupabase({
       subcampania: { id: 33, nombre: 'Sub QA', estado: 'COMPLETADA' },
-      meta: null,
       rpcResult: {
         data: { ...rpcAsignacionOk, proposito: 'REPOSICION' },
         error: null,

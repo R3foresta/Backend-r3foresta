@@ -1,7 +1,7 @@
 // ADR-PLA-05. Nunca usa .env/Supabase compartido: inicia y destruye su propio
 // cluster PostgreSQL, con TCP deshabilitado y socket privado en un tempdir.
 // Requiere initdb, pg_ctl y psql instalados localmente. Carga las RPC reales
-// 060/061 y 062 sobre una fixture acotada (GPS fuera del alcance de este ADR).
+// 054/056 y 060–063 sobre una fixture acotada (GPS fuera del alcance de este ADR).
 import { execFile } from 'node:child_process';
 import { mkdtemp, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -136,6 +136,11 @@ describe('ADR-PLA-05 — revision atomica del plan en PostgreSQL aislado', () =>
     ) r;`;
   }
 
+  const returnSql = (asignacion: number, cantidad: number) =>
+    `SELECT to_jsonb(r) FROM public.fn_m3_devolver_asignacion_vivero(
+      ${asignacion}, ${cantidad}, 'SOBRANTE_OPERATIVO', 1, CURRENT_DATE, NULL
+    ) r;`;
+
   async function holdTransaction(query: string, name: string) {
     const completion = sql(
       `BEGIN; ${query} SELECT pg_sleep(0.4); COMMIT;`,
@@ -189,9 +194,12 @@ describe('ADR-PLA-05 — revision atomica del plan en PostgreSQL aislado', () =>
       'migrations/024_vivero_asignacion_subcampania.sql',
       'migrations/030_m3_registro_plantacion.sql',
       'migrations/047_m3_cancelacion_subcampania_y_plan.sql',
+      'migrations/054_m3_devolucion_fisica.sql',
+      'migrations/056_fix_devolucion_saldo_constraint.sql',
       'migrations/060_vivero_asignacion_validar_plan_especie.sql',
       'migrations/061_plantacion_meta_especie_orientativa.sql',
       'migrations/062_subcampania_revision_plan_atomica.sql',
+      'migrations/063_subcampania_plan_lectura_backend.sql',
     ];
     for (const file of files) {
       await execute('psql', [
@@ -622,6 +630,223 @@ describe('ADR-PLA-05 — revision atomica del plan en PostgreSQL aislado', () =>
         `SELECT total_plantado_inicial FROM public.subcampania WHERE id=${subId};`,
       ),
     ).toBe('5');
+  });
+
+  it('una lectura durante una revisión sin commit conserva el snapshot anterior completo', async () => {
+    const before = await getPlan();
+    const { completion } = await holdTransaction(
+      revisionSql(60, [meta(1, 30, 50), meta(2, 30, 50)]),
+      `snapshot_${subId}`,
+    );
+    try {
+      expect(await getPlan()).toEqual(before);
+    } finally {
+      await completion;
+    }
+    const after = await getPlan();
+    expect(after).toMatchObject({ meta_total_arboles: 60, plan_revision: 1 });
+    expect(
+      after.metas.map(({ cantidad_objetivo }) => cantidad_objetivo),
+    ).toEqual([30, 30]);
+  });
+
+  it('asigna una especie nueva esperando el commit de su incorporación al plan', async () => {
+    const assignment = await assignmentSql(2, 5);
+    const { completion } = await holdTransaction(
+      revisionSql(40, [meta(1, 20, 50), meta(2, 20, 50)]),
+      `add_species_${subId}`,
+    );
+    const results = await Promise.allSettled([completion, json(assignment)]);
+    expect(results.every((result) => result.status === 'fulfilled')).toBe(true);
+    expect(
+      await sql(
+        `SELECT saldo_vivo_actual FROM public.lote_vivero WHERE id=${subId * 10 + 2};`,
+      ),
+    ).toBe('15');
+    expect(
+      await sql(
+        `SELECT SUM(saldo_asignado_disponible) FROM public.asignacion_vivero_subcampania WHERE subcampania_id=${subId};`,
+      ),
+    ).toBe('5');
+    expect((await getPlan()).plan_revision).toBe(1);
+  });
+
+  it('plantación detrás de una revisión admite superar la nueva meta y conserva stock físico', async () => {
+    const assignment = await assign(1, 10);
+    const planting = await plantingSql(assignment.asignacion_id, 1, 10);
+    const { completion } = await holdTransaction(
+      revisionSql(5, [meta(1, 5)]),
+      `lower_goal_${subId}`,
+    );
+    const results = await Promise.allSettled([completion, json(planting)]);
+    expect(results.every((result) => result.status === 'fulfilled')).toBe(true);
+    expect(
+      await sql(
+        `SELECT total_plantado_inicial FROM public.subcampania WHERE id=${subId};`,
+      ),
+    ).toBe('10');
+    expect(
+      await sql(
+        `SELECT saldo_vivo_actual FROM public.lote_vivero WHERE id=${subId * 10 + 1};`,
+      ),
+    ).toBe('50');
+    expect((await getPlan()).meta_total_arboles).toBe(5);
+  });
+
+  it('una devolución completa permite retirar la especie sin perder stock ni su historial físico', async () => {
+    const assignment = await assign(1, 10);
+    await sql(returnSql(assignment.asignacion_id, 10));
+    const before = await snapshot();
+    await sql(revisionSql(40, [meta(2, 40)]));
+    const after = await snapshot();
+    expect(after.asignaciones).toEqual(before.asignaciones);
+    expect(after.lotes).toEqual(before.lotes);
+    expect(
+      await sql(
+        `SELECT saldo_vivo_actual FROM public.lote_vivero WHERE id=${subId * 10 + 1};`,
+      ),
+    ).toBe('60');
+    expect(
+      await sql(
+        `SELECT COUNT(*) FROM public.evento_lote_vivero WHERE asignacion_id=${assignment.asignacion_id} AND tipo_evento='DEVOLUCION_PLANTACION';`,
+      ),
+    ).toBe('1');
+    expect((await getPlan()).metas[0].planta_id).toBe(2);
+  });
+
+  it('una devolución parcial mantiene protegida la especie con saldo inicial restante', async () => {
+    const assignment = await assign(1, 10);
+    await sql(returnSql(assignment.asignacion_id, 4));
+    const before = await snapshot();
+    await expect(sql(revisionSql(40, [meta(2, 40)]))).rejects.toThrow(
+      /stock disponible/i,
+    );
+    expect(await snapshot()).toEqual(before);
+    expect(
+      await sql(
+        `SELECT saldo_asignado_disponible FROM public.asignacion_vivero_subcampania WHERE id=${assignment.asignacion_id};`,
+      ),
+    ).toBe('6');
+  });
+
+  it('no retira una especie apoyándose en una devolución todavía sin commit', async () => {
+    const assignment = await assign(1, 10);
+    const { completion } = await holdTransaction(
+      returnSql(assignment.asignacion_id, 10),
+      `return_${subId}`,
+    );
+    const results = await Promise.allSettled([
+      completion,
+      sql(revisionSql(40, [meta(2, 40)])),
+    ]);
+    expect(results[0].status).toBe('fulfilled');
+    expect(results[1].status).toBe('rejected');
+    expect(String((results[1] as PromiseRejectedResult).reason)).toMatch(
+      /stock disponible/i,
+    );
+    expect((await getPlan()).plan_revision).toBe(0);
+    await sql(revisionSql(40, [meta(2, 40)]));
+    expect((await getPlan()).plan_revision).toBe(1);
+    expect(
+      await sql(
+        `SELECT saldo_vivo_actual FROM public.lote_vivero WHERE id=${subId * 10 + 1};`,
+      ),
+    ).toBe('60');
+  });
+
+  it('devolución y ajuste concurrentes conservan cantidades físicas y una sola auditoría del plan', async () => {
+    const assignment = await assign(1, 10);
+    const { completion } = await holdTransaction(
+      revisionSql(60, [meta(1, 60)]),
+      `revision_return_${subId}`,
+    );
+    const results = await Promise.allSettled([
+      completion,
+      sql(returnSql(assignment.asignacion_id, 10)),
+    ]);
+    expect(results.every((result) => result.status === 'fulfilled')).toBe(true);
+    expect(
+      await sql(
+        `SELECT saldo_vivo_actual FROM public.lote_vivero WHERE id=${subId * 10 + 1};`,
+      ),
+    ).toBe('60');
+    expect(
+      await sql(
+        `SELECT cantidad_devuelta FROM public.asignacion_vivero_subcampania WHERE id=${assignment.asignacion_id};`,
+      ),
+    ).toBe('10');
+    expect(
+      await sql(
+        `SELECT COUNT(*) FROM public.subcampania_historial WHERE subcampania_id=${subId} AND tipo_historial='PLAN_REVISADO';`,
+      ),
+    ).toBe('1');
+    expect((await getPlan()).plan_revision).toBe(1);
+  });
+
+  it('063 obliga a consultar el snapshot mediante el backend y conserva los datos', async () => {
+    for (const role of ['anon', 'authenticated']) {
+      expect(
+        await sql(
+          `SELECT has_function_privilege('${role}', 'public.fn_subcampania_obtener_plan(bigint)', 'EXECUTE');`,
+        ),
+      ).toBe('f');
+      await expect(
+        sql(
+          `SET ROLE ${role}; SELECT public.fn_subcampania_obtener_plan(${subId});`,
+        ),
+      ).rejects.toThrow(/permission denied for function/i);
+    }
+    const result = await json<Plan>(
+      `SET ROLE service_role; SELECT public.fn_subcampania_obtener_plan(${subId});`,
+    );
+    expect(result).toEqual(await getPlan());
+  });
+
+  it('reaplicar 063 conserva datos, historial y permisos del snapshot', async () => {
+    await sql(revisionSql(60, [meta(1, 60)]));
+    const before = await snapshot();
+    await execute('psql', [
+      '-X',
+      '-q',
+      '--single-transaction',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-h',
+      socket,
+      '-p',
+      port,
+      '-d',
+      database,
+      '-f',
+      join(repo, 'migrations/063_subcampania_plan_lectura_backend.sql'),
+    ]);
+    expect(await snapshot()).toEqual(before);
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      expect(
+        await sql(
+          `SELECT has_function_privilege('${role}', 'public.fn_subcampania_obtener_plan(bigint)', 'EXECUTE');`,
+        ),
+      ).toBe(role === 'service_role' ? 't' : 'f');
+    }
+  });
+
+  it('el diagnóstico manual es SQL válido de solo lectura y conserva el snapshot', async () => {
+    const before = await snapshot();
+    await execute('psql', [
+      '-X',
+      '-q',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-h',
+      socket,
+      '-p',
+      port,
+      '-d',
+      database,
+      '-f',
+      join(repo, 'documentacion/sql/verificar_subcampania_plan_062_063.sql'),
+    ]);
+    expect(await snapshot()).toEqual(before);
   });
 
   it('restringe la RPC de revision al backend service_role', async () => {
