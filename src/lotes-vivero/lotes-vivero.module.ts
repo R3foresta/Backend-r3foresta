@@ -1,3 +1,4 @@
+import { ActorModule } from '../auth/actor.module';
 import { Module } from '@nestjs/common';
 import { EvidenceFileService } from '../common/files/evidence-file.service';
 import { SupabaseModule } from '../supabase/supabase.module';
@@ -20,7 +21,7 @@ import { ViveroSnapshotsService } from './application/vivero-snapshots.service';
 import { ViveroTimelineService } from './application/vivero-timeline.service';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [ActorModule, SupabaseModule],
   controllers: [LotesViveroController],
   providers: [
     LotesViveroService,

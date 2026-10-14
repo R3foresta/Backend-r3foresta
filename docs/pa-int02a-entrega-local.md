@@ -1,5 +1,7 @@
 # PA-T-INT02-A — entrega local para revisión
 
+> **Continuación del 14 de octubre:** privacidad, PWA y QA real actualizados en [el informe de integración](pa-int02a-continuacion-2026-10-14.md). 066/067 se aplicaron y verificaron en desarrollo; el texto del 13 que sigue conserva la evidencia histórica y sus pendientes de ese momento. Producción/piloto no habilitados.
+
 Fecha: 2026-10-13. Base revisada: backend `ae19480bac9ccb2015fe825cbbc8a720972074e9`; PWA `6520b6beb3096b83d27e461dd155fa5631195386`. Ambos árboles estaban limpios antes de editar. Esta nota distingue código/pruebas locales y resultados SQL aportados por Pablo en desarrollo: conciliación, 064 y 065 confirmadas por esos resultados. El agente no se conectó al remoto. Publicación y habilitación del piloto siguen pendientes.
 
 ## Comportamiento implementado

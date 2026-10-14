@@ -48,7 +48,7 @@ export class OrganizacionesService {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertAdmin(usuario.rol);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: inserted, error: insertError } = await supabase
       .from('organizacion')
@@ -118,7 +118,7 @@ export class OrganizacionesService {
   }
 
   async listar(filtros: ListarOrganizacionesFiltros) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     let query = supabase
       .from('organizacion')
       .select(SELECT_COLUMNS)
@@ -162,7 +162,7 @@ export class OrganizacionesService {
 
     patch.updated_at = new Date().toISOString();
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('organizacion')
       .update(patch)
@@ -192,7 +192,7 @@ export class OrganizacionesService {
     const actual = await this.cargar(id);
     const nuevaUrl = await this.logoService.subir(id, file);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('organizacion')
       .update({
@@ -227,7 +227,7 @@ export class OrganizacionesService {
       return { success: true, data: actual };
     }
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('organizacion')
       .update({ logo_url: null, updated_at: new Date().toISOString() })
@@ -253,7 +253,7 @@ export class OrganizacionesService {
 
     const actual = await this.cargar(id);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { count, error: countError } = await supabase
       .from('campania_organizacion')
       .select('id', { count: 'exact', head: true })
@@ -333,7 +333,7 @@ export class OrganizacionesService {
   }
 
   private async cargar(id: number): Promise<OrganizacionRow> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('organizacion')
       .select(SELECT_COLUMNS)

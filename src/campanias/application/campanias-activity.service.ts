@@ -41,7 +41,7 @@ export class CampaniasActivityService {
       throw new BadRequestException('limit debe ser un entero entre 1 y 50.');
     }
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     // Por defecto incluye subcampañas soft-deleted para que el feed muestre
     // eventos SUBCAMPANIA_CANCELADA (fn_subcampania_cancelar marca deleted_at

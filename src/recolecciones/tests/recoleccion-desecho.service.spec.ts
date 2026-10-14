@@ -40,6 +40,7 @@ describe('RecoleccionDesechoService', () => {
       },
     );
     const supabaseService = {
+      getAdminClient: jest.fn().mockReturnValue(supabase.client),
       getClient: jest.fn().mockReturnValue(supabase.client),
     };
     const authService = {
@@ -81,6 +82,7 @@ describe('RecoleccionDesechoService', () => {
     );
     const service = new RecoleccionDesechoService(
       {
+        getAdminClient: jest.fn().mockReturnValue(supabase.client),
         getClient: jest.fn().mockReturnValue(supabase.client),
       } as unknown as SupabaseService,
       {
@@ -100,6 +102,7 @@ describe('RecoleccionDesechoService', () => {
     const supabase = createSupabaseMock({ id: 31, usuario_id: 7 }, null);
     const service = new RecoleccionDesechoService(
       {
+        getAdminClient: jest.fn().mockReturnValue(supabase.client),
         getClient: jest.fn().mockReturnValue(supabase.client),
       } as unknown as SupabaseService,
       {

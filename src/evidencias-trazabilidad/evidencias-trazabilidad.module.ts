@@ -1,3 +1,4 @@
+import { ActorModule } from '../auth/actor.module';
 import { Module } from '@nestjs/common';
 import { EvidenceFileService } from '../common/files/evidence-file.service';
 import { SupabaseModule } from '../supabase/supabase.module';
@@ -5,7 +6,7 @@ import { EvidenciasTrazabilidadController } from './evidencias-trazabilidad.cont
 import { EvidenciasTrazabilidadService } from './evidencias-trazabilidad.service';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [ActorModule, SupabaseModule],
   controllers: [EvidenciasTrazabilidadController],
   providers: [EvidenciasTrazabilidadService, EvidenceFileService],
   exports: [EvidenciasTrazabilidadService],

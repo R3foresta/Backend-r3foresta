@@ -1,0 +1,131 @@
+{
+  "cuentas": 39,
+  "servidor": "17.6",
+  "cuenta_qa": {
+    "rol": "GENERAL",
+    "activo": true,
+    "usuario_id": "48",
+    "revision_autoridad": 0,
+    "afiliacion_original_restaurada": true
+  },
+  "privilegios": [
+    {
+      "rol": "anon",
+      "tabla": "public.organizacion",
+      "delete": false,
+      "insert": false,
+      "select": true,
+      "update": false,
+      "trigger": false,
+      "maintain": false,
+      "truncate": false,
+      "references": false
+    },
+    {
+      "rol": "anon",
+      "tabla": "public.usuario",
+      "delete": false,
+      "insert": false,
+      "select": false,
+      "update": false,
+      "trigger": false,
+      "maintain": false,
+      "truncate": false,
+      "references": false
+    },
+    {
+      "rol": "anon",
+      "tabla": "public.usuario_credencial",
+      "delete": false,
+      "insert": false,
+      "select": false,
+      "update": false,
+      "trigger": false,
+      "maintain": false,
+      "truncate": false,
+      "references": false
+    },
+    {
+      "rol": "authenticated",
+      "tabla": "public.organizacion",
+      "delete": false,
+      "insert": false,
+      "select": true,
+      "update": false,
+      "trigger": false,
+      "maintain": false,
+      "truncate": false,
+      "references": false
+    },
+    {
+      "rol": "authenticated",
+      "tabla": "public.usuario",
+      "delete": false,
+      "insert": false,
+      "select": false,
+      "update": false,
+      "trigger": false,
+      "maintain": false,
+      "truncate": false,
+      "references": false
+    },
+    {
+      "rol": "authenticated",
+      "tabla": "public.usuario_credencial",
+      "delete": false,
+      "insert": false,
+      "select": false,
+      "update": false,
+      "trigger": false,
+      "maintain": false,
+      "truncate": false,
+      "references": false
+    },
+    {
+      "rol": "service_role",
+      "tabla": "public.organizacion",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "trigger": true,
+      "maintain": true,
+      "truncate": true,
+      "references": true
+    },
+    {
+      "rol": "service_role",
+      "tabla": "public.usuario",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "trigger": true,
+      "maintain": true,
+      "truncate": true,
+      "references": true
+    },
+    {
+      "rol": "service_role",
+      "tabla": "public.usuario_credencial",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "trigger": true,
+      "maintain": true,
+      "truncate": true,
+      "references": true
+    }
+  ],
+  "observado_en": "2026-10-14T15:03:44.762667+00:00",
+  "roles_cuentas": {
+    "ADMIN": 5,
+    "GENERAL": 32,
+    "VOLUNTARIO": 2
+  },
+  "config_service_role": [
+    "statement_timeout=30s",
+    "lock_timeout=5s"
+  ]
+}

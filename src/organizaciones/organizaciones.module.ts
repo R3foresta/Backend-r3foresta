@@ -1,3 +1,4 @@
+import { ActorModule } from '../auth/actor.module';
 import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { OrganizacionesAuthService } from './organizaciones-auth.service';
@@ -6,7 +7,7 @@ import { OrganizacionesLogoService } from './organizaciones-logo.service';
 import { OrganizacionesService } from './organizaciones.service';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [ActorModule, SupabaseModule],
   controllers: [OrganizacionesController],
   providers: [
     OrganizacionesService,

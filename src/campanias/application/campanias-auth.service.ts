@@ -17,7 +17,7 @@ export class CampaniasAuthService {
 
   async getUserByAuthId(authId: string): Promise<CampaniaUsuario> {
     const { data, error } = await this.supabaseService
-      .getClient()
+      .getAdminClient()
       .from('usuario')
       .select('id, nombre, rol')
       .eq('auth_id', authId)

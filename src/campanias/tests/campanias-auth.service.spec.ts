@@ -8,6 +8,7 @@ function createSupabase(result: { data: any; error: any }): SupabaseService {
   const select = jest.fn().mockReturnValue({ eq });
   const from = jest.fn().mockReturnValue({ select });
   return {
+    getAdminClient: jest.fn().mockReturnValue({ from }),
     getClient: jest.fn().mockReturnValue({ from }),
   } as unknown as SupabaseService;
 }

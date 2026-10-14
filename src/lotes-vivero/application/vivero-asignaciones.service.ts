@@ -88,7 +88,7 @@ export class ViveroAsignacionesService {
     dto: CrearAsignacionDto,
     authId: string,
   ) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertCanWrite(usuario.rol);
@@ -233,7 +233,7 @@ export class ViveroAsignacionesService {
   }
 
   async listarAsignaciones(loteId: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     // Verificar que el lote existe
     const { data: lote, error: loteError } = await supabase
@@ -336,7 +336,7 @@ export class ViveroAsignacionesService {
     dto: DevolverAsignacionDto,
     authId: string,
   ) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertCanWrite(usuario.rol);

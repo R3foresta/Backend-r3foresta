@@ -85,6 +85,14 @@ function buildSupabaseAgregar(opts: {
   });
 
   return {
+    getAdminClient: jest.fn().mockReturnValue({
+      from: jest.fn().mockImplementation((table: string) => {
+        if (table === 'subcampania') return { select: subSelect };
+        if (table === 'subcampania_equipo')
+          return { select: equipoSelect, insert };
+        return {};
+      }),
+    }),
     getClient: jest.fn().mockReturnValue({
       from: jest.fn().mockImplementation((table: string) => {
         if (table === 'subcampania') return { select: subSelect };
@@ -128,6 +136,14 @@ function buildSupabaseQuitar(opts: {
   const del = jest.fn().mockReturnValue({ eq: delEq1 });
 
   return {
+    getAdminClient: jest.fn().mockReturnValue({
+      from: jest.fn().mockImplementation((table: string) => {
+        if (table === 'subcampania') return { select: subSelect };
+        if (table === 'subcampania_equipo')
+          return { select: miembroSelect, delete: del };
+        return {};
+      }),
+    }),
     getClient: jest.fn().mockReturnValue({
       from: jest.fn().mockImplementation((table: string) => {
         if (table === 'subcampania') return { select: subSelect };

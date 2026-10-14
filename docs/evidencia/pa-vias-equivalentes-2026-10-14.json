@@ -1,0 +1,9 @@
+{
+  "credenciales": [
+    {"rol": "authenticated", "delete": true, "insert": true, "select": true, "update": true},
+    {"rol": "anon", "delete": true, "insert": true, "select": true, "update": true},
+    {"rol": "service_role", "delete": true, "insert": true, "select": true, "update": true}
+  ],
+  "definers_publicos": [],
+  "vistas_organizacion": []
+}

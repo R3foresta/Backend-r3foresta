@@ -27,6 +27,7 @@ describe('ViveroInicioService', () => {
     // sin tocar la base de datos real.
     rpc = jest.fn();
     const supabaseService = {
+      getAdminClient: jest.fn().mockReturnValue({ rpc }),
       getClient: jest.fn().mockReturnValue({ rpc }),
     } as unknown as SupabaseService;
 

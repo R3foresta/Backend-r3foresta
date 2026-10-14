@@ -1,3 +1,4 @@
+import { ActorModule } from '../auth/actor.module';
 import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { PlantacionesController } from './api/plantaciones.controller';
@@ -7,7 +8,7 @@ import { PlantacionEvidenciasService } from './application/plantacion-evidencias
 import { PlantacionesService } from './application/plantaciones.service';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [ActorModule, SupabaseModule],
   controllers: [PlantacionesController],
   providers: [
     PlantacionesService,

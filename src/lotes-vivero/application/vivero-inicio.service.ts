@@ -31,7 +31,7 @@ export class ViveroInicioService {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertCanWrite(usuario.rol);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     let lastError: any = null;
 
     for (let intento = 1; intento <= 5; intento++) {

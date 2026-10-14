@@ -83,7 +83,7 @@ export class SubcampaniasActivacionService {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertAdmin(usuario.rol);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: actualData, error: fetchError } = await supabase
       .from('subcampania')
@@ -223,7 +223,7 @@ export class SubcampaniasActivacionService {
       cantidad_objetivo: number;
     }[]
   > {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('subcampania_meta_especie')
       .select('planta_id, porcentaje_objetivo, cantidad_objetivo')
@@ -254,7 +254,7 @@ export class SubcampaniasActivacionService {
       saldo_asignado_disponible: number;
     }[]
   > {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('asignacion_vivero_subcampania')
       .select(

@@ -16,12 +16,10 @@ function buildSupabase(config: {
       chain.select = jest.fn().mockReturnValue(chain);
       chain.is = jest.fn().mockReturnValue(chain);
       chain.eq = jest.fn().mockReturnValue(chain);
-      chain.single = jest
-        .fn()
-        .mockResolvedValue({
-          data: config.subcampanias[0] ?? null,
-          error: null,
-        });
+      chain.single = jest.fn().mockResolvedValue({
+        data: config.subcampanias[0] ?? null,
+        error: null,
+      });
       chain.order = jest
         .fn()
         .mockResolvedValue({ data: config.subcampanias, error: null });
@@ -92,6 +90,10 @@ function buildSupabase(config: {
   });
 
   return {
+    getAdminClient: jest.fn().mockReturnValue({
+      from: fromMock,
+      rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
+    }),
     getClient: jest.fn().mockReturnValue({
       from: fromMock,
       rpc: jest.fn().mockResolvedValue({ data: null, error: null }),

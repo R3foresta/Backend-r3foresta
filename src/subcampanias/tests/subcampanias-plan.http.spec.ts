@@ -99,7 +99,24 @@ describe('GET/PUT plan — contrato HTTP y sesión', () => {
           provide: SupabaseService,
           useValue: {
             getClient: () => ({ from }),
-            getAdminClient: () => ({ from, rpc }),
+            getAdminClient: () => ({
+              from,
+              rpc: async (name: string, params: Record<string, unknown>) => {
+                if (name !== 'pa_actor_verificar')
+                  return rpc(name, params) as { data: unknown; error: unknown };
+                const result = await single(String(params.p_auth_id));
+                return {
+                  error: result.error,
+                  data: result.data
+                    ? {
+                        usuario_id: String(result.data.id),
+                        rol: result.data.rol,
+                        activo: (result.data as { activo?: boolean }).activo,
+                      }
+                    : null,
+                };
+              },
+            }),
           },
         },
         ...[
@@ -300,6 +317,7 @@ describe('GET/PUT plan — contrato HTTP y sesión', () => {
   it('PATCH no permite modificar meta junto con otros campos', async () => {
     await request(app.getHttpServer())
       .patch('/api/subcampanias/1')
+      .set('Authorization', `Bearer ${token('admin')}`)
       .set('x-auth-id', 'admin')
       .send({ meta_total_arboles: 60, descripcion: 'Cambio' })
       .expect(422);
@@ -322,7 +340,24 @@ describe('GET/PUT plan — contrato HTTP y sesión', () => {
       .overrideProvider(SupabaseService)
       .useValue({
         getClient: () => ({ from }),
-        getAdminClient: () => ({ from, rpc }),
+        getAdminClient: () => ({
+          from,
+          rpc: async (name: string, params: Record<string, unknown>) => {
+            if (name !== 'pa_actor_verificar')
+              return rpc(name, params) as { data: unknown; error: unknown };
+            const result = await single(String(params.p_auth_id));
+            return {
+              error: result.error,
+              data: result.data
+                ? {
+                    usuario_id: String(result.data.id),
+                    rol: result.data.rol,
+                    activo: (result.data as { activo?: boolean }).activo,
+                  }
+                : null,
+            };
+          },
+        }),
       })
       .compile();
     try {

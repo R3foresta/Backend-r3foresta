@@ -43,7 +43,7 @@ export class RecoleccionConsultasService {
   ) {}
 
   async getRawRecoleccion(id: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('recoleccion')
       .select('*')
@@ -62,7 +62,7 @@ export class RecoleccionConsultasService {
     authId: string,
     userRole: string,
   ) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const page = filters.page || 1;
     const limit = Math.min(filters.limit || 10, 50);
     const offset = (page - 1) * limit;
@@ -107,7 +107,7 @@ export class RecoleccionConsultasService {
   }
 
   async findAll(authId: string, filters: FiltersRecoleccionDto) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const usuario = await this.authService.getUserByAuthId(authId);
     const page = filters.page || 1;
     const limit = Math.min(filters.limit || 10, 50);
@@ -164,7 +164,7 @@ export class RecoleccionConsultasService {
   }
 
   async findStockSummary(authId: string) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertAdminRole(usuario.rol);
 
@@ -306,7 +306,7 @@ export class RecoleccionConsultasService {
   }
 
   async findByVivero(viveroId: number, filters: FiltersRecoleccionDto) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data: vivero, error: viveroError } = await supabase
       .from('vivero')
       .select('id')
@@ -355,7 +355,7 @@ export class RecoleccionConsultasService {
   }
 
   async findOne(id: number, cantidadSolicitadaVivero?: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('recoleccion')
       .select(
@@ -538,7 +538,7 @@ export class RecoleccionConsultasService {
   private async findPlantIdsBySearchTerm(
     searchTerm: string,
   ): Promise<number[]> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('planta')
       .select('id')

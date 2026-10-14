@@ -87,7 +87,7 @@ export class ViveroDespachoService {
     authId: string,
     files: ViveroEvidenceFileInput[],
   ) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')
@@ -183,7 +183,7 @@ export class ViveroDespachoService {
       loteId,
     );
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data, error } = await supabase
       .rpc('fn_vivero_registrar_despacho', {
@@ -242,7 +242,7 @@ export class ViveroDespachoService {
   // Devuelve todos los eventos DESPACHO del lote con sus evidencias.
   // ---------------------------------------------------------------------------
   async obtenerDespachos(loteId: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: loteData, error: loteError } = await supabase
       .from('lote_vivero')

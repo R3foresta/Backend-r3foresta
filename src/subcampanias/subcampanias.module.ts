@@ -1,3 +1,4 @@
+import { ActorModule } from '../auth/actor.module';
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { SupabaseModule } from '../supabase/supabase.module';
@@ -19,7 +20,7 @@ import { SubcampaniasPoligonoService } from './application/subcampanias-poligono
 import { SubcampaniasService } from './application/subcampanias.service';
 
 @Module({
-  imports: [SupabaseModule, AuthModule],
+  imports: [ActorModule, SupabaseModule, AuthModule],
   controllers: [SubcampaniasController],
   providers: [
     SubcampaniaPlanAuthGuard,

@@ -65,7 +65,7 @@ export class ViveroConsultasService {
   ) {}
 
   async listarLotes(filters: FiltrarLotesViveroDto) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const page = filters.page || 1;
     const limit = Math.min(filters.limit || 20, 50);
     const offset = (page - 1) * limit;
@@ -186,7 +186,7 @@ export class ViveroConsultasService {
   // (RN-VIV-10/RN-VIV-33).
   // ---------------------------------------------------------------------------
   async obtenerDetalle(loteId: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: loteRow, error: loteError } = await supabase
       .from('lote_vivero')

@@ -35,7 +35,7 @@ export class RecoleccionDesechoService {
     authId: string,
   ) {
     const usuario = await this.authService.getUserByAuthId(authId);
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: recoleccion, error: recoleccionError } = await supabase
       .from('recoleccion')

@@ -65,6 +65,7 @@ function buildSupabase(config: {
   });
 
   return {
+    getAdminClient: jest.fn().mockReturnValue({ from: fromMock }),
     getClient: jest.fn().mockReturnValue({ from: fromMock }),
   } as unknown as SupabaseService;
 }
@@ -239,7 +240,8 @@ describe('CampaniasActivityService', () => {
       buildConsultasService(),
     );
     await service.listar(1, 5, { soloSubcampaniasVivas: true });
-    const client: any = (supabase.getClient as jest.Mock).mock.results[0].value;
+    const client: any = (supabase.getAdminClient as jest.Mock).mock.results[0]
+      .value;
     const fromCalls = (client.from as jest.Mock).mock.calls.map(
       (c: any[]) => c[0],
     );
@@ -257,7 +259,8 @@ describe('CampaniasActivityService', () => {
       buildConsultasService(),
     );
     await service.listar(1, 5);
-    const client: any = (supabase.getClient as jest.Mock).mock.results[0].value;
+    const client: any = (supabase.getAdminClient as jest.Mock).mock.results[0]
+      .value;
     const fromCalls = (client.from as jest.Mock).mock.calls.map(
       (c: any[]) => c[0],
     );

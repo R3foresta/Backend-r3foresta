@@ -265,7 +265,13 @@ export class UsersService {
       BigInt(actor.usuario_id) <= BigInt(Number.MAX_SAFE_INTEGER)
         ? Number(actor.usuario_id)
         : actor.usuario_id;
-    return { ...legacy, id };
+    const { data: perfil } = await this.perfil.leer(actor);
+    return {
+      ...legacy,
+      id,
+      organizacion: perfil.afiliacion?.nombre ?? null,
+      afiliacion: perfil.afiliacion,
+    };
   }
 
   async listarParaSelector(filtros: { q?: string; rol?: string }): Promise<

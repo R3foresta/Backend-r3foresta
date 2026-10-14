@@ -1,3 +1,5 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { InternalActorGuard } from '../auth/internal-actor.guard';
 import {
   Body,
   Controller,
@@ -11,6 +13,7 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
@@ -28,6 +31,8 @@ import { CreateEvidenciaRecoleccionDto } from './dto/create-evidencia-recoleccio
 import { ListEvidenciasTrazabilidadDto } from './dto/list-evidencias-trazabilidad.dto';
 
 @ApiTags('evidencias-trazabilidad')
+@ApiBearerAuth()
+@UseGuards(InternalActorGuard)
 @Controller('evidencias-trazabilidad')
 export class EvidenciasTrazabilidadController {
   constructor(

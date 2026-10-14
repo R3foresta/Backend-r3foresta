@@ -77,7 +77,7 @@ export class PlantacionCreationService {
       throw err;
     }
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data, error } = await supabase
       .rpc('fn_m3_registrar_plantacion', {

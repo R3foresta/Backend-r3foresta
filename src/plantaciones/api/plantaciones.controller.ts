@@ -1,3 +1,4 @@
+import { InternalActorGuard } from '../../auth/internal-actor.guard';
 import {
   BadRequestException,
   Body,
@@ -9,8 +10,9 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PlantacionesService } from '../application/plantaciones.service';
 import {
   ApiCrearEvidenciaPendientePlantacion,
@@ -22,6 +24,8 @@ import { DescartarEvidenciasPendientesPlantacionDto } from './dto/descartar-evid
 import { RegistrarPlantacionDto } from './dto/registrar-plantacion.dto';
 
 @ApiTags('plantaciones')
+@ApiBearerAuth()
+@UseGuards(InternalActorGuard)
 @Controller('registros-plantacion')
 export class PlantacionesController {
   constructor(private readonly plantacionesService: PlantacionesService) {}

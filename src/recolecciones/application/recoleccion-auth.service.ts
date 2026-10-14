@@ -16,7 +16,7 @@ export class RecoleccionAuthService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   async getUserByAuthId(authId: string): Promise<RecoleccionUsuario> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('usuario')
       .select('id, nombre, rol')

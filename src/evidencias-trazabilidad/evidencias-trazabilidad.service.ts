@@ -122,7 +122,7 @@ export class EvidenciasTrazabilidadService {
     const preparedFiles =
       this.evidenceFileService.prepareOriginalEvidenceFiles(files);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const metadataPayload = this.parseMetadata(payload.metadata);
     const bucketFotos = 'recoleccion_fotos';
 
@@ -356,7 +356,7 @@ export class EvidenciasTrazabilidadService {
   }
 
   async list(filters: ListEvidenciasTrazabilidadDto) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const tipoEntidadId = await this.resolveTipoEntidadId(
       filters.tipo_entidad_id,
@@ -467,7 +467,7 @@ export class EvidenciasTrazabilidadService {
   }
 
   async findOne(id: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data, error } = await supabase
       .from('evidencias_trazabilidad')
@@ -538,7 +538,7 @@ export class EvidenciasTrazabilidadService {
     tipoEntidadId?: number,
     tipoEntidadCodigo?: string,
   ): Promise<number | undefined> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     let resolvedByCode: number | undefined;
 
@@ -582,7 +582,7 @@ export class EvidenciasTrazabilidadService {
   }
 
   private mapEvidencia(row: EvidenciaRow) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data: publicUrlData } = supabase.storage
       .from(row.bucket)
       .getPublicUrl(row.ruta_archivo);

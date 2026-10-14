@@ -7,14 +7,14 @@ import {
   ApiParam,
   ApiQuery,
   ApiResponse,
-  ApiSecurity,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { TipoOrganizacion } from '../enums/tipo-organizacion.enum';
 
 const AUTH_ID_HEADER = {
   name: 'x-auth-id',
-  description: 'ID de autenticacion del usuario de Supabase',
-  required: true,
+  description: 'Opcional: auth_id coincidente con el JWT de la aplicación',
+  required: false,
 };
 
 const TIPOS_ORG = Object.values(TipoOrganizacion);
@@ -26,7 +26,7 @@ export function ApiCrearOrganizacion() {
       description:
         'Crea una organizacion. multipart/form-data si incluye `logo`. Solo ADMIN.',
     }),
-    ApiSecurity('x-auth-id'),
+    ApiBearerAuth(),
     ApiHeader(AUTH_ID_HEADER),
     ApiConsumes('multipart/form-data', 'application/json'),
     ApiBody({
@@ -53,7 +53,10 @@ export function ApiCrearOrganizacion() {
     }),
     ApiResponse({ status: 201, description: 'Organizacion creada.' }),
     ApiResponse({ status: 400, description: 'Datos invalidos.' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 401,
+      description: 'JWT Bearer requerido o identidad discordante.',
+    }),
     ApiResponse({
       status: 403,
       description: 'Solo el rol ADMIN puede crear organizaciones.',
@@ -72,7 +75,7 @@ export function ApiListarOrganizaciones() {
       description:
         'Lista completa ordenada por nombre. Filtros opcionales: activo, tipo.',
     }),
-    ApiSecurity('x-auth-id'),
+    ApiBearerAuth(),
     ApiHeader(AUTH_ID_HEADER),
     ApiQuery({
       name: 'activo',
@@ -87,18 +90,24 @@ export function ApiListarOrganizaciones() {
       description: 'Filtra por tipo de organizacion.',
     }),
     ApiResponse({ status: 200, description: 'Lista de organizaciones.' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 401,
+      description: 'JWT Bearer requerido o identidad discordante.',
+    }),
   );
 }
 
 export function ApiDetalleOrganizacion() {
   return applyDecorators(
     ApiOperation({ summary: 'Obtener detalle de una organizacion' }),
-    ApiSecurity('x-auth-id'),
+    ApiBearerAuth(),
     ApiHeader(AUTH_ID_HEADER),
     ApiParam({ name: 'id', type: 'integer' }),
     ApiResponse({ status: 200, description: 'Detalle de la organizacion.' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 401,
+      description: 'JWT Bearer requerido o identidad discordante.',
+    }),
     ApiResponse({ status: 404, description: 'Organizacion no encontrada.' }),
   );
 }
@@ -110,7 +119,7 @@ export function ApiEditarOrganizacion() {
       description:
         'Actualiza nombre, tipo o activo. No maneja el logo (usar POST /:id/logo). Solo ADMIN.',
     }),
-    ApiSecurity('x-auth-id'),
+    ApiBearerAuth(),
     ApiHeader(AUTH_ID_HEADER),
     ApiParam({ name: 'id', type: 'integer' }),
     ApiBody({
@@ -125,7 +134,10 @@ export function ApiEditarOrganizacion() {
     }),
     ApiResponse({ status: 200, description: 'Organizacion actualizada.' }),
     ApiResponse({ status: 400, description: 'Datos invalidos.' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 401,
+      description: 'JWT Bearer requerido o identidad discordante.',
+    }),
     ApiResponse({
       status: 403,
       description: 'Solo el rol ADMIN puede editar organizaciones.',
@@ -142,7 +154,7 @@ export function ApiSubirLogo() {
       description:
         'multipart/form-data, campo `logo` (PNG/JPG/JPEG/WEBP, max 2 MB). Reemplaza el logo anterior si existe. Solo ADMIN.',
     }),
-    ApiSecurity('x-auth-id'),
+    ApiBearerAuth(),
     ApiHeader(AUTH_ID_HEADER),
     ApiParam({ name: 'id', type: 'integer' }),
     ApiConsumes('multipart/form-data'),
@@ -157,7 +169,10 @@ export function ApiSubirLogo() {
     }),
     ApiResponse({ status: 201, description: 'Logo actualizado.' }),
     ApiResponse({ status: 400, description: 'Archivo invalido.' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 401,
+      description: 'JWT Bearer requerido o identidad discordante.',
+    }),
     ApiResponse({
       status: 403,
       description: 'Solo el rol ADMIN puede modificar el logo.',
@@ -173,11 +188,14 @@ export function ApiBorrarLogo() {
       description:
         'Pone logo_url en NULL y elimina el archivo del bucket "organizaciones". Solo ADMIN.',
     }),
-    ApiSecurity('x-auth-id'),
+    ApiBearerAuth(),
     ApiHeader(AUTH_ID_HEADER),
     ApiParam({ name: 'id', type: 'integer' }),
     ApiResponse({ status: 200, description: 'Logo eliminado.' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 401,
+      description: 'JWT Bearer requerido o identidad discordante.',
+    }),
     ApiResponse({
       status: 403,
       description: 'Solo el rol ADMIN puede borrar el logo.',
@@ -193,11 +211,14 @@ export function ApiBorrarOrganizacion() {
       description:
         'Si no esta referenciada en campania_organizacion, elimina fisicamente la organizacion y su logo. Si esta asociada a una o mas campañas, conserva la fila y marca activo=false. Solo ADMIN.',
     }),
-    ApiSecurity('x-auth-id'),
+    ApiBearerAuth(),
     ApiHeader(AUTH_ID_HEADER),
     ApiParam({ name: 'id', type: 'integer' }),
     ApiResponse({ status: 200, description: 'Organizacion eliminada.' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 401,
+      description: 'JWT Bearer requerido o identidad discordante.',
+    }),
     ApiResponse({
       status: 403,
       description: 'Solo el rol ADMIN puede borrar organizaciones.',

@@ -23,7 +23,7 @@ export class SubcampaniasConsultasService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   async listar(filtros: ListarSubcampaniasFiltros = {}) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     let query = supabase
       .from('subcampania')
@@ -193,7 +193,7 @@ export class SubcampaniasConsultasService {
   }
 
   async obtenerPorId(id: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: subcampania, error } = await supabase
       .from('subcampania')

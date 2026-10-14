@@ -91,7 +91,7 @@ describe('RecoleccionesService', () => {
   // Variables que usaremos en los tests
   let service: RecoleccionesService;
   let evidenciasService: RecoleccionEvidenciasService;
-  let supabaseService: { getClient: jest.Mock };
+  let supabaseService: { getClient: jest.Mock; getAdminClient: jest.Mock };
   let ubicacionesReadService: { getUbicacionesByIds: jest.Mock };
 
   /**
@@ -105,6 +105,7 @@ describe('RecoleccionesService', () => {
     supabaseService = {
       // jest.fn() crea una función que puedes monitorear
       // .mockReturnValue() establece qué devuelve cuando se llama
+      getAdminClient: jest.fn(() => supabaseService.getClient() as unknown),
       getClient: jest.fn(),
     };
 

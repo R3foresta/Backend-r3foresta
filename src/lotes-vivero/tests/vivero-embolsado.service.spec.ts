@@ -88,6 +88,10 @@ describe('ViveroEmbolsadoService', () => {
 
   function buildService(fromImpl: jest.Mock, rpc: jest.Mock) {
     const supabaseService = {
+      getAdminClient: jest.fn().mockReturnValue({
+        from: fromImpl,
+        rpc,
+      }),
       getClient: jest.fn().mockReturnValue({
         from: fromImpl,
         rpc,
@@ -507,6 +511,17 @@ describe('ViveroEmbolsadoService', () => {
       });
 
       const supabaseService = {
+        getAdminClient: jest.fn().mockReturnValue({
+          from: fromMock,
+          rpc: jest.fn(),
+          storage: {
+            from: jest.fn().mockReturnValue({
+              getPublicUrl: jest.fn().mockReturnValue({
+                data: { publicUrl: 'https://storage/foto.jpg' },
+              }),
+            }),
+          },
+        }),
         getClient: jest.fn().mockReturnValue({
           from: fromMock,
           rpc: jest.fn(),

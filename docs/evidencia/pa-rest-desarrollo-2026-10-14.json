@@ -1,0 +1,46 @@
+{
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "entorno_confirmado_por_Pablo": "DESARROLLO",
+  "observado_en": "2026-10-14T14:43:04.876Z",
+  "pruebas": [
+    {
+      "caso": "anon SELECT usuario sin filas",
+      "status": 401,
+      "code": "42501"
+    },
+    {
+      "caso": "anon SELECT usuario_credencial sin filas",
+      "status": 401,
+      "code": "42501"
+    },
+    {
+      "caso": "anon UPDATE organizacion filtro imposible",
+      "status": 401,
+      "code": "42501"
+    },
+    {
+      "caso": "anon RPC pa_actor_verificar",
+      "status": 401,
+      "code": "42501"
+    },
+    {
+      "caso": "anon RPC pa_privado_timeout_diagnostico",
+      "status": 401,
+      "code": "42501"
+    },
+    {
+      "caso": "configuración efectiva antes del comando PostgREST",
+      "status": 200,
+      "rol": "service_role",
+      "lock_timeout": "5s",
+      "observado_en": "2026-10-14T14:42:34.660821+00:00",
+      "statement_timeout": "30s"
+    },
+    {
+      "caso": "pg_sleep(31) interrumpido por PostgreSQL",
+      "status": 500,
+      "code": "57014",
+      "ms": 30321
+    }
+  ]
+}

@@ -101,7 +101,7 @@ export class SubcampaniasPlantacionContextService {
   ) {}
 
   async obtener(subcampaniaId: number, authId: string) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     // 1. Leer meta, revisión y especies en el mismo snapshot. Una revisión
     // concurrente no debe mezclar la meta anterior con el nuevo plan.
@@ -396,7 +396,7 @@ export class SubcampaniasPlantacionContextService {
 
   private async buscarZonaNombre(zonaId: number): Promise<string | null> {
     const resultado = (await this.supabaseService
-      .getClient()
+      .getAdminClient()
       .from('division_administrativa')
       .select('id, nombre')
       .eq('id', zonaId)

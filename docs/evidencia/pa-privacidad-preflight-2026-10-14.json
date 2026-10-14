@@ -1,0 +1,243 @@
+{
+  "tablas": [
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=r/postgres,authenticated=r/postgres,service_role=arwdDxtm/postgres}",
+      "rls": false,
+      "tabla": "usuario"
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "rls": false,
+      "tabla": "organizacion"
+    }
+  ],
+  "cuentas": 39,
+  "servidor": "17.6",
+  "politicas": [],
+  "config_roles": [
+    {
+      "rol": "anon",
+      "config": [
+        "statement_timeout=3s"
+      ],
+      "bypassrls": false
+    },
+    {
+      "rol": "authenticated",
+      "config": [
+        "statement_timeout=8s"
+      ],
+      "bypassrls": false
+    },
+    {
+      "rol": "service_role",
+      "config": null,
+      "bypassrls": true
+    },
+    {
+      "rol": "authenticator",
+      "config": [
+        "session_preload_libraries=safeupdate",
+        "statement_timeout=8s",
+        "lock_timeout=8s"
+      ],
+      "bypassrls": false
+    }
+  ],
+  "roles_cuentas": {
+    "ADMIN": 5,
+    "GENERAL": 32,
+    "VOLUNTARIO": 2
+  },
+  "vistas_usuario": [],
+  "config_base_roles": [
+    {
+      "rol": "anon",
+      "base": "ALL",
+      "config": [
+        "statement_timeout=3s"
+      ]
+    },
+    {
+      "rol": "authenticated",
+      "base": "ALL",
+      "config": [
+        "statement_timeout=8s"
+      ]
+    },
+    {
+      "rol": "authenticator",
+      "base": "ALL",
+      "config": [
+        "session_preload_libraries=safeupdate",
+        "statement_timeout=8s",
+        "lock_timeout=8s"
+      ]
+    },
+    {
+      "rol": "ALL",
+      "base": "postgres",
+      "config": [
+        "app.settings.jwt_exp=3600"
+      ]
+    }
+  ],
+  "funciones_consumidoras": [
+    {
+      "anon": true,
+      "firma": "fn_campania_desactivar_sin_plantaciones(bigint,bigint,text)",
+      "config": null,
+      "definer": false,
+      "service_role": true,
+      "authenticated": true
+    },
+    {
+      "anon": true,
+      "firma": "fn_m3_devolver_asignacion_vivero(bigint,integer,motivo_devolucion_plantacion,bigint,date,text)",
+      "config": null,
+      "definer": false,
+      "service_role": true,
+      "authenticated": true
+    },
+    {
+      "anon": true,
+      "firma": "fn_m3_registrar_plantacion(bigint,boolean,bigint,date,bigint,numeric,numeric,text,bigint[],jsonb,bigint[])",
+      "config": null,
+      "definer": false,
+      "service_role": true,
+      "authenticated": true
+    },
+    {
+      "anon": true,
+      "firma": "fn_recoleccion_registrar_desecho(bigint,numeric,bigint)",
+      "config": null,
+      "definer": false,
+      "service_role": true,
+      "authenticated": true
+    },
+    {
+      "anon": true,
+      "firma": "fn_subcampania_cancelar(bigint,bigint,text)",
+      "config": null,
+      "definer": false,
+      "service_role": true,
+      "authenticated": true
+    },
+    {
+      "anon": false,
+      "firma": "fn_subcampania_revisar_plan(bigint,integer,jsonb,bigint,bigint)",
+      "config": [
+        "search_path=public, pg_temp"
+      ],
+      "definer": false,
+      "service_role": true,
+      "authenticated": false
+    },
+    {
+      "anon": true,
+      "firma": "fn_vivero_asignar_stock_subcampania(bigint,bigint,integer,proposito_asignacion,bigint,date,bigint[],text)",
+      "config": null,
+      "definer": false,
+      "service_role": true,
+      "authenticated": true
+    },
+    {
+      "anon": true,
+      "firma": "fn_vivero_crear_lote_desde_recoleccion(bigint,bigint,bigint,date,date,numeric,unidad_medida,text,bigint[],text)",
+      "config": null,
+      "definer": false,
+      "service_role": true,
+      "authenticated": true
+    },
+    {
+      "anon": true,
+      "firma": "fn_vivero_registrar_adaptabilidad(bigint,date,bigint,subetapa_adaptabilidad,text,bigint[])",
+      "config": null,
+      "definer": false,
+      "service_role": true,
+      "authenticated": true
+    },
+    {
+      "anon": true,
+      "firma": "fn_vivero_registrar_descarte_pre_embolsado(bigint,date,bigint,numeric,unidad_medida,causa_descarte_pre_embolsado,text,bigint[])",
+      "config": null,
+      "definer": false,
+      "service_role": true,
+      "authenticated": true
+    },
+    {
+      "anon": true,
+      "firma": "fn_vivero_registrar_despacho(bigint,date,bigint,integer,destino_tipo_vivero,text,bigint,text,bigint[])",
+      "config": null,
+      "definer": false,
+      "service_role": true,
+      "authenticated": true
+    },
+    {
+      "anon": true,
+      "firma": "fn_vivero_registrar_embolsado(bigint,date,bigint,integer,text,bigint[])",
+      "config": null,
+      "definer": false,
+      "service_role": true,
+      "authenticated": true
+    },
+    {
+      "anon": true,
+      "firma": "fn_vivero_registrar_merma(bigint,date,bigint,integer,causa_merma_vivero,text,bigint[])",
+      "config": null,
+      "definer": false,
+      "service_role": true,
+      "authenticated": true
+    },
+    {
+      "anon": false,
+      "firma": "pa_actor_verificar(text)",
+      "config": [
+        "search_path=public"
+      ],
+      "definer": false,
+      "service_role": true,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_organizaciones_seleccionables(bigint,text,text,bigint,integer)",
+      "config": [
+        "search_path=public"
+      ],
+      "definer": false,
+      "service_role": true,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_perfil_actualizar(bigint,text,boolean,text,boolean,text,boolean,bigint,text,jsonb)",
+      "config": [
+        "search_path=public"
+      ],
+      "definer": false,
+      "service_role": true,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_perfil_foto_actualizar(bigint,text,text)",
+      "config": [
+        "search_path=public"
+      ],
+      "definer": false,
+      "service_role": true,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_perfil_leer(bigint,text)",
+      "config": [
+        "search_path=public"
+      ],
+      "definer": false,
+      "service_role": true,
+      "authenticated": false
+    }
+  ]
+}

@@ -167,7 +167,7 @@ export class ViveroTimelineService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   async obtenerTimeline(loteId: number, filters: FiltrarTimelineLoteDto) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     // 1. Verificar que el lote existe
     const lote = await this.obtenerLote(supabase, loteId);

@@ -17,7 +17,7 @@ export class ViveroAuthService {
 
   async getUserByAuthId(authId: string): Promise<ViveroUsuario> {
     const { data, error } = await this.supabaseService
-      .getClient()
+      .getAdminClient()
       .from('usuario')
       .select('id, nombre, rol')
       .eq('auth_id', authId)

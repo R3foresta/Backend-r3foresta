@@ -1,3 +1,4 @@
+import { InternalActorGuard } from '../../auth/internal-actor.guard';
 import {
   BadRequestException,
   Body,
@@ -12,8 +13,9 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { LotesViveroService } from '../application/lotes-vivero.service';
 import {
   ApiCrearAsignacion,
@@ -62,6 +64,8 @@ import { RegistrarMermaDto } from './dto/registrar-merma.dto';
 //   (y eventualmente rol), o si quedan abiertos por diseño. Sincronizar también
 //   con la doc del módulo (modulos/lotes-vivero.md sección "Autenticación").
 @ApiTags('lotes-vivero')
+@ApiBearerAuth()
+@UseGuards(InternalActorGuard)
 @Controller('lotes-vivero')
 export class LotesViveroController {
   constructor(private readonly lotesViveroService: LotesViveroService) {}

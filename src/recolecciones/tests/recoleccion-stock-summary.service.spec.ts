@@ -41,6 +41,11 @@ function createService(options?: {
     error: options?.collectionError ?? null,
   });
   const supabaseService = {
+    getAdminClient: jest.fn().mockReturnValue({
+      from: jest.fn((table: string): unknown =>
+        table === 'planta' ? plantsQuery : collectionsQuery,
+      ),
+    }),
     getClient: jest.fn().mockReturnValue({
       from: jest.fn((table: string) =>
         table === 'planta' ? plantsQuery : collectionsQuery,

@@ -1,3 +1,4 @@
+import { ActorModule } from '../auth/actor.module';
 import { Module } from '@nestjs/common';
 import { RecoleccionesService } from './application/recolecciones.service';
 import { RecoleccionesController } from './api/recolecciones.controller';
@@ -25,6 +26,7 @@ import { RecoleccionFormDataParser } from './api/parsers/recoleccion-formdata.pa
 
 @Module({
   imports: [
+    ActorModule,
     SupabaseModule,
     PinataModule,
     BlockchainModule,

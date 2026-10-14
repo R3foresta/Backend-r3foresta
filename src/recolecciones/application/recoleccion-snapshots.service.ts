@@ -51,7 +51,7 @@ export class RecoleccionSnapshotsService {
     nombre_comercial_snapshot: string;
     variedad_snapshot: string;
   }> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('planta')
       .select('nombre_cientifico, nombre_comun_principal, especie, variedad')
@@ -90,7 +90,7 @@ export class RecoleccionSnapshotsService {
   }
 
   private async getUsuarioDisplayNameById(usuarioId: number): Promise<string> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data, error } = await supabase
       .from('usuario')
@@ -124,7 +124,7 @@ export class RecoleccionSnapshotsService {
   private async getNombreComunidadByUbicacionId(
     ubicacionId: number,
   ): Promise<string> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: ubicacionData, error: ubicacionError } = await supabase
       .from('ubicacion')

@@ -58,7 +58,7 @@ export class ViveroDescartePreEmbolsadoService {
     authId: string,
     files: ViveroEvidenceFileInput[],
   ) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')
@@ -170,7 +170,7 @@ export class ViveroDescartePreEmbolsadoService {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertCanWrite(usuario.rol);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data, error } = await supabase
       .rpc('fn_vivero_registrar_descarte_pre_embolsado', {

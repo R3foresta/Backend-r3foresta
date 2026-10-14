@@ -1,0 +1,60 @@
+{
+  "actor_id": "48",
+  "rol_global": "GENERAL",
+  "ceremonia": "passkey real completada por Pablo en Brave localhost:5173",
+  "cambios_afiliacion": [
+    {
+      "tipo": "ORGANIZACION_REGISTRADA",
+      "organizacion_id": "1",
+      "recarga_confirmada": true
+    },
+    {
+      "tipo": "OTRA",
+      "recarga_confirmada": true
+    },
+    {
+      "tipo": null,
+      "recarga_confirmada": true
+    },
+    {
+      "tipo": "OTRA",
+      "afiliacion_original_restaurada": true
+    }
+  ],
+  "negativos_sesion_real": [
+    {
+      "caso": "identidad ajena",
+      "status": 401
+    },
+    {
+      "caso": "rol en perfil v1",
+      "status": 422
+    },
+    {
+      "caso": "rol en register-form",
+      "status": 422
+    },
+    {
+      "caso": "crear organizacion GENERAL",
+      "status": 403
+    },
+    {
+      "caso": "PUT plan GENERAL formato valido",
+      "status": 403
+    }
+  ],
+  "plan": {
+    "subcampania_id": "103",
+    "GET": 200,
+    "cache": "private, no-store",
+    "PUT_GENERAL": 403,
+    "nota": "Primer intento PUT devolvió 400 por plan vacío sin metas; payload válido posterior alcanzó autorización y devolvió 403. No se invocó RPC de escritura."
+  },
+  "impacto": {
+    "incognito_Brave": true,
+    "organizaciones_GET": 200,
+    "cantidad": 6,
+    "dashboard_organizacion_55_GET": 200
+  },
+  "limite": "QA real con cuenta GENERAL existente. VOLUNTARIO y BIGINT >2^53 comprobados en HTTP simulado/PostgreSQL sintético, no mediante nueva ceremonia real VOLUNTARIO."
+}

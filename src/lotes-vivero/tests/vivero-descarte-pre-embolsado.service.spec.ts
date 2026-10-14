@@ -32,6 +32,7 @@ describe('ViveroDescartePreEmbolsadoService', () => {
   beforeEach(() => {
     rpcMock = jest.fn();
     supabaseService = {
+      getAdminClient: jest.fn().mockReturnValue({ rpc: rpcMock }),
       getClient: jest.fn().mockReturnValue({ rpc: rpcMock }),
     };
 

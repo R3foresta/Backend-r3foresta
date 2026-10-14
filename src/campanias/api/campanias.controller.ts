@@ -1,3 +1,4 @@
+import { InternalActorGuard } from '../../auth/internal-actor.guard';
 import {
   BadRequestException,
   Body,
@@ -15,7 +16,8 @@ import {
   Query,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CampaniasService } from '../application/campanias.service';
 import {
   ApiActivityCampania,
@@ -37,6 +39,8 @@ import { DesactivarCampaniaDto } from './dto/desactivar-campania.dto';
 import { EditarCampaniaDto } from './dto/editar-campania.dto';
 
 @ApiTags('campanias')
+@ApiBearerAuth()
+@UseGuards(InternalActorGuard)
 @Controller('campanias')
 export class CampaniasController {
   constructor(private readonly campaniasService: CampaniasService) {}

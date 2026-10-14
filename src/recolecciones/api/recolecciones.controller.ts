@@ -1,3 +1,4 @@
+import { InternalActorGuard } from '../../auth/internal-actor.guard';
 import {
   BadRequestException,
   Body,
@@ -13,8 +14,9 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RecoleccionesService } from '../application/recolecciones.service';
 import {
   ApiApproveRecoleccionValidation,
@@ -36,6 +38,8 @@ import { RegistrarDesechoDto } from './dto/registrar-desecho.dto';
 import { RecoleccionFormDataParser } from './parsers/recoleccion-formdata.parser';
 
 @ApiTags('recolecciones')
+@ApiBearerAuth()
+@UseGuards(InternalActorGuard)
 @Controller('recolecciones')
 export class RecoleccionesController {
   constructor(

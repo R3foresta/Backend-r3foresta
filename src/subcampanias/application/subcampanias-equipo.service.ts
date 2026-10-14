@@ -21,7 +21,7 @@ export class SubcampaniasEquipoService {
   ) {}
 
   async listar(subcampaniaId: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: subcampania, error: subError } = await supabase
       .from('subcampania')
@@ -81,7 +81,7 @@ export class SubcampaniasEquipoService {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertAdmin(usuario.rol);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: subcampania, error: subError } = await supabase
       .from('subcampania')
@@ -163,7 +163,7 @@ export class SubcampaniasEquipoService {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertAdmin(usuario.rol);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: subcampania, error: subError } = await supabase
       .from('subcampania')
@@ -227,7 +227,7 @@ export class SubcampaniasEquipoService {
   private async obtenerMiembrosPorIds(ids: number[]) {
     if (ids.length === 0) return [];
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('subcampania_equipo')
       .select(

@@ -1,3 +1,4 @@
+import { ActorModule } from '../auth/actor.module';
 import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { SubcampaniasModule } from '../subcampanias/subcampanias.module';
@@ -14,7 +15,7 @@ import { CampaniasOrganizacionesService } from './application/campanias-organiza
 import { CampaniasService } from './application/campanias.service';
 
 @Module({
-  imports: [SupabaseModule, SubcampaniasModule],
+  imports: [ActorModule, SupabaseModule, SubcampaniasModule],
   controllers: [CampaniasController],
   providers: [
     CampaniasService,

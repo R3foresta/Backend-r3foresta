@@ -58,6 +58,12 @@ describe('EvidenciasTrazabilidadService', () => {
     };
 
     const supabaseService = {
+      getAdminClient: jest.fn().mockReturnValue({
+        from,
+        storage: {
+          from: jest.fn().mockReturnValue(storageBucket),
+        },
+      }),
       getClient: jest.fn().mockReturnValue({
         from,
         storage: {

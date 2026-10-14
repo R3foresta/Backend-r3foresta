@@ -1,0 +1,28 @@
+[
+  {
+    "ruta": "/api/v1/usuarios/me/perfil",
+    "status": 401,
+    "cache": "private, no-store"
+  },
+  {
+    "ruta": "/api/v1/participacion/organizaciones-seleccionables",
+    "status": 401,
+    "cache": "private, no-store"
+  },
+  {
+    "ruta": "/api/organizaciones",
+    "status": 401,
+    "cache": "private, no-store"
+  },
+  {
+    "ruta": "/api/subcampanias/1/plan",
+    "status": 401,
+    "cache": "private, no-store"
+  },
+  {
+    "ruta": "/api/v1/impact/organizations",
+    "status": 200,
+    "cache": "public, max-age=60, stale-while-revalidate=300",
+    "cantidad": 6
+  }
+]

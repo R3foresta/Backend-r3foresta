@@ -97,6 +97,7 @@ function buildSupabase(opts: {
     .mockResolvedValue({ data: opts.poligono ?? null, error: null });
 
   return {
+    getAdminClient: jest.fn().mockReturnValue({ from, rpc }),
     getClient: jest.fn().mockReturnValue({ from, rpc }),
   } as unknown as SupabaseService;
 }

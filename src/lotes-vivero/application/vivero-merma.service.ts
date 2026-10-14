@@ -80,7 +80,7 @@ export class ViveroMermaService {
     authId: string,
     files: ViveroEvidenceFileInput[],
   ) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')
@@ -156,7 +156,7 @@ export class ViveroMermaService {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertCanWrite(usuario.rol);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data, error } = await supabase
       .rpc('fn_vivero_registrar_merma', {
@@ -208,7 +208,7 @@ export class ViveroMermaService {
   // Devuelve todos los eventos MERMA del lote con sus evidencias.
   // ---------------------------------------------------------------------------
   async obtenerMermas(loteId: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')

@@ -1,3 +1,4 @@
+import { InternalActorGuard } from '../auth/internal-actor.guard';
 import {
   BadRequestException,
   Body,
@@ -17,8 +18,9 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   ApiBorrarLogo,
   ApiBorrarOrganizacion,
@@ -37,6 +39,8 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const LOGO_MIMETYPES = '.(png|jpeg|jpg|webp)';
 
 @ApiTags('organizaciones')
+@ApiBearerAuth()
+@UseGuards(InternalActorGuard)
 @Controller('organizaciones')
 export class OrganizacionesController {
   constructor(private readonly organizacionesService: OrganizacionesService) {}

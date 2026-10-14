@@ -73,7 +73,7 @@ export class ViveroEmbolsadoService {
   // Carga los datos del lote para la pantalla de embolsado. Solo lectura.
   // ---------------------------------------------------------------------------
   async obtenerContexto(loteId: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')
@@ -182,7 +182,7 @@ export class ViveroEmbolsadoService {
     authId: string,
     files: ViveroEvidenceFileInput[],
   ) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')
@@ -263,7 +263,7 @@ export class ViveroEmbolsadoService {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertCanWrite(usuario.rol);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     // Validar que plantas_vivas_iniciales no supere la cantidad de material
     // disponible (cantidad_inicial_en_proceso) del lote (RN-VIV-EMB-01).
@@ -332,7 +332,7 @@ export class ViveroEmbolsadoService {
   // Consulta el resultado del embolsado ya registrado.
   // ---------------------------------------------------------------------------
   async obtenerResultado(loteId: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')

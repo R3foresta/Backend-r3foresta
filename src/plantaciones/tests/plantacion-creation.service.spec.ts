@@ -28,6 +28,7 @@ function buildSupabaseWithRpc(result: { data: any; error: any }) {
   const rpc = jest.fn().mockReturnValue({ single });
   const from = jest.fn();
   const supabase = {
+    getAdminClient: jest.fn().mockReturnValue({ rpc, from }),
     getClient: jest.fn().mockReturnValue({ rpc, from }),
   } as unknown as SupabaseService;
   return { supabase, rpc, single, from };

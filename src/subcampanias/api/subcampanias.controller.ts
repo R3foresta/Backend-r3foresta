@@ -1,3 +1,5 @@
+import { ActiveAccountAudience } from '../../auth/internal-actor.guard';
+import { InternalActorGuard } from '../../auth/internal-actor.guard';
 import {
   BadRequestException,
   Body,
@@ -16,7 +18,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { SubcampaniasService } from '../application/subcampanias.service';
 import { AgregarMiembroEquipoDto } from './dto/agregar-miembro-equipo.dto';
 import { CancelarSubcampaniaDto } from './dto/cancelar-subcampania.dto';
@@ -46,6 +48,8 @@ import {
 } from './docs/subcampanias.swagger';
 
 @ApiTags('subcampanias')
+@ApiBearerAuth()
+@UseGuards(InternalActorGuard)
 @Controller('subcampanias')
 export class SubcampaniasController {
   constructor(private readonly subcampaniasService: SubcampaniasService) {}
@@ -142,6 +146,7 @@ export class SubcampaniasController {
     );
   }
 
+  @ActiveAccountAudience()
   @Get(':id/plan')
   @UseGuards(SubcampaniaPlanAuthGuard)
   @ApiObtenerPlan()
@@ -152,6 +157,7 @@ export class SubcampaniasController {
     return this.subcampaniasService.obtenerPlan(id, request.planAuthId);
   }
 
+  @ActiveAccountAudience()
   @Put(':id/plan')
   @UseGuards(SubcampaniaPlanAuthGuard)
   @ApiGuardarPlan()

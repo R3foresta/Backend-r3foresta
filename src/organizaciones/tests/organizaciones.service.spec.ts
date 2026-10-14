@@ -56,6 +56,7 @@ function makeSupabase(byTable: Record<string, QueryResult | QueryResult[]>) {
     return builder;
   });
   const supabase = {
+    getAdminClient: jest.fn().mockReturnValue({ from: fromMock }),
     getClient: jest.fn().mockReturnValue({ from: fromMock }),
   } as unknown as SupabaseService;
   return { supabase, fromMock, builders };

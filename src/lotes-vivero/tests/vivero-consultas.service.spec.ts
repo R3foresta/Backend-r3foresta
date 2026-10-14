@@ -90,6 +90,7 @@ describe('ViveroConsultasService', () => {
     from = jest.fn().mockReturnValue(query);
 
     const supabaseService = {
+      getAdminClient: jest.fn().mockReturnValue({ from }),
       getClient: jest.fn().mockReturnValue({ from }),
     } as unknown as SupabaseService;
 
@@ -258,6 +259,7 @@ describe('ViveroConsultasService.obtenerDetalle', () => {
     const mocks = createDetailQueryMock(loteResp, eventosResp);
     from = mocks.from;
     const supabaseService = {
+      getAdminClient: jest.fn().mockReturnValue({ from }),
       getClient: jest.fn().mockReturnValue({ from }),
     } as unknown as SupabaseService;
     const timelineService = {} as unknown as ViveroTimelineService;

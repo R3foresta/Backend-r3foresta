@@ -100,6 +100,10 @@ function buildSupabase(opts: {
     throw new Error(`Lectura no esperada: ${table}`);
   });
   const supabase = {
+    getAdminClient: jest.fn().mockReturnValue({
+      rpc,
+      from,
+    }),
     getClient: jest.fn().mockReturnValue({
       rpc,
       from,
