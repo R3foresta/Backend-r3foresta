@@ -74,34 +74,18 @@ export class AuthService implements OnModuleDestroy {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { username, email, registration, challenge } = registerDto;
 
-    console.log('\n🔵 ============ INTENTO DE REGISTRO ============');
-    console.log('📥 Datos recibidos desde el frontend:');
-    console.log('   • Usuario:', username);
-    console.log('   • Email:', email || 'No proporcionado');
-    console.log('   • Origin:', origin);
-    console.log('   • Challenge válido:', challenge ? 'Sí' : 'No');
-
     // Verificar challenge
     if (!this.verifyChallenge(challenge)) {
-      console.log('❌ Challenge inválido o expirado');
       throw new BadRequestException('Challenge inválido o expirado');
     }
 
     try {
-      console.log('🔐 Verificando credenciales WebAuthn...');
       // Verificar el registro con WebAuthn
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const verified = await server.verifyRegistration(registration, {
         challenge,
         origin,
       });
-
-      console.log('✅ Credenciales WebAuthn verificadas correctamente');
-      console.log(
-        '   • Credential ID:',
-        verified.credential.id.substring(0, 20) + '...',
-      );
-      console.log('   • Algoritmo:', verified.credential.algorithm);
 
       // Crear credencial
       const credential: Credential = {
@@ -113,20 +97,12 @@ export class AuthService implements OnModuleDestroy {
         transports: registration.transports as string[],
         createdAt: new Date(),
       };
-
-      console.log('💾 Creando usuario en el sistema...');
       // Crear usuario
       const user = await this.usersService.createUser({
         username,
         email,
         credential,
       });
-
-      console.log('✅ Usuario creado exitosamente');
-      console.log('   • ID de usuario:', user.id);
-      console.log('   • Total de credenciales:', user.credentials.length);
-      console.log('💾 ✅ DATOS GUARDADOS EN SUPABASE');
-      console.log('🔵 ============================================\n');
 
       // Generar JWT
       const token = this.generateJwt(user.id, user.username);
@@ -144,8 +120,6 @@ export class AuthService implements OnModuleDestroy {
         message: 'Usuario registrado exitosamente',
       };
     } catch (error) {
-      console.log('❌ ERROR EN REGISTRO:', (error as Error).message);
-      console.log('🔵 ============================================\n');
       throw new BadRequestException(
         (error as Error).message || 'Error al registrar usuario',
       );
@@ -159,17 +133,8 @@ export class AuthService implements OnModuleDestroy {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { authentication, challenge } = loginDto;
 
-    console.log('\n🟢 ============ INTENTO DE LOGIN ============');
-    console.log('📥 Solicitud de autenticación recibida');
-    console.log('   • Origin:', origin);
-    console.log('   • Challenge válido:', challenge ? 'Sí' : 'No');
-    console.log('📋 Objeto authentication completo:');
-    console.log(JSON.stringify(authentication, null, 2));
-
     // Verificar challenge
     if (!this.verifyChallenge(challenge)) {
-      console.log('❌ Challenge inválido o expirado');
-      console.log('🟢 ==========================================\n');
       throw new BadRequestException('Challenge inválido o expirado');
     }
 
@@ -180,58 +145,19 @@ export class AuthService implements OnModuleDestroy {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         authentication.id) as string;
 
-      console.log('🔍 Extrayendo Credential ID...');
-      console.log('   • credentialId completo:', credentialId);
-      console.log(
-        '   • credentialId preview:',
-        credentialId
-          ? credentialId.substring(0, Math.min(20, credentialId.length)) + '...'
-          : 'UNDEFINED',
-      );
-
       if (!credentialId) {
-        console.log(
-          '❌ ERROR: No se pudo extraer credentialId del objeto authentication',
-        );
-        console.log(
-          '   • authentication.credentialId:',
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          authentication.credentialId,
-        );
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        console.log('   • authentication.id:', authentication.id);
-        console.log('🟢 ==========================================\n');
         throw new BadRequestException(
           'No se encontró credentialId en la solicitud de autenticación',
         );
       }
-
-      console.log('🔎 Buscando usuario en persistencia...');
       // Buscar usuario por credentialId
       const result = await this.usersService.findByCredentialId(credentialId);
 
       if (!result) {
-        console.log('❌ Credencial NO encontrada en la persistencia');
-        console.log('💡 Sugerencia: Asegúrate de haberte registrado primero');
-        console.log('🟢 ==========================================\n');
         throw new UnauthorizedException('Credencial no encontrada');
       }
 
       const { user, credential } = result;
-      console.log('✅ Usuario encontrado en la persistencia:');
-      console.log('   • Usuario:', user.username);
-      console.log('   • ID:', user.id);
-      console.log('   • Email:', user.email || 'No tiene');
-      console.log(
-        '   • Registrado:',
-        credential.createdAt.toLocaleString('es-ES'),
-      );
-      console.log(
-        '   • Último login:',
-        user.lastLogin ? user.lastLogin.toLocaleString('es-ES') : 'Primera vez',
-      );
-
-      console.log('🔐 Verificando autenticación WebAuthn...');
       // Verificar la autenticación con WebAuthn
       const verified = await server.verifyAuthentication(
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -252,21 +178,13 @@ export class AuthService implements OnModuleDestroy {
         },
       );
 
-      console.log('✅ Autenticación WebAuthn verificada correctamente');
-      console.log('   • Counter anterior:', credential.counter);
-      console.log('   • Counter nuevo:', verified.counter);
-
       // Actualizar contador y último login
-      this.usersService.updateCredentialCounter(
+      await this.usersService.updateCredentialCounter(
         user.id,
         credentialId,
         verified.counter,
       );
-      this.usersService.updateLastLogin(user.id);
-
-      console.log('💾 ✅ DATOS ACTUALIZADOS EN PERSISTENCIA');
-      console.log('🎉 LOGIN EXITOSO para:', user.username);
-      console.log('🟢 ==========================================\n');
+      await this.usersService.updateLastLogin(user.id);
 
       // Generar JWT
       const token = this.generateJwt(user.id, user.username);
@@ -284,8 +202,6 @@ export class AuthService implements OnModuleDestroy {
         message: 'Login exitoso',
       };
     } catch (error) {
-      console.log('❌ ERROR EN LOGIN:', (error as Error).message);
-      console.log('🟢 ==========================================\n');
       throw new UnauthorizedException(
         (error as Error).message || 'Error al autenticar',
       );
@@ -316,34 +232,6 @@ export class AuthService implements OnModuleDestroy {
       if (now > data.expiresAt) {
         this.challenges.delete(sessionId);
       }
-    }
-  }
-
-  /**
-   * Prueba la conexión con Supabase y devuelve todos los usuarios
-   */
-  async testSupabaseConnection() {
-    try {
-      const allUsers = await this.usersService.getAllUsers();
-      return {
-        success: true,
-        message: '✅ Conexión con Supabase funcionando correctamente',
-        totalUsuarios: allUsers.length,
-        usuarios: allUsers.map((u) => ({
-          id: u.id,
-          username: u.username,
-          email: u.email,
-          auth_id: u.auth_id,
-          rol: u.rol,
-          created_at: u.created_at,
-        })),
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: '❌ Error al conectar con Supabase',
-        error: (error as Error).message,
-      };
     }
   }
 }

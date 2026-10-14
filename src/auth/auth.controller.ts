@@ -1,7 +1,7 @@
 import { Controller, Post, Get, Body, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
+import { parseRegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
@@ -22,9 +22,9 @@ export class AuthController {
    * Registra un nuevo usuario con passkey
    */
   @Post('register')
-  async register(@Body() registerDto: RegisterDto, @Req() req: Request) {
+  async register(@Body() body: unknown, @Req() req: Request) {
     const origin = req.headers.origin || 'http://localhost:5173';
-    return this.authService.register(registerDto, origin);
+    return this.authService.register(await parseRegisterDto(body), origin);
   }
 
   /**
@@ -35,14 +35,5 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto, @Req() req: Request) {
     const origin = req.headers.origin || 'http://localhost:5173';
     return this.authService.login(loginDto, origin);
-  }
-
-  /**
-   * GET /auth/test-supabase
-   * Endpoint de prueba para verificar conexión con Supabase
-   */
-  @Get('test-supabase')
-  async testSupabase() {
-    return this.authService.testSupabaseConnection();
   }
 }

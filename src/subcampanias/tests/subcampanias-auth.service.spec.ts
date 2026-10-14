@@ -7,20 +7,23 @@ import {
 import { SupabaseService } from '../../supabase/supabase.service';
 import { SubcampaniasAuthService } from '../application/subcampanias-auth.service';
 
-function createSupabase(result: { data: any; error: any }): SupabaseService {
+function createSupabase(result: {
+  data: unknown;
+  error: unknown;
+}): SupabaseService {
   const single = jest.fn().mockResolvedValue(result);
   const eq = jest.fn().mockReturnValue({ single });
   const select = jest.fn().mockReturnValue({ eq });
   const from = jest.fn().mockReturnValue({ select });
   return {
-    getClient: jest.fn().mockReturnValue({ from }),
+    getAdminClient: jest.fn().mockReturnValue({ from }),
   } as unknown as SupabaseService;
 }
 
 describe('SubcampaniasAuthService', () => {
   it('resuelve usuario por auth_id', async () => {
     const supabase = createSupabase({
-      data: { id: 5, nombre: 'Admin', rol: 'ADMIN' },
+      data: { id: 5, nombre: 'Admin', rol: 'ADMIN', activo: true },
       error: null,
     });
     const service = new SubcampaniasAuthService(supabase);
@@ -29,6 +32,7 @@ describe('SubcampaniasAuthService', () => {
       id: 5,
       nombre: 'Admin',
       rol: 'ADMIN',
+      activo: true,
     });
   });
 
@@ -62,10 +66,11 @@ describe('SubcampaniasAuthService', () => {
   it('rechaza un auth_id vacío sin consultar la base', async () => {
     const supabase = createSupabase({ data: null, error: null });
     const service = new SubcampaniasAuthService(supabase);
+    const resolve = jest.spyOn(supabase, 'getAdminClient');
     await expect(service.getAuthenticatedUser('  ')).rejects.toThrow(
       UnauthorizedException,
     );
-    expect(supabase.getClient).not.toHaveBeenCalled();
+    expect(resolve).not.toHaveBeenCalled();
   });
 
   it('mantiene 500 al fallar la verificación de una sesión por un error de base de datos', async () => {
@@ -78,7 +83,7 @@ describe('SubcampaniasAuthService', () => {
   });
 
   it('permite una sesión válida de un usuario GENERAL', async () => {
-    const usuario = { id: 5, nombre: 'General', rol: 'GENERAL' };
+    const usuario = { id: 5, nombre: 'General', rol: 'GENERAL', activo: true };
     const service = new SubcampaniasAuthService(
       createSupabase({ data: usuario, error: null }),
     );
@@ -87,8 +92,23 @@ describe('SubcampaniasAuthService', () => {
     );
   });
 
+  it.each([false, null, undefined])(
+    'rechaza actividad inválida %s',
+    async (activo) => {
+      const service = new SubcampaniasAuthService(
+        createSupabase({
+          data: { id: 5, nombre: 'Admin', rol: 'ADMIN', activo },
+          error: null,
+        }),
+      );
+      await expect(service.getAuthenticatedUser('auth')).rejects.toThrow(
+        ForbiddenException,
+      );
+    },
+  );
+
   describe('assertAdmin', () => {
-    const service = new SubcampaniasAuthService({} as any);
+    const service = new SubcampaniasAuthService({} as SupabaseService);
 
     it.each(['ADMIN', 'admin', 'Admin'])('permite rol %s', (rol) => {
       expect(() => service.assertAdmin(rol)).not.toThrow();
@@ -103,7 +123,9 @@ describe('SubcampaniasAuthService', () => {
       null,
       'OTRO',
     ])('rechaza rol %s', (rol) => {
-      expect(() => service.assertAdmin(rol as any)).toThrow(ForbiddenException);
+      expect(() => service.assertAdmin(String(rol ?? ''))).toThrow(
+        ForbiddenException,
+      );
     });
   });
 });

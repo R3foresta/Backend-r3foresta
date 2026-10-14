@@ -11,6 +11,7 @@ export type SubcampaniaUsuario = {
   id: number;
   nombre: string;
   rol: string;
+  activo?: boolean;
 };
 
 @Injectable()
@@ -19,9 +20,9 @@ export class SubcampaniasAuthService {
 
   async getUserByAuthId(authId: string): Promise<SubcampaniaUsuario> {
     const { data, error } = await this.supabaseService
-      .getClient()
+      .getAdminClient()
       .from('usuario')
-      .select('id, nombre, rol')
+      .select('id, nombre, rol, activo')
       .eq('auth_id', authId)
       .single();
 
@@ -36,6 +37,14 @@ export class SubcampaniasAuthService {
       );
     }
 
+    if (data.activo !== true) {
+      throw new ForbiddenException('CUENTA_INACTIVA');
+    }
+    if (!Number.isSafeInteger(Number(data.id)) || Number(data.id) <= 0) {
+      throw new InternalServerErrorException(
+        'ID fuera del rango seguro del contrato interno.',
+      );
+    }
     return data as SubcampaniaUsuario;
   }
 

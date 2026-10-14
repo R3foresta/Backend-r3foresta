@@ -10,14 +10,11 @@ import { UsersModule } from '../users/users.module';
     UsersModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret:
-          configService.get<string>('JWT_SECRET') ||
-          'your-secret-key-change-in-production',
-        signOptions: {
-          expiresIn: '7d',
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret?.trim()) throw new Error('JWT_SECRET no está configurado.');
+        return { secret, signOptions: { expiresIn: '7d' } };
+      },
       inject: [ConfigService],
     }),
   ],
