@@ -1,13 +1,8 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  InternalServerErrorException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
+import { verifyBearerIdentity } from '../../../auth/verified-actor.guard';
 
 export type PlanAuthenticatedRequest = Request & { planAuthId: string };
 
@@ -22,50 +17,13 @@ export class SubcampaniaPlanAuthGuard implements CanActivate {
     const request = context
       .switchToHttp()
       .getRequest<PlanAuthenticatedRequest>();
-    const authorization = request.headers.authorization;
-    const token = authorization?.match(/^Bearer\s+(\S+)$/i)?.[1];
-    if (!token) {
-      throw new UnauthorizedException(
-        'Se requiere Authorization: Bearer <token>.',
-      );
-    }
-
-    const secret = this.configService.get<string>('JWT_SECRET');
-    if (!secret?.trim()) {
-      throw new InternalServerErrorException('JWT_SECRET no está configurado.');
-    }
-
-    let payload: { sub?: unknown; exp?: unknown };
-    try {
-      payload = await this.jwtService.verifyAsync<{
-        sub?: unknown;
-        exp?: unknown;
-      }>(token, { secret, algorithms: ['HS256'] });
-    } catch {
-      throw new UnauthorizedException('Token inválido o expirado.');
-    }
-    if (
-      typeof payload.sub !== 'string' ||
-      !payload.sub.trim() ||
-      typeof payload.exp !== 'number' ||
-      !Number.isFinite(payload.exp)
-    ) {
-      throw new UnauthorizedException(
-        'Token sin identidad o expiración válida.',
-      );
-    }
-
-    const authId = payload.sub;
-    const suppliedAuthId = request.headers['x-auth-id'];
-    if (
-      suppliedAuthId !== undefined &&
-      (typeof suppliedAuthId !== 'string' || suppliedAuthId.trim() !== authId)
-    ) {
-      throw new UnauthorizedException(
-        'x-auth-id no coincide con la sesión autenticada.',
-      );
-    }
-    request.planAuthId = authId;
+    request.res?.setHeader('Cache-Control', 'private, no-store');
+    request.res?.setHeader('Vary', 'Authorization');
+    request.planAuthId = await verifyBearerIdentity(
+      request,
+      this.jwtService,
+      this.configService,
+    );
     return true;
   }
 }

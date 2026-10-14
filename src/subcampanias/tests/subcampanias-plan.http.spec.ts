@@ -34,11 +34,20 @@ describe('GET/PUT plan — contrato HTTP y sesión', () => {
     JWT_SECRET: secret,
   };
   const users = new Map([
-    ['admin', { id: 1, nombre: 'Admin', rol: 'ADMIN' }],
-    ['general', { id: 2, nombre: 'General', rol: 'GENERAL' }],
-    ['validador', { id: 3, nombre: 'Validador', rol: 'VALIDADOR' }],
-    ['voluntario', { id: 4, nombre: 'Voluntario', rol: 'VOLUNTARIO' }],
-    ['coordinador', { id: 5, nombre: 'Coordinador', rol: 'GENERAL' }],
+    ['admin', { id: 1, nombre: 'Admin', rol: 'ADMIN', activo: true }],
+    ['general', { id: 2, nombre: 'General', rol: 'GENERAL', activo: true }],
+    [
+      'validador',
+      { id: 3, nombre: 'Validador', rol: 'VALIDADOR', activo: true },
+    ],
+    [
+      'voluntario',
+      { id: 4, nombre: 'Voluntario', rol: 'VOLUNTARIO', activo: true },
+    ],
+    [
+      'coordinador',
+      { id: 5, nombre: 'Coordinador', rol: 'GENERAL', activo: true },
+    ],
   ]);
   const snapshot = {
     subcampania_id: 1,
@@ -90,7 +99,7 @@ describe('GET/PUT plan — contrato HTTP y sesión', () => {
           provide: SupabaseService,
           useValue: {
             getClient: () => ({ from }),
-            getAdminClient: () => ({ rpc }),
+            getAdminClient: () => ({ from, rpc }),
           },
         },
         ...[
@@ -142,6 +151,8 @@ describe('GET/PUT plan — contrato HTTP y sesión', () => {
         .set('Authorization', `Bearer ${token(authId)}`)
         .expect(200);
       expect(response.body).toEqual({ success: true, data: snapshot });
+      expect(response.headers['cache-control']).toBe('private, no-store');
+      expect(response.headers.vary).toContain('Authorization');
       expect(eq).toHaveBeenCalledWith('auth_id', authId);
       expect(rpc).toHaveBeenCalledWith('fn_subcampania_obtener_plan', {
         p_subcampania_id: 1,
@@ -311,7 +322,7 @@ describe('GET/PUT plan — contrato HTTP y sesión', () => {
       .overrideProvider(SupabaseService)
       .useValue({
         getClient: () => ({ from }),
-        getAdminClient: () => ({ rpc }),
+        getAdminClient: () => ({ from, rpc }),
       })
       .compile();
     try {
