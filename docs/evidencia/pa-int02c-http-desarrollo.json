@@ -1,0 +1,158 @@
+{
+  "tarea": "PA-T-INT02-C-BE06",
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "entorno": "BACKEND_LOCAL_CON_SUPABASE_DESARROLLO",
+  "observado_en": "2026-10-15T10:11:21.330Z",
+  "implementacion": {
+    "bootstrap_real": true,
+    "host": "127.0.0.1",
+    "puerto": 64239,
+    "proceso_detenido": true,
+    "supabase_inicializado": true,
+    "fuentes": [
+      {
+        "archivo": "src/main.ts",
+        "sha256": "0916ecb3ced5ef85d218071871a0fe480db1041680ab8d52cfecf5813b74b9a7"
+      },
+      {
+        "archivo": "src/participacion/participacion.module.ts",
+        "sha256": "6e6918a3842e05b19bcc8a8292937475ac2f1d110bbe16512adc5215a6d63544"
+      }
+    ]
+  },
+  "pruebas": [
+    {
+      "caso": "proceso completo disponible",
+      "metodo": "GET",
+      "ruta": "/health",
+      "status": 200,
+      "aprobado": true
+    },
+    {
+      "caso": "Swagger contiene los DTO de las 14 rutas",
+      "metodo": "GET",
+      "ruta": "/api/docs-json",
+      "status": 200,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "GET",
+      "ruta": "/api/v1/participacion/capacidades",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "GET",
+      "ruta": "/api/v1/subcampanias/1/miembros-participacion",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "POST",
+      "ruta": "/api/v1/participacion/personas/buscar",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "POST",
+      "ruta": "/api/v1/participacion/accesos/revisar",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "POST",
+      "ruta": "/api/v1/participacion/accesos/otorgar-plantador",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "POST",
+      "ruta": "/api/v1/participacion/accesos/retirar-plantador",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "POST",
+      "ruta": "/api/v1/participacion/accesos/designar-administrador",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "POST",
+      "ruta": "/api/v1/participacion/accesos/administrador-a-plantador",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "POST",
+      "ruta": "/api/v1/participacion/accesos/retirar-administrador",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "POST",
+      "ruta": "/api/v1/participacion/accesos/reemplazar-administrador",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "POST",
+      "ruta": "/api/v1/usuarios/1/roles",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "POST",
+      "ruta": "/api/v1/usuarios/1/inactivaciones",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "GET",
+      "ruta": "/api/v1/usuarios/1/autoridad",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "visitante rechazado antes de dominio",
+      "metodo": "GET",
+      "ruta": "/api/v1/participacion/comandos/00000000-0000-4000-8000-000000000001",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "JWT sintético sin cuenta: guard consulta DB y devuelve sesión inválida",
+      "metodo": "GET",
+      "ruta": "/api/v1/participacion/capacidades",
+      "status": 401,
+      "aprobado": true
+    },
+    {
+      "caso": "preflight permite POST privado desde la PWA local",
+      "metodo": "OPTIONS",
+      "ruta": "/api/v1/participacion/accesos/otorgar-plantador",
+      "status": 204,
+      "aprobado": true
+    }
+  ],
+  "limites": [
+    "No crea ni modifica cuentas, permisos o comandos.",
+    "JWT sintético sólo identifica un auth_id aleatorio sin cuenta.",
+    "No acredita login WebAuthn, personas reales ni interfaz frontend.",
+    "No compara cuerpos SQL remotos ni acredita despliegue externo."
+  ],
+  "estado": "CORRECTO"
+}

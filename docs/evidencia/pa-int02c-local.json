@@ -1,0 +1,162 @@
+{
+  "tarea": "PA-T-INT02-C",
+  "estado": "CORRECTO",
+  "fecha_utc": "2026-10-15T15:31:21.168573+00:00",
+  "comando": "python3 scripts/qa/pa-int02c-db-test.py",
+  "entorno": {
+    "aislado": true,
+    "tcp": false,
+    "env_cargado": false,
+    "antecedente": "test/db/pa-int02c-fixture.sql",
+    "naturaleza": "SINTETICO_AISLADO_POST_067",
+    "postgresql": "14.17 (Homebrew)",
+    "lc_ctype": "C.UTF-8",
+    "lc_collate": "C.UTF-8",
+    "cluster_detenido": true,
+    "directorio_eliminado": true
+  },
+  "migraciones": [
+    "migrations/068_pa_participacion_comando.sql",
+    "migrations/069_pa_int02b_eventos_acceso.sql",
+    "migrations/070_pa_int02b_permisos_contextuales.sql",
+    "migrations/071_pa_int02b_bootstrap_controlado.sql",
+    "migrations/072_pa_int02c_comandos_acceso.sql",
+    "migrations/073_pa_int02c_lecturas.sql"
+  ],
+  "casos": [
+    "reinstalar072 después073 conserva EXECUTE de todas las lecturas privadas y su ejecución real",
+    "migraciones 068–073, repetición C aditiva y bootstrap sintético acotado",
+    "capacidades privadas/paginadas, sin contexto vacío, PAUSADA, saldo cero, miembros deduplicados/logística mínima",
+    "búsqueda correo exacto sin índice único/colisiones, nombre NFC y comodín literal; revisión completa privada",
+    "C04/C05, canonicalización multiámbito, replay/GET tras retiro, no-op y revisión obsoleta",
+    "vector compartido PA-COMANDO/1, BIGINT fuera de precisión JS y orden numérico2/10",
+    "todo-o-nada ante estado/revisión/eliminada, inactividad, PAUSADA y autoridad propia/ajena",
+    "C06/C07/C08, primera designación/no-op, degradación frente a retiro y último contextual",
+    "C09 cerrada/cancelada, entrante activo/ambas revisiones, entrante existente deduplicado",
+    "concurrencia real: dos retiros conservan administrador efectivo e historia íntegra",
+    "concurrencia real: baja/designación en ambos órdenes y baja/retiro sin cero efectivos",
+    "baja verifica todos los ámbitos, conserva permisos/historia y no-op valida autoridad",
+    "roles/baja separados, último ADMIN global, revisión concurrente y autoridad vigente",
+    "recuperación propia/replay tras retiro, ajeno indistinguible, inactivo rechazado y recibo mínimo",
+    "identidad de comando por actor/operación/UUID, sin clave global ni duplicación de efecto",
+    "dos POST concurrentes: misma clave confirma una vez y contenido distinto no sobrescribe",
+    "subtransacción: fallo tras efecto parcial revierte todo; desconocido no fabrica rechazo y misma clave converge",
+    "lock_timeout real ≈5s es inconcluso/404 y misma clave converge; statement_timeout previo30s",
+    "GET preparación compartida es 202/SIN_RESULTADO e inconcluso, sin estado EN_CURSO ficticio",
+    "miembro inactivo conserva gestión mínima, GET autoridad privado y perfil no muta autoridad",
+    "ACL SQL reales PUBLIC/anon/authenticated; límite service_role privilegiado INVOKER registrado sin efectos",
+    "reinstalación C conserva terminales, historia/equipo/registro legados y no crea EN_CURSO"
+  ],
+  "carreras": [
+    {
+      "caso": "dos retiros de últimos contextuales",
+      "espera_observada": "Lock",
+      "primero": "CONFIRMADO",
+      "segundo": "RECHAZADO",
+      "error_segundo": "ULTIMO_ADMINISTRADOR_CONTEXTUAL"
+    },
+    {
+      "caso": "baja antes de designación",
+      "espera_observada": "Lock",
+      "primero": "CONFIRMADO",
+      "segundo": "RECHAZADO",
+      "error_segundo": "DESTINO_INACTIVO"
+    },
+    {
+      "caso": "designación antes de baja",
+      "espera_observada": "Lock",
+      "primero": "CONFIRMADO",
+      "segundo": "RECHAZADO",
+      "error_segundo": "ULTIMO_ADMINISTRADOR_CONTEXTUAL"
+    },
+    {
+      "caso": "baja versus retiro del otro administrador",
+      "espera_observada": "Lock",
+      "primero": "CONFIRMADO",
+      "segundo": "RECHAZADO",
+      "error_segundo": "ULTIMO_ADMINISTRADOR_CONTEXTUAL"
+    },
+    {
+      "caso": "dos cambios de autoridad con misma revisión",
+      "espera_observada": "Lock",
+      "primero": "CONFIRMADO",
+      "segundo": "RECHAZADO",
+      "error_segundo": "REVISION_OBSOLETA"
+    },
+    {
+      "caso": "dos degradaciones de últimos ADMIN globales",
+      "espera_observada": "Lock",
+      "primero": "CONFIRMADO",
+      "segundo": "RECHAZADO",
+      "error_segundo": "ULTIMO_ADMIN_GLOBAL"
+    },
+    {
+      "caso": "misma clave/contenido en dos conexiones",
+      "espera_observada": "Lock",
+      "primero": "CONFIRMADO",
+      "segundo": "CONFIRMADO",
+      "error_segundo": null
+    },
+    {
+      "caso": "misma clave con contenido distinto en dos conexiones",
+      "espera_observada": "Lock",
+      "primero": "CONFIRMADO",
+      "segundo": null,
+      "error_segundo": "COMANDO_REUTILIZADO"
+    }
+  ],
+  "limites": [
+    "Sin aplicación remota ni catálogo real",
+    "Sin reconstrucción completa de 001–067",
+    "Sin PostGIS, Storage, registro INT03-A ni carreras de INT02-D",
+    "Continuidad cooperativa entre RPC: service_role privado conserva escritura SQL de autoridad por SECURITY INVOKER; SQL/importaciones ajenos al orden no están cubiertos",
+    "La ejecución HTTP se acredita por separado"
+  ],
+  "timeouts": {
+    "lock_timeout_segundos": 5,
+    "medido_segundos": 5.025,
+    "statement_timeout_previo": "30s",
+    "rechazo_durable_fabricado": false,
+    "misma_clave_converge": true
+  },
+  "frontera_service_role": {
+    "privada_privilegiada": true,
+    "sql_autoridad_directo_permitido": true,
+    "verificacion": "UPDATE rol/activo de fixture con ROLLBACK",
+    "garantia": "RPC cooperativas; importaciones/SQL directos privados deben respetar la misma disciplina",
+    "security_invoker_conservado": true
+  },
+  "conteos": {
+    "comandos": 78,
+    "historial": 40,
+    "vigencias": 34
+  },
+  "sha256": {
+    "migrations/068_pa_participacion_comando.sql": "838e1e658d178e59af5318e5b64514aef6b02317c1d4b19a3bd71af77e353a45",
+    "migrations/069_pa_int02b_eventos_acceso.sql": "cc360b8799d6a681d3ac98fe0114feae38223dfea7bea9dda0a4b739d0afca39",
+    "migrations/070_pa_int02b_permisos_contextuales.sql": "fe577206af76c8aa5f61ad453d0916b0e025b13b1660ba996fc8bbbd81dddd39",
+    "migrations/071_pa_int02b_bootstrap_controlado.sql": "ef8a2e3ff9a4e370c8ff176e0f85b46447f135dd3e5bd34ce21f74f909dbb560",
+    "migrations/072_pa_int02c_comandos_acceso.sql": "747b74f9a1d4c0eab006544119c4a5d505c757939a4eeedaec77e95f25233ee7",
+    "migrations/073_pa_int02c_lecturas.sql": "7bfcc6d60e5baaf603a514475e5403137d28a478dba715eed22a63797c34b157",
+    "test/db/pa-int02c-assertions.py": "8cb082ae97be43b1e4ae8d58d2d98aa7a4e64ad078432ba2453ec023c88916c8",
+    "scripts/qa/pa-int02c-db-test.py": "7f9bce2232ed78b0f8dfbb3846d55aba06f234fc1e9003b1e7e212561b997732",
+    "test/db/pa-int02b-fixture.sql": "c534f735cd9987d90f0efbcfc8c9debbb7b1fc3892261287bddabe91c1aea031",
+    "test/db/pa-int02c-fixture.sql": "cfef8a65ee2550a50a0c5e07678fff90ea5ea5ca51cf53243ced71454f667f83",
+    "migrations/064_pa_int02a_identidad_perfil.sql": "4c4d5de014312db461922862b7b1b6313674084f7c0eaca3d91a5cbbcef94344",
+    "scripts/sql/pa-int02c-estado.sql": "9061da321b311309ecc343515dc04cb3d6d426b1bec9aa38d700ef40d8887f59",
+    "scripts/qa/pa-int02c-estado-verificar.py": "a92fab4bf75b53e518293fc4bed4d50b679d36fa7ee21760c211066beab02ad3"
+  },
+  "cotejo_estado": {
+    "entorno": "SINTETICO_LOCAL",
+    "resultado": "ESTADO_COMPACTO_COTEJADO",
+    "evidencia": "docs/evidencia/pa-int02c-estado-local.json",
+    "salida": "docs/evidencia/pa-int02c-cotejo-local.json",
+    "origen_remoto_acreditado": false
+  },
+  "http": {
+    "implementacion_real": true,
+    "transporte_db": "psql socket privado",
+    "suite": "test/db/pa-int02c-http.spec.ts",
+    "exit_code": 0
+  }
+}

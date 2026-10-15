@@ -1,0 +1,121 @@
+{
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "entorno_confirmado_por_Pablo": "DESARROLLO",
+  "observado_en": "2026-10-14T22:35:10.210Z",
+  "pruebas": [
+    {
+      "caso": "control cliente publico aceptado sin filas",
+      "status": 200,
+      "code": null,
+      "aprobado": true
+    },
+    {
+      "caso": "control rol privado service_role sin filas",
+      "status": 200,
+      "code": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon SELECT participacion_comando sin filas",
+      "status": 401,
+      "code": "42501",
+      "aprobado": true
+    },
+    {
+      "caso": "service_role SELECT participacion_comando sin filas",
+      "status": 200,
+      "code": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon UPDATE participacion_comando filtro imposible",
+      "status": 401,
+      "code": "42501",
+      "aprobado": true
+    },
+    {
+      "caso": "anon SELECT subcampania_permiso sin filas",
+      "status": 401,
+      "code": "42501",
+      "aprobado": true
+    },
+    {
+      "caso": "service_role SELECT subcampania_permiso sin filas",
+      "status": 200,
+      "code": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon UPDATE subcampania_permiso filtro imposible",
+      "status": 401,
+      "code": "42501",
+      "aprobado": true
+    },
+    {
+      "caso": "anon SELECT subcampania_permiso_revision sin filas",
+      "status": 401,
+      "code": "42501",
+      "aprobado": true
+    },
+    {
+      "caso": "service_role SELECT subcampania_permiso_revision sin filas",
+      "status": 200,
+      "code": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon UPDATE subcampania_permiso_revision filtro imposible",
+      "status": 401,
+      "code": "42501",
+      "aprobado": true
+    },
+    {
+      "caso": "anon SELECT subcampania_historial sin filas",
+      "status": 401,
+      "code": "42501",
+      "aprobado": true
+    },
+    {
+      "caso": "service_role SELECT subcampania_historial sin filas",
+      "status": 200,
+      "code": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon UPDATE subcampania_historial filtro imposible",
+      "status": 401,
+      "code": "42501",
+      "aprobado": true
+    },
+    {
+      "caso": "anon UPDATE marca subcampania filtro imposible",
+      "status": 401,
+      "code": "42501",
+      "aprobado": true
+    },
+    {
+      "caso": "columnas inicializacion presentes sin leer filas",
+      "status": 200,
+      "code": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon RPC bootstrap con manifest invalido, sin efectos",
+      "status": 401,
+      "code": "42501",
+      "aprobado": true
+    },
+    {
+      "caso": "service_role RPC bootstrap con manifest invalido, sin efectos",
+      "status": 400,
+      "code": "22023",
+      "aprobado": true
+    }
+  ],
+  "limites": [
+    "sin filas privadas",
+    "sin bootstrap real",
+    "authenticated/FKs/RLS/sobrecargas requieren cotejo SQL"
+  ],
+  "script_sha256": "c1bdb396598e7a2b287c7a64d0eb57c26b133c406f6f8198f48bc77d7e42c930"
+}

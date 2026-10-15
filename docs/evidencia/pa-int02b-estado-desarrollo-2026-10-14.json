@@ -1,0 +1,500 @@
+{
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "entorno_confirmado_por_Pablo": "DESARROLLO",
+  "fuente": "Salida de pa-int02b-estado.sql ejecutada por Pablo y compartida en este chat",
+  "confirmacion_migraciones": "Sí, las cuatro sin errores",
+  "migraciones": [
+    "068",
+    "069",
+    "070",
+    "071"
+  ],
+  "estado": {
+    "base": "postgres",
+    "legado": {
+      "equipo": 44,
+      "hechos": 9,
+      "usuarios": 40,
+      "historial": 73
+    },
+    "funciones": [
+      {
+        "firma": "fn_subcampania_historial_prevent_mutation()",
+        "huella": "e6df6463f63c0e0d5b217becce3d04af",
+        "anon_ejecuta": false,
+        "configuracion": [
+          "search_path=pg_catalog, public"
+        ],
+        "security_definer": false,
+        "service_role_ejecuta": false,
+        "authenticated_ejecuta": false
+      },
+      {
+        "firma": "pa_inicializar_participacion_legada(bigint,uuid,jsonb)",
+        "huella": "286eacfaf1974481c64b24db593ded55",
+        "anon_ejecuta": false,
+        "configuracion": [
+          "search_path=pg_catalog, public"
+        ],
+        "security_definer": false,
+        "service_role_ejecuta": true,
+        "authenticated_ejecuta": false
+      },
+      {
+        "firma": "pa_participacion_comando_proteger()",
+        "huella": "c3765aadf349d66969dcc30bf24d1631",
+        "anon_ejecuta": false,
+        "configuracion": [
+          "search_path=pg_catalog, public"
+        ],
+        "security_definer": false,
+        "service_role_ejecuta": false,
+        "authenticated_ejecuta": false
+      },
+      {
+        "firma": "pa_participacion_marca_proteger()",
+        "huella": "0c67a35f6828f440394d9dd4f6959306",
+        "anon_ejecuta": false,
+        "configuracion": [
+          "search_path=pg_catalog, public"
+        ],
+        "security_definer": false,
+        "service_role_ejecuta": false,
+        "authenticated_ejecuta": false
+      },
+      {
+        "firma": "pa_permiso_revision_proteger()",
+        "huella": "ae19785f6c00a55884079f5fb585ba7d",
+        "anon_ejecuta": false,
+        "configuracion": [
+          "search_path=pg_catalog, public"
+        ],
+        "security_definer": false,
+        "service_role_ejecuta": false,
+        "authenticated_ejecuta": false
+      },
+      {
+        "firma": "pa_permiso_vigencia_proteger()",
+        "huella": "b3d9136be070cf4463b0a2d3f1918773",
+        "anon_ejecuta": false,
+        "configuracion": [
+          "search_path=pg_catalog, public"
+        ],
+        "security_definer": false,
+        "service_role_ejecuta": false,
+        "authenticated_ejecuta": false
+      }
+    ],
+    "relaciones": [
+      {
+        "acl": "{postgres=arwdDxtm/postgres,service_role=arw/postgres}",
+        "rls": true,
+        "nombre": "participacion_comando"
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,service_role=ar/postgres}",
+        "rls": false,
+        "nombre": "subcampania_historial"
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,service_role=arw/postgres}",
+        "rls": true,
+        "nombre": "subcampania_permiso"
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,service_role=arw/postgres}",
+        "rls": true,
+        "nombre": "subcampania_permiso_revision"
+      }
+    ],
+    "privilegios": [
+      {
+        "rol": "anon",
+        "tabla": "participacion_comando",
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "truncate": false
+      },
+      {
+        "rol": "anon",
+        "tabla": "subcampania_historial",
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "truncate": false
+      },
+      {
+        "rol": "anon",
+        "tabla": "subcampania_permiso",
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "truncate": false
+      },
+      {
+        "rol": "anon",
+        "tabla": "subcampania_permiso_revision",
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "truncate": false
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "participacion_comando",
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "truncate": false
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "subcampania_historial",
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "truncate": false
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "subcampania_permiso",
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "truncate": false
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "subcampania_permiso_revision",
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "truncate": false
+      },
+      {
+        "rol": "service_role",
+        "tabla": "participacion_comando",
+        "delete": false,
+        "insert": true,
+        "select": true,
+        "update": true,
+        "truncate": false
+      },
+      {
+        "rol": "service_role",
+        "tabla": "subcampania_historial",
+        "delete": false,
+        "insert": true,
+        "select": true,
+        "update": false,
+        "truncate": false
+      },
+      {
+        "rol": "service_role",
+        "tabla": "subcampania_permiso",
+        "delete": false,
+        "insert": true,
+        "select": true,
+        "update": true,
+        "truncate": false
+      },
+      {
+        "rol": "service_role",
+        "tabla": "subcampania_permiso_revision",
+        "delete": false,
+        "insert": true,
+        "select": true,
+        "update": true,
+        "truncate": false
+      }
+    ],
+    "observado_en": "2026-10-14T22:39:16.263195+00:00",
+    "rol_consulta": "postgres",
+    "solo_lectura": "on",
+    "restricciones": [
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_actor_fk",
+        "validada": true,
+        "definicion": "FOREIGN KEY (actor_id) REFERENCES usuario(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_ciclo_ck",
+        "validada": true,
+        "definicion": "CHECK ((((estado = 'PREPARADO'::text) AND (operacion = 'REGISTRAR_PLANTACION_INICIAL'::text) AND (subcampania_preparacion_id IS NOT NULL) AND (huella IS NULL) AND (registro_plantacion_id IS NULL) AND (resultado IS NULL) AND (error IS NULL) AND (http_terminal IS NULL) AND (finalizado_en IS NULL)) OR ((estado = 'CONFIRMADO'::text) AND (huella IS NOT NULL) AND (resultado IS NOT NULL) AND (error IS NULL) AND (http_terminal IS NOT NULL) AND (http_terminal = 200) AND (finalizado_en IS NOT NULL)) OR ((estado = 'RECHAZADO'::text) AND (resultado IS NULL) AND (error IS NOT NULL) AND (registro_plantacion_id IS NULL) AND (http_terminal IS NOT NULL) AND (http_terminal = ANY (ARRAY[403, 404, 409, 422, 503])) AND (finalizado_en IS NOT NULL) AND ((huella IS NOT NULL) OR COALESCE(((operacion = 'REGISTRAR_PLANTACION_INICIAL'::text) AND (subcampania_preparacion_id IS NOT NULL) AND (http_terminal = 409) AND ((error ->> 'codigo'::text) = 'PREPARACION_CANCELADA'::text)), false)))))"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_error_ck",
+        "validada": true,
+        "definicion": "CHECK (((error IS NULL) OR COALESCE(((jsonb_typeof((error -> 'codigo'::text)) = 'string'::text) AND (btrim((error ->> 'codigo'::text)) <> ''::text) AND (jsonb_typeof((error -> 'mensaje'::text)) = 'string'::text) AND (btrim((error ->> 'mensaje'::text)) <> ''::text) AND (jsonb_typeof((error -> 'campos'::text)) = 'array'::text) AND (jsonb_typeof((error -> 'ambitos'::text)) = 'array'::text) AND ((error ->> 'reintento'::text) = ANY (ARRAY['MISMA_CLAVE'::text, 'NUEVA_CONFIRMACION'::text, 'RECUPERAR_SESION'::text, 'NO_APLICA'::text]))), false)))"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_estado_ck",
+        "validada": true,
+        "definicion": "CHECK ((estado = ANY (ARRAY['PREPARADO'::text, 'CONFIRMADO'::text, 'RECHAZADO'::text])))"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_fechas_ck",
+        "validada": true,
+        "definicion": "CHECK (((finalizado_en IS NULL) OR (finalizado_en >= creado_en)))"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_huella_ck",
+        "validada": true,
+        "definicion": "CHECK (((huella IS NULL) OR (octet_length(huella) = 32)))"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_id_actor_uq",
+        "validada": true,
+        "definicion": "UNIQUE (id, actor_id)"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_identidad_uq",
+        "validada": true,
+        "definicion": "UNIQUE (actor_id, operacion, comando_id)"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_objetos_ck",
+        "validada": true,
+        "definicion": "CHECK ((((resultado IS NULL) OR (jsonb_typeof(resultado) = 'object'::text)) AND ((error IS NULL) OR (jsonb_typeof(error) = 'object'::text))))"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_operacion_ck",
+        "validada": true,
+        "definicion": "CHECK ((operacion = ANY (ARRAY['REGISTRAR_PLANTACION_INICIAL'::text, 'OTORGAR_PLANTADOR'::text, 'RETIRAR_PLANTADOR'::text, 'DESIGNAR_ADMINISTRADOR'::text, 'CAMBIAR_ADMINISTRADOR_A_PLANTADOR'::text, 'RETIRAR_ADMINISTRADOR'::text, 'REEMPLAZAR_ADMINISTRADOR'::text, 'CAMBIAR_ROL_GLOBAL'::text, 'INACTIVAR_CUENTA'::text, 'INICIALIZAR_PARTICIPACION_LEGADA'::text])))"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_pkey",
+        "validada": true,
+        "definicion": "PRIMARY KEY (id)"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_preparacion_fk",
+        "validada": true,
+        "definicion": "FOREIGN KEY (subcampania_preparacion_id) REFERENCES subcampania(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_registro_fk",
+        "validada": true,
+        "definicion": "FOREIGN KEY (registro_plantacion_id) REFERENCES registro_plantacion(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_registro_resultado_ck",
+        "validada": true,
+        "definicion": "CHECK (\nCASE\n    WHEN ((estado = 'CONFIRMADO'::text) AND (operacion = 'REGISTRAR_PLANTACION_INICIAL'::text)) THEN ((registro_plantacion_id IS NOT NULL) AND (subcampania_preparacion_id IS NOT NULL) AND COALESCE(((jsonb_typeof((resultado -> 'registro_plantacion_id'::text)) = 'string'::text) AND ((resultado ->> 'registro_plantacion_id'::text) = (registro_plantacion_id)::text) AND (jsonb_typeof((resultado -> 'subcampania_id'::text)) = 'string'::text) AND ((resultado ->> 'subcampania_id'::text) = (subcampania_preparacion_id)::text) AND ((resultado ->> 'tipo'::text) = 'PLANTACION_INICIAL'::text)), false))\n    ELSE (registro_plantacion_id IS NULL)\nEND)"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_resultado_tipo_ck",
+        "validada": true,
+        "definicion": "CHECK (((estado <> 'CONFIRMADO'::text) OR COALESCE(((resultado ->> 'tipo'::text) =\nCASE\n    WHEN (operacion = 'REGISTRAR_PLANTACION_INICIAL'::text) THEN 'PLANTACION_INICIAL'::text\n    WHEN (operacion = 'CAMBIAR_ROL_GLOBAL'::text) THEN 'ROL_GLOBAL'::text\n    WHEN (operacion = 'INACTIVAR_CUENTA'::text) THEN 'CUENTA_INACTIVADA'::text\n    WHEN (operacion = 'INICIALIZAR_PARTICIPACION_LEGADA'::text) THEN 'INICIALIZACION_PARTICIPACION_LEGADA'::text\n    ELSE 'ACCESO'::text\nEND), false)))"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_scope_ck",
+        "validada": true,
+        "definicion": "CHECK (((operacion = 'REGISTRAR_PLANTACION_INICIAL'::text) OR (subcampania_preparacion_id IS NULL)))"
+      },
+      {
+        "tabla": "participacion_comando",
+        "nombre": "participacion_comando_version_ck",
+        "validada": true,
+        "definicion": "CHECK (((version_contrato > 0) AND (version_huella > 0)))"
+      },
+      {
+        "tabla": "subcampania_historial",
+        "nombre": "subcampania_historial_acceso_chk",
+        "validada": true,
+        "definicion": "CHECK ((((tipo_historial)::text <> ALL (ARRAY['PERMISO_OTORGADO'::text, 'PERMISO_CAMBIADO'::text, 'PERMISO_RETIRADO'::text, 'ADMINISTRADOR_REEMPLAZADO'::text])) OR ((participacion_comando_id IS NOT NULL) AND (actor_user_id IS NOT NULL) AND (estado_origen IS NOT NULL) AND (estado_destino IS NOT NULL) AND (estado_origen = estado_destino) AND (NOT (jsonb_typeof((metadata -> 'anterior'::text)) IS DISTINCT FROM 'array'::text)) AND (NOT (jsonb_typeof((metadata -> 'nuevo'::text)) IS DISTINCT FROM 'array'::text)) AND (jsonb_array_length((metadata -> 'anterior'::text)) > 0) AND (jsonb_array_length((metadata -> 'anterior'::text)) = jsonb_array_length((metadata -> 'nuevo'::text))))))"
+      },
+      {
+        "tabla": "subcampania_historial",
+        "nombre": "subcampania_historial_actor_fk",
+        "validada": true,
+        "definicion": "FOREIGN KEY (actor_user_id) REFERENCES usuario(id) ON DELETE SET NULL"
+      },
+      {
+        "tabla": "subcampania_historial",
+        "nombre": "subcampania_historial_comando_actor_fk",
+        "validada": true,
+        "definicion": "FOREIGN KEY (participacion_comando_id, actor_user_id) REFERENCES participacion_comando(id, actor_id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_historial",
+        "nombre": "subcampania_historial_metadata_object_chk",
+        "validada": true,
+        "definicion": "CHECK ((jsonb_typeof(metadata) = 'object'::text))"
+      },
+      {
+        "tabla": "subcampania_historial",
+        "nombre": "subcampania_historial_participacion_comando_fk",
+        "validada": true,
+        "definicion": "FOREIGN KEY (participacion_comando_id) REFERENCES participacion_comando(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_historial",
+        "nombre": "subcampania_historial_pkey",
+        "validada": true,
+        "definicion": "PRIMARY KEY (id)"
+      },
+      {
+        "tabla": "subcampania_historial",
+        "nombre": "subcampania_historial_subcampania_fk",
+        "validada": true,
+        "definicion": "FOREIGN KEY (subcampania_id) REFERENCES subcampania(id) ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_permiso",
+        "nombre": "subcampania_permiso_actor_otorgamiento_fk",
+        "validada": true,
+        "definicion": "FOREIGN KEY (comando_otorgamiento_id, otorgado_por) REFERENCES participacion_comando(id, actor_id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_permiso",
+        "nombre": "subcampania_permiso_actor_retiro_fk",
+        "validada": true,
+        "definicion": "FOREIGN KEY (comando_retiro_id, revocado_por) REFERENCES participacion_comando(id, actor_id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_permiso",
+        "nombre": "subcampania_permiso_comando_otorgamiento_id_fkey",
+        "validada": true,
+        "definicion": "FOREIGN KEY (comando_otorgamiento_id) REFERENCES participacion_comando(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_permiso",
+        "nombre": "subcampania_permiso_comando_retiro_id_fkey",
+        "validada": true,
+        "definicion": "FOREIGN KEY (comando_retiro_id) REFERENCES participacion_comando(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_permiso",
+        "nombre": "subcampania_permiso_otorgado_por_fkey",
+        "validada": true,
+        "definicion": "FOREIGN KEY (otorgado_por) REFERENCES usuario(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_permiso",
+        "nombre": "subcampania_permiso_pkey",
+        "validada": true,
+        "definicion": "PRIMARY KEY (id)"
+      },
+      {
+        "tabla": "subcampania_permiso",
+        "nombre": "subcampania_permiso_retiro_chk",
+        "validada": true,
+        "definicion": "CHECK ((((revocado_en IS NULL) AND (revocado_por IS NULL) AND (comando_retiro_id IS NULL)) OR ((revocado_en IS NOT NULL) AND (revocado_por IS NOT NULL) AND (comando_retiro_id IS NOT NULL) AND (revocado_en >= otorgado_en))))"
+      },
+      {
+        "tabla": "subcampania_permiso",
+        "nombre": "subcampania_permiso_revision_fk",
+        "validada": true,
+        "definicion": "FOREIGN KEY (subcampania_id, usuario_id) REFERENCES subcampania_permiso_revision(subcampania_id, usuario_id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_permiso",
+        "nombre": "subcampania_permiso_revocado_por_fkey",
+        "validada": true,
+        "definicion": "FOREIGN KEY (revocado_por) REFERENCES usuario(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_permiso",
+        "nombre": "subcampania_permiso_rol_contextual_check",
+        "validada": true,
+        "definicion": "CHECK ((rol_contextual = ANY (ARRAY['PLANTADOR'::text, 'ADMINISTRADOR_SUBCAMPANIA'::text])))"
+      },
+      {
+        "tabla": "subcampania_permiso",
+        "nombre": "subcampania_permiso_subcampania_id_fkey",
+        "validada": true,
+        "definicion": "FOREIGN KEY (subcampania_id) REFERENCES subcampania(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_permiso",
+        "nombre": "subcampania_permiso_usuario_id_fkey",
+        "validada": true,
+        "definicion": "FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_permiso_revision",
+        "nombre": "subcampania_permiso_revision_actualizado_por_fkey",
+        "validada": true,
+        "definicion": "FOREIGN KEY (actualizado_por) REFERENCES usuario(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_permiso_revision",
+        "nombre": "subcampania_permiso_revision_pkey",
+        "validada": true,
+        "definicion": "PRIMARY KEY (subcampania_id, usuario_id)"
+      },
+      {
+        "tabla": "subcampania_permiso_revision",
+        "nombre": "subcampania_permiso_revision_revision_check",
+        "validada": true,
+        "definicion": "CHECK ((revision >= 1))"
+      },
+      {
+        "tabla": "subcampania_permiso_revision",
+        "nombre": "subcampania_permiso_revision_subcampania_id_fkey",
+        "validada": true,
+        "definicion": "FOREIGN KEY (subcampania_id) REFERENCES subcampania(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "tabla": "subcampania_permiso_revision",
+        "nombre": "subcampania_permiso_revision_usuario_id_fkey",
+        "validada": true,
+        "definicion": "FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      }
+    ],
+    "roles_cuentas": [
+      {
+        "rol": "ADMIN",
+        "activo": true,
+        "cuentas": 5
+      },
+      {
+        "rol": "GENERAL",
+        "activo": true,
+        "cuentas": 32
+      },
+      {
+        "rol": "VOLUNTARIO",
+        "activo": true,
+        "cuentas": 3
+      }
+    ],
+    "postgres_version": "17.6",
+    "marca_inicializacion": [
+      {
+        "tipo": "timestamp with time zone",
+        "columna": "participacion_inicializada_en"
+      },
+      {
+        "tipo": "bigint",
+        "columna": "participacion_inicializada_por"
+      }
+    ]
+  }
+}

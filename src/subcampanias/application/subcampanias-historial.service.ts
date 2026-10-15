@@ -37,7 +37,7 @@ export class SubcampaniasHistorialService {
     if (params.tipo === TipoHistorialSubcampania.PLAN_REVISADO) {
       throw new Error('PLAN_REVISADO requiere fn_subcampania_revisar_plan.');
     }
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { error } = await supabase.from('subcampania_historial').insert({
       subcampania_id: params.subcampaniaId,

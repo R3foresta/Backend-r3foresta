@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
 import { configureGlobalRoutes } from './app.routes';
+import { participacionOpenApi } from './participacion/participacion-openapi.generated';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -74,7 +75,7 @@ async function bootstrap() {
       'x-user-role',
       'Accept',
     ],
-    exposedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Content-Type', 'Authorization', 'Retry-After'],
     preflightContinue: false,
     optionsSuccessStatus: 204,
   });
@@ -135,6 +136,18 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+  document.paths = { ...document.paths, ...participacionOpenApi.paths };
+  document.components = {
+    ...document.components,
+    schemas: {
+      ...document.components?.schemas,
+      ...participacionOpenApi.components?.schemas,
+    },
+    securitySchemes: {
+      ...document.components?.securitySchemes,
+      ...participacionOpenApi.components?.securitySchemes,
+    },
+  };
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
@@ -144,7 +157,7 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  await app.listen(port, process.env.HOST || '0.0.0.0');
   console.log(`🚀 Backend NestJS corriendo en http://localhost:${port}`);
   console.log(
     `📚 Documentación Swagger disponible en http://localhost:${port}/api/docs`,

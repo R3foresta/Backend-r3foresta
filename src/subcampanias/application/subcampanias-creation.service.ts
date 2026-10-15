@@ -40,7 +40,7 @@ export class SubcampaniasCreationService {
       );
     }
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: campania, error: campError } = await supabase
       .from('campania')

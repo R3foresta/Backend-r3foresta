@@ -1,0 +1,40 @@
+{
+  "resultado": "ESTADO_COMPACTO_COTEJADO",
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "postgres_version": "17.6",
+  "observado_en": "2026-10-14T22:39:16.263195+00:00",
+  "restricciones_validadas": 41,
+  "fk_nuevas_restrict": 17,
+  "combinaciones_privilegios_cotejadas": 12,
+  "huellas_funciones_coincidentes": 6,
+  "legado_fotografia_posterior": {
+    "equipo": 44,
+    "hechos": 9,
+    "usuarios": 40,
+    "historial": 73
+  },
+  "roles_fotografia_posterior": [
+    {
+      "rol": "ADMIN",
+      "activo": true,
+      "cuentas": 5
+    },
+    {
+      "rol": "GENERAL",
+      "activo": true,
+      "cuentas": 32
+    },
+    {
+      "rol": "VOLUNTARIO",
+      "activo": true,
+      "cuentas": 3
+    }
+  ],
+  "limites": [
+    "Sin fotografia anterior B: no acredita conservacion real antes/despues",
+    "Estado compacto no trae indices/triggers/politicas/secuencias/MAINTAIN ni todas las columnas",
+    "Sin manifest real revisado ni transicion de personas",
+    "Sin despliegue de consumidores acreditado"
+  ],
+  "cotejador_sha256": "7bbbaacc8404c7f63eda71a559543fa4b85c2ee32b49d3a2ae57ca22857437fb"
+}

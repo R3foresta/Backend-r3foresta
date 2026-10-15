@@ -22,7 +22,12 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:e2e:p0": "jest --config ./test/jest-e2e.json test/e2e/p0",
     "test:e2e:db": "jest --config ./test/jest-e2e.json test/e2e/db",
-    "test:db:plan": "jest --config ./test/jest-db-isolated.json --runInBand"
+    "test:db:plan": "jest --config ./test/jest-db-isolated.json --runInBand",
+    "test:db:participacion": "python3 scripts/qa/pa-int02b-db-test.py",
+    "test:db:acceso": "python3 scripts/qa/pa-int02c-db-test.py",
+    "docs:participacion": "node scripts/qa/pa-int02c-openapi.cjs",
+    "preview:participacion": "python3 scripts/qa/pa-int02c-preview.py",
+    "test:db:acceso:estado": "python3 -m unittest discover -s test/db -p 'test_pa_int02c_estado_verificar.py'"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

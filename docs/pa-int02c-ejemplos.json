@@ -1,0 +1,895 @@
+{
+  "origen": "HTTP directo contra PostgreSQL sintético aislado; sólo identidades de fixture.",
+  "ejemplos": {
+    "designacion_confirmada": {
+      "http": 200,
+      "body": {
+        "error": null,
+        "estado": "CONFIRMADO",
+        "operacion": "DESIGNAR_ADMINISTRADOR",
+        "resultado": {
+          "tipo": "ACCESO",
+          "cambios": [
+            {
+              "usuarios": [
+                {
+                  "cambio": "CAMBIO_APLICADO",
+                  "usuario_id": "602",
+                  "permiso_nuevo": "ADMINISTRADOR_SUBCAMPANIA",
+                  "revision_nueva": "1",
+                  "permiso_anterior": null,
+                  "revision_anterior": "0",
+                  "conserva_acceso_global": false
+                }
+              ],
+              "subcampania_id": "600"
+            }
+          ]
+        },
+        "comando_id": "f2b3290e-af28-42e1-93b2-7fca3fc7e848",
+        "finalizado_en": "2026-10-15T15:31:43.770023Z"
+      }
+    },
+    "plantador_confirmado": {
+      "http": 200,
+      "body": {
+        "error": null,
+        "estado": "CONFIRMADO",
+        "operacion": "OTORGAR_PLANTADOR",
+        "resultado": {
+          "tipo": "ACCESO",
+          "cambios": [
+            {
+              "usuarios": [
+                {
+                  "cambio": "CAMBIO_APLICADO",
+                  "usuario_id": "603",
+                  "permiso_nuevo": "PLANTADOR",
+                  "revision_nueva": "1",
+                  "permiso_anterior": null,
+                  "revision_anterior": "0",
+                  "conserva_acceso_global": false
+                }
+              ],
+              "subcampania_id": "600"
+            }
+          ]
+        },
+        "comando_id": "61b1ae57-886b-452e-b170-e45a37497bc4",
+        "finalizado_en": "2026-10-15T15:31:43.815403Z"
+      }
+    },
+    "capacidades_voluntario": {
+      "http": 200,
+      "body": {
+        "data": {
+          "actor": {
+            "usuario_id": "604",
+            "rol_global": "VOLUNTARIO"
+          },
+          "capacidades_globales": {
+            "asignar_roles": false,
+            "designar_administradores": false,
+            "leer_plan": true
+          },
+          "subcampanias": []
+        },
+        "observado_en": "2026-10-15T15:31:43.869Z",
+        "siguiente_cursor": null
+      }
+    },
+    "capacidades_plantador": {
+      "http": 200,
+      "body": {
+        "data": {
+          "actor": {
+            "usuario_id": "603",
+            "rol_global": "VOLUNTARIO"
+          },
+          "capacidades_globales": {
+            "asignar_roles": false,
+            "designar_administradores": false,
+            "leer_plan": true
+          },
+          "subcampanias": [
+            {
+              "campania_id": "600",
+              "campania_nombre": "Campaña HTTP",
+              "subcampania_id": "600",
+              "nombre": "Propia HTTP",
+              "estado": "ACTIVA",
+              "permiso_contextual": "PLANTADOR",
+              "revision_permiso": "1",
+              "fuente_autoridad": "CONTEXTUAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": false,
+                "incorporar_plantador": false,
+                "cambiar_administrador": false,
+                "retirar_administrador": false,
+                "designar_administrador": false,
+                "reemplazar_administrador": false
+              }
+            }
+          ]
+        },
+        "observado_en": "2026-10-15T15:31:43.898Z",
+        "siguiente_cursor": null
+      }
+    },
+    "capacidades_contextual": {
+      "http": 200,
+      "body": {
+        "data": {
+          "actor": {
+            "usuario_id": "602",
+            "rol_global": "VOLUNTARIO"
+          },
+          "capacidades_globales": {
+            "asignar_roles": false,
+            "designar_administradores": false,
+            "leer_plan": true
+          },
+          "subcampanias": [
+            {
+              "campania_id": "600",
+              "campania_nombre": "Campaña HTTP",
+              "subcampania_id": "600",
+              "nombre": "Propia HTTP",
+              "estado": "ACTIVA",
+              "permiso_contextual": "ADMINISTRADOR_SUBCAMPANIA",
+              "revision_permiso": "1",
+              "fuente_autoridad": "CONTEXTUAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": false,
+                "retirar_administrador": false,
+                "designar_administrador": false,
+                "reemplazar_administrador": false
+              }
+            }
+          ]
+        },
+        "observado_en": "2026-10-15T15:31:43.936Z",
+        "siguiente_cursor": null
+      }
+    },
+    "capacidades_admin": {
+      "http": 200,
+      "body": {
+        "data": {
+          "actor": {
+            "usuario_id": "600",
+            "rol_global": "ADMIN"
+          },
+          "capacidades_globales": {
+            "asignar_roles": true,
+            "designar_administradores": true,
+            "leer_plan": true
+          },
+          "subcampanias": [
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "11",
+              "nombre": "Ámbito sintético 11",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "12",
+              "nombre": "Ámbito sintético 12",
+              "estado": "COMPLETADA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": false,
+                "registrar_inicial": false,
+                "retirar_plantador": true,
+                "incorporar_plantador": false,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": false,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "13",
+              "nombre": "Ámbito sintético 13",
+              "estado": "CANCELADA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": false,
+                "registrar_inicial": false,
+                "retirar_plantador": true,
+                "incorporar_plantador": false,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": false,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "14",
+              "nombre": "Ámbito sintético 14",
+              "estado": "BORRADOR",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": false,
+                "registrar_inicial": false,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "15",
+              "nombre": "Ámbito sintético 15",
+              "estado": "PAUSADA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": false,
+                "registrar_inicial": false,
+                "retirar_plantador": false,
+                "incorporar_plantador": false,
+                "cambiar_administrador": false,
+                "retirar_administrador": false,
+                "designar_administrador": false,
+                "reemplazar_administrador": false
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "16",
+              "nombre": "Ámbito sintético 16",
+              "estado": "FINALIZADA_PARCIAL",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": false,
+                "registrar_inicial": false,
+                "retirar_plantador": true,
+                "incorporar_plantador": false,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": false,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "17",
+              "nombre": "Ámbito sintético 17",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "18",
+              "nombre": "Ámbito sintético 18",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "19",
+              "nombre": "Ámbito sintético 19",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "20",
+              "nombre": "Ámbito sintético 20",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "21",
+              "nombre": "Ámbito sintético 21",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "22",
+              "nombre": "Ámbito sintético 22",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "23",
+              "nombre": "Ámbito sintético 23",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "24",
+              "nombre": "Ámbito sintético 24",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "25",
+              "nombre": "Ámbito sintético 25",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "26",
+              "nombre": "Ámbito sintético 26",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "27",
+              "nombre": "Ámbito sintético 27",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "28",
+              "nombre": "Ámbito sintético 28",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "1",
+              "campania_nombre": "Campaña sintética INT02C",
+              "subcampania_id": "29",
+              "nombre": "Ámbito sintético 29",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            },
+            {
+              "campania_id": "600",
+              "campania_nombre": "Campaña HTTP",
+              "subcampania_id": "600",
+              "nombre": "Propia HTTP",
+              "estado": "ACTIVA",
+              "permiso_contextual": null,
+              "revision_permiso": "0",
+              "fuente_autoridad": "GLOBAL",
+              "acciones": {
+                "preparar_registro": true,
+                "registrar_inicial": true,
+                "retirar_plantador": true,
+                "incorporar_plantador": true,
+                "cambiar_administrador": true,
+                "retirar_administrador": true,
+                "designar_administrador": true,
+                "reemplazar_administrador": true
+              }
+            }
+          ]
+        },
+        "observado_en": "2026-10-15T15:31:43.966Z",
+        "siguiente_cursor": "WzEsIjQ0NGJhY2IzMTk4YTE4MjRkNmE4YTk2MWJhZjJjYmNjOTYyYTRlYWQyNTdmYjJlNmFjNWU4MGZmOGQxYjFlNzAiLCI2MDAiXQ.RwMK6_UbzEWmGy1orGXvtRXM9IwJRJAsfr3mD35ui0I"
+      }
+    },
+    "miembros": {
+      "http": 200,
+      "body": {
+        "data": [
+          {
+            "usuario_id": "600",
+            "nombre": "ADMIN HTTP",
+            "organizacion": null,
+            "permiso_contextual": null,
+            "revision_permiso": "0",
+            "acceso_global": true,
+            "etiqueta_acceso_global": "Administrador · Acceso global",
+            "responsabilidad_logistica": null
+          },
+          {
+            "usuario_id": "601",
+            "nombre": "ADMIN HTTP 2",
+            "organizacion": null,
+            "permiso_contextual": null,
+            "revision_permiso": "0",
+            "acceso_global": true,
+            "etiqueta_acceso_global": "Administrador · Acceso global",
+            "responsabilidad_logistica": null
+          },
+          {
+            "usuario_id": "1",
+            "nombre": "Administrador central",
+            "organizacion": null,
+            "permiso_contextual": null,
+            "revision_permiso": "0",
+            "acceso_global": true,
+            "etiqueta_acceso_global": "Administrador · Acceso global",
+            "responsabilidad_logistica": null
+          },
+          {
+            "usuario_id": "602",
+            "nombre": "Gestora HTTP",
+            "organizacion": null,
+            "permiso_contextual": "ADMINISTRADOR_SUBCAMPANIA",
+            "revision_permiso": "1",
+            "acceso_global": false,
+            "etiqueta_acceso_global": null,
+            "responsabilidad_logistica": null
+          },
+          {
+            "usuario_id": "603",
+            "nombre": "Plántador HTTP",
+            "organizacion": null,
+            "permiso_contextual": "PLANTADOR",
+            "revision_permiso": "1",
+            "acceso_global": false,
+            "etiqueta_acceso_global": null,
+            "responsabilidad_logistica": null
+          }
+        ],
+        "observado_en": "2026-10-15T15:31:44.086Z",
+        "siguiente_cursor": null
+      }
+    },
+    "busqueda_correo_exacto": {
+      "http": 200,
+      "body": {
+        "data": [
+          {
+            "usuario_id": "603",
+            "nombre": "Plántador HTTP",
+            "organizacion": null
+          }
+        ],
+        "observado_en": "2026-10-15T15:31:44.119Z",
+        "siguiente_cursor": null
+      }
+    },
+    "revision_accesos": {
+      "http": 200,
+      "body": {
+        "data": {
+          "usuario": {
+            "usuario_id": "603",
+            "nombre": "Plántador HTTP",
+            "organizacion": null
+          },
+          "ambitos": [
+            {
+              "subcampania_id": "600",
+              "permiso_contextual": "PLANTADOR",
+              "revision_permiso": "1",
+              "acceso_global": false
+            }
+          ]
+        },
+        "observado_en": "2026-10-15T15:31:44.153Z"
+      }
+    },
+    "sin_cambios": {
+      "http": 200,
+      "body": {
+        "error": null,
+        "estado": "CONFIRMADO",
+        "operacion": "OTORGAR_PLANTADOR",
+        "resultado": {
+          "tipo": "ACCESO",
+          "cambios": [
+            {
+              "usuarios": [
+                {
+                  "cambio": "SIN_CAMBIOS",
+                  "usuario_id": "603",
+                  "permiso_nuevo": "PLANTADOR",
+                  "revision_nueva": "1",
+                  "permiso_anterior": "PLANTADOR",
+                  "revision_anterior": "1",
+                  "conserva_acceso_global": false
+                }
+              ],
+              "subcampania_id": "600"
+            }
+          ]
+        },
+        "comando_id": "45f1373a-cdbc-4d46-9a6d-660bd9e46cad",
+        "finalizado_en": "2026-10-15T15:31:44.226816Z"
+      }
+    },
+    "revision_obsoleta_rechazado": {
+      "http": 409,
+      "body": {
+        "error": {
+          "campos": [],
+          "codigo": "REVISION_OBSOLETA",
+          "ambitos": [],
+          "mensaje": "La revisión cambió; revise la selección.",
+          "reintento": "NUEVA_CONFIRMACION"
+        },
+        "estado": "RECHAZADO",
+        "operacion": "OTORGAR_PLANTADOR",
+        "resultado": null,
+        "comando_id": "bbc1a652-b6ca-45c4-89ac-028704cba90c",
+        "finalizado_en": "2026-10-15T15:31:44.272895Z"
+      }
+    },
+    "reemplazo_confirmado": {
+      "http": 200,
+      "body": {
+        "error": null,
+        "estado": "CONFIRMADO",
+        "operacion": "REEMPLAZAR_ADMINISTRADOR",
+        "resultado": {
+          "tipo": "ACCESO",
+          "cambios": [
+            {
+              "usuarios": [
+                {
+                  "cambio": "CAMBIO_APLICADO",
+                  "usuario_id": "602",
+                  "permiso_nuevo": null,
+                  "revision_nueva": "2",
+                  "permiso_anterior": "ADMINISTRADOR_SUBCAMPANIA",
+                  "revision_anterior": "1",
+                  "conserva_acceso_global": false
+                },
+                {
+                  "cambio": "CAMBIO_APLICADO",
+                  "usuario_id": "604",
+                  "permiso_nuevo": "ADMINISTRADOR_SUBCAMPANIA",
+                  "revision_nueva": "1",
+                  "permiso_anterior": null,
+                  "revision_anterior": "0",
+                  "conserva_acceso_global": false
+                }
+              ],
+              "subcampania_id": "600"
+            }
+          ]
+        },
+        "comando_id": "ba2924c2-6123-4df9-b54e-7cd333ccf580",
+        "finalizado_en": "2026-10-15T15:31:44.305153Z"
+      }
+    },
+    "recuperacion_propia": {
+      "http": 200,
+      "body": {
+        "error": null,
+        "estado": "CONFIRMADO",
+        "operacion": "OTORGAR_PLANTADOR",
+        "resultado": {
+          "tipo": "ACCESO",
+          "cambios": [
+            {
+              "usuarios": [
+                {
+                  "cambio": "SIN_CAMBIOS",
+                  "usuario_id": "603",
+                  "permiso_nuevo": "PLANTADOR",
+                  "revision_nueva": "1",
+                  "permiso_anterior": "PLANTADOR",
+                  "revision_anterior": "1",
+                  "conserva_acceso_global": false
+                }
+              ],
+              "subcampania_id": "600"
+            }
+          ]
+        },
+        "comando_id": "45f1373a-cdbc-4d46-9a6d-660bd9e46cad",
+        "finalizado_en": "2026-10-15T15:31:44.226816Z"
+      }
+    },
+    "clave_reutilizada_inconcluso": {
+      "http": 409,
+      "body": {
+        "error": {
+          "campos": [],
+          "codigo": "COMANDO_REUTILIZADO",
+          "ambitos": [],
+          "mensaje": "La clave ya corresponde a otro contenido.",
+          "reintento": "MISMA_CLAVE"
+        },
+        "comando_id": "45f1373a-cdbc-4d46-9a6d-660bd9e46cad",
+        "resultado_concluyente": false
+      }
+    },
+    "comando_no_confirmado_inconcluso": {
+      "http": 404,
+      "body": {
+        "error": {
+          "campos": [],
+          "codigo": "COMANDO_NO_CONFIRMADO",
+          "ambitos": [],
+          "mensaje": "No hay un resultado confirmado para esta clave.",
+          "reintento": "MISMA_CLAVE"
+        },
+        "comando_id": "45f1373a-cdbc-4d46-9a6d-660bd9e46cad",
+        "resultado_concluyente": false
+      }
+    },
+    "autoridad": {
+      "http": 200,
+      "body": {
+        "data": {
+          "activo": true,
+          "nombre": "Plántador HTTP",
+          "rol_global": "VOLUNTARIO",
+          "usuario_id": "603",
+          "revision_autoridad": "0"
+        },
+        "observado_en": "2026-10-15T15:31:44.521172Z"
+      }
+    },
+    "rol_confirmado": {
+      "http": 200,
+      "body": {
+        "error": null,
+        "estado": "CONFIRMADO",
+        "operacion": "CAMBIAR_ROL_GLOBAL",
+        "resultado": {
+          "tipo": "ROL_GLOBAL",
+          "cambio": "CAMBIO_APLICADO",
+          "rol_nuevo": "GENERAL",
+          "usuario_id": "603",
+          "rol_anterior": "VOLUNTARIO",
+          "revision_nueva": "1",
+          "revision_anterior": "0"
+        },
+        "comando_id": "c940741a-3fb3-47e3-89c4-66856769180b",
+        "finalizado_en": "2026-10-15T15:31:44.555555Z"
+      }
+    },
+    "capacidad_rechazado": {
+      "http": 403,
+      "body": {
+        "error": {
+          "campos": [],
+          "codigo": "CAPACIDAD_INSUFICIENTE",
+          "ambitos": [],
+          "mensaje": "No dispone de esta capacidad.",
+          "reintento": "NUEVA_CONFIRMACION"
+        },
+        "estado": "RECHAZADO",
+        "operacion": "CAMBIAR_ROL_GLOBAL",
+        "resultado": null,
+        "comando_id": "5884b180-e5b3-4a3e-abdb-1cffe4ab7668",
+        "finalizado_en": "2026-10-15T15:31:44.586620Z"
+      }
+    },
+    "inactivacion_confirmada": {
+      "http": 200,
+      "body": {
+        "error": null,
+        "estado": "CONFIRMADO",
+        "operacion": "INACTIVAR_CUENTA",
+        "resultado": {
+          "tipo": "CUENTA_INACTIVADA",
+          "activo": false,
+          "cambio": "CAMBIO_APLICADO",
+          "usuario_id": "603",
+          "revision_nueva": "2",
+          "revision_anterior": "1"
+        },
+        "comando_id": "681999fa-49dd-462a-8dfa-07d4787c1183",
+        "finalizado_en": "2026-10-15T15:31:44.621326Z"
+      }
+    },
+    "preparado_sin_resultado": {
+      "http": 202,
+      "body": {
+        "error": null,
+        "estado": "SIN_RESULTADO",
+        "operacion": "REGISTRAR_PLANTACION_INICIAL",
+        "resultado": null,
+        "comando_id": "e0a06a51-7b72-4c01-b5be-6421ed975877",
+        "finalizado_en": null
+      }
+    }
+  }
+}

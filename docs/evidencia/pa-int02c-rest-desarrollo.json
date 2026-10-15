@@ -1,0 +1,357 @@
+{
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "entorno_confirmado_por_Pablo": "DESARROLLO",
+  "migraciones_declaradas_aplicadas_por_usuario": [
+    "072",
+    "073"
+  ],
+  "observado_en": "2026-10-14T23:04:13.269Z",
+  "versiones": {
+    "node": "v24.19.0"
+  },
+  "fuentes_locales_al_verificar": [
+    {
+      "archivo": "migrations/072_pa_int02c_comandos_acceso.sql",
+      "sha256": "747b74f9a1d4c0eab006544119c4a5d505c757939a4eeedaec77e95f25233ee7",
+      "funciones": [
+        {
+          "nombre": "pa_c_error",
+          "md5_cuerpo": "c00d8e4901fab6073c970233d25826e9"
+        },
+        {
+          "nombre": "pa_c_fuera",
+          "md5_cuerpo": "03c2f65253adefa0caf62b773b28a290"
+        },
+        {
+          "nombre": "pa_c_recibo",
+          "md5_cuerpo": "74cdf9bb02e2eb408e9c40359fdbeeb8"
+        },
+        {
+          "nombre": "pa_c_decimal",
+          "md5_cuerpo": "120f4a7de8d0657b16335a3041fcb908"
+        },
+        {
+          "nombre": "pa_c_canon_coincide",
+          "md5_cuerpo": "83a55dc727738228ffb6cf24d95c53e3"
+        },
+        {
+          "nombre": "pa_acceso_ejecutar",
+          "md5_cuerpo": "8075887f7777097967da3a2a3f146750"
+        },
+        {
+          "nombre": "pa_c_rechazar",
+          "md5_cuerpo": "5c5fd7946dc5d49b8d76ffe319260ee1"
+        },
+        {
+          "nombre": "pa_c_replay",
+          "md5_cuerpo": "6f980c31c4cad7286602446c1e16adba"
+        },
+        {
+          "nombre": "pa_comando_recuperar",
+          "md5_cuerpo": "1b807bf3eae44827f22273ccfa11369d"
+        },
+        {
+          "nombre": "pa_autoridad_leer",
+          "md5_cuerpo": "4d26d1116d9ff9f48828a6da209f9e62"
+        },
+        {
+          "nombre": "pa_c_permiso_aplicar",
+          "md5_cuerpo": "ecd174c894605c3a9fbaead2a31e7d02"
+        },
+        {
+          "nombre": "pa_autoridad_ejecutar",
+          "md5_cuerpo": "d5b80a0eb44e4580243ca143557ee74b"
+        }
+      ]
+    },
+    {
+      "archivo": "migrations/073_pa_int02c_lecturas.sql",
+      "sha256": "7bfcc6d60e5baaf603a514475e5403137d28a478dba715eed22a63797c34b157",
+      "funciones": [
+        {
+          "nombre": "pa_lecturas_actor",
+          "md5_cuerpo": "ef1d5ff117c3f41d68249077ee4623a2"
+        },
+        {
+          "nombre": "pa_lecturas_ambitos_validar",
+          "md5_cuerpo": "0abed68fb62b14cfdbac3eba957a795d"
+        },
+        {
+          "nombre": "pa_capacidades_leer",
+          "md5_cuerpo": "c78dd608391b614fa1a7c0b6d38836aa"
+        },
+        {
+          "nombre": "pa_miembros_participacion_leer",
+          "md5_cuerpo": "c6572e84cdf23c19a532f0e0d0bc6541"
+        },
+        {
+          "nombre": "pa_personas_buscar",
+          "md5_cuerpo": "58836c1806f2e863089ba34638fe2625"
+        },
+        {
+          "nombre": "pa_accesos_revisar",
+          "md5_cuerpo": "c3d8aeb89da2d454abe8e3456c8ce0aa"
+        }
+      ]
+    }
+  ],
+  "pruebas": [
+    {
+      "caso": "control cliente publico aceptado sin filas",
+      "status": 200,
+      "code": null,
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "control service_role sin filas",
+      "status": 200,
+      "code": null,
+      "error_estable": null,
+      "aprobado": true,
+      "configuracion_privada": {
+        "statement_timeout": "30s",
+        "lock_timeout": "5s",
+        "espera_segundos": 0
+      }
+    },
+    {
+      "caso": "anon SELECT usuario_autoridad_historial limit0",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role SELECT usuario_autoridad_historial limit0",
+      "status": 200,
+      "code": null,
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon SELECT participacion_comando limit0",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role SELECT participacion_comando limit0",
+      "status": 200,
+      "code": null,
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon SELECT subcampania_permiso limit0",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role SELECT subcampania_permiso limit0",
+      "status": 200,
+      "code": null,
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon SELECT subcampania_permiso_revision limit0",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role SELECT subcampania_permiso_revision limit0",
+      "status": 200,
+      "code": null,
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon SELECT subcampania_historial limit0",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role SELECT subcampania_historial limit0",
+      "status": 200,
+      "code": null,
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon RPC pa_capacidades_leer sin efectos",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role RPC pa_capacidades_leer entrada sintética sin efectos",
+      "status": 401,
+      "code": "PT401",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon RPC pa_capacidades_leer sin efectos",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role RPC pa_capacidades_leer entrada sintética sin efectos",
+      "status": 422,
+      "code": "PT422",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon RPC pa_miembros_participacion_leer sin efectos",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role RPC pa_miembros_participacion_leer entrada sintética sin efectos",
+      "status": 422,
+      "code": "PT422",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon RPC pa_personas_buscar sin efectos",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role RPC pa_personas_buscar entrada sintética sin efectos",
+      "status": 422,
+      "code": "PT422",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon RPC pa_accesos_revisar sin efectos",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role RPC pa_accesos_revisar entrada sintética sin efectos",
+      "status": 401,
+      "code": "PT401",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon RPC pa_comando_recuperar sin efectos",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role RPC pa_comando_recuperar entrada sintética sin efectos",
+      "status": 200,
+      "code": null,
+      "error_estable": "SESION_INVALIDA",
+      "aprobado": true
+    },
+    {
+      "caso": "anon RPC pa_acceso_ejecutar sin efectos",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role RPC pa_acceso_ejecutar entrada sintética sin efectos",
+      "status": 200,
+      "code": null,
+      "error_estable": "ENTRADA_INVALIDA",
+      "aprobado": true
+    },
+    {
+      "caso": "anon RPC pa_autoridad_ejecutar sin efectos",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role RPC pa_autoridad_ejecutar entrada sintética sin efectos",
+      "status": 200,
+      "code": null,
+      "error_estable": "ENTRADA_INVALIDA",
+      "aprobado": true
+    },
+    {
+      "caso": "anon RPC pa_autoridad_leer sin efectos",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "service_role RPC pa_autoridad_leer entrada sintética sin efectos",
+      "status": 200,
+      "code": null,
+      "error_estable": "SESION_INVALIDA",
+      "aprobado": true
+    },
+    {
+      "caso": "anon helper pa_c_decimal denegado",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon helper pa_c_canon_coincide denegado",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon helper pa_c_error denegado",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon helper pa_lecturas_actor denegado",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    },
+    {
+      "caso": "anon helper pa_lecturas_ambitos_validar denegado",
+      "status": 401,
+      "code": "42501",
+      "error_estable": null,
+      "aprobado": true
+    }
+  ],
+  "coincidencia_cuerpo_sql_remoto_verificada": false,
+  "limites": [
+    "No lee filas ni personas; no ejecuta comandos válidos ni aplica migraciones.",
+    "REST verifica superficie de firmas/grants y rechazo temprano; no certifica cuerpos SQL/md5 remotos.",
+    "RLS/políticas/índices/locale/grants de authenticated/sobrecargas/continuidad requieren cotejo SQL.",
+    "Aplicación072/073 declarada por usuario; igualdad con archivos locales requiere estado SQL."
+  ]
+}

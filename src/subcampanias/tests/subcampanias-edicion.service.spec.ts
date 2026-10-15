@@ -7,9 +7,9 @@ import { EdicionPorEstadoPolicy } from '../domain/policies/edicion-por-estado.po
 
 describe('revisiones de meta por PATCH', () => {
   it('rechaza meta incluso combinada con otros datos antes de acceder a la base', async () => {
-    const getClient = jest.fn();
+    const getAdminClient = jest.fn();
     const service = new SubcampaniasEdicionService(
-      { getClient } as unknown as SupabaseService,
+      { getAdminClient } as unknown as SupabaseService,
       {
         getUserByAuthId: jest.fn().mockResolvedValue({ id: 1, rol: 'ADMIN' }),
         assertAdmin: jest.fn(),
@@ -22,7 +22,7 @@ describe('revisiones de meta por PATCH', () => {
         'admin',
       ),
     ).rejects.toThrow(UnprocessableEntityException);
-    expect(getClient).not.toHaveBeenCalled();
+    expect(getAdminClient).not.toHaveBeenCalled();
   });
 
   it.each(Object.values(EstadoSubcampania))(

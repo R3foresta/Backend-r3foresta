@@ -27,7 +27,7 @@ export class SubcampaniasPoligonoService {
 
     this.validarGeoJson(dto.poligono);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data, error } = await supabase.rpc(
       'fn_subcampania_setear_poligono',

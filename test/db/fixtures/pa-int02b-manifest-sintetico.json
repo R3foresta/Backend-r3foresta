@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "ambitos": [
+    {
+      "subcampania_id": "11",
+      "estado_esperado": "ACTIVA",
+      "correspondencias": [
+        {
+          "usuario_id": "2",
+          "permiso_propuesto": "ADMINISTRADOR_SUBCAMPANIA",
+          "revision_esperada": "0",
+          "justificacion": "Correspondencia sintetica revisada para ensayo aislado",
+          "fuente_legada": "FIXTURE sintetico, no autorizacion de personas reales",
+          "decision_revisor": {
+            "estado": "APROBADA",
+            "revisor": "Pablo",
+            "referencia": "DECISION SINTETICA NO REAL"
+          }
+        },
+        {
+          "usuario_id": "3",
+          "permiso_propuesto": "PLANTADOR",
+          "revision_esperada": "0",
+          "justificacion": "Correspondencia sintetica revisada para ensayo aislado",
+          "fuente_legada": "FIXTURE sintetico, no autorizacion de personas reales",
+          "decision_revisor": {
+            "estado": "APROBADA",
+            "revisor": "Pablo",
+            "referencia": "DECISION SINTETICA NO REAL"
+          }
+        }
+      ]
+    },
+    {
+      "subcampania_id": "12",
+      "estado_esperado": "COMPLETADA",
+      "correspondencias": [
+        {
+          "usuario_id": "2",
+          "permiso_propuesto": "ADMINISTRADOR_SUBCAMPANIA",
+          "revision_esperada": "0",
+          "justificacion": "Correspondencia sintetica revisada para ensayo aislado",
+          "fuente_legada": "FIXTURE sintetico, no autorizacion de personas reales",
+          "decision_revisor": {
+            "estado": "APROBADA",
+            "revisor": "Pablo",
+            "referencia": "DECISION SINTETICA NO REAL"
+          }
+        },
+        {
+          "usuario_id": "4",
+          "permiso_propuesto": "ADMINISTRADOR_SUBCAMPANIA",
+          "revision_esperada": "0",
+          "justificacion": "Correspondencia sintetica revisada para ensayo aislado",
+          "fuente_legada": "FIXTURE sintetico, no autorizacion de personas reales",
+          "decision_revisor": {
+            "estado": "APROBADA",
+            "revisor": "Pablo",
+            "referencia": "DECISION SINTETICA NO REAL"
+          }
+        }
+      ]
+    },
+    {
+      "subcampania_id": "13",
+      "estado_esperado": "CANCELADA",
+      "correspondencias": [
+        {
+          "usuario_id": "3",
+          "permiso_propuesto": "ADMINISTRADOR_SUBCAMPANIA",
+          "revision_esperada": "0",
+          "justificacion": "Correspondencia sintetica revisada para ensayo aislado",
+          "fuente_legada": "FIXTURE sintetico, no autorizacion de personas reales",
+          "decision_revisor": {
+            "estado": "APROBADA",
+            "revisor": "Pablo",
+            "referencia": "DECISION SINTETICA NO REAL"
+          }
+        }
+      ]
+    },
+    {
+      "subcampania_id": "16",
+      "estado_esperado": "FINALIZADA_PARCIAL",
+      "correspondencias": [
+        {
+          "usuario_id": "2",
+          "permiso_propuesto": "ADMINISTRADOR_SUBCAMPANIA",
+          "revision_esperada": "0",
+          "justificacion": "Correspondencia sintetica revisada para ensayo aislado",
+          "fuente_legada": "FIXTURE sintetico, no autorizacion de personas reales",
+          "decision_revisor": {
+            "estado": "APROBADA",
+            "revisor": "Pablo",
+            "referencia": "DECISION SINTETICA NO REAL"
+          }
+        }
+      ]
+    },
+    {
+      "subcampania_id": "9007199254740993",
+      "estado_esperado": "ACTIVA",
+      "correspondencias": [
+        {
+          "usuario_id": "9007199254740993",
+          "permiso_propuesto": "ADMINISTRADOR_SUBCAMPANIA",
+          "revision_esperada": "0",
+          "justificacion": "Correspondencia sintetica revisada para ensayo aislado",
+          "fuente_legada": "FIXTURE sintetico, no autorizacion de personas reales",
+          "decision_revisor": {
+            "estado": "APROBADA",
+            "revisor": "Pablo",
+            "referencia": "DECISION SINTETICA NO REAL"
+          }
+        }
+      ]
+    }
+  ]
+}

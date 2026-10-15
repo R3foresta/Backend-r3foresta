@@ -54,7 +54,7 @@ function buildSupabase(opts: {
   const update = jest.fn().mockReturnValue({ eq: updateEq });
 
   return {
-    getClient: jest.fn().mockReturnValue({
+    getAdminClient: jest.fn().mockReturnValue({
       from: jest.fn().mockReturnValue({ select: subSelect, update }),
     }),
   } as unknown as SupabaseService;

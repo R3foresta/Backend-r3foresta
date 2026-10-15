@@ -1,0 +1,26 @@
+{
+  "resultado": "ESTADO_COMPACTO_COTEJADO",
+  "entorno_declarado": "SINTETICO_LOCAL",
+  "proyecto_contexto": "SINTETICO_AISLADO_INT02C",
+  "origen_remoto_acreditado": false,
+  "migraciones_cotejadas": [
+    "072",
+    "073"
+  ],
+  "cotejos": {
+    "relaciones": 5,
+    "combinaciones_acl": 15,
+    "huellas_funciones": 18,
+    "restricciones": 52,
+    "fk_nuevas_restrict": 21,
+    "indices": 25,
+    "triggers": 8
+  },
+  "desviaciones": [],
+  "limites": [
+    "Solo cotejo de un archivo local; ref/entorno aportados no prueban su origen remoto.",
+    "Fotografía posterior: no acredita conservación de datos reales antes/después.",
+    "No ejecuta RPC ni comandos, ni acredita despliegue backend/frontend o integración INT03-A/INT02-D.",
+    "La consulta no incluye MAINTAIN, otros definers ni todas las relaciones externas al alcance C."
+  ]
+}

@@ -33,7 +33,7 @@ export class SubcampaniasEdicionService {
       );
     }
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: actual, error: fetchError } = await supabase
       .from('subcampania')
@@ -111,7 +111,7 @@ export class SubcampaniasEdicionService {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertAdmin(usuario.rol);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: actual, error: fetchError } = await supabase
       .from('subcampania')

@@ -73,7 +73,7 @@ function buildSupabase(opts: {
   });
 
   return {
-    getClient: jest.fn().mockReturnValue({ from }),
+    getAdminClient: jest.fn().mockReturnValue({ from }),
   } as unknown as SupabaseService;
 }
 
