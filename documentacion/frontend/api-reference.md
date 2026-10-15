@@ -1,6 +1,6 @@
 # API Reference — Reforesta Backend
 
-**Última actualización**: 2026-08-11
+**Convenciones revisadas**: 2026-10-15. Las guías por módulo pueden conservar contratos legados; confirmar controller/DTO/guard antes de copiar sus ejemplos. Participación v1: [OpenAPI vigente](../../docs/pa-int02c-openapi.json).
 
 ## Tabla de Contenidos
 
@@ -34,20 +34,13 @@ externos.
 
 ### Autenticación
 
-Todos los endpoints requieren el header:
+Las rutas privadas exigen `Authorization: Bearer <token>` verificado. `x-auth-id` es opcional y sólo puede coincidir con el JWT; `x-user-role` no concede autoridad. WebAuthn acredita identidad y backend/DB revalidan cuenta, rol y permiso por acción/objeto.
 
-```
-x-auth-id: <supabase_auth_id>
-```
+Impacto público, `/health` y la ceremonia WebAuthn conservan sus audiencias. No existe una regla única para todos los GET ni un guard global; ver [seguridad y superficies pendientes](../../ARCHITECTURE.md#petición-privada-y-autorización).
 
-**Excepciones**: Endpoints de auth (login, registro) — ver módulo Usuarios.
+Roles globales: `ADMIN | GENERAL | VALIDADOR | VOLUNTARIO`. El alta escribe VOLUNTARIO; un permiso contextual puede habilitarle participación sin cambiar ese rol. `PLANTADOR` y `ADMINISTRADOR_SUBCAMPANIA` no son roles globales ni logística COORDINADOR/OPERARIO. Perfil/afiliación no modifican autoridad.
 
-**Roles válidos**:
-
-- `ADMIN` — Acceso total, creación de campañas/organizaciones
-- `VALIDADOR` — Valida recolecciones, acceso a datos operativos
-- `GENERAL` — Acceso básico, lectura/escritura en módulos asignados
-- `VOLUNTARIO` — Acceso limitado, solo lectura en vistas públicas
+Para v1 de participación, IDs y revisiones BIGINT son cadenas, las entradas son estrictas y lecturas/comandos usan envelopes completos. Las rutas legadas conservan sus tipos y respuestas; los [contratos de C](../../docs/pa-int02c-entrega-local.md) prevalecen sobre ejemplos anteriores para sus 14 rutas.
 
 ### Content-Type
 
@@ -59,7 +52,7 @@ x-auth-id: <supabase_auth_id>
 | Status  | Escenario                                                                       |
 | ------- | ------------------------------------------------------------------------------- |
 | **400** | Validación fallida: datos inválidos, formato incorrecto, parámetros malformados |
-| **401** | Header `x-auth-id` ausente, vacío o token JWT inválido                          |
+| **401** | Bearer ausente/inválido, sesión no resoluble o identidad discordante                          |
 | **403** | Rol insuficiente para la acción solicitada                                      |
 | **404** | Recurso no encontrado                                                           |
 | **409** | Conflicto: duplicado (ej. email, username, nombre único ya existe)              |
@@ -68,7 +61,9 @@ x-auth-id: <supabase_auth_id>
 
 ### Respuestas
 
-**Éxito (GET list)**:
+Las formas siguientes describen contratos legados. Participación v1 tiene recibos/envelopes discriminados y errores propios en su OpenAPI; no extrapolar `success/data` a esas rutas.
+
+**Éxito (GET list legado)**:
 
 ```json
 {
@@ -294,7 +289,7 @@ Formato exacto para subcampañas:
 
 ### Autenticación en Desarrollo
 
-Algunos endpoints aceptan `x-auth-id` directamente (sin JWT) en modo dev. Ver `users.controller.ts`.
+Las rutas privadas verificadas usan Bearer también en desarrollo. Los tokens del preview de participación sólo sirven para su fixture local.
 
 ### Límites de Archivos
 

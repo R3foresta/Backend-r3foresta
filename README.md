@@ -1,100 +1,65 @@
 # Backend R3Foresta
 
-API REST de trazabilidad forestal construida con NestJS y Supabase. Modela la
-cadena completa:
+API NestJS/Supabase para trazabilidad: **Recolección → Vivero → entrega física → Plantación**.
+Estado revisado el **15 de octubre de 2026**, sobre el código publicado en `e9777f8`.
 
-```text
-Recolección → Lote de vivero → Asignación física → Plantación
-```
+## Empezar
 
-Incluye evidencia en Supabase Storage, metadata NFT en Pinata/IPFS y anclaje
-blockchain de recolecciones validadas.
-
-## Documentación
-
-- [ARCHITECTURE.md](ARCHITECTURE.md): arquitectura implementada, invariantes,
-  límites transaccionales y riesgos.
-- [documentacion/README.md](documentacion/README.md): índice de contratos,
-  guías de frontend, Postman y decisiones del backend.
-- [test/README.md](test/README.md): estructura y alcance de pruebas.
-- [R3foresta/r3foresta-docs](https://github.com/R3foresta/r3foresta-docs):
-  requerimientos, reglas de negocio, contratos entre módulos, esquema canónico
-  y estado de despliegue.
-
-Si una guía contradice el contrato de producto, revisar el orden de fuentes de
-verdad definido en `ARCHITECTURE.md`.
-
-## Requisitos
-
-- Node.js compatible con ES2023.
-- npm.
-- Proyecto Supabase con las migraciones requeridas.
-- Credenciales de Pinata y blockchain: en la implementación actual ambos
-  módulos se inicializan al arrancar la aplicación.
-
-Copiar `.env.example` a `.env` y reemplazar todos los valores de ejemplo. No
-usar el fallback de `JWT_SECRET` en producción.
-
-## Instalación y ejecución
-
-```bash
-npm install
+```sh
+npm ci
+cp .env.example .env
+# Completar la configuración privada antes de arrancar.
 npm run start:dev
 ```
 
-La API queda, por defecto, en `http://localhost:3000/api` y Swagger en
-`http://localhost:3000/api/docs`.
+Node/npm compatibles con el lockfile; la última verificación usó Node 24.19.0.
+`package.json` todavía no fija `engines`. Para el backend completo se requieren
+Supabase, JWT, Pinata y blockchain: estos módulos se inicializan al arrancar.
+`JWT_SECRET` es obligatorio, sin fallback. `SUPABASE_SERVICE_ROLE_KEY` es
+necesaria para identidad, operaciones privadas y RPC; nunca va a la PWA.
+Las variables y opcionales `HOST`, `PORT`, `CORS_ORIGINS` y `UBICACION_VIEW_NAME`
+están en [.env.example](.env.example).
 
-Comandos:
-
-```bash
-npm run build
-npm run start:prod
-npm run lint
-npm run format
-```
-
-`npm run lint` y `npm run format` modifican archivos.
-
-## Pruebas
-
-```bash
-npm test
-npm run test:unit
-npm run test:integration
-npm run test:e2e
-npm run test:e2e:p0
-npm run test:e2e:db
-npm run test:cov
-```
-
-Integración y e2e pueden depender de Supabase real y escribir datos. Revisar
-`test/README.md` y las variables de entorno antes de ejecutarlas.
-
-## Variables de entorno
-
-| Variable | Uso |
+| Servicio local | URL |
 |---|---|
-| `SUPABASE_URL` | URL del proyecto Supabase |
-| `SUPABASE_KEY` | Cliente Supabase usado por la mayoría de servicios |
-| `SUPABASE_SERVICE_ROLE_KEY` | Operaciones administrativas/RPC restringidas |
-| `JWT_SECRET` | Firma de tokens emitidos por WebAuthn |
-| `PINATA_JWT` | Escritura de metadata en Pinata |
-| `GATEWAY_URL` | Gateway IPFS |
-| `RPC_URL` | Nodo blockchain |
-| `PRIVATE_KEY` | Wallet firmante del backend |
-| `CONTRACT_ADDRESS` | Contrato NFT |
-| `CORS_ORIGINS` | Orígenes adicionales separados por coma |
-| `UBICACION_VIEW_NAME` | Vista alternativa de ubicaciones, opcional |
-| `PORT` | Puerto HTTP, por defecto `3000` |
+| API general / participación | `http://localhost:3000/api` / `/api/v1` |
+| Swagger / contrato JSON | `http://localhost:3000/api/docs` / `/api/docs-json` |
+| Salud del proceso, sin dependencias externas | `http://localhost:3000/health` |
 
-Nunca publicar `.env`, `PRIVATE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
-`PINATA_JWT` ni `JWT_SECRET`.
+Para integrar gestión de acceso **sin credenciales ni Supabase**, ejecutar
+`npm run preview:participacion`. Entrega una API sintética en `127.0.0.1:3302`;
+ver [guía de participación](documentacion/modulos/participacion.md).
 
-## Advertencia de seguridad
+## Verificar un cambio
 
-El backend emite JWT, pero gran parte de la API todavía identifica al solicitante
-mediante `x-auth-id` sin validar globalmente el token. Además existen endpoints
-de diagnóstico e integración privilegiada sin guard. Esta situación está
-registrada como P0 en `ARCHITECTURE.md`; no se debe considerar `x-auth-id` un
-mecanismo suficiente para clientes no confiables.
+```sh
+npm run build
+npm run test:unit -- --runInBand
+```
+
+[Pruebas](test/README.md) distingue unitarios, PostgreSQL aislado y suites con
+escrituras externas. `npm run lint` y `npm run format` modifican archivos.
+
+## Documentación esencial
+
+| Necesidad | Entrada |
+|---|---|
+| Trabajar en el repositorio | [AGENTS.md](AGENTS.md) |
+| Entender límites, seguridad y datos | [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Integrar permisos, roles y recuperación | [Participación](documentacion/modulos/participacion.md) |
+| Consultar módulos y recetas | [Índice técnico](documentacion/README.md) |
+| Revisar migraciones y pruebas de una entrega | [Informes y evidencias](docs/README.md) |
+| Reglas de producto y avance entre equipos | [r3foresta-docs](https://github.com/R3foresta/r3foresta-docs) |
+
+## Qué está listo y qué falta
+
+B/C implementan permisos contextuales y 14 rutas de gestión/recuperación;
+**el registro participante con fotos/LIFO aún no está implementado**. La gestión
+tiene pruebas DB/HTTP aisladas y un entorno local para frontend. SQL aplicado,
+cotejo remoto, publicación Git y despliegue son evidencias distintas; consultar
+la [guía de participación](documentacion/modulos/participacion.md#estado-y-límites).
+
+Las rutas privadas cubiertas usan **Bearer JWT verificado**, cuenta activa y
+políticas de servidor; `x-auth-id` no autentica. Impacto conserva su audiencia
+pública. Permanecen superficies legadas y deuda de despliegue/migraciones
+identificadas en [arquitectura](ARCHITECTURE.md#pendientes-materiales).

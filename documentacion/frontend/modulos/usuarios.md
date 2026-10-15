@@ -1,337 +1,74 @@
-# Módulo: Usuarios
+# Usuarios, perfil y autoridad
 
-Base URL: `/api/users`
+**Revisado: 15 de octubre de 2026.** [Sesión WebAuthn](../webauthn.md), [controller legado](../../../src/users/users.controller.ts), [controller v1](../../../src/users/perfil-v1.controller.ts) y [DTO de perfil](../../../src/users/perfil-v1.dto.ts).
 
----
+Todas las rutas de esta guía exigen Bearer verificado y cuenta activa. El actor se toma de la sesión, no de un ID del body. `x-auth-id` puede omitirse; si se envía debe coincidir. El alta empieza VOLUNTARIO; la afiliación declarada no concede permisos.
 
-## GET /users
+## Perfil propio v1
 
-**Rol mínimo**: GENERAL
-**Descripción**: Lista usuarios para selectores (dropdowns), filtrados por nombre y/o rol.
-
-**Headers**
-| Header | Requerido | Descripción |
-|--------|-----------|-------------|
-| x-auth-id | ✓ | Supabase auth_id del usuario autenticado |
-
-**Query Parameters**
-| Parámetro | Tipo | Requerido | Descripción |
-|-----------|------|-----------|------------|
-| q | string | — | Búsqueda ILIKE por nombre (case-insensitive) |
-| rol | string | — | Filtrar por rol exacto (ADMIN, GENERAL, VALIDADOR, VOLUNTARIO) |
-
-**Respuesta exitosa** `200`
-
-```json
-[
-  {
-    "id": 1,
-    "nombre": "Juan Pérez",
-    "rol": "ADMIN",
-    "foto_perfil_url": "https://supabase.../imagenes-perfil/user_1716910800000_abc123/profile-picture.jpg?v=1716920000000"
-  },
-  {
-    "id": 2,
-    "nombre": "María González",
-    "rol": "GENERAL",
-    "foto_perfil_url": null
-  }
-]
-```
-
-**Errores**
-| Status | Cuándo |
-|--------|--------|
-| 400 | Rol inválido, parámetros malformados |
-| 401 | Header x-auth-id ausente |
-
-**Ejemplo cURL**
-
-```bash
-curl -X GET "http://localhost:3000/api/users?q=juan&rol=ADMIN" \
-  -H "x-auth-id: <tu-auth-id>"
-```
-
----
-
-## GET /users/rol/:rol
-
-**Rol mínimo**: GENERAL
-**Descripción**: Alias explícito para listar usuarios por rol. Útil para selectores de coordinadores/equipo.
-
-**Headers**
-| Header | Requerido | Descripción |
-|--------|-----------|-------------|
-| x-auth-id | ✓ | Supabase auth_id del usuario autenticado |
-
-**Path Parameters**
-| Parámetro | Tipo | Descripción |
-|-----------|------|------------|
-| rol | string | Rol exacto: ADMIN, GENERAL, VALIDADOR, VOLUNTARIO |
-
-**Query Parameters**
-| Parámetro | Tipo | Requerido | Descripción |
-|-----------|------|-----------|------------|
-| q | string | — | Búsqueda ILIKE por nombre |
-
-**Respuesta exitosa** `200`
-
-```json
-[
-  {
-    "id": 7,
-    "nombre": "Coord Pepe",
-    "rol": "GENERAL",
-    "foto_perfil_url": "https://supabase.../imagenes-perfil/user_1716910800000_def456/profile-picture.jpg?v=1716920000000"
-  }
-]
-```
-
-**Notas**
-
-- Es equivalente a `GET /users?rol=:rol&q=...`.
-- Para coordinadores de subcampaña, filtrar por el rol de usuario que producto defina como elegible y luego asignarlo con rol de equipo `COORDINADOR`.
-
-**Errores**
-| Status | Cuándo |
-|--------|--------|
-| 400 | Rol inválido o parámetros malformados |
-| 401 | Header x-auth-id ausente |
-
-**Ejemplo cURL**
-
-```bash
-curl -X GET "http://localhost:3000/api/users/rol/GENERAL?q=coord" \
-  -H "x-auth-id: <tu-auth-id>"
-```
-
----
-
-## GET /users/profile
-
-**Rol mínimo**: GENERAL (leer el propio perfil)  
-**Descripción**: Obtiene los datos completos del usuario autenticado.
-
-**Headers**
-| Header | Requerido | Descripción |
-|--------|-----------|-------------|
-| x-auth-id | ✓ | Supabase auth_id (dev mode); o JWT Bearer (prod) |
-
-**Respuesta exitosa** `200`
+`GET /api/v1/usuarios/me/perfil` devuelve `{data:PerfilPropio, observado_en}`. Todos los campos del perfil son requeridos:
 
 ```json
 {
-  "id": 1,
-  "username": "juan.perez",
-  "correo": "juan@example.com",
-  "auth_id": "user_1716910800000_abc123",
-  "nombre": "Juan Pérez",
-  "apellido": "González",
-  "doc_identidad": "12345678",
-  "wallet_address": "0x1234567890123456789012345678901234567890",
-  "organizacion": "Fundacion Verde",
-  "contacto": "555-1234",
-  "rol": "ADMIN",
-  "foto_perfil_url": "https://supabase.../imagenes-perfil/user_1716910800000_abc123/profile-picture.jpg?v=1716920000000",
-  "created_at": "2026-05-28T10:00:00Z",
-  "updated_at": "2026-05-28T10:00:00Z"
+  "usuario_id": "42",
+  "nombre": "Persona de prueba",
+  "apellido": null,
+  "afiliacion": null,
+  "rol_global": "VOLUNTARIO"
 }
 ```
 
-**Campos Opcionales** (pueden ser `null`):
+`usuario_id` es BIGINT decimal como cadena; este ID es distinto del `auth_id` del JWT. No se devuelven correo, contacto, wallet, documento ni credenciales.
 
-- `apellido`
-- `doc_identidad`
-- `wallet_address`
-- `organizacion`
-- `contacto`
-- `foto_perfil_url`
+`PATCH /api/v1/usuarios/me/perfil` acepta al menos uno de estos campos; rechaza desconocidos y autoridad:
 
-**Errores**
-| Status | Cuándo |
-|--------|--------|
-| 401 | Token JWT inválido o ausente; x-auth-id no encontrado |
-| 404 | Usuario no encontrado en BD |
+| Campo | Regla |
+|---|---|
+| `nombre?` | Texto NFC/trim de 1..100 caracteres; no null |
+| `apellido?` | Texto de 1..30; null o vacío normalizado elimina el dato opcional |
+| `afiliacion?` | null, organización registrada o texto «Otra» |
 
-**Ejemplo cURL**
-
-```bash
-curl -X GET http://localhost:3000/api/users/profile \
-  -H "x-auth-id: <tu-auth-id>"
-```
-
----
-
-## POST /users/register-form
-
-**Rol mínimo**: GENERAL (completar el propio registro)  
-**Descripción**: Completa los datos del formulario de registro tras el login WebAuthn.
-
-**Headers**
-| Header | Requerido | Descripción |
-|--------|-----------|-------------|
-| x-auth-id | ✓ | Supabase auth_id (dev) o Bearer JWT (prod) |
-| Content-Type | ✓ | `application/json` |
-
-**Body** (`application/json`)
-| Campo | Tipo | Requerido | Validación |
-|-------|------|-----------|------------|
-| nombre | string | ✓ | max 200 caracteres |
-| apellido | string | — | max 200 caracteres |
-| doc_identidad | string | ✓ | unique en tabla usuario |
-| wallet_address | string | — | unique si se envía; debe ser valid Ethereum address |
-| organizacion | string | — | max 200 caracteres |
-| contacto | string | — | max 200 caracteres (teléfono o email adicional) |
-| rol | string | — | Default: GENERAL; client nunca puede auto-elevar a ADMIN |
-
-**Respuesta exitosa** `200`
+Omitir conserva el dato anterior. Formas de afiliación:
 
 ```json
-{
-  "id": 1,
-  "username": "juan.perez",
-  "correo": "juan@example.com",
-  "auth_id": "user_1716910800000_abc123",
-  "nombre": "Juan Pérez",
-  "apellido": "González",
-  "doc_identidad": "12345678",
-  "wallet_address": "0x1234567890123456789012345678901234567890",
-  "organizacion": "Fundacion Verde",
-  "contacto": "555-1234",
-  "rol": "GENERAL",
-  "created_at": "2026-05-28T10:00:00Z",
-  "updated_at": "2026-05-28T10:30:00Z"
-}
+{"afiliacion":{"tipo":"ORGANIZACION_REGISTRADA","organizacion_id":"7"}}
 ```
-
-**Errores**
-| Status | Cuándo |
-|--------|--------|
-| 400 | Validación fallida: campo mal formado |
-| 401 | Token inválido o ausente |
-| 409 | `doc_identidad` o `wallet_address` ya existen en otra cuenta |
-
-**Ejemplo cURL**
-
-```bash
-curl -X POST http://localhost:3000/api/users/register-form \
-  -H "Content-Type: application/json" \
-  -H "x-auth-id: <tu-auth-id>" \
-  -d '{
-    "nombre": "Juan",
-    "apellido": "Pérez",
-    "doc_identidad": "12345678",
-    "wallet_address": "0x1234567890123456789012345678901234567890",
-    "organizacion": "Fundacion Verde",
-    "contacto": "555-1234"
-  }'
-```
-
----
-
-## PATCH /users/profile/photo 📎
-
-**Rol mínimo**: GENERAL (actualizar propia foto)  
-**Descripción**: Sube o reemplaza la foto de perfil. Solo 1 foto activa por usuario.
-
-**Headers**
-| Header | Requerido | Descripción |
-|--------|-----------|-------------|
-| x-auth-id | ✓ | Supabase auth_id |
-| Content-Type | ✓ | `multipart/form-data` |
-
-**Body** (`multipart/form-data`)
-| Campo | Tipo | Requerido | Validación |
-|-------|------|-----------|------------|
-| file | file | ✓ | max 2 MB; tipos: PNG, JPEG, JPG, WebP |
-
-**Respuesta exitosa** `200`
 
 ```json
-{
-  "id": 1,
-  "username": "juan.perez",
-  "nombre": "Juan Pérez",
-  "foto_perfil_url": "https://supabase.../imagenes-perfil/user_1716910800000_abc123/profile-picture.jpg?v=1716920000000",
-  "updated_at": "2026-05-28T12:30:00Z"
-}
+{"afiliacion":{"tipo":"OTRA","nombre":"Agrupación de prueba"}}
 ```
 
-**Notas**
+Catálogo: el servidor valida la organización activa y obtiene su nombre. «Otra»: NFC/trim de 1..150, sin crear una organización maestra. La salida usa `{tipo,organizacion_id,nombre}`, con ID null para «Otra». Ninguna selección es obligatoria.
 
-- URL incluye `?v=timestamp` para forzar recarga del navegador (bypass caché local)
-- Foto anterior es eliminada automáticamente
-- Almacenamiento: `supabase/imagenes-perfil/{auth_id}/profile-picture.{ext}`
-- Caché control: `cacheControl: '0'` (no cachea en CDN de Supabase)
+`GET /api/v1/participacion/organizaciones-seleccionables` permite a cualquier cuenta activa recorrer el catálogo mínimo: `consulta?` de 2..100, `cursor?`, `limite?` entero 1..20, default 20. Devuelve `{data:[{organizacion_id,nombre}],observado_en,siguiente_cursor}`. Un vínculo previamente guardado a una organización luego inactiva se conserva en el perfil, pero no habilita una nueva selección de esa organización.
 
-**Errores**
-| Status | Cuándo |
-|--------|--------|
-| 400 | Archivo demasiado grande, tipo incorrecto, o error de upload |
-| 401 | Header x-auth-id ausente |
+## Autoridad y gestión contextual
 
-**Ejemplo cURL**
+Perfil no admite `rol`, `rol_global`, `activo`, revisión de autoridad, actor ni permisos. Los cambios administrativos separados son:
 
-```bash
-curl -X PATCH http://localhost:3000/api/users/profile/photo \
-  -H "x-auth-id: <tu-auth-id>" \
-  -F "file=@/path/to/photo.jpg"
+- `GET /api/v1/usuarios/:usuario_id/autoridad`.
+- `POST /api/v1/usuarios/:usuario_id/roles`.
+- `POST /api/v1/usuarios/:usuario_id/inactivaciones`.
+
+Exigen ADMIN global y tienen revisión/continuidad, motivo e historial/recibo atómicos. DTO y errores: [OpenAPI C](../../../docs/pa-int02c-openapi.json) y [ejemplos ejecutados](../../../docs/pa-int02c-ejemplos.json). El permiso PLANTADOR/ADMINISTRADOR_SUBCAMPANIA es contextual y se gestiona en `/api/v1/participacion/accesos/*`, separado de roles globales y del equipo logístico.
+
+## Compatibilidad `/api/users`
+
+Estas rutas conservan su respuesta legada; no mezclarlas con los envelopes/IDs v1:
+
+| Ruta | Audiencia y comportamiento |
+|---|---|
+| `GET /api/users?q=&rol=` | Directorio/selector interno para ADMIN, GENERAL o VALIDADOR; devuelve `[{id,nombre,rol,foto_perfil_url}]`. ID numérico sólo en rango seguro |
+| `GET /api/users/rol/:rol?q=` | Alias del selector; mismo control interno |
+| `GET /api/users/profile` | Perfil legado **propio**, con campos históricos y afiliación; no es directorio de terceros |
+| `POST /api/users/register-form` | Adaptador de edición propia; permite nombre/apellido, organización como «Otra» y campos históricos documento/wallet/contacto según validación. No exige esos datos para el nuevo recorrido; `rol` u otro campo ajeno devuelve 422 |
+| `PATCH /api/users/profile/photo` | Multipart, campo `file`, máximo 2 MiB y formato PNG/JPEG/JPG/WebP. Actualiza sólo foto propia y devuelve perfil legado |
+
+No usar el directorio interno para buscar participantes contextuales. Usar `/api/v1/participacion/personas/buscar`, autorizado por acción y selección completa, que no expone correo ni roles internos de terceros.
+
+```sh
+curl http://localhost:3000/api/v1/usuarios/me/perfil \
+  -H "Authorization: Bearer <token>"
 ```
 
----
-
-## Tipos & Estructuras
-
-### Usuario (completo)
-
-```typescript
-{
-  id: number;
-  username: string;
-  correo: string;
-  auth_id: string;
-  nombre: string;
-  apellido?: string;
-  doc_identidad?: string;
-  wallet_address?: string;
-  organizacion?: string;
-  contacto?: string;
-  rol: 'ADMIN' | 'VALIDADOR' | 'GENERAL' | 'VOLUNTARIO';
-  foto_perfil_url?: string;
-  created_at: string; // ISO 8601
-  updated_at: string; // ISO 8601
-}
-```
-
-### Usuario (selector/lista)
-
-```typescript
-{
-  id: number;
-  nombre: string;
-  rol: string;
-  foto_perfil_url: string | null;
-}
-```
-
----
-
-## Reglas de Negocio
-
-1. **Rol default**: Nuevo usuario tiene rol `GENERAL`; solo ADMIN puede cambiar roles.
-2. **doc_identidad**: Unique constraint, case-sensitive.
-3. **wallet_address**: Opcional; si se envía, debe ser única y válida (Ethereum format).
-4. **Foto de perfil**: Se borra al actualizar. URL generada con `?v=timestamp` (cache-busting).
-5. **Autenticación dual**:
-   - **Dev**: Acepta header `x-auth-id` directo
-   - **Prod**: Requiere JWT en `Authorization: Bearer <token>`
-
----
-
-## Flujo Típico
-
-1. **Registro WebAuthn** → Genera usuario con username/email, rol GENERAL
-2. **POST /register-form** → Completa nombre, documento, organización
-3. **GET /profile** → Lee datos actualizados
-4. **PATCH /profile/photo** → Sube foto
-5. **GET /users?q=...** o **GET /users/rol/:rol?q=...** → Búsqueda de usuarios para asignaciones/equipo
+Privacidad: perfil y participación se sirven fuera de caché pública. No generalizar el envelope de error de C a todas las rutas legadas. Los errores/limitaciones precisos de cada contrato están en su implementación y [pruebas de perfil](../../../src/users/perfil-v1.http.spec.ts).

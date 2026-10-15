@@ -39,9 +39,11 @@ Todos los flujos requieren:
 
 1. Una **recolección VALIDADA con saldo disponible** (`estado_registro = VALIDADO`, `saldo_actual > 0`).
 2. Un **vivero** registrado y accesible para el usuario operativo.
-3. Header `x-auth-id` con el `auth_id` de Supabase del usuario.
+3. Bearer JWT válido de una cuenta interna activa y autoridad para la operación. `x-auth-id` por sí solo no autentica; si se conserva, debe coincidir con `sub`.
 4. Para crear el lote, haber subido **evidencias pendientes** vía `POST /api/lotes-vivero/evidencias-pendientes` (devuelve `evidencia_ids`).
 
 ## Despacho
 
-El endpoint `POST /api/lotes-vivero/:id/despacho` está expuesto pero el backend devuelve `501 Not Implemented`. Ver TODO en [../README.md](../README.md).
+El despacho manual está implementado y rechaza `PLANTACION_CAMPANIA`; entregar a campo usa asignación física. Ver [guía M2↔M3](../frontend/guia-migracion-asignacion-fisica.md).
+
+Para gestión de accesos usar [participación](../modulos/participacion.md) y sus ejemplos HTTP ejecutados. Las precondiciones físicas de Vivero anteriores no se aplican a sus lecturas/comandos de acceso.

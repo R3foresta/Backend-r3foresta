@@ -1,6 +1,10 @@
 # Tareas
 
-Indice de tareas tecnicas del backend.
+Historia de tareas técnicas M2↔M3, con cortes originales de julio de 2026.
+No es la cola vigente ni una orden de reaplicar SQL. Para el trabajo actual usar
+[participación](../modulos/participacion.md), sus [informes](../../docs/README.md) y
+`r3foresta-docs/ESTADO.md`. Los pendientes externos siguientes corresponden a su fecha;
+la aplicación de migraciones debe comprobarse en el entorno destino.
 
 ## Integracion M2 Vivero - M3 Plantacion
 
