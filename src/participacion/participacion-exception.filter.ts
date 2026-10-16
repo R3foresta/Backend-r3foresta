@@ -49,7 +49,7 @@ export class ParticipacionExceptionFilter implements ExceptionFilter {
           ? 'CAPACIDAD_INSUFICIENTE'
           : status === 404
             ? 'RECURSO_NO_VISIBLE'
-            : status === 400 || status === 422
+              : status === 400 || status === 413 || status === 422
               ? 'ENTRADA_INVALIDA'
               : 'RESULTADO_NO_DETERMINADO';
     if (
@@ -71,11 +71,11 @@ export class ParticipacionExceptionFilter implements ExceptionFilter {
       RESULTADO_NO_DETERMINADO:
         'No se pudo determinar el resultado. Recupere el comando con la misma clave.',
     };
-    response.status(status === 400 ? 422 : status).json({
+    response.status(status === 400 || status === 413 ? 422 : status).json({
       error: {
         codigo,
         mensaje: messages[codigo],
-        campos: [],
+        campos: status === 413 ? ['foto'] : [],
         ambitos: [],
         reintento:
           status === 401 || codigo === 'CUENTA_INACTIVA'

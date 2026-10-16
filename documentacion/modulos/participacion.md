@@ -72,18 +72,27 @@ el runner DB/HTTP. Revisar los cambios de evidencias antes de incluirlos en Git.
 
 ## Estado y límites
 
+INT03-A extiende el contrato con contexto/participantes, preparación/cargas,
+registro inicial LIFO y detalle propio: [guía de entrega a INT04](../../docs/pa-int03a-entrega-local.md).
+OpenAPI conserva C y añade diez rutas (24). Las cargas usan exclusivamente
+multipart, bucket privado, lease/generación y derivados sanitizados; el GET
+común recupera PREPARADO/terminal tras retiro. Registrar no vuelve a descontar
+Vivero. [Conciliación del día de entregas](../../docs/pa-int03a-conciliacion-entregas.md).
+
 B: 068–071 confirmadas aplicadas en desarrollo; estado SQL compacto y REST cotejados.
 C: 072/073 confirmadas aplicadas; REST comprobó superficie y validación temprana.
 Cotejo completo de cuerpos/catálogo remoto C y despliegue externo pendientes.
 [Informe B](../../docs/pa-int02b-entrega-local.md) y [C](../../docs/pa-int02c-entrega-local.md)
 conservan entorno, pruebas y límites; [estado canónico](../../../r3foresta-docs/ESTADO.md).
 
-Los ensayos usan antecedente mínimo post-067, no replay completo ni PostGIS/Storage.
+Los ensayos B/C usan antecedente mínimo post-067, no replay completo ni PostGIS/Storage.
+El ensayo INT03-A añade PostGIS real y Storage privado de archivos sintéticos;
+no acredita las políticas del Storage remoto ni el corte de INT02-D.
 `service_role` sigue privilegiado: continuidad probada entre RPC cooperativas,
 no ante SQL/importaciones que omiten sus locks. Mantener cuentas → ámbitos.
 
-Pendientes: manifest real revisado y transición B; registro/cargas/LIFO/snapshots
-INT03-A; rutas equivalentes y carreras compartidas INT02-D; QA integrado y piloto.
+Pendientes: manifest real revisado y transición B; aplicación remota/conciliación
+de entregas INT03-A; rutas equivalentes y carreras compartidas INT02-D; QA integrado y piloto.
 La gestión C anticipó el motor común sin fotos y no completa esos recorridos.
 Instalar 071 no asigna permisos. No ejecutar fixtures en Supabase ni reaplicar SQL
 por la mera falta de evidencia; cotejar primero el entorno y las versiones.

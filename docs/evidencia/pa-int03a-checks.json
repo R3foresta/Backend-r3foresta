@@ -1,0 +1,92 @@
+{
+  "tarea": "PA-T-INT03-A",
+  "estado": "CORRECTO",
+  "fecha_utc": "2026-10-15T20:22:55.992625+00:00",
+  "base_git": "345d8f251038556c33fdaaee258d801e699b0fd3",
+  "version_entregada": "base más árbol local, sin commit/push/despliegue de esta entrega",
+  "build": {
+    "comando": "npm run build",
+    "exit_code": 0
+  },
+  "unitarios": {
+    "comando": "npm run test:unit -- --runInBand --cacheDirectory=/private/tmp/r3-jest",
+    "suites": 62,
+    "pruebas": 690,
+    "exit_code": 0
+  },
+  "regresion_b": {
+    "comando": "npm run test:db:participacion",
+    "casos": 53,
+    "denegaciones_sql": 78,
+    "postgresql": "14.17 Homebrew aislado",
+    "exit_code": 0
+  },
+  "regresion_c": {
+    "comando": "npm run test:db:acceso",
+    "grupos_sql": 22,
+    "carreras": 8,
+    "http": 13,
+    "postgresql": "14.17 Homebrew aislado",
+    "exit_code": 0
+  },
+  "registro": {
+    "evidencia": "docs/evidencia/pa-int03a-local.json",
+    "grupos_sql": 22,
+    "carreras": 10,
+    "http_storage": 16,
+    "exit_code": 0
+  },
+  "openapi": {
+    "comando": "node scripts/qa/pa-int02c-openapi.cjs --check",
+    "rutas": 24,
+    "schemas": 52,
+    "exit_code": 0
+  },
+  "sha256_fuentes": {
+    "migrations/074_pa_int03a_cargas.sql": "fa72c23c500cb743fa1afa0452ea088bcf0cff8d15b3e3956b763e7adb2cf045",
+    "migrations/075_pa_int03a_registro.sql": "be438c7b27f25f2e14f607bcfd307678cd401ac5f2d6746e29a37058ade24169",
+    "migrations/076_pa_int03a_fecha_entrega.sql": "c12ae6f68ad43799946a5a335d5eff64bd9b17446ad31dd0670447f6f32cf2ae",
+    "scripts/qa/pa-int03a-db-test.py": "2e057be6f412197a345a5dfd4f54d2941236b7c318fbe783edb546e29516b743",
+    "scripts/qa/pa-int03a-harness.ts": "45137549ffa1c4616c12e588ea5350092f4b670e54c4347b0ba8f37e6c1d7504",
+    "scripts/qa/pa-int03a-postgis-preparar.sh": "09cc8611b12431bb8690e9ca2ceed05ccb54442b116d0a2f65ac27caf56dba59",
+    "scripts/qa/pa-int03a-preview-server.ts": "5c30879d9d85bd477af9dc4df6e1f3d0efe07267c5718ecef3f49ffe7d769ca4",
+    "scripts/sql/pa-int03a-catalog-preflight.sql": "5888d258684ef0c535256b44473f7ef2932933ed9f142515a60768df580e1dce",
+    "src/participacion/application/participacion-registro.service.ts": "870d1befa73f9963d2ab11412bcb3bad3b3831500d75a208093e2e2806041743",
+    "src/participacion/cargas/participacion-cargas.controller.ts": "fad5a2b7b4ec9d09ca31f24d94fd2ca097ef3a8e59d73e4c8a8e6d572a9a1657",
+    "src/participacion/cargas/participacion-cargas.service.spec.ts": "e0bba8dea52b33690ddb536cfc4fa737fd469e1d6af978223cdb7cf25a4bd513",
+    "src/participacion/cargas/participacion-cargas.service.ts": "174849035e5131f333c8ecbb899b7d1ea012f6b14f0bf9c293ca23e4e13e2d66",
+    "src/participacion/cargas/participacion-imagen.service.spec.ts": "97a90c4480619e289ed53f6cb402ac85337db00120c8895cb8936757e291f1e1",
+    "src/participacion/cargas/participacion-imagen.service.ts": "9ce27c610c8cfbf8fd538c698128537b724e715cefa1dd63a80b9ad457d87d76",
+    "src/participacion/domain/policies/registro-proyeccion.policy.ts": "e6421fb4cb5eded475b0ee6264b8db05692e0e1968fa4a8ffd44278605b181b0",
+    "src/participacion/dto/registro.dto.ts": "b1260b3fb27569cc5f9fac4f304db229a22685c75ad69371a9ff76b73494ffe4",
+    "src/participacion/participacion-registro.controller.ts": "ca238b71e4b6770d84c73e82bc368e0d06f153582290b0418975034974b2b7eb",
+    "src/participacion/tests/registro-dto.spec.ts": "0089c02d9c3f77534a9da0478759ac998473e41ba11425742fc35b2629304b1a",
+    "src/participacion/tests/registro-service.spec.ts": "53ec54076b4c7455d0b8f6738fd10fb94f9a0230df30e3835fba1aae365c5e66",
+    "test/db/fixtures/pa-int03a/sintetica.heic": "ebeb0363f833465546726dd5e3856bb30036af146ab05bd661751452da24eda3",
+    "test/db/pa-int03a-acceso-regresion.py": "8c24afcf612af043ddf19fdad19a376c732cac9bf800f5868cb701fb88ed35fb",
+    "test/db/pa-int03a-assertions.py": "9db6f5237e832b52307ae29b8b8815b34ce4d661b69782c505322069ad1b7541",
+    "test/db/pa-int03a-expiracion.py": "7aa505aad4c5cdac74aae4072c1f336d70ec9742ebe2b41555c11fcdc6610daa",
+    "test/db/pa-int03a-fixture.sql": "1e18eda74ca9ce8ac8234d40c31d6de20d0c990a2c0b4c7d22d692a37bf4117f",
+    "test/db/pa-int03a-http.spec.ts": "22b5519e8ccb81c6ead2ad2f7e09cd9d5cd06987510e9af9084631931f47aa7b",
+    "test/db/pa-int03a-preview-fixture.sql": "746aafc7eac07b8dc771f16ab27bc48c30ede672fc6d937d6d971b24755467a5",
+    "test/jest-participacion-registro-db.json": "fe0a046ded5c6127f96c1e98526a32ce2060ae9076876918c1b7981794ec4442",
+    ".env.example": "3320248d19642b9cc8761be269cfa6c50643589ffd75e60a898833fb86127d43",
+    "package-lock.json": "1eeb7119917a64cf23f39c44be1925a86022dfea5e9237ec8d13daaa00bf563e",
+    "package.json": "055847375f766981bf432facb493738756e876dcf4490ce0482c98ee26715971",
+    "scripts/qa/pa-int02c-openapi.cjs": "498cb5109e4e59ce63dc07213cfaca202922b666fb1e8d30d44e292c9cac510d",
+    "src/evidencias-trazabilidad/evidencias-trazabilidad.service.spec.ts": "b35245d27e4931b4cd6fc975d31e2a492e06bfb5529b4a061102a89452de2da4",
+    "src/evidencias-trazabilidad/evidencias-trazabilidad.service.ts": "b8b184ec008272c5188d9672b5eac288b9d1bac6bfc2704bcf18c5463f31ba86",
+    "src/participacion/comando-canonical.ts": "e2539ce1d5108df8a34d5db36c87fe77b098918cf2fc73adddf97d6d16a8c4f0",
+    "src/participacion/comando-recibo.ts": "f8db6c6c50a83580b46a94ba33f37523f44cc55b7f95f623507ba653c508c479",
+    "src/participacion/participacion-exception.filter.ts": "f310eefaad6b44e970638ede7400e9dacce090754660ed63b0d67d5b74bf0fab",
+    "src/participacion/participacion-openapi.generated.ts": "db92bb2bd16c50a2b796fd66bf82944d3b2f0423a57a96fa4c9d92212fdfb399",
+    "src/participacion/participacion.module.ts": "dbaca1a0964dd9a4056173edc662856deafea904dba68464a350115456839d51",
+    "src/participacion/tests/participacion-openapi.spec.ts": "adc7ebfe2f4270755938ea4a39c00b88427b9a3d715af0a58c47a9d5457309a9",
+    "test/README.md": "882668cb10a7a7a2c466fd9b775c41236fcbe9130fde52deb6e2aeb5be57ec00"
+  },
+  "limites": [
+    "SQL aplicado solo en clústeres sintéticos; no catálogo remoto ni replay completo",
+    "No transición/conciliación real, commit/push ni despliegue",
+    "INT02-D/INT04/INT05/INT08 conservan sus entregas y habilitación real"
+  ]
+}

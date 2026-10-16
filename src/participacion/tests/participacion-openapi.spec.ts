@@ -10,14 +10,24 @@ import { ParticipacionComandosService } from '../participacion-comandos.service'
 import { ParticipacionLecturasController } from '../participacion-lecturas.controller';
 import { ParticipacionLecturasService } from '../participacion-lecturas.service';
 import { participacionOpenApi } from '../participacion-openapi.generated';
+import { ParticipacionRegistroController } from '../participacion-registro.controller';
+import { ParticipacionRegistroService } from '../application/participacion-registro.service';
+import {
+  ParticipacionCargasController,
+  ParticipacionFotosPublicasController,
+} from '../cargas/participacion-cargas.controller';
+import { ParticipacionCargasService } from '../cargas/participacion-cargas.service';
 
 describe('Contrato OpenAPI de participación v1', () => {
-  it('documenta las 14 rutas registradas por Nest y resuelve todos sus schemas', async () => {
+  it('documenta las 24 rutas registradas por Nest y resuelve todos sus schemas', async () => {
     const module = await Test.createTestingModule({
       imports: [JwtModule.register({})],
       controllers: [
         ParticipacionComandosController,
         ParticipacionLecturasController,
+        ParticipacionRegistroController,
+        ParticipacionCargasController,
+        ParticipacionFotosPublicasController,
       ],
       providers: [
         VerifiedActorGuard,
@@ -25,6 +35,8 @@ describe('Contrato OpenAPI de participación v1', () => {
         { provide: SupabaseService, useValue: {} },
         { provide: ParticipacionComandosService, useValue: {} },
         { provide: ParticipacionLecturasService, useValue: {} },
+        { provide: ParticipacionRegistroService, useValue: {} },
+        { provide: ParticipacionCargasService, useValue: {} },
       ],
     }).compile();
     const app = module.createNestApplication();
@@ -38,7 +50,7 @@ describe('Contrato OpenAPI de participación v1', () => {
       expect(Object.keys(actual.paths).sort()).toEqual(
         Object.keys(participacionOpenApi.paths).sort(),
       );
-      expect(Object.keys(actual.paths)).toHaveLength(14);
+      expect(Object.keys(actual.paths)).toHaveLength(24);
       for (const route of Object.keys(actual.paths))
         expect(Object.keys(actual.paths[route]).sort()).toEqual(
           Object.keys(participacionOpenApi.paths[route]).sort(),

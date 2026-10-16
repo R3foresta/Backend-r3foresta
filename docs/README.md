@@ -9,6 +9,7 @@ Esta carpeta conserva resultados fechados; no es otro backlog ni una receta de d
 | Identidad y privacidad A | [Cierre](pa-int02a-continuacion-2026-10-14.md) y [entrega inicial](pa-int02a-entrega-local.md) | JWT, perfil, grants y QA de desarrollo |
 | Persistencia B | [Entrega](pa-int02b-entrega-local.md) | Vigencias/revisiones, bootstrap sintético y cotejo compacto de desarrollo |
 | Gestión C | [Entrega](pa-int02c-entrega-local.md) | 14 rutas, comandos/lecturas, carreras y entorno local frontend |
+| Registro participante INT03-A | [Entrega](pa-int03a-entrega-local.md) | Diez rutas nuevas, cargas privadas, LIFO/snapshots, PostGIS/Storage de prueba y recuperación |
 
 [OpenAPI](pa-int02c-openapi.json) y [ejemplos HTTP](pa-int02c-ejemplos.json) son
 artefactos generados. `evidencia/` identifica entorno, fecha y resultados; una salida

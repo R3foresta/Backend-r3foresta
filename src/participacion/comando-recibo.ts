@@ -1,4 +1,5 @@
 import { id, revision, COMMAND_OPERATIONS } from './dto/comandos.dto';
+import { fechaExacta } from './dto/registro.dto';
 
 export type StableError = {
   codigo: string;
@@ -122,7 +123,6 @@ function validateResult(value: unknown, operation: string): void {
       'gps_distancia_a_poligono_m',
       'revision_inicial',
     ]);
-    // El motor de acceso recupera recibos del consumidor inicial cuando exista.
     assert(result.tipo === 'PLANTACION_INICIAL');
     ['registro_plantacion_id', 'subcampania_id', 'responsable_id'].forEach(
       (key) => id(result[key]),
@@ -130,26 +130,41 @@ function validateResult(value: unknown, operation: string): void {
     assert(result.revision_inicial === '0');
     assert(
       typeof result.codigo_trazabilidad === 'string' &&
-        /^\d{4}-\d{2}-\d{2}$/.test(result.fecha_plantacion as string),
+        result.codigo_trazabilidad.length > 0,
     );
+    fechaExacta(result.fecha_plantacion);
     assert(
       Number.isInteger(result.cantidad_total_plantada) &&
-        (result.cantidad_total_plantada as number) > 0,
+        (result.cantidad_total_plantada as number) > 0 &&
+        (result.cantidad_total_plantada as number) <= 2147483647,
     );
     assert(
       typeof result.gps_dentro_poligono === 'boolean' &&
         (result.gps_distancia_a_poligono_m === null ||
           (typeof result.gps_distancia_a_poligono_m === 'number' &&
-            Number.isFinite(result.gps_distancia_a_poligono_m))),
+            Number.isFinite(result.gps_distancia_a_poligono_m) &&
+            result.gps_distancia_a_poligono_m >= 0)),
     );
-    assert(Array.isArray(result.especies));
+    assert(
+      Array.isArray(result.especies) &&
+        result.especies.length >= 1 &&
+        result.especies.length <= 100,
+    );
+    let total = 0;
+    let previousPlant = 0n;
     result.especies.forEach((value) => {
       const species = object(value, ['planta_id', 'cantidad']);
-      id(species.planta_id);
+      const plant = BigInt(id(species.planta_id));
+      assert(plant > previousPlant);
+      previousPlant = plant;
       assert(
-        Number.isInteger(species.cantidad) && (species.cantidad as number) > 0,
+        Number.isInteger(species.cantidad) &&
+          (species.cantidad as number) > 0 &&
+          (species.cantidad as number) <= 2147483647,
       );
+      total += species.cantidad as number;
     });
+    assert(total === result.cantidad_total_plantada);
   } else {
     object(result, ['tipo', 'cambios']);
     assert(

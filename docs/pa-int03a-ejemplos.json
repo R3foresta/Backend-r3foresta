@@ -1,0 +1,228 @@
+{
+  "origen": "HTTP real contra fixture local sintético, sin tokens ni URLs firmadas persistidas",
+  "ejemplos": {
+    "contexto_autorizado": {
+      "http": 200,
+      "body": {
+        "data": {
+          "actor": {
+            "usuario_id": "801",
+            "fuente_autoridad": "CONTEXTUAL"
+          },
+          "reglas": {
+            "fotos_max": 10,
+            "fotos_min": 1,
+            "fecha_maxima": "2026-10-15",
+            "zona_horaria": "America/La_Paz",
+            "hoy_operativo": "2026-10-15",
+            "exterior_permitido": true,
+            "fecha_minima_ventana": "2026-10-05",
+            "ventana_retroactiva_dias": 10
+          },
+          "especies": [
+            {
+              "nombre": "Tara sintética",
+              "planta_id": "8",
+              "saldo_elegible": 20,
+              "cantidad_objetivo": 2,
+              "porcentaje_objetivo": 100
+            }
+          ],
+          "subcampania": {
+            "id": "820",
+            "estado": "ACTIVA",
+            "nombre": "Ámbito INT03-A 820",
+            "poligono": {
+              "type": "Polygon",
+              "coordinates": [
+                [
+                  [
+                    -68.2,
+                    -16.6
+                  ],
+                  [
+                    -68,
+                    -16.6
+                  ],
+                  [
+                    -68,
+                    -16.4
+                  ],
+                  [
+                    -68.2,
+                    -16.4
+                  ],
+                  [
+                    -68.2,
+                    -16.6
+                  ]
+                ]
+              ]
+            },
+            "campania_id": "800",
+            "plan_revision": "0",
+            "campania_nombre": "Campaña INT03-A",
+            "meta_total_arboles": 2
+          },
+          "disponibilidad": "DISPONIBLE"
+        },
+        "observado_en": "2026-10-15T20:21:46.993005Z"
+      }
+    },
+    "seleccionables_pagina": {
+      "http": 200,
+      "body": {
+        "data": [
+          {
+            "nombre": "Administrador central",
+            "usuario_id": "1",
+            "organizacion": null
+          }
+        ],
+        "observado_en": "2026-10-15T20:21:47.021401Z",
+        "siguiente_cursor": "eyJjb250ZXh0IjoiWzEsXCI4MDFcIixcImEtaHR0cC04MDFcIixcIlBBUlRJQ0lQQU5URVNfUkVHSVNUUk9cIixcIjgyMFwiLG51bGxdIiwiYWZ0ZXIiOiIxIn0.JOZLpSPrAFIPOD3-goBWAoWqpL90MqLQPAtBUpy5vLA"
+      }
+    },
+    "preparacion_inconclusa": {
+      "http": 202,
+      "body": {
+        "error": null,
+        "estado": "SIN_RESULTADO",
+        "operacion": "REGISTRAR_PLANTACION_INICIAL",
+        "resultado": null,
+        "comando_id": "2b2ef11c-f19f-4684-a250-32b5e96b4a69",
+        "finalizado_en": null
+      }
+    },
+    "preview_propio": {
+      "http": 200,
+      "body": {
+        "data": {
+          "url": "<URL_FIRMADA_LOCAL_5_MIN>",
+          "expira_en": "2026-10-15T20:26:48.283Z"
+        },
+        "observado_en": "2026-10-15T20:21:48.280154Z"
+      }
+    },
+    "registro_confirmado": {
+      "http": 200,
+      "body": {
+        "error": null,
+        "estado": "CONFIRMADO",
+        "operacion": "REGISTRAR_PLANTACION_INICIAL",
+        "resultado": {
+          "tipo": "PLANTACION_INICIAL",
+          "especies": [
+            {
+              "cantidad": 1,
+              "planta_id": "8"
+            }
+          ],
+          "responsable_id": "801",
+          "subcampania_id": "821",
+          "fecha_plantacion": "2026-10-15",
+          "revision_inicial": "0",
+          "codigo_trazabilidad": "PLT-001-INT03A-821",
+          "gps_dentro_poligono": true,
+          "registro_plantacion_id": "21",
+          "cantidad_total_plantada": 1,
+          "gps_distancia_a_poligono_m": 0
+        },
+        "comando_id": "38b19c04-2fb0-465c-962b-f7e5991482fa",
+        "finalizado_en": "2026-10-15T20:21:51.522313Z"
+      }
+    },
+    "detalle_autor": {
+      "http": 200,
+      "body": {
+        "data": {
+          "latitud": -16.5,
+          "especies": [
+            {
+              "cantidad": 1,
+              "planta_id": "8"
+            }
+          ],
+          "longitud": -68.1,
+          "relaciones": [
+            "AUTOR"
+          ],
+          "evidencia_ids": [
+            "62"
+          ],
+          "participantes": [
+            {
+              "usuario_id": "801",
+              "es_responsable": true,
+              "afiliacion_tipo": "OTRA",
+              "nombre_snapshot": "Perfil después",
+              "afiliacion_estado": "DECLARADA",
+              "afiliacion_snapshot": "Otra actual",
+              "organizacion_id_snapshot": null
+            },
+            {
+              "usuario_id": "802",
+              "es_responsable": false,
+              "afiliacion_tipo": null,
+              "nombre_snapshot": "Participante congelado",
+              "afiliacion_estado": "NO_DECLARADA",
+              "afiliacion_snapshot": null,
+              "organizacion_id_snapshot": null
+            }
+          ],
+          "subcampania_id": "821",
+          "fecha_plantacion": "2026-10-15",
+          "revision_registro": "0",
+          "codigo_trazabilidad": "PLT-001-INT03A-821",
+          "gps_dentro_poligono": true,
+          "observaciones_autor": "Nota privada HTTP",
+          "registro_plantacion_id": "21",
+          "cantidad_total_plantada": 1
+        },
+        "observado_en": "2026-10-15T20:21:51.544519Z"
+      }
+    },
+    "respuesta_perdida_inconclusa": {
+      "http": 503,
+      "body": {
+        "error": {
+          "codigo": "RESULTADO_NO_DETERMINADO",
+          "mensaje": "No se pudo determinar el resultado. Consulte la misma clave.",
+          "campos": [],
+          "ambitos": [],
+          "reintento": "MISMA_CLAVE"
+        },
+        "comando_id": "5cb926f9-3ba7-44dd-8f01-3cb13ec2bdc4",
+        "resultado_concluyente": false
+      }
+    },
+    "recibo_recuperado_tras_retiro": {
+      "http": 200,
+      "body": {
+        "error": null,
+        "estado": "CONFIRMADO",
+        "operacion": "REGISTRAR_PLANTACION_INICIAL",
+        "resultado": {
+          "tipo": "PLANTACION_INICIAL",
+          "especies": [
+            {
+              "cantidad": 1,
+              "planta_id": "8"
+            }
+          ],
+          "responsable_id": "801",
+          "subcampania_id": "826",
+          "fecha_plantacion": "2026-10-15",
+          "revision_inicial": "0",
+          "codigo_trazabilidad": "PLT-001-INT03A-826",
+          "gps_dentro_poligono": true,
+          "registro_plantacion_id": "23",
+          "cantidad_total_plantada": 1,
+          "gps_distancia_a_poligono_m": 0
+        },
+        "comando_id": "5cb926f9-3ba7-44dd-8f01-3cb13ec2bdc4",
+        "finalizado_en": "2026-10-15T20:21:52.214884Z"
+      }
+    }
+  }
+}

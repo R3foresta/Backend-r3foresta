@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { EvidenceFileService } from '../common/files/evidence-file.service';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -12,9 +12,11 @@ function createQueryBuilder(
   const builder: any = {
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
+    neq: jest.fn().mockReturnThis(),
     ilike: jest.fn().mockReturnThis(),
     is: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
+    range: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
     single: jest
       .fn()
@@ -75,6 +77,23 @@ describe('EvidenciasTrazabilidadService', () => {
     service = new EvidenciasTrazabilidadService(
       supabaseService,
       new EvidenceFileService(),
+    );
+  });
+
+  it('la ruta general no abre originales o pendientes de participación, incluso por ID', async () => {
+    from.mockReturnValue(
+      createQueryBuilder({
+        data: { id: 90, bucket: 'participacion_evidencias' },
+        error: null,
+      }),
+    );
+    await expect(service.findOne(90)).rejects.toBeInstanceOf(NotFoundException);
+    const query = createQueryBuilder({ data: [], error: null, count: 0 });
+    from.mockReturnValue(query);
+    await service.list({});
+    expect(query.neq).toHaveBeenCalledWith(
+      'bucket',
+      'participacion_evidencias',
     );
   });
 

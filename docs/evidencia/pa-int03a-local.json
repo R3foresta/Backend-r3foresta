@@ -1,0 +1,863 @@
+{
+  "tarea": "PA-T-INT03-A",
+  "estado": "CORRECTO",
+  "fecha_utc": "2026-10-15T20:21:33.892375+00:00",
+  "comando": "python3 scripts/qa/pa-int03a-db-test.py --pg-bin /tmp/pa-postgis-runtime/14/bin",
+  "entorno": {
+    "aislado": true,
+    "tcp": false,
+    "env_cargado": false,
+    "naturaleza": "SINTETICO_AISLADO_POST_073",
+    "antecedentes": [
+      "test/db/pa-int02c-fixture.sql",
+      "test/db/pa-int03a-fixture.sql"
+    ],
+    "postgresql": "14.24 (Postgres.app)",
+    "postgis": "POSTGIS=\"3.2.10 7762352\" [EXTENSION] PGSQL=\"140\" GEOS=\"3.10.7-CAPI-1.16.7\" PROJ=\"8.1.1\" LIBXML=\"2.9.14\" LIBJSON=\"0.15\" LIBPROTOBUF=\"1.4.1\" WAGYU=\"0.5.0 (Internal)\"",
+    "node": "v24.19.0",
+    "runtime_reproducible": {
+      "preparador": "scripts/qa/pa-int03a-postgis-preparar.sh",
+      "fuente": "https://github.com/PostgresApp/PostgresApp/releases/download/v2.9.6/Postgres-2.9.6-14.dmg",
+      "sha256_artefacto_usado": "a73a5d7c78c1fdce15ff1cc31b55d670c0b68070e0c436add53d3b053ef6567a"
+    },
+    "cluster_detenido": true,
+    "directorio_eliminado": true
+  },
+  "casos": [
+    {
+      "caso": "contexto/selección por autoridad efectiva, ADMIN global, ACTIVA y SIN_STOCK válido",
+      "trazabilidad": [
+        "PA-ID04",
+        "PA-ID06",
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "LIFO timestamp+ID, entrega posterior excluida, meta superable y sin segundo débito M2",
+      "trazabilidad": [
+        "PA-ID21",
+        "PA-S01-CA05"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "snapshots congelados, retroactivo sin historia, cantidad grupal una vez y observación solo autor",
+      "trazabilidad": [
+        "PA-ID22"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "fechas extremas inclusivas y afiliaciones catálogo/Otra/ausencia, sin modificar perfil",
+      "trazabilidad": [
+        "PA-ID21",
+        "PA-ID22"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "revisión obsoleta, fecha fuera de ventana, especie fuera del plan y entrega no conciliada rechazan sin dominio",
+      "trazabilidad": [
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "recibo/replay idénticos después de retiro, contenido distinto 409 y ajeno invisible incluso ADMIN",
+      "trazabilidad": [
+        "PA-ID14",
+        "PA-ID15",
+        "PA-ID16",
+        "PA-ID23"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "rechazo terminal no cambia al reponer stock y preparación cancelada conserva huella NULL/409",
+      "trazabilidad": [
+        "PA-ID16",
+        "PA-ID17"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "doble POST un hecho/consumo/terminal y últimas unidades sin sobreconsumo",
+      "trazabilidad": [
+        "PA-ID14",
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "barreras DB para retiro/registro y seleccionado en ambos órdenes con permiso C real",
+      "trazabilidad": [
+        "PA-ID11",
+        "PA-ID13"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "perfil/snapshot en ambos órdenes y cambio rol serializado con cuenta/registro",
+      "trazabilidad": [
+        "PA-ID11",
+        "PA-ID13",
+        "PA-ID22"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "timeout de sentencia bajo lock real conserva resultado inconcluso y misma clave converge",
+      "trazabilidad": [
+        "PA-ID15",
+        "PA-ID17"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "rechazo tras efecto parcial revierte dominio y conserva terminal; desconocido deja preparación inconclusa y misma clave converge",
+      "trazabilidad": [
+        "PA-ID17"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "PostGIS real dentro/fuera; ausencia confirmada del evaluador inyectada produce rechazo durable 503 sin consumo",
+      "trazabilidad": [
+        "PA-ID20"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "evidencia ajena rechaza aun ADMIN; cargas omitidas/generaciones se clausuran sin borrar tombstones",
+      "trazabilidad": [
+        "PA-ID18",
+        "PA-ID19",
+        "PA-ID23"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "denegaciones SQL/RPC reales, todas sobrecargas privadas y FKs nuevas RESTRICT",
+      "trazabilidad": [
+        "PA-ID23"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "RPC física 076 real conserva DATE de entrada sin cast/backfill legado y descuenta M2 solo en entrega",
+      "trazabilidad": [
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "expiración inline al límite de 30 días: cancelación sin huella, replay distinto conserva 409 y GET terminal",
+      "trazabilidad": [
+        "PA-ID16",
+        "PA-ID17"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "foto vencida clausura inicial antes del barrido y conserva ledger de compensación sin consumo",
+      "trazabilidad": [
+        "PA-ID17",
+        "PA-ID19"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "regresión focalizada: rechazo tras consumo revierte hecho, detalles, contadores y conserva foto/terminal",
+      "trazabilidad": [
+        "PA-ID17",
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "fotos propias con tipo ajeno, vínculo previo o preparación/ámbito distinto rechazan íntegramente sin consumo",
+      "trazabilidad": [
+        "PA-ID18",
+        "PA-ID19"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "catálogo instalado 074: seis FKs RESTRICT validadas en carga y una en generaciones",
+      "trazabilidad": [
+        "PA-ID23"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "regresión C04–C09, continuidad, rol/baja e historial con helpers 075 instalados; once claves repiten recibo/GET sin efectos",
+      "trazabilidad": [
+        "PA-ID13",
+        "PA-ID16",
+        "PA-ID23"
+      ],
+      "resultado": "CORRECTO",
+      "operaciones": [
+        "CAMBIAR_ADMINISTRADOR_A_PLANTADOR",
+        "CAMBIAR_ROL_GLOBAL",
+        "DESIGNAR_ADMINISTRADOR",
+        "INACTIVAR_CUENTA",
+        "OTORGAR_PLANTADOR",
+        "REEMPLAZAR_ADMINISTRADOR",
+        "RETIRAR_ADMINISTRADOR",
+        "RETIRAR_PLANTADOR"
+      ],
+      "comandos": 11,
+      "ambitos": [
+        "850",
+        "851"
+      ],
+      "eventos_contextuales": 8,
+      "eventos_autoridad": 2
+    }
+  ],
+  "carreras": [
+    {
+      "caso": "doble POST simultáneo misma clave",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "805",
+            "fecha_plantacion": "2026-10-15",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-805",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "7",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "7e96014a-7f20-4d4d-8ba6-f2e401fa6eea",
+          "finalizado_en": "2026-10-15T20:21:39.225484Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "805",
+            "fecha_plantacion": "2026-10-15",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-805",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "7",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "7e96014a-7f20-4d4d-8ba6-f2e401fa6eea",
+          "finalizado_en": "2026-10-15T20:21:39.225484Z"
+        },
+        "http_status": 200
+      }
+    },
+    {
+      "caso": "dos comandos compiten por última unidad",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "806",
+            "fecha_plantacion": "2026-10-15",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-806",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "8",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "e8c5006c-511a-4f0b-a744-df4e8170a337",
+          "finalizado_en": "2026-10-15T20:21:39.434525Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": {
+            "campos": [],
+            "codigo": "STOCK_INSUFICIENTE",
+            "ambitos": [],
+            "mensaje": "El stock elegible no cubre las cantidades confirmadas.",
+            "reintento": "NUEVA_CONFIRMACION"
+          },
+          "estado": "RECHAZADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": null,
+          "comando_id": "bf6d8a07-bce3-42bd-9994-6dfcadd1bca4",
+          "finalizado_en": "2026-10-15T20:21:39.508909Z"
+        },
+        "http_status": 409
+      }
+    },
+    {
+      "caso": "retiro actor antes de registro",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "RETIRAR_PLANTADOR",
+          "resultado": {
+            "tipo": "ACCESO",
+            "cambios": [
+              {
+                "usuarios": [
+                  {
+                    "cambio": "CAMBIO_APLICADO",
+                    "usuario_id": "801",
+                    "permiso_nuevo": null,
+                    "revision_nueva": "2",
+                    "permiso_anterior": "PLANTADOR",
+                    "revision_anterior": "1",
+                    "conserva_acceso_global": false
+                  }
+                ],
+                "subcampania_id": "807"
+              }
+            ]
+          },
+          "comando_id": "8ab0e4e1-a813-496a-ba08-7dbe55901188",
+          "finalizado_en": "2026-10-15T20:21:39.575262Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": {
+            "campos": [],
+            "codigo": "CAPACIDAD_INSUFICIENTE",
+            "ambitos": [],
+            "mensaje": "No dispone de esta capacidad.",
+            "reintento": "NUEVA_CONFIRMACION"
+          },
+          "estado": "RECHAZADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": null,
+          "comando_id": "9a94d1f3-8edf-454e-b414-c88d3d80c11a",
+          "finalizado_en": "2026-10-15T20:21:39.635188Z"
+        },
+        "http_status": 403
+      }
+    },
+    {
+      "caso": "registro antes de retiro actor",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "808",
+            "fecha_plantacion": "2026-10-15",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-808",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "9",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "1878d341-1745-4d51-bc61-b7b9bea5a6ea",
+          "finalizado_en": "2026-10-15T20:21:39.714510Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "RETIRAR_PLANTADOR",
+          "resultado": {
+            "tipo": "ACCESO",
+            "cambios": [
+              {
+                "usuarios": [
+                  {
+                    "cambio": "CAMBIO_APLICADO",
+                    "usuario_id": "801",
+                    "permiso_nuevo": null,
+                    "revision_nueva": "2",
+                    "permiso_anterior": "PLANTADOR",
+                    "revision_anterior": "1",
+                    "conserva_acceso_global": false
+                  }
+                ],
+                "subcampania_id": "808"
+              }
+            ]
+          },
+          "comando_id": "c82440fe-ee2b-4fe0-be3d-169b59aa2303",
+          "finalizado_en": "2026-10-15T20:21:39.770399Z"
+        },
+        "http_status": 200
+      }
+    },
+    {
+      "caso": "retiro participante antes de registro",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "RETIRAR_PLANTADOR",
+          "resultado": {
+            "tipo": "ACCESO",
+            "cambios": [
+              {
+                "usuarios": [
+                  {
+                    "cambio": "CAMBIO_APLICADO",
+                    "usuario_id": "802",
+                    "permiso_nuevo": null,
+                    "revision_nueva": "2",
+                    "permiso_anterior": "PLANTADOR",
+                    "revision_anterior": "1",
+                    "conserva_acceso_global": false
+                  }
+                ],
+                "subcampania_id": "809"
+              }
+            ]
+          },
+          "comando_id": "39cf60e0-67ed-43a2-8bbe-49a54885429b",
+          "finalizado_en": "2026-10-15T20:21:39.834501Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": {
+            "campos": [],
+            "codigo": "PARTICIPANTE_NO_ELEGIBLE",
+            "ambitos": [],
+            "mensaje": "Una persona seleccionada ya no es elegible.",
+            "reintento": "NUEVA_CONFIRMACION"
+          },
+          "estado": "RECHAZADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": null,
+          "comando_id": "d0d3f08f-8351-44ea-8f70-52665f26426a",
+          "finalizado_en": "2026-10-15T20:21:39.908126Z"
+        },
+        "http_status": 409
+      }
+    },
+    {
+      "caso": "registro antes de retiro participante",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "810",
+            "fecha_plantacion": "2026-10-15",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-810",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "10",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "1c51217d-567e-42d6-89d2-6e24e59ba5f4",
+          "finalizado_en": "2026-10-15T20:21:40.002926Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "RETIRAR_PLANTADOR",
+          "resultado": {
+            "tipo": "ACCESO",
+            "cambios": [
+              {
+                "usuarios": [
+                  {
+                    "cambio": "CAMBIO_APLICADO",
+                    "usuario_id": "802",
+                    "permiso_nuevo": null,
+                    "revision_nueva": "2",
+                    "permiso_anterior": "PLANTADOR",
+                    "revision_anterior": "1",
+                    "conserva_acceso_global": false
+                  }
+                ],
+                "subcampania_id": "810"
+              }
+            ]
+          },
+          "comando_id": "30c5e3fc-e12d-458c-a3e8-c3fbaf06c367",
+          "finalizado_en": "2026-10-15T20:21:40.061899Z"
+        },
+        "http_status": 200
+      }
+    },
+    {
+      "caso": "perfil antes de captura snapshot",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "estado": "PERFIL_CAMBIADO"
+        }
+      },
+      "segundo": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "817",
+            "fecha_plantacion": "2026-10-15",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-817",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "11",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "bad3ebfd-45cb-474c-b927-d45235e67873",
+          "finalizado_en": "2026-10-15T20:21:40.192802Z"
+        },
+        "http_status": 200
+      }
+    },
+    {
+      "caso": "captura snapshot antes de cambio perfil",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "818",
+            "fecha_plantacion": "2026-10-15",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-818",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "12",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "50799333-be05-40a7-9aa9-ad3579f5e384",
+          "finalizado_en": "2026-10-15T20:21:40.302977Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "estado": "PERFIL_CAMBIADO"
+        }
+      }
+    },
+    {
+      "caso": "cambio rol antes de registro global sin permiso",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "CAMBIAR_ROL_GLOBAL",
+          "resultado": {
+            "tipo": "ROL_GLOBAL",
+            "cambio": "CAMBIO_APLICADO",
+            "rol_nuevo": "VOLUNTARIO",
+            "usuario_id": "803",
+            "rol_anterior": "ADMIN",
+            "revision_nueva": "1",
+            "revision_anterior": "0"
+          },
+          "comando_id": "d541bd8b-f1d0-4e70-8962-24b5e208717d",
+          "finalizado_en": "2026-10-15T20:21:40.497459Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": {
+            "campos": [],
+            "codigo": "CAPACIDAD_INSUFICIENTE",
+            "ambitos": [],
+            "mensaje": "No dispone de esta capacidad.",
+            "reintento": "NUEVA_CONFIRMACION"
+          },
+          "estado": "RECHAZADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": null,
+          "comando_id": "beb52c61-d448-48ac-a7c3-a8f3db67ad06",
+          "finalizado_en": "2026-10-15T20:21:40.570449Z"
+        },
+        "http_status": 403
+      }
+    },
+    {
+      "caso": "registro global antes de cambio rol sin permiso",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "803",
+            "subcampania_id": "819",
+            "fecha_plantacion": "2026-10-15",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-819",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "13",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "3aa33a99-fa4a-4561-b18b-19e3b95a753d",
+          "finalizado_en": "2026-10-15T20:21:40.689135Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "CAMBIAR_ROL_GLOBAL",
+          "resultado": {
+            "tipo": "ROL_GLOBAL",
+            "cambio": "CAMBIO_APLICADO",
+            "rol_nuevo": "VOLUNTARIO",
+            "usuario_id": "803",
+            "rol_anterior": "ADMIN",
+            "revision_nueva": "3",
+            "revision_anterior": "2"
+          },
+          "comando_id": "49c2f8d7-a41d-4aff-b30f-7ba19acda910",
+          "finalizado_en": "2026-10-15T20:21:40.744417Z"
+        },
+        "http_status": 200
+      }
+    }
+  ],
+  "limites": [
+    "Sin aplicación remota, transición de personas reales, push ni despliegue",
+    "Fixture parcial; no acredita replay 001–073",
+    "Storage de prueba privado de archivos; no acredita políticas del bucket Supabase real",
+    "INT02-D y rutas legadas/equivalentes conservan su corte independiente"
+  ],
+  "migraciones": [
+    "migrations/068_pa_participacion_comando.sql",
+    "migrations/069_pa_int02b_eventos_acceso.sql",
+    "migrations/070_pa_int02b_permisos_contextuales.sql",
+    "migrations/071_pa_int02b_bootstrap_controlado.sql",
+    "migrations/072_pa_int02c_comandos_acceso.sql",
+    "migrations/073_pa_int02c_lecturas.sql",
+    "migrations/074_pa_int03a_cargas.sql",
+    "migrations/075_pa_int03a_registro.sql",
+    "migrations/076_pa_int03a_fecha_entrega.sql"
+  ],
+  "revision_git": "345d8f251038556c33fdaaee258d801e699b0fd3",
+  "sha256": {
+    "migrations/068_pa_participacion_comando.sql": "838e1e658d178e59af5318e5b64514aef6b02317c1d4b19a3bd71af77e353a45",
+    "migrations/069_pa_int02b_eventos_acceso.sql": "cc360b8799d6a681d3ac98fe0114feae38223dfea7bea9dda0a4b739d0afca39",
+    "migrations/070_pa_int02b_permisos_contextuales.sql": "fe577206af76c8aa5f61ad453d0916b0e025b13b1660ba996fc8bbbd81dddd39",
+    "migrations/071_pa_int02b_bootstrap_controlado.sql": "ef8a2e3ff9a4e370c8ff176e0f85b46447f135dd3e5bd34ce21f74f909dbb560",
+    "migrations/072_pa_int02c_comandos_acceso.sql": "747b74f9a1d4c0eab006544119c4a5d505c757939a4eeedaec77e95f25233ee7",
+    "migrations/073_pa_int02c_lecturas.sql": "7bfcc6d60e5baaf603a514475e5403137d28a478dba715eed22a63797c34b157",
+    "migrations/074_pa_int03a_cargas.sql": "fa72c23c500cb743fa1afa0452ea088bcf0cff8d15b3e3956b763e7adb2cf045",
+    "migrations/075_pa_int03a_registro.sql": "be438c7b27f25f2e14f607bcfd307678cd401ac5f2d6746e29a37058ade24169",
+    "migrations/076_pa_int03a_fecha_entrega.sql": "c12ae6f68ad43799946a5a335d5eff64bd9b17446ad31dd0670447f6f32cf2ae",
+    "src/participacion/application/participacion-registro.service.ts": "870d1befa73f9963d2ab11412bcb3bad3b3831500d75a208093e2e2806041743",
+    "src/participacion/cargas/participacion-cargas.controller.ts": "fad5a2b7b4ec9d09ca31f24d94fd2ca097ef3a8e59d73e4c8a8e6d572a9a1657",
+    "src/participacion/cargas/participacion-cargas.service.spec.ts": "e0bba8dea52b33690ddb536cfc4fa737fd469e1d6af978223cdb7cf25a4bd513",
+    "src/participacion/cargas/participacion-cargas.service.ts": "174849035e5131f333c8ecbb899b7d1ea012f6b14f0bf9c293ca23e4e13e2d66",
+    "src/participacion/cargas/participacion-imagen.service.spec.ts": "97a90c4480619e289ed53f6cb402ac85337db00120c8895cb8936757e291f1e1",
+    "src/participacion/cargas/participacion-imagen.service.ts": "9ce27c610c8cfbf8fd538c698128537b724e715cefa1dd63a80b9ad457d87d76",
+    "src/participacion/comando-canonical.ts": "e2539ce1d5108df8a34d5db36c87fe77b098918cf2fc73adddf97d6d16a8c4f0",
+    "src/participacion/comando-recibo.ts": "f8db6c6c50a83580b46a94ba33f37523f44cc55b7f95f623507ba653c508c479",
+    "src/participacion/domain/policies/registro-proyeccion.policy.ts": "e6421fb4cb5eded475b0ee6264b8db05692e0e1968fa4a8ffd44278605b181b0",
+    "src/participacion/dto/comandos.dto.ts": "117412b9c53266bd1d7fef3bc9a5130eb0293905ab06f2c08afea38509206707",
+    "src/participacion/dto/lecturas.dto.ts": "bdd51a81f9190df06bf3338d664a73cc887be1e2810f58bdc3f66e0c2c297432",
+    "src/participacion/dto/registro.dto.ts": "b1260b3fb27569cc5f9fac4f304db229a22685c75ad69371a9ff76b73494ffe4",
+    "src/participacion/participacion-comandos.controller.ts": "773d56931ee103544395f8fda8fed438eb12c24ae6ec1816dc8ce7dde69b5f69",
+    "src/participacion/participacion-comandos.service.ts": "f64bb774d44e0c9067445cc7c88e58ae075db7ee139dcc4f6fc1a185a71ab98e",
+    "src/participacion/participacion-exception.filter.ts": "f310eefaad6b44e970638ede7400e9dacce090754660ed63b0d67d5b74bf0fab",
+    "src/participacion/participacion-lecturas.controller.ts": "50ff2b37f627e501ba962005981f58f0b0db526b115dd112bbaf1e97e44d3d1e",
+    "src/participacion/participacion-lecturas.service.ts": "b8d2768490889eb48eff95d794df22c1a15e7271144126cd34cf1724d7021456",
+    "src/participacion/participacion-openapi.generated.ts": "db92bb2bd16c50a2b796fd66bf82944d3b2f0423a57a96fa4c9d92212fdfb399",
+    "src/participacion/participacion-registro.controller.ts": "ca238b71e4b6770d84c73e82bc368e0d06f153582290b0418975034974b2b7eb",
+    "src/participacion/participacion.module.ts": "dbaca1a0964dd9a4056173edc662856deafea904dba68464a350115456839d51",
+    "src/participacion/tests/comando-canonical.spec.ts": "342c998b05c9c12dd0a5ef29dccf63d9e225b7bf53e12a663376bd359121a6e5",
+    "src/participacion/tests/participacion-comandos.service.spec.ts": "eba75248969aec3958c967c60276f399e374b0ba1786811ea08a32ad33a9afae",
+    "src/participacion/tests/participacion-lecturas.spec.ts": "8bdf6b2539200fbeac369c9082dedf999b2887f744a48d44a19dcbfea0def62c",
+    "src/participacion/tests/participacion-openapi.spec.ts": "adc7ebfe2f4270755938ea4a39c00b88427b9a3d715af0a58c47a9d5457309a9",
+    "src/participacion/tests/registro-dto.spec.ts": "0089c02d9c3f77534a9da0478759ac998473e41ba11425742fc35b2629304b1a",
+    "src/participacion/tests/registro-service.spec.ts": "53ec54076b4c7455d0b8f6738fd10fb94f9a0230df30e3835fba1aae365c5e66",
+    "migrations/010_vivero_operational_rules.sql": "9e19e7f83c7b36f516fff9857f97efba312e6ace8aaafc5c0774d8a9e6d083e3",
+    "test/db/pa-int03a-fixture.sql": "1e18eda74ca9ce8ac8234d40c31d6de20d0c990a2c0b4c7d22d692a37bf4117f",
+    "test/db/pa-int03a-assertions.py": "9db6f5237e832b52307ae29b8b8815b34ce4d661b69782c505322069ad1b7541",
+    "test/db/pa-int03a-expiracion.py": "7aa505aad4c5cdac74aae4072c1f336d70ec9742ebe2b41555c11fcdc6610daa",
+    "test/db/pa-int03a-acceso-regresion.py": "8c24afcf612af043ddf19fdad19a376c732cac9bf800f5868cb701fb88ed35fb",
+    "test/db/pa-int03a-http.spec.ts": "22b5519e8ccb81c6ead2ad2f7e09cd9d5cd06987510e9af9084631931f47aa7b",
+    "test/jest-participacion-registro-db.json": "fe0a046ded5c6127f96c1e98526a32ce2060ae9076876918c1b7981794ec4442",
+    "scripts/qa/pa-int03a-db-test.py": "2e057be6f412197a345a5dfd4f54d2941236b7c318fbe783edb546e29516b743",
+    "scripts/qa/pa-int03a-harness.ts": "45137549ffa1c4616c12e588ea5350092f4b670e54c4347b0ba8f37e6c1d7504",
+    "scripts/qa/pa-int03a-preview-server.ts": "5c30879d9d85bd477af9dc4df6e1f3d0efe07267c5718ecef3f49ffe7d769ca4",
+    "scripts/qa/pa-int03a-postgis-preparar.sh": "09cc8611b12431bb8690e9ca2ceed05ccb54442b116d0a2f65ac27caf56dba59",
+    "test/db/pa-int03a-preview-fixture.sql": "746aafc7eac07b8dc771f16ab27bc48c30ede672fc6d937d6d971b24755467a5",
+    "test/db/fixtures/pa-int03a/sintetica.heic": "ebeb0363f833465546726dd5e3856bb30036af146ab05bd661751452da24eda3"
+  },
+  "saldos_lifo": {
+    "registro_id": "2",
+    "detalles": [
+      [
+        80002,
+        2
+      ],
+      [
+        80003,
+        5
+      ]
+    ],
+    "vivero_intacto": true,
+    "meta": 2,
+    "plantado": 7,
+    "estado": "ACTIVA"
+  },
+  "catalogo_cargas": {
+    "FK_RESTRICT_carga": 6,
+    "FK_RESTRICT_generacion": 1,
+    "instalacion_y_repeticion": "074–076",
+    "Storage_RLS_adversario": "Política permisiva legada + restrictiva074 probadas SQL reales; bucket privado; otro bucket preservado"
+  },
+  "sql_estado": "CORRECTO",
+  "http_casos": [
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales rechaza visitante, cuenta inactiva y x-auth-id discordante; cache privada",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales contexto real y paginación de candidatos no exponen stock interno ni perfiles",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales PREPARADO recupera 202 y exige DTO estricto, multipart y bytes realmente decodificables",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales decodifica jpeg real y elimina metadata del derivado JPEG",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales decodifica png real y elimina metadata del derivado JPEG",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales decodifica webp real y elimina metadata del derivado JPEG",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales decodifica heic real y elimina metadata del derivado JPEG",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales decodifica heif real y elimina metadata del derivado JPEG",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales preview propio firmado 5 minutos; ADMIN ajeno y objeto directo permanecen privados",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales mismos bytes recuperan misma evidencia; otros bytes 409 y máximo diez cargas",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales reconcilia respuesta perdida Storage y finalización DB sin duplicar evidencia ni objetos",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales Storage antes de escritura deja 202 recuperable y nueva generación invalida lease anterior",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales upload atrasado tras cancelar/limpiar reaparece y el ledger durable lo vuelve a borrar",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales confirma hecho/fotos/recibo; público ve solo derivado, cleanup protege VINCULADA y falta temporal no revierte stock",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales confirmar omitiendo upload en tránsito clausura su generación y cleanup conserva la foto vinculada",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales pérdida de respuesta después de commit permite recuperar recibo tras retiro sin nuevo consumo"
+  ],
+  "storage": {
+    "tipo": "Archivos privados reales en directorio efímero 0700, objetos 0600; URLs HMAC verificadas por HTTP",
+    "original_sha256": "89973ffa58b683b6e888e2b6b0bb993052f4d6e357a9cafde51a371ec6f8bab1",
+    "formatos": [
+      "JPEG",
+      "PNG",
+      "WEBP",
+      "HEIC",
+      "HEIF"
+    ],
+    "fallos_inyectados": [
+      "upload confirma objeto y pierde respuesta",
+      "upload falla antes de escribir",
+      "finalización DB confirma y pierde respuesta",
+      "registro DB confirma y pierde respuesta",
+      "upload bloqueado antes de escribir, cancelación/cleanup y aparición atrasada",
+      "registro confirma una foto y omite otra reservada en tránsito, invalida lease y barre aparición atrasada",
+      "remove falla una vez"
+    ],
+    "limite": "No acredita políticas remotas del bucket Supabase ni red de producción"
+  },
+  "http_storage": {
+    "suite": "test/db/pa-int03a-http.spec.ts",
+    "exit_code": 0
+  }
+}

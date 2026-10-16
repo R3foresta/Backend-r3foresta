@@ -25,12 +25,19 @@ usan socket privado/DB sin TCP y destruyen exclusivamente su clúster al termina
 | `npm run test:db:participacion` | Base B, restricciones/vigencias/revisión/bootstrap, conservación sintética y denegaciones SQL |
 | `npm run test:db:acceso` | Gestión C: 22 grupos SQL, ocho carreras y 13 pruebas HTTP con RPC reales |
 | `npm run test:db:acceso:estado` | 26 casos del cotejador sobre estado sintético guardado; sin conectar DB |
+| `npm run test:db:registro -- --pg-bin /ruta/postgis/bin` | Registro INT03-A: PostgreSQL/PostGIS reales aislados, LIFO/snapshots/recibos, carreras y HTTP con objetos privados de prueba |
 | `node scripts/qa/pa-int02c-openapi.cjs --check` | OpenAPI y proyección Swagger coinciden con el generador |
 
 B/C usan antecedentes mínimos post-067: no acreditan replay 001–067, PostGIS,
 Storage ni garantías del registro participante/INT02-D. Los runners pueden regenerar
 `docs/evidencia/` y ejemplos HTTP; revisar esos diffs antes de incluirlos en un commit.
 Un manifest sintético no constituye autorización para personas reales.
+
+El runner INT03-A exige PostGIS real y falla si falta; no sustituye el evaluador
+por un mock. Instala/repite 074–076 sobre un antecedente representativo post-073,
+sin acreditar replay completo. Su Storage de prueba verifica bytes y derivados;
+las políticas del bucket Supabase remoto conservan su comprobación separada.
+[Comandos, evidencia y límites](../docs/pa-int03a-entrega-local.md).
 
 ## Integración de frontend
 

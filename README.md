@@ -29,6 +29,9 @@ están en [.env.example](.env.example).
 Para integrar gestión de acceso **sin credenciales ni Supabase**, ejecutar
 `npm run preview:participacion`. Entrega una API sintética en `127.0.0.1:3302`;
 ver [guía de participación](documentacion/modulos/participacion.md).
+Para registro con fotos y PostGIS real, usar
+`npm run preview:registro -- --pg-bin /ruta/runtime-postgis/bin` en `127.0.0.1:3303`;
+[fixture y contrato INT04](docs/pa-int03a-entrega-local.md#entorno-local-para-int04).
 
 ## Verificar un cambio
 
@@ -53,9 +56,10 @@ escrituras externas. `npm run lint` y `npm run format` modifican archivos.
 
 ## Qué está listo y qué falta
 
-B/C implementan permisos contextuales y 14 rutas de gestión/recuperación;
-**el registro participante con fotos/LIFO aún no está implementado**. La gestión
-tiene pruebas DB/HTTP aisladas y un entorno local para frontend. SQL aplicado,
+B/C implementan permisos contextuales y 14 rutas de gestión/recuperación.
+INT03-A añade en el árbol local diez rutas de registro participante, fotos
+privadas recuperables, consumo LIFO y snapshots; [entrega y verificación](docs/pa-int03a-entrega-local.md).
+La gestión tiene pruebas DB/HTTP aisladas y un entorno local para frontend. SQL aplicado,
 cotejo remoto, publicación Git y despliegue son evidencias distintas; consultar
 la [guía de participación](documentacion/modulos/participacion.md#estado-y-límites).
 

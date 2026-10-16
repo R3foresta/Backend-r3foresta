@@ -287,7 +287,7 @@ const schemas = {
     ),
     gps_dentro_poligono: bool,
     gps_distancia_a_poligono_m: { type: 'number', nullable: true },
-    revision_inicial: revision,
+    revision_inicial: { type: 'string', enum: ['0'] },
   }),
 };
 function schemasNullableId() {
@@ -513,13 +513,336 @@ paths['/api/v1/participacion/comandos/{comando_id}'].get.responses[202] = {
     'Retry-After': { schema: { type: 'string', enum: ['2'] } },
   },
 };
+// INT03-A extiende el mismo contrato y conserva las rutas/recibos de C.
+const initialOperation = {
+  type: 'string',
+  enum: ['REGISTRAR_PLANTACION_INICIAL'],
+};
+const count = { type: 'integer', minimum: 0, maximum: 2147483647 };
+const quantity = { ...count, minimum: 1 };
+const date = {
+  type: 'string',
+  format: 'date',
+  pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+};
+const speciesQuantity = obj({ planta_id: id, cantidad: quantity });
+const affiliation = {
+  oneOf: [
+    obj({
+      tipo: { type: 'string', enum: ['ORGANIZACION_REGISTRADA'] },
+      organizacion_id: id,
+    }),
+    obj({
+      tipo: { type: 'string', enum: ['OTRA'] },
+      nombre: { ...text, minLength: 1, maxLength: 150 },
+    }),
+    { type: 'object', nullable: true, enum: [null] },
+  ],
+};
+schemas.RegistroInicialEntrada = obj(
+  {
+    comando_id: uuid,
+    subcampania_id: id,
+    plan_revision_esperada: revision,
+    fecha_plantacion: date,
+    latitud: {
+      type: 'number',
+      minimum: -90,
+      maximum: 90,
+      multipleOf: 0.000001,
+    },
+    longitud: {
+      type: 'number',
+      minimum: -180,
+      maximum: 180,
+      multipleOf: 0.000001,
+    },
+    especies: array(speciesQuantity, 1, 100),
+    coresponsable_ids: { ...array(id, 0, 100), uniqueItems: true },
+    evidencia_ids: { ...array(id, 1, 10), uniqueItems: true },
+    observaciones: {
+      ...nullableText,
+      maxLength: 2000,
+      description: 'NFC/trim; omitido, vacío y null equivalen a null.',
+    },
+    afiliaciones_declaradas: array(
+      obj({ usuario_id: id, afiliacion: affiliation }),
+      0,
+      101,
+    ),
+  },
+  ['observaciones', 'afiliaciones_declaradas'],
+);
+schemas.ContextoRegistro = obj({
+  subcampania: obj({
+    id,
+    campania_id: id,
+    nombre: text,
+    campania_nombre: text,
+    estado: { type: 'string', enum: ['ACTIVA'] },
+    plan_revision: revision,
+    meta_total_arboles: quantity,
+    poligono: obj({
+      type: { type: 'string', enum: ['Polygon'] },
+      coordinates: array(array(array({ type: 'number' }, 2, 2), 4), 1),
+    }),
+  }),
+  actor: obj({
+    usuario_id: id,
+    fuente_autoridad: { type: 'string', enum: ['GLOBAL', 'CONTEXTUAL'] },
+  }),
+  disponibilidad: { type: 'string', enum: ['DISPONIBLE', 'SIN_STOCK'] },
+  especies: array(
+    obj({
+      planta_id: id,
+      nombre: text,
+      porcentaje_objetivo: { type: 'number', minimum: 0, maximum: 100 },
+      cantidad_objetivo: count,
+      saldo_elegible: count,
+    }),
+    1,
+    100,
+  ),
+  reglas: obj({
+    hoy_operativo: date,
+    fecha_minima_ventana: date,
+    fecha_maxima: date,
+    zona_horaria: { type: 'string', enum: ['America/La_Paz'] },
+    ventana_retroactiva_dias: { type: 'integer', enum: [10] },
+    fotos_min: { type: 'integer', enum: [1] },
+    fotos_max: { type: 'integer', enum: [10] },
+    exterior_permitido: { type: 'boolean', enum: [true] },
+  }),
+});
+schemas.ParticipanteSnapshot = obj({
+  usuario_id: id,
+  nombre_snapshot: nullableText,
+  afiliacion_snapshot: nullableText,
+  afiliacion_estado: {
+    type: 'string',
+    enum: ['DECLARADA', 'NO_DECLARADA', 'HISTORICA_NO_DISPONIBLE'],
+  },
+  afiliacion_tipo: {
+    type: 'string',
+    nullable: true,
+    enum: ['ORGANIZACION_REGISTRADA', 'OTRA', null],
+  },
+  organizacion_id_snapshot: {
+    ...text,
+    nullable: true,
+    pattern: '^[1-9][0-9]*$',
+    maxLength: 19,
+  },
+  es_responsable: bool,
+});
+schemas.DetallePropio = obj({
+  registro_plantacion_id: id,
+  codigo_trazabilidad: text,
+  subcampania_id: id,
+  fecha_plantacion: date,
+  revision_registro: revision,
+  relaciones: {
+    ...array({ type: 'string', enum: ['AUTOR', 'PARTICIPANTE'] }, 1, 2),
+    uniqueItems: true,
+  },
+  cantidad_total_plantada: quantity,
+  especies: array(speciesQuantity, 1, 100),
+  latitud: { type: 'number' },
+  longitud: { type: 'number' },
+  gps_dentro_poligono: bool,
+  participantes: array(ref('ParticipanteSnapshot'), 1, 101),
+  evidencia_ids: array(id, 0, 10),
+  observaciones_autor: nullableText,
+});
+schemas.PreparacionEntrada = obj({
+  comando_id: uuid,
+  operacion: initialOperation,
+  subcampania_id: id,
+});
+schemas.DescartePreparacionEntrada = obj({ operacion: initialOperation });
+schemas.Preparacion = obj({
+  comando_id: uuid,
+  operacion: initialOperation,
+  subcampania_id: id,
+  estado: { type: 'string', enum: ['PREPARADO'] },
+});
+schemas.Carga = obj({
+  carga_id: uuid,
+  estado: {
+    type: 'string',
+    enum: [
+      'RESERVADA',
+      'DISPONIBLE',
+      'VINCULADA',
+      'DESCARTE_PENDIENTE',
+      'DESCARTADA',
+    ],
+  },
+  evidencia_id: {
+    ...text,
+    nullable: true,
+    pattern: '^[1-9][0-9]*$',
+    maxLength: 19,
+  },
+  creado_en: instant,
+  expira_en: { ...instant, nullable: true },
+});
+schemas.Preview = obj({
+  url: { type: 'string', format: 'uri' },
+  expira_en: instant,
+});
+for (const [name, data] of [
+  ['ContextoRegistroLectura', ref('ContextoRegistro')],
+  ['DetallePropioLectura', ref('DetallePropio')],
+  ['PreparacionLectura', ref('Preparacion')],
+  ['CargaLectura', ref('Carga')],
+  ['CargasLectura', array(ref('Carga'), 0, 10)],
+  ['PreviewLectura', ref('Preview')],
+])
+  schemas[name] = obj({ data, observado_en: instant });
+schemas.PreparacionORecibo = {
+  oneOf: [ref('PreparacionLectura'), ref('Recibo')],
+};
+add(
+  '/api/v1/subcampanias/{id}/contexto-registro',
+  'get',
+  'Contexto de registro',
+  null,
+  'ContextoRegistroLectura',
+  [param('id', 'path', id, true)],
+);
+add(
+  '/api/v1/subcampanias/{id}/participantes-seleccionables',
+  'get',
+  'Participantes elegibles',
+  null,
+  'PersonasLectura',
+  [
+    param('id', 'path', id, true),
+    param('q', 'query', { ...text, minLength: 2, maxLength: 100 }),
+    param('cursor', 'query', pagination.cursor),
+    param('limite', 'query', pagination.limite),
+  ],
+);
+add(
+  '/api/v1/plantaciones/iniciales',
+  'post',
+  'REGISTRAR_PLANTACION_INICIAL',
+  'RegistroInicialEntrada',
+  null,
+  [],
+  true,
+);
+paths['/api/v1/plantaciones/iniciales'].post.responses = {
+  ...commandResponses,
+  422: response(
+    'ReciboOError',
+    'DTO inválido fuera de recibo o validación de negocio durable.',
+  ),
+  503: response(
+    'ReciboOError',
+    'Evaluador sin resultado durable o infraestructura inconclusa.',
+  ),
+};
+add(
+  '/api/v1/plantaciones/{id}/detalle-propio',
+  'get',
+  'Detalle propio histórico',
+  null,
+  'DetallePropioLectura',
+  [param('id', 'path', id, true)],
+);
+add(
+  '/api/v1/participacion/comandos/preparaciones',
+  'post',
+  'Preparar cargas propias',
+  'PreparacionEntrada',
+  'PreparacionORecibo',
+);
+const operationQuery = param('operacion', 'query', initialOperation, true);
+add(
+  '/api/v1/participacion/comandos/{comando_id}/cargas/{carga_id}',
+  'put',
+  'Cargar foto recuperable',
+  null,
+  'CargaLectura',
+  [
+    param('comando_id', 'path', uuid, true),
+    param('carga_id', 'path', uuid, true),
+    operationQuery,
+  ],
+);
+const upload =
+  paths['/api/v1/participacion/comandos/{comando_id}/cargas/{carga_id}'].put;
+upload.requestBody = {
+  required: true,
+  content: {
+    'multipart/form-data': {
+      schema: obj({
+        foto: {
+          type: 'string',
+          format: 'binary',
+          description:
+            'Un archivo hasta 10 MiB. JPG/JPEG/PNG/WEBP/HEIC/HEIF decodificado; sin metadata libre.',
+        },
+      }),
+    },
+  },
+};
+upload.responses[201] = response('CargaLectura', 'Nueva carga disponible.');
+upload.responses[202] = {
+  ...response('CargaLectura', 'Lease vigente; estado reservado inconcluso.'),
+  headers: {
+    ...headers,
+    'Retry-After': { schema: { type: 'string', enum: ['2'] } },
+  },
+};
+add(
+  '/api/v1/participacion/comandos/{comando_id}/cargas',
+  'get',
+  'Listar cargas propias',
+  null,
+  'CargasLectura',
+  [param('comando_id', 'path', uuid, true), operationQuery],
+);
+add(
+  '/api/v1/participacion/comandos/{comando_id}/descarte-preparacion',
+  'post',
+  'Descartar preparación propia',
+  'DescartePreparacionEntrada',
+  'Recibo',
+  [param('comando_id', 'path', uuid, true)],
+);
+add(
+  '/api/v1/participacion/cargas/{carga_id}/preview',
+  'get',
+  'Preview propio de cinco minutos',
+  null,
+  'PreviewLectura',
+  [param('carga_id', 'path', uuid, true)],
+);
+add(
+  '/api/v1/impact/fotos/{evidencia_id}',
+  'get',
+  'Foto pública sanitizada vinculada',
+  null,
+  'PreviewLectura',
+  [param('evidencia_id', 'path', id, true)],
+);
+paths['/api/v1/impact/fotos/{evidencia_id}'].get.security = [];
+paths['/api/v1/impact/fotos/{evidencia_id}'].get.responses[200].headers = {
+  'Cache-Control': {
+    schema: text,
+    description: 'no-store; URL del derivado válida por cinco minutos.',
+  },
+};
 const document = {
   openapi: '3.0.3',
   info: {
-    title: 'R3Foresta Participación aliada — INT02-C',
-    version: '1.0.0',
+    title: 'R3Foresta Participación aliada — INT02-C / INT03-A',
+    version: '1.1.0',
     description:
-      'Contrato de 14 rutas implementadas localmente. REGISTRAR_PLANTACION_INICIAL sólo se recupera, su ejecución depende de INT03-A. IDs/revisiones BIGINT en cadenas. Unknown fields rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO no son rechazos durables.',
+      'Gestión C y registro inicial recuperable INT03-A. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. Corte de rutas legadas y habilitación real dependen de INT02-D.',
   },
   servers: [{ url: 'http://localhost:3000' }],
   paths,
@@ -550,7 +873,9 @@ if (process.argv.includes('--check')) {
   if (fs.readFileSync(runtimeTarget, 'utf8') !== runtimeEncoded)
     throw new Error('OpenAPI runtime no corresponde al generador');
   console.log(
-    'OpenAPI reproducible: 14 rutas, ' +
+    'OpenAPI reproducible: ' +
+      Object.keys(paths).length +
+      ' rutas, ' +
       Object.keys(schemas).length +
       ' schemas.',
   );

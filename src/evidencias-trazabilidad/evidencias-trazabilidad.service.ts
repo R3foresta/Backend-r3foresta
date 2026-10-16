@@ -401,6 +401,8 @@ export class EvidenciasTrazabilidadService {
       `,
         { count: 'exact' },
       )
+      // Las cargas v1 tienen su propia audiencia y proyección sanitizada.
+      .neq('bucket', 'participacion_evidencias')
       .order('es_principal', { ascending: false })
       .order('orden', { ascending: true })
       .order('creado_en', { ascending: false });
@@ -505,7 +507,11 @@ export class EvidenciasTrazabilidadService {
       .eq('id', id)
       .single();
 
-    if (error || !data) {
+    if (
+      error ||
+      !data ||
+      (data as EvidenciaRow).bucket === 'participacion_evidencias'
+    ) {
       throw new NotFoundException('Evidencia de trazabilidad no encontrada');
     }
 

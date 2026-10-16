@@ -1,6 +1,6 @@
 # Arquitectura del backend
 
-**Corte: 15 de octubre de 2026, código `e9777f8`, migraciones hasta 073.**
+**Corte: 15 de octubre de 2026, base `345d8f2` más árbol INT03-A, migraciones hasta 076.**
 Describe implementación; el contrato de producto y el estado de cada entorno
 viven en [r3foresta-docs](https://github.com/R3foresta/r3foresta-docs).
 
@@ -17,6 +17,7 @@ identifican pruebas, fecha, revisión y entorno.
 | M2 | `src/lotes-vivero` | Transformación, merma, entrega y devolución |
 | M3 | `src/campanias`, `subcampanias`, `plantaciones` | Plan/equipo/stock y hechos de campo |
 | Acceso contextual | `src/participacion` | Capacidades, miembros, comandos de acceso y autoridad, recuperación |
+| Registro participante | `src/participacion/application`, `cargas`, `domain/policies` | Contexto/personas, inicial LIFO, detalle propio, cargas/generaciones e imagen sanitizada |
 | Público | `src/impact`, `src/health` | Impacto y liveness |
 | Infraestructura | `src/supabase`, `pinata`, `blockchain`, `evidencias-trazabilidad` | DB/Storage e integraciones |
 
@@ -91,7 +92,9 @@ antecedentes mínimos, no una prueba de reconstrucción completa.
 
 En participación: 068 crea comandos; 069 añade eventos ENUM y debe confirmar antes
 de 070; 070 crea permisos/revisiones/ACL; 071 instala bootstrap sin ejecutarlo;
-072/073 implementan gestión y lecturas privadas. El backend privado consumidor debe
+072/073 implementan gestión y lecturas privadas; 074 añade cargas/snapshots,
+075 registro inicial LIFO/lecturas y replay de preparación, 076 conserva el día
+DATE de entrada de entregas nuevas sin conciliar legado. El backend privado consumidor debe
 acompañar el cierre de grants. [Evidencia por entrega](docs/README.md).
 
 ## Pendientes materiales
@@ -99,9 +102,10 @@ acompañar el cierre de grants. [Evidencia por entrega](docs/README.md).
 1. Pinata upload, blockchain mint/wallet/diagnósticos y `/api/test-db` conservan
    controllers sin guard; no considerar cerrada toda la superficie por las mejoras
    de identidad. `/api/auth/test-supabase` ya no existe en el controller actual.
-2. Registro participante con cargas recuperables, LIFO y snapshots (INT03-A),
-   autorización por objeto/rutas equivalentes y carreras compartidas (INT02-D).
-   La gestión C implementada no completa esos recorridos ni habilita el piloto.
+2. INT03-A implementa registro/cargas/LIFO/snapshots con verificación aislada;
+   [entrega y límites](docs/pa-int03a-entrega-local.md). Faltan aplicación remota,
+   conciliación de entregas y autorización por objeto/rutas equivalentes/carreras
+   compartidas INT02-D. La implementación local no habilita el piloto.
 3. Catálogo remoto completo y manifest de transición real revisado. En C se confirmó
    aplicación 072/073 y REST; igualdad de cuerpos/catálogo remoto y despliegue externo
    siguen sin acreditarse. No modificar permisos reales con fixtures.

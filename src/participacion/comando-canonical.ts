@@ -25,7 +25,17 @@ export function canonicalCommand(
   operation: string,
   payload: unknown,
 ): { contenido: string; huella: string } {
-  const contenido = canonicalJson(payload);
+  // Los números HTTP conservan su tipo; la intención de inicial fija seis
+  // posiciones decimales en los bytes canónicos aceptados por D10.
+  const normalized =
+    operation === 'REGISTRAR_PLANTACION_INICIAL'
+      ? {
+          ...(payload as Record<string, unknown>),
+          latitud: (payload as { latitud: number }).latitud.toFixed(6),
+          longitud: (payload as { longitud: number }).longitud.toFixed(6),
+        }
+      : payload;
+  const contenido = canonicalJson(normalized);
   return {
     contenido,
     huella: createHash('sha256')
