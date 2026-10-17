@@ -3,7 +3,7 @@
   "estado": "CIERRE_TECNICO_LOCAL_VERIFICADO",
   "fecha_utc": "2026-10-16T23:25:15.721627+00:00",
   "revision_git": "a045d9d7f5664007f0fbf9fcc8cf53bea226e7e4",
-  "sin_commit_de_esta_entrega": true,
+  "sin_commit_de_esta_entrega": false,
   "build": {
     "comando": "TMPDIR=/private/tmp npm run build",
     "exit_code": 0
@@ -88,9 +88,9 @@
   ],
   "sha256": {
     ".env.example": "c6ebac7027d92ebccea4240d90c9385b9e934695ab0a26ea6c528e89f3028e95",
-    "ARCHITECTURE.md": "b569d177baf21bd46616d7bab7e629f05ebfb3c38549fd93b5695e38dc743911",
-    "README.md": "9a390c5c3f297187d132047e3862607a4f42ece420404ca7cb0e1abfbefc7bc2",
-    "docs/README.md": "27acece1bd862bf38dd6848a66721f10c90a23c66d71fed6b2097b0bc56824f2",
+    "ARCHITECTURE.md": "3361f4ac8d811a931e9b47932af4623a44f448df52e80ad9caa92bceed13a4e6",
+    "README.md": "f367d74f6c0417790de607ef11fc1788076c1c69fe396d5f292b573a2834aa2f",
+    "docs/README.md": "9ca7051cec03fb3b5006ed4fc848f5494736406269b0a928b3994c700425924f",
     "docs/evidencia/pa-int02d-checks.json": "7df7bc41f6e88cae544d425db68b09d6c9ca5841e33e6cbf4a6a20d8b3c34432",
     "docs/evidencia/pa-int02d-local.json": "f4180159f84ac893f3a65bd117f65091c42dea21db40d72d92c7d722ec3f6df6",
     "docs/evidencia/pa-int02d-preview-local.json": "e51e396612eec9a797672966a10888981a7c08529b88b52e2a7027f02cf80e54",
@@ -99,11 +99,11 @@
     "docs/evidencia/pa-int02d-regresion-c-pa-int02c-local.json": "b5505e9a3a951212991b71579c10d6399b4cca619293cb516295a1080dbc7c08",
     "docs/evidencia/pa-int02d-regresiones-basales.json": "1ee0cf28be17e1f3b04f7b01b58bad35744273663d0edab058c025a210f60501",
     "docs/pa-int02c-openapi.json": "a1ae8e5906c8d81c061b426fff528419f8b23c1b309beaf646b4c2713751cc3b",
-    "docs/pa-int02d-compatibilidad.md": "12e8e3072140ffb01f2f4aab0d77afbed385d7eacd6c470e8d3d22b078173230",
-    "docs/pa-int02d-entrega-local.md": "9db713b312c7aaf3c031399e75d46c628f3280caa74737e03f70c1f8d1f0cc98",
+    "docs/pa-int02d-compatibilidad.md": "85f59d9b348ca445cbffa6063fe50e8f4f4f64fade1e0b7bd8f8e102de9341ff",
+    "docs/pa-int02d-entrega-local.md": "74d35f89b2ec6c974dca7cd7b325805b205099c4fa95d4993f8232cf1420e206",
     "docs/pa-int02d-preview.md": "257aad10827ffa89f5d1bfba858b5ad58f3f7bc137ba8dd6214e66e4bbf0de6a",
     "docs/pa-int02d-registro-ejemplos.json": "fd0b5dc945df5e798b999fad8ad3a995b2f75cd770178cd768a90d0387481b13",
-    "documentacion/modulos/participacion.md": "cb2c0e134436cb92efd878825822834ba34d82747fb772e0ed59b6373eb33670",
+    "documentacion/modulos/participacion.md": "a4724e4ce0e3896ee7fce5aef84ea5258e02e0317141c5b08ed463e036630ed8",
     "migrations/077_pa_int02d_operaciones_compartidas.sql": "c11660a287349ccadc45ff0026008f193834e55cf28f2ce89b99ba46a799088b",
     "migrations/078_pa_int02d_lifecycle.sql": "bfe78a412ef71d795eff20167e1f73f02a7b6091779f2808e0f6e10ccde6aa0f",
     "migrations/079_pa_int02d_evidencias.sql": "509b6b2a4a50de012d060f469d85a781b5b6947a03d47669f934e8f99d8f5f3d",
@@ -215,5 +215,26 @@
       "cambio": "Solo se eliminó una línea vacía adicional al EOF, fuera de las sentencias SQL.",
       "equivalencia_verificada": "bytes_probados = bytes_entregados + newline; sin cambio SQL semántico ni repetición de la suite"
     }
+  },
+  "estado_al_ejecutar_pruebas": {
+    "fecha_utc": "2026-10-16T23:25:15.721627+00:00",
+    "revision_base": "a045d9d7f5664007f0fbf9fcc8cf53bea226e7e4",
+    "sin_commit_de_esta_entrega": true
+  },
+  "entrega_git": {
+    "commit": "75a57eb05e57b3048908cccc04aa14fc24ae8629",
+    "rama": "main",
+    "fecha_commit": "2026-10-17T06:18:00-04:00",
+    "estado": "COMMIT_LOCAL_CREADO",
+    "push": "PENDIENTE",
+    "sql_remoto": "PENDIENTE",
+    "despliegue": "PENDIENTE"
+  },
+  "actualizacion_documental": {
+    "fecha_utc": "2026-10-17T10:21:00.094356+00:00",
+    "alcance": "Registrar commit de entrega posterior a las pruebas y actualizar solo huellas documentales backend.",
+    "suites_repetidas": false,
+    "revision_git_de_pruebas_conservada": true,
+    "documentacion_canonica": "Huellas históricas de recepción; actualización actual a cargo del repositorio r3foresta-docs."
   }
 }

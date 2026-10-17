@@ -1,6 +1,7 @@
 # Arquitectura del backend
 
-**Corte: 16 de octubre de 2026, base `a045d9d` más árbol local INT02-D, migraciones hasta080.**
+**Corte documental: 17 de octubre de 2026. Entrega local `75a57eb` en `main`, migraciones hasta080.**
+La verificación conserva la base `a045d9d` más árbol INT02-D del 16 de octubre; el commit de entrega es posterior. Push, SQL remoto y despliegue pendientes.
 Describe implementación; el contrato de producto y el estado de cada entorno
 viven en [r3foresta-docs](https://github.com/R3foresta/r3foresta-docs).
 

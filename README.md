@@ -1,7 +1,8 @@
 # Backend R3Foresta
 
 API NestJS/Supabase para trazabilidad: **Recolección → Vivero → entrega física → Plantación**.
-Estado revisado el **16 de octubre de 2026**, sobre `a045d9d` más árbol local INT02-D verificado (sin commit/push/despliegue de D).
+Estado documental al **17 de octubre de 2026**: entrega INT02-D en el commit local `75a57eb` de `main`.
+Las pruebas conservan su base `a045d9d` más árbol D del 16 de octubre. Push, SQL remoto y despliegue de D pendientes.
 
 ## Empezar
 

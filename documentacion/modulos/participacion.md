@@ -1,6 +1,7 @@
 # Participación: integración y mantenimiento
 
-**Corte: 16 de octubre de 2026. Base publicada `a045d9d` más árbol local INT02-D.**
+**Corte documental: 17 de octubre de 2026. Entrega D en commit local `75a57eb`, rama `main`.**
+Base original de las pruebas: `a045d9d` más árbol INT02-D del 16 de octubre. Push, SQL remoto y despliegue de D pendientes.
 Gestión y registro participante implementados; D aporta corte/locks/superficie y entrega el entorno sintético para INT04. No acredita aplicación remota ni despliegue.
 
 ## Contrato que debe usar el cliente

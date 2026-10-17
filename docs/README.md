@@ -17,6 +17,8 @@ artefactos generados. `evidencia/` identifica entorno, fecha y resultados; una s
 local no se convierte en remota por llevar un project-ref. Conservar esa procedencia.
 Los informes que dicen «sin commit» describen su corte original: B/C se publicaron
 posteriormente en `main`, commit `e9777f8`, el 15 de octubre. Push no acredita despliegue.
+INT02-D tiene commit local de entrega `75a57eb` en `main`, del 17 de octubre;
+las pruebas conservan la base `a045d9d` más árbol D del 16. Push, SQL remoto y despliegue de D pendientes.
 
 La [revisión de ramas](revision-ramas-2026-10-14.md) es una fotografía histórica.
 Para avances y pendientes actuales consultar `r3foresta-docs/ESTADO.md`.

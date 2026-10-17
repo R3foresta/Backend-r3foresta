@@ -1,6 +1,8 @@
 # PA-T-INT02-D — Cierre técnico local
 
-**Corte:** 16 de octubre de 2026. **Base:** `a045d9d7f5664007f0fbf9fcc8cf53bea226e7e4` más árbol local de D, sin commit/push ni despliegue. **Estado:** BE01–BE08 verificadas para el alcance técnico local; contrato y entorno entregados para comenzar INT04.
+**Corte de pruebas:** 16 de octubre de 2026. **Base de verificación:** `a045d9d7f5664007f0fbf9fcc8cf53bea226e7e4` más el árbol D previo al commit. **Estado:** BE01–BE08 verificadas para el alcance técnico local; contrato y entorno entregados para comenzar INT04.
+
+**Entrega Git — 17 de octubre:** commit local `75a57eb05e57b3048908cccc04aa14fc24ae8629`, en `main`. El commit registra la entrega posterior a las pruebas y no cambia su procedencia. Push, aplicación/cotejo SQL remotos y despliegue de D pendientes. Esta actualización documental no repite suites ni modifica código/SQL.
 
 La [ficha D](../../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/pa-t-int02-d.md) y el [estado canónico](../../r3foresta-docs/ESTADO.md) conservan la cobertura por entrega. El [manifest](evidencia/pa-int02d-handoff.json) identifica fuentes y evidencias finales. Los resultados recibidos de 784/785 unitarios y 32 grupos/22 carreras quedan sustituidos por la verificación final indicada abajo; la recepción original se conserva en el archivo documental.
 
@@ -65,6 +67,6 @@ Inicial usa comando/cargas v1. Reposición conserva su herramienta interna, exig
 
 ## Pendientes del entorno destino
 
-Pablo confirmó 074–076 ejecutadas sin errores en desarrollo Supabase `vyrjlehkhabydkhjxagx`; no se repiten por falta de cotejo posterior. **077–080 solo están acreditadas localmente.** Faltan cotejo/aplicación remotos de SQL/ACL/columnas/membresías/vistas/definers, PostgREST, Storage y URLs/CDN históricas, conciliación de fechas/permisos/personas, corte/drenaje y habilitación reales, WebAuthn, revisión humana de UX, QA integrado, publicación/despliegue y piloto. `service_role` conserva su poder privilegiado; la garantía es cooperativa entre RPC que respetan los locks.
+Pablo confirmó 074–076 ejecutadas sin errores en desarrollo Supabase `vyrjlehkhabydkhjxagx`; no se repiten por falta de cotejo posterior. **077–080 solo están acreditadas localmente.** Faltan cotejo/aplicación remotos de SQL/ACL/columnas/membresías/vistas/definers, PostgREST, Storage y URLs/CDN históricas, conciliación de fechas/permisos/personas, corte/drenaje y habilitación reales, WebAuthn, revisión humana de UX, QA integrado, push/despliegue y piloto. `service_role` conserva su poder privilegiado; la garantía es cooperativa entre RPC que respetan los locks.
 
 La inicial normal sigue pausada por omisión mediante `PARTICIPACION_INICIAL_ESCRITURA_HABILITADA`; el preview habilita expresamente su fixture. Este cierre no completa INT02, PA-S00/01/03, tareas padre de QA ni PA-F01.

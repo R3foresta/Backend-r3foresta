@@ -1,6 +1,6 @@
 # PA-T-INT02-D — Compatibilidad de plantación y evidencias
 
-Corte técnico local: 16 de octubre de 2026, árbol sobre `a045d9d` más INT02-D. Esta guía describe el contrato que recibe INT04; no acredita aplicación/cotejo remoto de 077–080, despliegue ni habilitación de participantes reales.
+Verificación técnica local: 16 de octubre de 2026, base `a045d9d` más árbol INT02-D. Entrega Git posterior: commit local `75a57eb` en `main`, del 17 de octubre; push pendiente. Esta guía describe el contrato que recibe INT04; no acredita aplicación/cotejo remoto de 077–080, despliegue ni habilitación de participantes reales.
 
 ## Matriz final BE01–BE02
 
