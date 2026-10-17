@@ -3,162 +3,68 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { SupabaseService } from '../../supabase/supabase.service';
 import {
   CerrarSubcampaniaDto,
   EstadoFinalSubcampania,
 } from '../api/dto/cerrar-subcampania.dto';
 import { MotivoCierreParcial } from '../domain/enums/motivo-cierre-parcial.enum';
-import { SubcampaniasAuthService } from '../application/subcampanias-auth.service';
 import { SubcampaniasCierreService } from '../application/subcampanias-cierre.service';
+import { lifecycleFixture } from './subcampanias-lifecycle.test-utils';
 
-function buildAuthService(rol: string): SubcampaniasAuthService {
-  return {
-    getUserByAuthId: jest
-      .fn()
-      .mockResolvedValue({ id: 1, nombre: 'Admin', rol }),
-    assertAdmin: jest.fn().mockImplementation((r: string) => {
-      if (String(r ?? '').toUpperCase() !== 'ADMIN')
-        throw new ForbiddenException();
-    }),
-  } as unknown as SubcampaniasAuthService;
-}
-
-function buildSupabase(opts: {
-  subcampaniaRow: any;
-  updateResult?: { data: any; error: any };
-}): SupabaseService {
-  const subSingle = jest
-    .fn()
-    .mockResolvedValue(
-      opts.subcampaniaRow
-        ? { data: opts.subcampaniaRow, error: null }
-        : { data: null, error: { message: 'nf' } },
-    );
-  const subIs = jest.fn().mockReturnValue({ single: subSingle });
-  const subEq = jest.fn().mockReturnValue({ is: subIs });
-  const subSelect = jest.fn().mockReturnValue({ eq: subEq });
-
-  const updateSingle = jest.fn().mockResolvedValue(
-    opts.updateResult ?? {
-      data: {
-        id: 1,
-        estado: 'COMPLETADA',
-        fase_mantenimiento: 'MANTENIMIENTO_ACTIVO',
-      },
-      error: null,
-    },
-  );
-  const updateSelect = jest.fn().mockReturnValue({ single: updateSingle });
-  const updateEq = jest.fn().mockReturnValue({ select: updateSelect });
-  const update = jest.fn().mockReturnValue({ eq: updateEq });
-
-  return {
-    getAdminClient: jest.fn().mockReturnValue({
-      from: jest.fn().mockReturnValue({ select: subSelect, update }),
-    }),
-  } as unknown as SupabaseService;
-}
-
-const baseDto: CerrarSubcampaniaDto = {
+const dto: CerrarSubcampaniaDto = {
   estado_final: EstadoFinalSubcampania.COMPLETADA,
   fecha_cierre_operativo: '2026-12-01T00:00:00Z',
   fecha_fin_mantenimiento: '2029-12-01',
 };
-
 describe('SubcampaniasCierreService', () => {
-  it('cierra correctamente como COMPLETADA y setea fase_mantenimiento', async () => {
-    const supabase = buildSupabase({
-      subcampaniaRow: { id: 1, estado: 'ACTIVA' },
-    });
-    const service = new SubcampaniasCierreService(
-      supabase,
-      buildAuthService('ADMIN'),
-    );
-    const result = await service.cerrar(1, baseDto, 'auth-1');
-    expect(result.success).toBe(true);
-    expect(result.data.fase_mantenimiento).toBe('MANTENIMIENTO_ACTIVO');
-    expect(result.data.estado).toBe('COMPLETADA');
-  });
-
-  it('cierra como FINALIZADA_PARCIAL con motivo válido', async () => {
-    const supabase = buildSupabase({
-      subcampaniaRow: { id: 1, estado: 'ACTIVA' },
-      updateResult: {
-        data: {
-          id: 1,
-          estado: 'FINALIZADA_PARCIAL',
-          fase_mantenimiento: 'MANTENIMIENTO_ACTIVO',
-          motivo_cierre_parcial: MotivoCierreParcial.FALTA_STOCK,
-        },
-        error: null,
-      },
-    });
-    const service = new SubcampaniasCierreService(
-      supabase,
-      buildAuthService('ADMIN'),
-    );
-    const dto: CerrarSubcampaniaDto = {
-      ...baseDto,
-      estado_final: EstadoFinalSubcampania.FINALIZADA_PARCIAL,
+  it.each([
+    EstadoFinalSubcampania.COMPLETADA,
+    EstadoFinalSubcampania.FINALIZADA_PARCIAL,
+  ])('conserva %s y la fase que confirma la transacción', async (estado) => {
+    const datos = {
+      ...dto,
+      estado_final: estado,
       motivo_cierre_parcial: MotivoCierreParcial.FALTA_STOCK,
     };
-    const result = await service.cerrar(1, dto, 'auth-1');
-    expect(result.data.estado).toBe('FINALIZADA_PARCIAL');
-    expect(result.data.motivo_cierre_parcial).toBe('FALTA_STOCK');
-  });
-
-  it('lanza 422 si FINALIZADA_PARCIAL no incluye motivo', async () => {
-    const supabase = buildSupabase({
-      subcampaniaRow: { id: 1, estado: 'ACTIVA' },
+    const f = lifecycleFixture({
+      id: 1,
+      estado,
+      fase_mantenimiento: 'MANTENIMIENTO_ACTIVO',
     });
-    const service = new SubcampaniasCierreService(
-      supabase,
-      buildAuthService('ADMIN'),
-    );
-    const dto: CerrarSubcampaniaDto = {
-      ...baseDto,
-      estado_final: EstadoFinalSubcampania.FINALIZADA_PARCIAL,
-    };
-    await expect(service.cerrar(1, dto, 'auth-1')).rejects.toThrow(
-      UnprocessableEntityException,
-    );
-  });
-
-  it('lanza 422 si la transición es inválida (no ACTIVA)', async () => {
-    const supabase = buildSupabase({
-      subcampaniaRow: { id: 1, estado: 'BORRADOR' },
+    const result = await new SubcampaniasCierreService(
+      f.supabase,
+      f.auth,
+    ).cerrar(1, datos, 'admin');
+    expect(result.data).toMatchObject({
+      estado,
+      fase_mantenimiento: 'MANTENIMIENTO_ACTIVO',
     });
-    const service = new SubcampaniasCierreService(
-      supabase,
-      buildAuthService('ADMIN'),
-    );
-    await expect(service.cerrar(1, baseDto, 'auth-1')).rejects.toThrow(
-      UnprocessableEntityException,
-    );
-  });
-
-  it('lanza 404 si la subcampaña no existe', async () => {
-    const supabase = buildSupabase({ subcampaniaRow: null });
-    const service = new SubcampaniasCierreService(
-      supabase,
-      buildAuthService('ADMIN'),
-    );
-    await expect(service.cerrar(99, baseDto, 'auth-1')).rejects.toThrow(
-      NotFoundException,
-    );
-  });
-
-  it('lanza ForbiddenException si el rol no es ADMIN', async () => {
-    const supabase = buildSupabase({
-      subcampaniaRow: { id: 1, estado: 'ACTIVA' },
+    expect(f.rpc).toHaveBeenCalledWith('pa_d_subcampania_cerrar', {
+      p_id: 1,
+      p_actor_id: 99,
+      p_datos: datos,
     });
-    const service = new SubcampaniasCierreService(
-      supabase,
-      buildAuthService('GENERAL'),
-    );
-    await expect(service.cerrar(1, baseDto, 'auth-1')).rejects.toThrow(
-      ForbiddenException,
-    );
+    expect(f.from).not.toHaveBeenCalled();
+  });
+  it('rechaza cierre parcial sin motivo antes de mutar', async () => {
+    const f = lifecycleFixture({});
+    await expect(
+      new SubcampaniasCierreService(f.supabase, f.auth).cerrar(
+        1,
+        { ...dto, estado_final: EstadoFinalSubcampania.FINALIZADA_PARCIAL },
+        'admin',
+      ),
+    ).rejects.toThrow(UnprocessableEntityException);
+    expect(f.rpc).not.toHaveBeenCalled();
+  });
+  it.each([
+    ['P0002', NotFoundException],
+    ['P0001', UnprocessableEntityException],
+    ['42501', ForbiddenException],
+  ])('mapea rechazo %s de la revalidación DB', async (code, errorType) => {
+    const f = lifecycleFixture(null, { code, message: 'Rechazo DB' });
+    await expect(
+      new SubcampaniasCierreService(f.supabase, f.auth).cerrar(1, dto, 'admin'),
+    ).rejects.toThrow(errorType);
   });
 });

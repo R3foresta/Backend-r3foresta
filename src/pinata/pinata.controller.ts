@@ -1,3 +1,7 @@
+import { PrivateResponseInterceptor } from '../auth/private-response.interceptor';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { InternalActorGuard } from '../auth/internal-actor.guard';
+import { UseGuards, UseInterceptors } from '@nestjs/common';
 import {
   Controller,
   Post,
@@ -18,6 +22,9 @@ export class PinataController {
    * Body: { data: any, filename?: string }
    */
   @Post('upload-json')
+  @UseGuards(InternalActorGuard)
+  @UseInterceptors(PrivateResponseInterceptor)
+  @ApiBearerAuth()
   async uploadJson(@Body() body: UploadJsonDto) {
     // Validación: el campo "data" es obligatorio
     if (!body.data) {

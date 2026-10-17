@@ -238,7 +238,7 @@ export async function startHarness(port = 0, sessionEndpoint = false) {
       ParticipacionRegistroService,
       ParticipacionCargasService,
       ParticipacionImagenService,
-      { provide: ConfigService, useValue: { get: () => 'pa-a-http-fixture' } },
+      { provide: ConfigService, useValue: { get: (key:string) => key === 'PARTICIPACION_INICIAL_ESCRITURA_HABILITADA' ? 'true' : 'pa-a-http-fixture' } },
       {
         provide: SupabaseService,
         useValue: { getAdminClient: () => ({ rpc, storage: { from } }) },

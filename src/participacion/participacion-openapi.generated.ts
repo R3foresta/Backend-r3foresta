@@ -4847,6 +4847,50 @@ export const participacionOpenApi = {
           }
         }
       }
+    },
+    "/api/v1/impact/imagenes/{evidenciaId}": {
+      "get": {
+        "summary": "JPEG público sanitizado de evidencia vinculada elegible, incluido legado",
+        "operationId": "ImagenPublicaSanitizada",
+        "security": [],
+        "parameters": [
+          {
+            "name": "evidenciaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JPEG sin EXIF, nunca original ni pendiente.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Imagen no elegible o no encontrada."
+          },
+          "503": {
+            "description": "Imagen no disponible temporalmente."
+          }
+        }
+      }
     }
   },
   "components": {

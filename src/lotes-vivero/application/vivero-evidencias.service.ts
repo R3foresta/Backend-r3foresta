@@ -65,7 +65,7 @@ export class ViveroEvidenciasService {
     const preparedFiles =
       this.evidenceFileService.prepareOriginalEvidenceFiles(files);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const tipoEntidadId = await this.resolveTipoEntidadEventoViveroId();
     const metadataPayload = this.parseMetadata(dto.metadata);
     const evento =

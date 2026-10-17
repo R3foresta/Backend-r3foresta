@@ -13,6 +13,8 @@ function createQueryBuilder(
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     neq: jest.fn().mockReturnThis(),
+    not: jest.fn().mockReturnThis(),
+    gt: jest.fn().mockReturnThis(),
     ilike: jest.fn().mockReturnThis(),
     is: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),

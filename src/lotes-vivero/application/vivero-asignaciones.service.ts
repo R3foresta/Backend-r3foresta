@@ -1,3 +1,4 @@
+import { throwSharedMutationFailure } from '../../common/db/pa-shared-rpc-error';
 import {
   BadRequestException,
   ConflictException,
@@ -183,6 +184,7 @@ export class ViveroAsignacionesService {
     const rpcError = rpcResult.error;
 
     if (rpcError) {
+      throwSharedMutationFailure(rpcError);
       this.logger.error('Error al asignar stock a subcampania:', rpcError);
       if (this.esErrorNoEncontradoRpc(rpcError)) {
         throw new NotFoundException(rpcError.message);
@@ -383,6 +385,7 @@ export class ViveroAsignacionesService {
 
     if (rpcResult.error) {
       const rpcError = rpcResult.error;
+      throwSharedMutationFailure(rpcError);
       this.logger.error('Error al devolver asignacion:', rpcError);
       if (this.esErrorNoEncontradoRpc(rpcError)) {
         throw new NotFoundException(rpcError.message);

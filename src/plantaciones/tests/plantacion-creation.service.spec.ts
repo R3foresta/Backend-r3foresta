@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { RegistrarPlantacionDto } from '../api/dto/registrar-plantacion.dto';
 import { PlantacionAuthService } from '../application/plantacion-auth.service';
@@ -9,7 +9,8 @@ function buildDto(
 ): RegistrarPlantacionDto {
   return {
     subcampania_id: 10,
-    es_reposicion: false,
+    es_reposicion: true,
+    registro_plantacion_origen_id: 400,
     fecha_plantacion: '2026-05-20',
     latitud: -16.5,
     longitud: -68.15,
@@ -98,8 +99,8 @@ describe('PlantacionCreationService', () => {
     expect(auth.assertCanWrite).toHaveBeenCalledWith('GENERAL');
     expect(rpc).toHaveBeenCalledWith('fn_m3_registrar_plantacion', {
       p_subcampania_id: 10,
-      p_es_reposicion: false,
-      p_registro_plantacion_origen_id: null,
+      p_es_reposicion: true,
+      p_registro_plantacion_origen_id: 400,
       p_fecha_plantacion: '2026-05-20',
       p_responsable_id: 99,
       p_latitud: -16.5,
@@ -272,27 +273,21 @@ describe('PlantacionCreationService', () => {
     });
   });
 
-  it('acepta plantacion inicial autorizada por la RPC sin modificar metas ni cerrar', async () => {
+  it('inicial legada responde409 antes de identidad/DB', async () => {
     const auth = buildAuthService();
     const { supabase, rpc, from } = buildSupabaseWithRpc({
-      data: buildRpcRow(),
+      data: null,
       error: null,
     });
     const service = new PlantacionCreationService(
       supabase,
       auth as unknown as PlantacionAuthService,
     );
-
-    // ADR-PLA-04/05: la RPC puede aceptar 50 con una meta vigente de 40.
-    // El servicio no debe introducir otra escritura ni usar la meta como tope.
-    const result = await service.registrar(buildDto(), 'auth-99');
-
-    expect(result.data.cantidad_total_plantada).toBe(50);
-    expect(rpc).toHaveBeenCalledTimes(1);
-    expect(rpc).toHaveBeenCalledWith(
-      'fn_m3_registrar_plantacion',
-      expect.objectContaining({ p_es_reposicion: false }),
-    );
+    await expect(
+      service.registrar(buildDto({ es_reposicion: false }), 'auth-99'),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(auth.getUserByAuthId).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
     expect(from).not.toHaveBeenCalled();
   });
 
@@ -391,3 +386,28 @@ describe('PlantacionCreationService', () => {
     );
   });
 });
+
+// Un aborto técnico no es un rechazo de negocio ni autoriza repetir a ciegas.
+it.each(['55P03', '57014', '40P01', '40001'])(
+  'INT02-D: %s devuelve 503 inconcluso',
+  async (code) => {
+    const { supabase } = buildSupabaseWithRpc({
+      data: null,
+      error: { code, message: 'abort concurrente' },
+    });
+    const service = new PlantacionCreationService(
+      supabase,
+      buildAuthService() as unknown as PlantacionAuthService,
+    );
+    const action = service.registrar(buildDto(), 'auth-99');
+    await expect(action).rejects.toMatchObject({
+      response: {
+        error: {
+          codigo: 'RESULTADO_NO_DETERMINADO',
+          resultado_concluyente: false,
+        },
+      },
+      status: 503,
+    });
+  },
+);

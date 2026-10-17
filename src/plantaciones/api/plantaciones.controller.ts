@@ -11,6 +11,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common';
+import { PrivateResponseInterceptor } from '../../auth/private-response.interceptor';
+import { MAX_FOTO_BYTES } from '../../participacion/cargas/participacion-imagen.service';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PlantacionesService } from '../application/plantaciones.service';
@@ -26,13 +28,18 @@ import { RegistrarPlantacionDto } from './dto/registrar-plantacion.dto';
 @ApiTags('plantaciones')
 @ApiBearerAuth()
 @UseGuards(InternalActorGuard)
+@UseInterceptors(PrivateResponseInterceptor)
 @Controller('registros-plantacion')
 export class PlantacionesController {
   constructor(private readonly plantacionesService: PlantacionesService) {}
 
   @Post('evidencias-pendientes')
   @ApiCrearEvidenciaPendientePlantacion()
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 10 }]))
+  @UseInterceptors(
+    FileFieldsInterceptor([{ name: 'fotos', maxCount: 10 }], {
+      limits: { fileSize: MAX_FOTO_BYTES, files: 10 },
+    }),
+  )
   crearEvidenciaPendiente(
     @Body() dto: CrearEvidenciaPendientePlantacionDto,
     @Headers('x-auth-id') authId?: string,

@@ -1,3 +1,5 @@
+import { ImpactImagenController } from '../../impact/impact-imagen.controller';
+import { ImpactService } from '../../impact/impact.service';
 import { Test } from '@nestjs/testing';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -19,7 +21,7 @@ import {
 import { ParticipacionCargasService } from '../cargas/participacion-cargas.service';
 
 describe('Contrato OpenAPI de participación v1', () => {
-  it('documenta las 24 rutas registradas por Nest y resuelve todos sus schemas', async () => {
+  it('documenta las 25 rutas registradas por Nest y resuelve todos sus schemas', async () => {
     const module = await Test.createTestingModule({
       imports: [JwtModule.register({})],
       controllers: [
@@ -28,9 +30,11 @@ describe('Contrato OpenAPI de participación v1', () => {
         ParticipacionRegistroController,
         ParticipacionCargasController,
         ParticipacionFotosPublicasController,
+        ImpactImagenController,
       ],
       providers: [
         VerifiedActorGuard,
+        { provide: ImpactService, useValue: {} },
         { provide: ConfigService, useValue: { get: () => 'synthetic' } },
         { provide: SupabaseService, useValue: {} },
         { provide: ParticipacionComandosService, useValue: {} },
@@ -50,7 +54,7 @@ describe('Contrato OpenAPI de participación v1', () => {
       expect(Object.keys(actual.paths).sort()).toEqual(
         Object.keys(participacionOpenApi.paths).sort(),
       );
-      expect(Object.keys(actual.paths)).toHaveLength(24);
+      expect(Object.keys(actual.paths)).toHaveLength(25);
       for (const route of Object.keys(actual.paths))
         expect(Object.keys(actual.paths[route]).sort()).toEqual(
           Object.keys(participacionOpenApi.paths[route]).sort(),

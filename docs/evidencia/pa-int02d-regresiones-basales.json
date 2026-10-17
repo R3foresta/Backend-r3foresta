@@ -1,0 +1,14 @@
+{
+  "b": {
+    "exit_code": 0,
+    "segundos": 8.849,
+    "comando": "python3 scripts/qa/pa-int02b-db-test.py",
+    "naturaleza": "BASELINE_AISLADO_B_C_SIN_077_080"
+  },
+  "c": {
+    "exit_code": 0,
+    "segundos": 22.216,
+    "comando": "python3 scripts/qa/pa-int02c-db-test.py",
+    "naturaleza": "BASELINE_AISLADO_B_C_SIN_077_080"
+  }
+}

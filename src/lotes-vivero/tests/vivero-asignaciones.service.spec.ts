@@ -416,3 +416,54 @@ describe('ViveroAsignacionesService — devolucion fisica (RF-VIV-12)', () => {
     ).rejects.toThrow(NotFoundException);
   });
 });
+
+// Un aborto técnico no es un rechazo de negocio ni autoriza repetir a ciegas.
+it.each(['55P03', '57014', '40P01', '40001'])(
+  'INT02-D: %s devuelve 503 inconcluso',
+  async (code) => {
+    const { supabase } = buildSupabase({
+      rpcResult: { data: null, error: { code, message: 'abort concurrente' } },
+    });
+    const service = new ViveroAsignacionesService(supabase, buildAuthService());
+    const action = service.crearAsignacion(55, baseDto, 'auth-1');
+    await expect(action).rejects.toMatchObject({
+      response: {
+        error: {
+          codigo: 'RESULTADO_NO_DETERMINADO',
+          resultado_concluyente: false,
+        },
+      },
+      status: 503,
+    });
+  },
+);
+
+// Un aborto técnico no es un rechazo de negocio ni autoriza repetir a ciegas.
+it.each(['55P03', '57014', '40P01', '40001'])(
+  'INT02-D: %s devuelve 503 inconcluso',
+  async (code) => {
+    const { supabase } = buildSupabase({
+      rpcResult: { data: null, error: { code, message: 'abort concurrente' } },
+    });
+    const service = new ViveroAsignacionesService(supabase, buildAuthService());
+    const action = service.devolverAsignacion(
+      55,
+      10,
+      {
+        cantidad_devuelta: 1,
+        motivo_devolucion: MotivoDevolucionPlantacion.SOBRANTE_OPERATIVO,
+        fecha_devolucion: '2026-07-07',
+      },
+      'auth-1',
+    );
+    await expect(action).rejects.toMatchObject({
+      response: {
+        error: {
+          codigo: 'RESULTADO_NO_DETERMINADO',
+          resultado_concluyente: false,
+        },
+      },
+      status: 503,
+    });
+  },
+);

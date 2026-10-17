@@ -1,3 +1,4 @@
+import { ActorModule } from './auth/actor.module';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -8,6 +9,7 @@ describe('AppController', () => {
 
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
+      imports: [ActorModule],
       controllers: [AppController],
       providers: [
         AppService,
@@ -18,7 +20,10 @@ describe('AppController', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .overrideProvider(SupabaseService)
+      .useValue({ getClient: jest.fn() })
+      .compile();
 
     appController = app.get<AppController>(AppController);
   });

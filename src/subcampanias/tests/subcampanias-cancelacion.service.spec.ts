@@ -162,3 +162,28 @@ describe('SubcampaniasCancelacionService', () => {
     );
   });
 });
+
+// Un aborto técnico no es un rechazo de negocio ni autoriza repetir a ciegas.
+it.each(['55P03', '57014', '40P01', '40001'])(
+  'INT02-D: %s devuelve 503 inconcluso',
+  async (code) => {
+    const supabase = buildSupabase({
+      data: null,
+      error: { code, message: 'abort concurrente' },
+    });
+    const service = new SubcampaniasCancelacionService(
+      supabase,
+      buildAuthService('ADMIN'),
+    );
+    const action = service.cancelar(5, dto, 'auth-1');
+    await expect(action).rejects.toMatchObject({
+      response: {
+        error: {
+          codigo: 'RESULTADO_NO_DETERMINADO',
+          resultado_concluyente: false,
+        },
+      },
+      status: 503,
+    });
+  },
+);

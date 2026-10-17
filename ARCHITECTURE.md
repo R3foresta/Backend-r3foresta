@@ -1,6 +1,6 @@
 # Arquitectura del backend
 
-**Corte: 15 de octubre de 2026, base `345d8f2` más árbol INT03-A, migraciones hasta 076.**
+**Corte: 16 de octubre de 2026, base `a045d9d` más árbol local INT02-D, migraciones hasta080.**
 Describe implementación; el contrato de producto y el estado de cada entorno
 viven en [r3foresta-docs](https://github.com/R3foresta/r3foresta-docs).
 
@@ -41,7 +41,7 @@ GET del plan conserva la lectura para cuentas activas y su escritura requiere AD
 Los controllers de campañas, subcampañas, recolecciones, vivero, plantaciones,
 organizaciones y evidencias usan guard interno. Usuarios/perfil y participación
 usan guard verificado. **No existe guard global**: revisar cada ruta restante.
-Impacto y las ceremonias WebAuthn son públicos por su contrato. CORS no autentica.
+Impacto y las ceremonias WebAuthn son públicos por su contrato. CORS no autentica. Las13 entradas autorizadas de diagnósticos/mutaciones de catálogos usan guard interno; catálogos GET y consultas públicas de cadena conservan su audiencia.
 `GET /health` es liveness sin consultas externas y no lleva prefijo `/api`.
 
 El JWT WebAuthn tiene identidad propia; no asumir una sesión Supabase Auth ni
@@ -94,18 +94,15 @@ En participación: 068 crea comandos; 069 añade eventos ENUM y debe confirmar a
 de 070; 070 crea permisos/revisiones/ACL; 071 instala bootstrap sin ejecutarlo;
 072/073 implementan gestión y lecturas privadas; 074 añade cargas/snapshots,
 075 registro inicial LIFO/lecturas y replay de preparación, 076 conserva el día
-DATE de entrada de entregas nuevas sin conciliar legado. El backend privado consumidor debe
+DATE de entrada de entregas nuevas sin conciliar legado.077 ordena físicas/plan/reposición (campaña antes de hija también bajo FKs de eventos),078 lleva lifecycle a RPC,079 privatiza reposición y sanitiza foto pública,080 cierra el inventario fijo de tablas/vista/catálogos sin nuevos grants de servicio ni RLS. Preflight/postflight fallan ante drift fuera del alcance; no lo corrigen implícitamente. El backend privado consumidor debe
 acompañar el cierre de grants. [Evidencia por entrega](docs/README.md).
 
 ## Pendientes materiales
 
 1. Pinata upload, blockchain mint/wallet/diagnósticos y `/api/test-db` conservan
-   controllers sin guard; no considerar cerrada toda la superficie por las mejoras
-   de identidad. `/api/auth/test-supabase` ya no existe en el controller actual.
+   entradas ahora protegidas en el alcance D autorizado; sus acciones externas no se ejecutan en las pruebas sintéticas. No considerar acreditado el despliegue por tener guards locales. `/api/auth/test-supabase` ya no existe en el controller actual.
 2. INT03-A implementa registro/cargas/LIFO/snapshots con verificación aislada;
-   [entrega y límites](docs/pa-int03a-entrega-local.md). Faltan aplicación remota,
-   conciliación de entregas y autorización por objeto/rutas equivalentes/carreras
-   compartidas INT02-D. La implementación local no habilita el piloto.
+   [entrega y límites](docs/pa-int03a-entrega-local.md). D integra localmente autorización por objeto/rutas equivalentes/carreras compartidas; [informe D](docs/pa-int02d-entrega-local.md). Faltan aplicación/cotejo remotos y conciliación de entregas. La implementación local no habilita el piloto.
 3. Catálogo remoto completo y manifest de transición real revisado. En C se confirmó
    aplicación 072/073 y REST; igualdad de cuerpos/catálogo remoto y despliegue externo
    siguen sin acreditarse. No modificar permisos reales con fixtures.

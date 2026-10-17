@@ -71,7 +71,7 @@ export class ViveroSaldosService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   async obtenerSaldos(loteId: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const saldos = await this.cargarSaldosBase(loteId);
 
     const { data: asignacionesData, error: asignacionesError } = await supabase
@@ -140,7 +140,7 @@ export class ViveroSaldosService {
   }
 
   async listarStockDisponiblePorEspecie() {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: lotes, error: lotesError } = await supabase
       .from('lote_vivero')
@@ -246,7 +246,7 @@ export class ViveroSaldosService {
   private async intentarLeerDesdeVista(
     loteId: number,
   ): Promise<SaldosVistaRow | null> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('v_lote_vivero_saldos')
       .select('lote_id, saldo_vivo_actual, saldo_asignado_subcampanias')
@@ -277,7 +277,7 @@ export class ViveroSaldosService {
   private async calcularSaldosDesdeTablas(
     loteId: number,
   ): Promise<SaldosVistaRow> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: loteData, error: loteError } = await supabase
       .from('lote_vivero')
@@ -331,7 +331,7 @@ export class ViveroSaldosService {
   private async cargarSaldosDisponibles(
     loteIds: number[],
   ): Promise<Map<number, SaldosVistaRow>> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('v_lote_vivero_saldos')
       .select('lote_id, saldo_vivo_actual, saldo_asignado_subcampanias')

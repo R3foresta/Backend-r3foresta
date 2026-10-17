@@ -3,7 +3,9 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
+import { ParticipacionImagenService } from '../participacion/cargas/participacion-imagen.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import {
   ImpactEvidenceQueryDto,
@@ -159,10 +161,13 @@ const PAGE_SIZE = 1000;
 
 @Injectable()
 export class ImpactService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly imagenService: ParticipacionImagenService = new ParticipacionImagenService(),
+  ) {}
 
   async listOrganizations() {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('organizacion')
       .select('id, nombre, logo_url')
@@ -376,7 +381,7 @@ export class ImpactService {
       };
     }
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const [statesResult, subcampaignResult] = await Promise.all([
       supabase
         .from('campania_estado')
@@ -447,7 +452,7 @@ export class ImpactService {
   private async requireOrganization(
     organizationId: number,
   ): Promise<ImpactOrganization> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('organizacion')
       .select('id, nombre, logo_url')
@@ -472,7 +477,7 @@ export class ImpactService {
     organizationId: number,
     campaignId?: number,
   ): Promise<CampaignRow[]> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     let associationQuery = supabase
       .from('campania_organizacion')
       .select('campania_id')
@@ -515,7 +520,7 @@ export class ImpactService {
   private async loadPolygons(
     subcampaignIds: number[],
   ): Promise<Map<number, GeoJsonGeometry | null>> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const entries = await Promise.all(
       subcampaignIds.map(async (subcampaignId) => {
         const rpcResult = (await supabase.rpc(
@@ -546,7 +551,7 @@ export class ImpactService {
     );
     if (missingIds.length === 0) return result;
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('division_administrativa')
       .select('id, nombre')
@@ -568,7 +573,7 @@ export class ImpactService {
     if (subcampaignIds.length === 0) return [];
 
     return this.fetchAll<PlantingRow>(async (from, to) => {
-      const supabase = this.supabaseService.getClient();
+      const supabase = this.supabaseService.getAdminClient();
       return supabase
         .from('registro_plantacion')
         .select(
@@ -587,7 +592,7 @@ export class ImpactService {
     if (subcampaignIds.length === 0) return [];
 
     return this.fetchAll<MortalityEventRow>(async (from, to) => {
-      const supabase = this.supabaseService.getClient();
+      const supabase = this.supabaseService.getAdminClient();
       return supabase
         .from('evento_plantacion')
         .select(
@@ -607,7 +612,7 @@ export class ImpactService {
     const result = new Map<number, ImpactSpecies[]>();
     if (plantingIds.length === 0) return result;
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const data = await this.fetchAll<PlantingDetailRow>(
       async (from, to) =>
         supabase
@@ -651,6 +656,85 @@ export class ImpactService {
     return result;
   }
 
+  /** Elegibilidad DB antes de Storage; no expone originales ni sus URLs. */
+  async imagenPublica(evidenciaId: string): Promise<Buffer> {
+    if (!/^[1-9][0-9]{0,18}$/.test(evidenciaId))
+      throw new NotFoundException('Imagen no encontrada.');
+    const client = this.supabaseService.getAdminClient();
+    const { data: modern, error: modernError } = await client.rpc(
+      'pa_foto_publica',
+      { p_evidencia_id: evidenciaId },
+    );
+    if (modernError || !modern?.body)
+      throw new ServiceUnavailableException(
+        'Imagen no disponible temporalmente.',
+      );
+    let bucket: string,
+      path: string,
+      legacy = false;
+    if (modern.http_status === 200) {
+      bucket = modern.body.data?.bucket;
+      path = modern.body.data?.ruta_derivada;
+      if (
+        bucket !== 'participacion_evidencias' ||
+        typeof path !== 'string' ||
+        !path.endsWith('/derivada.jpg') ||
+        path.includes('..')
+      )
+        throw new ServiceUnavailableException(
+          'Imagen no disponible temporalmente.',
+        );
+    } else {
+      if (modern.http_status !== 404)
+        throw new ServiceUnavailableException(
+          'Imagen no disponible temporalmente.',
+        );
+      const { data: historical, error } = await client.rpc(
+        'pa_d_foto_legada_publica',
+        { p_evidencia_id: evidenciaId },
+      );
+      if (error || !historical?.body)
+        throw new ServiceUnavailableException(
+          'Imagen no disponible temporalmente.',
+        );
+      if (historical.http_status === 404)
+        throw new NotFoundException('Imagen no encontrada.');
+      if (historical.http_status !== 200)
+        throw new ServiceUnavailableException(
+          'Imagen no disponible temporalmente.',
+        );
+      bucket = historical.body.data?.bucket;
+      path = historical.body.data?.ruta_original;
+      if (
+        bucket !== 'recoleccion_fotos' ||
+        typeof path !== 'string' ||
+        !path ||
+        path.includes('..') ||
+        path.startsWith('/')
+      )
+        throw new ServiceUnavailableException(
+          'Imagen no disponible temporalmente.',
+        );
+      legacy = true;
+    }
+    const { data: blob, error: downloadError } = await client.storage
+      .from(bucket)
+      .download(path);
+    if (downloadError || !blob)
+      throw new ServiceUnavailableException(
+        'Imagen no disponible temporalmente.',
+      );
+    const bytes = Buffer.from(await blob.arrayBuffer());
+    if (!legacy) return bytes;
+    try {
+      return (await this.imagenService.preparar(bytes)).derivada;
+    } catch {
+      throw new ServiceUnavailableException(
+        'Imagen no disponible temporalmente.',
+      );
+    }
+  }
+
   private async loadEvidence(
     plantings: PlantingRow[],
     subcampaigns: SubcampaignRow[],
@@ -658,7 +742,7 @@ export class ImpactService {
     const result = new Map<number, ImpactEvidence[]>();
     if (plantings.length === 0) return result;
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data: typeRow, error: typeError } = await supabase
       .from('tipos_entidad_evidencia')
       .select('id')
@@ -704,9 +788,6 @@ export class ImpactService {
       const subcampaign = subcampaignById.get(Number(planting.subcampania_id));
       if (!subcampaign) continue;
 
-      const { data: publicUrl } = supabase.storage
-        .from(row.bucket)
-        .getPublicUrl(row.ruta_archivo);
       const evidence: ImpactEvidence = {
         id: Number(row.id),
         plantingRecordId: plantingId,
@@ -714,7 +795,7 @@ export class ImpactService {
         subcampaignId: Number(subcampaign.id),
         publicTraceabilityCode: row.codigo_trazabilidad ?? null,
         title: row.titulo ?? null,
-        imageUrl: publicUrl.publicUrl,
+        imageUrl: `/api/v1/impact/imagenes/${row.id}`,
         takenAt: row.tomado_en ?? row.creado_en,
         isPrimary: Boolean(row.es_principal),
         species: [],

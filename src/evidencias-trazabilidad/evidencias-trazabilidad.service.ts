@@ -403,6 +403,8 @@ export class EvidenciasTrazabilidadService {
       )
       // Las cargas v1 tienen su propia audiencia y proyección sanitizada.
       .neq('bucket', 'participacion_evidencias')
+      .not('ruta_archivo', 'like', 'plantaciones/registros/pendientes/%')
+      .gt('entidad_id', 0)
       .order('es_principal', { ascending: false })
       .order('orden', { ascending: true })
       .order('creado_en', { ascending: false });
@@ -448,9 +450,18 @@ export class EvidenciasTrazabilidadService {
       );
     }
 
-    const evidencias = (data || []).map((row) =>
-      this.mapEvidencia(row as EvidenciaRow),
-    );
+    const evidencias = (data || [])
+      .filter((row) => {
+        const evidence = row as EvidenciaRow;
+        return (
+          evidence.bucket !== 'participacion_evidencias' &&
+          Boolean(evidence.entidad_id) &&
+          !evidence.ruta_archivo?.startsWith(
+            'plantaciones/registros/pendientes/',
+          )
+        );
+      })
+      .map((row) => this.mapEvidencia(row as EvidenciaRow));
     const total = count || 0;
     const totalPages = total > 0 ? Math.ceil(total / limit) : 0;
 
@@ -510,7 +521,11 @@ export class EvidenciasTrazabilidadService {
     if (
       error ||
       !data ||
-      (data as EvidenciaRow).bucket === 'participacion_evidencias'
+      (data as EvidenciaRow).bucket === 'participacion_evidencias' ||
+      (data as EvidenciaRow).ruta_archivo?.startsWith(
+        'plantaciones/registros/pendientes/',
+      ) ||
+      !(data as EvidenciaRow).entidad_id
     ) {
       throw new NotFoundException('Evidencia de trazabilidad no encontrada');
     }

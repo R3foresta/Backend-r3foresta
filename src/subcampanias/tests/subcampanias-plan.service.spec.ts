@@ -278,3 +278,21 @@ describe('GuardarPlanDto', () => {
     },
   );
 });
+
+// Un aborto técnico no es un rechazo de negocio ni autoriza repetir a ciegas.
+it.each(['55P03', '57014', '40P01', '40001'])(
+  'INT02-D: %s devuelve 503 inconcluso',
+  async (code) => {
+    const { service } = setup({ code, message: 'abort concurrente' });
+    const action = service.guardar(1, revision, 'auth-1');
+    await expect(action).rejects.toMatchObject({
+      response: {
+        error: {
+          codigo: 'RESULTADO_NO_DETERMINADO',
+          resultado_concluyente: false,
+        },
+      },
+      status: 503,
+    });
+  },
+);

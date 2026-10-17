@@ -127,7 +127,7 @@ export class ComunidadesService {
   }
 
   async crear(payload: CreateComunidadDto) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const nombre = this.normalizeNombre(payload.nombre);
     const pais = await this.getPaisById(payload.pais_id);
     const tipoMunicipio = await this.getTipoPorOrden(pais.id, 3);
@@ -169,7 +169,7 @@ export class ComunidadesService {
   }
 
   async actualizar(id: number, payload: UpdateComunidadDto) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const comunidadActual = await this.getComunidadById(id);
     const pais = await this.getPaisById(comunidadActual.pais_id);
     const tipoMunicipio = await this.getTipoPorOrden(pais.id, 3);
@@ -237,7 +237,7 @@ export class ComunidadesService {
   }
 
   async desactivar(id: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const comunidad = await this.getComunidadById(id);
 
     if (!comunidad.activo) {

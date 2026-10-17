@@ -1,21 +1,17 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import {
   GeoJsonPolygonDto,
   SetearPoligonoDto,
 } from '../api/dto/setear-poligono.dto';
 import { SubcampaniasAuthService } from './subcampanias-auth.service';
+import {
+  lifecycleObject,
+  throwLifecycleRpcError,
+} from './subcampanias-rpc-error';
 
 @Injectable()
 export class SubcampaniasPoligonoService {
-  private readonly logger = new Logger(SubcampaniasPoligonoService.name);
-
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly authService: SubcampaniasAuthService,
@@ -38,23 +34,11 @@ export class SubcampaniasPoligonoService {
       },
     );
 
-    if (error) {
-      this.logger.error('Error al setear poligono:', error);
-      const msg = (error as any).message ?? '';
-      if ((error as any).code === 'P0002' || msg.includes('no existe')) {
-        throw new NotFoundException(`Subcampaña con id ${id} no encontrada`);
-      }
-      if ((error as any).code === 'P0001' || msg.includes('BORRADOR')) {
-        throw new UnprocessableEntityException(
-          'Solo se puede setear el polígono en estado BORRADOR.',
-        );
-      }
-      throw new BadRequestException(msg || 'No se pudo setear el polígono.');
-    }
+    if (error) throwLifecycleRpcError(error);
 
     return {
       success: true,
-      data: data ?? { id, message: 'Polígono actualizado correctamente.' },
+      data: lifecycleObject(data),
     };
   }
 

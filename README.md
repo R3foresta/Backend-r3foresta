@@ -1,7 +1,7 @@
 # Backend R3Foresta
 
 API NestJS/Supabase para trazabilidad: **Recolección → Vivero → entrega física → Plantación**.
-Estado revisado el **15 de octubre de 2026**, sobre el código publicado en `e9777f8`.
+Estado revisado el **16 de octubre de 2026**, sobre `a045d9d` más árbol local INT02-D verificado (sin commit/push/despliegue de D).
 
 ## Empezar
 
@@ -29,9 +29,13 @@ están en [.env.example](.env.example).
 Para integrar gestión de acceso **sin credenciales ni Supabase**, ejecutar
 `npm run preview:participacion`. Entrega una API sintética en `127.0.0.1:3302`;
 ver [guía de participación](documentacion/modulos/participacion.md).
-Para registro con fotos y PostGIS real, usar
-`npm run preview:registro -- --pg-bin /ruta/runtime-postgis/bin` en `127.0.0.1:3303`;
-[fixture y contrato INT04](docs/pa-int03a-entrega-local.md#entorno-local-para-int04).
+Para integrar INT04 con registro, reposición interna y fotos/PostGIS reales,
+usar `npm run preview:participacion-d -- --pg-bin /ruta/runtime-postgis/bin`
+en `127.0.0.1:3303`; [fixture y verificación](docs/pa-int02d-preview.md).
+La escritura inicial del backend normal requiere
+`PARTICIPACION_INICIAL_ESCRITURA_HABILITADA=true` explícito tras el corte;
+por omisión se pausa y conserva recuperación/terminales.
+
 
 ## Verificar un cambio
 
@@ -56,12 +60,12 @@ escrituras externas. `npm run lint` y `npm run format` modifican archivos.
 
 ## Qué está listo y qué falta
 
-B/C implementan permisos contextuales y 14 rutas de gestión/recuperación.
-INT03-A añade en el árbol local diez rutas de registro participante, fotos
-privadas recuperables, consumo LIFO y snapshots; [entrega y verificación](docs/pa-int03a-entrega-local.md).
-La gestión tiene pruebas DB/HTTP aisladas y un entorno local para frontend. SQL aplicado,
-cotejo remoto, publicación Git y despliegue son evidencias distintas; consultar
-la [guía de participación](documentacion/modulos/participacion.md#estado-y-límites).
+B/C implementan permisos contextuales y gestión; INT03-A publicó registro v1,
+cargas privadas, consumo LIFO y snapshots. INT02-D completó BE01–BE08 localmente: migraciones 077–080,
+orden compartido con plan/físicas/lifecycle, corte inicial legado409, reposición
+con origen propio y evidencias privadas, foto pública sanitizada y cierre de
+superficie reducido autorizado. [Informe, evidencia y límites](docs/pa-int02d-entrega-local.md).
+SQL aplicado, cotejo remoto, publicación y despliegue son hechos distintos.
 
 Las rutas privadas cubiertas usan **Bearer JWT verificado**, cuenta activa y
 políticas de servidor; `x-auth-id` no autentica. Impacto conserva su audiencia

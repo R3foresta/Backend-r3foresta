@@ -1,3 +1,4 @@
+import { ActorModule } from './auth/actor.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -26,6 +27,7 @@ import { ParticipacionModule } from './participacion/participacion.module';
 
 @Module({
   imports: [
+    ActorModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),

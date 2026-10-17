@@ -1,3 +1,4 @@
+import { throwSharedMutationFailure } from '../../common/db/pa-shared-rpc-error';
 import {
   BadRequestException,
   ConflictException,
@@ -92,6 +93,7 @@ export class SubcampaniasPlanService {
 
   private leerResultado(result: RpcResult): PlanSnapshot {
     if (result.error) {
+      throwSharedMutationFailure(result.error);
       const { code, message } = result.error;
       const detalle = message ?? 'No se pudo guardar o leer el plan.';
       switch (code) {

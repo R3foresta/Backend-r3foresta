@@ -5,23 +5,21 @@ import {
   ApiHeader,
   ApiOperation,
   ApiResponse,
-  ApiSecurity,
 } from '@nestjs/swagger';
 
 const AUTH_ID_HEADER = {
   name: 'x-auth-id',
-  description: 'ID de autenticacion del usuario de Supabase',
-  required: true,
+  description: 'Alias opcional del sub del JWT verificado; debe coincidir.',
+  required: false,
 };
 
 export function ApiCrearEvidenciaPendientePlantacion() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Crear evidencias pendientes para REGISTRO_PLANTACION',
+      summary: 'Crear evidencias privadas pendientes de reposición interna',
       description:
-        'Sube fotos y crea evidencias con entidad_id=0 para el tipo REGISTRO_PLANTACION. Luego sus IDs se envian en POST /registros-plantacion para que la RPC fn_m3_registrar_plantacion las vincule atomicamente al registro.',
+        'Bearer JWT obligatorio. Requiere rol interno, equipo y subcampania_id + es_reposicion:true. Original privado y JPEG sanitizado, propiedad estricta también para ADMIN. Inicial usa cargas v1; contrato anterior responde 409 CLIENTE_INCOMPATIBLE antes de Storage.',
     }),
-    ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
     ApiConsumes('multipart/form-data'),
     ApiBody({
@@ -29,8 +27,10 @@ export function ApiCrearEvidenciaPendientePlantacion() {
         'Datos y archivos de evidencia pendiente del registro de plantacion',
       schema: {
         type: 'object',
-        required: ['fotos'],
+        required: ['subcampania_id', 'es_reposicion', 'fotos'],
         properties: {
+          subcampania_id: { type: 'integer', minimum: 1 },
+          es_reposicion: { type: 'boolean', enum: [true] },
           titulo: {
             type: 'string',
             maxLength: 120,
@@ -40,11 +40,6 @@ export function ApiCrearEvidenciaPendientePlantacion() {
             type: 'string',
             maxLength: 1000,
             example: 'Fotos del grupo plantado en la subcampania',
-          },
-          metadata: {
-            type: 'string',
-            example: '{"fuente":"app-mobile","modulo":"plantaciones"}',
-            description: 'Objeto JSON serializado como texto',
           },
           tomado_en: {
             type: 'string',
@@ -73,7 +68,15 @@ export function ApiCrearEvidenciaPendientePlantacion() {
       status: 400,
       description: 'Datos invalidos o formato de archivo no permitido',
     }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT ausente/inválido o header discordante',
+    }),
+    ApiResponse({
+      status: 409,
+      description:
+        'CLIENTE_INCOMPATIBLE: contrato inicial o upload sin ámbito/propósito',
+    }),
     ApiResponse({
       status: 404,
       description: 'Falta tipo_entidad_evidencia REGISTRO_PLANTACION',
@@ -85,12 +88,10 @@ export function ApiCrearEvidenciaPendientePlantacion() {
 export function ApiRegistrarPlantacion() {
   return applyDecorators(
     ApiOperation({
-      summary:
-        'Registrar plantacion o reposicion consumiendo stock asignado (M3)',
+      summary: 'Registrar reposición interna consumiendo stock asignado (M3)',
       description:
-        'Llama a la RPC fn_m3_registrar_plantacion. En una sola transaccion: valida el estado de la subcampania (inicial solo ACTIVA; reposicion tambien COMPLETADA/FINALIZADA_PARCIAL), GPS contra poligono, equipo (responsable + coresponsables), asignaciones ACTIVAS de proposito coherente y su saldo_asignado_disponible, las especies del plan (inicial) y el pendiente de reposicion del grupo origen (reposicion). La cantidad inicial puede superar la meta por especie, pero nunca el stock asignado disponible; la subcampania permanece ACTIVA hasta cierre manual. Inserta REGISTRO_PLANTACION + DETALLE + CORESPONSABLES, aumenta cantidad_consumida de las asignaciones usadas, actualiza contadores de subcampania y vincula evidencias. NO genera eventos en Vivero ni modifica LOTE_VIVERO.saldo_vivo_actual: la salida fisica ocurrio al crear la asignacion (RN-VIV-52/55).',
+        'Solo es_reposicion:true; inicial legada responde 409 CLIENTE_INCOMPATIBLE. Conserva rol ADMIN/GENERAL/VALIDADOR, equipo COORDINADOR/OPERARIO y estado ACTIVA/COMPLETADA/FINALIZADA_PARCIAL. La RPC comprueba origen inicial del mismo ámbito y evidencias propias privadas del mismo propósito antes de consumir stock M3. No vuelve a descontar Vivero.',
     }),
-    ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
     ApiBody({
       description: 'Datos del registro de plantacion',
@@ -98,6 +99,8 @@ export function ApiRegistrarPlantacion() {
         type: 'object',
         required: [
           'subcampania_id',
+          'es_reposicion',
+          'registro_plantacion_origen_id',
           'fecha_plantacion',
           'latitud',
           'longitud',
@@ -106,7 +109,7 @@ export function ApiRegistrarPlantacion() {
         ],
         properties: {
           subcampania_id: { type: 'integer', example: 1, minimum: 1 },
-          es_reposicion: { type: 'boolean', example: false, default: false },
+          es_reposicion: { type: 'boolean', enum: [true], example: true },
           registro_plantacion_origen_id: {
             type: 'integer',
             nullable: true,
@@ -169,7 +172,15 @@ export function ApiRegistrarPlantacion() {
       description:
         'Validacion fallida: estado de subcampania incompatible, GPS no evaluable, responsable o coresponsable fuera del equipo, saldo asignado insuficiente, proposito incoherente, especie fuera del plan, reposicion mayor al pendiente del grupo origen, etc.',
     }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT ausente/inválido o header discordante',
+    }),
+    ApiResponse({
+      status: 409,
+      description:
+        'CLIENTE_INCOMPATIBLE: contrato inicial o upload sin ámbito/propósito',
+    }),
     ApiResponse({ status: 403, description: 'Rol global insuficiente' }),
     ApiResponse({
       status: 404,
@@ -186,15 +197,16 @@ export function ApiDescartarEvidenciasPendientesPlantacion() {
       description:
         'Marca como eliminadas evidencias pendientes (entidad_id NULL/0) de tipo REGISTRO_PLANTACION y elimina sus archivos de Storage. Es idempotente: los IDs inexistentes, ya eliminados, ya vinculados o no pertenecientes al usuario se devuelven como ignorados.',
     }),
-    ApiSecurity('x-auth-id'),
     ApiHeader(AUTH_ID_HEADER),
     ApiBody({
       description:
         'IDs devueltos por POST /registros-plantacion/evidencias-pendientes que deben descartarse porque el registro fue cancelado o no se completara.',
       schema: {
         type: 'object',
-        required: ['evidencia_ids'],
+        required: ['subcampania_id', 'es_reposicion', 'evidencia_ids'],
         properties: {
+          subcampania_id: { type: 'integer', minimum: 1 },
+          es_reposicion: { type: 'boolean', enum: [true] },
           evidencia_ids: {
             type: 'array',
             minItems: 1,
@@ -210,7 +222,15 @@ export function ApiDescartarEvidenciasPendientesPlantacion() {
         'Evidencias pendientes descartadas. Devuelve evidencia_ids_descartadas y evidencia_ids_ignoradas.',
     }),
     ApiResponse({ status: 400, description: 'IDs invalidos' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT ausente/inválido o header discordante',
+    }),
+    ApiResponse({
+      status: 409,
+      description:
+        'CLIENTE_INCOMPATIBLE: contrato inicial o upload sin ámbito/propósito',
+    }),
     ApiResponse({ status: 403, description: 'Rol global insuficiente' }),
     ApiResponse({
       status: 404,

@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ImpactService } from './impact.service';
 
@@ -65,7 +66,7 @@ function makeSupabase(
   };
   return {
     supabase: {
-      getClient: jest.fn().mockReturnValue(client),
+      getAdminClient: jest.fn().mockReturnValue(client),
     } as unknown as SupabaseService,
     client,
   };
@@ -256,7 +257,7 @@ describe('ImpactService', () => {
     });
     expect(response.data.evidencePreview[0]).toMatchObject({
       publicTraceabilityCode: 'PLT-031-SUB-021',
-      imageUrl: 'https://storage.example/plantacion.jpg',
+      imageUrl: '/api/v1/impact/imagenes/41',
       title: 'Jornada de plantación',
       species: [
         {
@@ -731,5 +732,84 @@ describe('ImpactService', () => {
         to: '2026-07-01',
       }),
     ).rejects.toThrow('from no puede ser posterior a to.');
+  });
+});
+
+describe('ImpactService fotos públicas INT02-D', () => {
+  function imageHarness(
+    modernStatus: number,
+    legacyStatus = 404,
+    bytes = Buffer.from('jpeg'),
+  ) {
+    const download = jest.fn(async () => ({
+      data: { arrayBuffer: async () => bytes },
+      error: null,
+    }));
+    const bucket = jest.fn(() => ({ download }));
+    const rpc = jest.fn(async (name: string) => ({
+      data:
+        name === 'pa_foto_publica'
+          ? {
+              http_status: modernStatus,
+              body: {
+                data: {
+                  bucket: 'participacion_evidencias',
+                  ruta_derivada: 'reposiciones/77/10/test/derivada.jpg',
+                },
+              },
+            }
+          : {
+              http_status: legacyStatus,
+              body: {
+                data: {
+                  bucket: 'recoleccion_fotos',
+                  ruta_original:
+                    'plantaciones/registros/pendientes/77/original.jpg',
+                },
+              },
+            },
+      error: null,
+    }));
+    const supabase = {
+      getAdminClient: () => ({ rpc, storage: { from: bucket } }),
+    } as unknown as SupabaseService;
+    return { service: new ImpactService(supabase), rpc, bucket, download };
+  }
+  it('elegibilidad rechazada antes de leer Storage, aun con ID conocido', async () => {
+    const h = imageHarness(404);
+    await expect(h.service.imagenPublica('901')).rejects.toThrow(
+      'Imagen no encontrada.',
+    );
+    expect(h.download).not.toHaveBeenCalled();
+    expect(h.rpc.mock.calls.map((call) => call[0])).toEqual([
+      'pa_foto_publica',
+      'pa_d_foto_legada_publica',
+    ]);
+  });
+  it('derivado nuevo elegible solo descarga JPEG privado, no original', async () => {
+    const h = imageHarness(200);
+    expect(await h.service.imagenPublica('901')).toEqual(Buffer.from('jpeg'));
+    expect(h.bucket).toHaveBeenCalledWith('participacion_evidencias');
+    expect(h.download).toHaveBeenCalledWith(
+      'reposiciones/77/10/test/derivada.jpg',
+    );
+    expect(h.rpc).toHaveBeenCalledTimes(1);
+  });
+  it('foto legada vinculada conserva lectura pública y elimina EXIF al vuelo', async () => {
+    const original = await sharp({
+      create: { width: 2, height: 2, channels: 3, background: '#52a35f' },
+    })
+      .withExif({ IFD0: { Artist: 'dato privado', Copyright: 'no publicar' } })
+      .jpeg()
+      .toBuffer();
+    expect((await sharp(original).metadata()).exif).toBeDefined();
+    const h = imageHarness(404, 200, original);
+    const result = await h.service.imagenPublica('902');
+    const metadata = await sharp(result).metadata();
+    expect(metadata.format).toBe('jpeg');
+    expect(metadata.exif).toBeUndefined();
+    expect(metadata.xmp).toBeUndefined();
+    expect(h.bucket).toHaveBeenCalledWith('recoleccion_fotos');
+    expect(h.download).toHaveBeenCalledTimes(1);
   });
 });

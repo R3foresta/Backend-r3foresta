@@ -1,6 +1,8 @@
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsInt,
+  Min,
   IsDateString,
   IsOptional,
   IsString,
@@ -8,6 +10,19 @@ import {
 } from 'class-validator';
 
 export class CrearEvidenciaPendientePlantacionDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  subcampania_id?: number;
+
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === 'true' ? true : value === 'false' ? false : value,
+  )
+  @IsBoolean()
+  es_reposicion?: boolean;
+
   @IsOptional()
   @IsString({ message: 'titulo debe ser texto' })
   @MaxLength(120, { message: 'titulo no puede superar 120 caracteres' })

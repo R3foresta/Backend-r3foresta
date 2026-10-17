@@ -1,3 +1,7 @@
+import { PrivateResponseInterceptor } from './auth/private-response.interceptor';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { InternalActorGuard } from './auth/internal-actor.guard';
+import { UseGuards, UseInterceptors } from '@nestjs/common';
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { SupabaseService } from './supabase/supabase.service';
@@ -15,6 +19,9 @@ export class AppController {
   }
 
   @Get('test-db')
+  @UseGuards(InternalActorGuard)
+  @UseInterceptors(PrivateResponseInterceptor)
+  @ApiBearerAuth()
   async testDbConnection() {
     try {
       const { data, error } = await this.supabaseService

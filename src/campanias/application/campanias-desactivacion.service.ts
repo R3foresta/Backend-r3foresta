@@ -1,3 +1,4 @@
+import { throwSharedMutationFailure } from '../../common/db/pa-shared-rpc-error';
 import {
   BadRequestException,
   ConflictException,
@@ -67,7 +68,8 @@ export class CampaniasDesactivacionService {
       );
     }
 
-    const subcampaniasResult = (await supabase
+    const subcampaniasResult = (await this.supabaseService
+      .getAdminClient()
       .from('subcampania')
       .select('id, estado, total_plantado_inicial')
       .eq('campania_id', id)
@@ -168,7 +170,7 @@ export class CampaniasDesactivacionService {
     if (subcampaniaIds.length === 0) return [];
 
     const result = (await this.supabaseService
-      .getClient()
+      .getAdminClient()
       .from('asignacion_vivero_subcampania')
       .select('id, saldo_asignado_disponible')
       .in('subcampania_id', subcampaniaIds)
@@ -238,6 +240,7 @@ export class CampaniasDesactivacionService {
   }
 
   private mapearErrorRpc(error: SupabaseErrorLike): never {
+    throwSharedMutationFailure(error);
     this.logger.error('Error al desactivar campania masivamente:', error);
     const message =
       error.message ?? 'No se pudo desactivar la campaña de forma atómica.';

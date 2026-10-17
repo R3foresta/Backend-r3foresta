@@ -1,3 +1,7 @@
+import { PrivateResponseInterceptor } from '../auth/private-response.interceptor';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { InternalActorGuard } from '../auth/internal-actor.guard';
+import { UseGuards } from '@nestjs/common';
 import {
   Body,
   Controller,
@@ -81,6 +85,9 @@ export class PlantasController {
   }
 
   @Post('tipos-planta')
+  @UseGuards(InternalActorGuard)
+  @UseInterceptors(PrivateResponseInterceptor)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Crear un tipo de planta' })
   @ApiBody({ type: CreateTipoPlantaDto })
   @ApiResponse({ status: 201, description: 'Tipo creado correctamente' })
@@ -100,6 +107,9 @@ export class PlantasController {
   }
 
   @Post()
+  @UseGuards(InternalActorGuard)
+  @UseInterceptors(PrivateResponseInterceptor)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Crear planta',
     description:
@@ -144,6 +154,9 @@ export class PlantasController {
   }
 
   @Patch(':id')
+  @UseGuards(InternalActorGuard)
+  @UseInterceptors(PrivateResponseInterceptor)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Actualizar planta',
     description:
@@ -189,6 +202,9 @@ export class PlantasController {
   }
 
   @Patch(':id/desactivar')
+  @UseGuards(InternalActorGuard)
+  @UseInterceptors(PrivateResponseInterceptor)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Desactivar planta',
     description:

@@ -1,12 +1,13 @@
 import {
   BadRequestException,
+  ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   Logger,
-  NotFoundException,
 } from '@nestjs/common';
-import { createHash } from 'crypto';
-import { ImageFilePolicy } from '../../common/files/image-file.policy';
+import { randomUUID } from 'node:crypto';
+import { ParticipacionImagenService } from '../../participacion/cargas/participacion-imagen.service';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CrearEvidenciaPendientePlantacionDto } from '../api/dto/crear-evidencia-pendiente-plantacion.dto';
 import { DescartarEvidenciasPendientesPlantacionDto } from '../api/dto/descartar-evidencias-pendientes-plantacion.dto';
@@ -18,32 +19,17 @@ export type PlantacionEvidenceFileInput = {
   originalname?: string;
   buffer?: Buffer;
 };
-
-type FotoSubidaPlantacion = {
-  ruta_archivo: string;
-  storage_object_id: string | null;
-  mime_type: string;
-  tamano_bytes: number;
-  formato: string;
-  hash_sha256: string | null;
-};
-
-type EvidenciaPendienteDescartadaRow = {
-  id: number | string;
-  bucket: string | null;
-  ruta_archivo: string | null;
-};
+type RpcReply = { http_status: number; body: { data?: any; error?: unknown } };
 
 @Injectable()
 export class PlantacionEvidenciasService {
   private readonly logger = new Logger(PlantacionEvidenciasService.name);
-  // Reutilizamos `recoleccion_fotos` (mismo bucket que el resto del flujo M2/M3
-  // hasta tanto se cree un bucket dedicado para plantaciones). Namespaceado por path.
-  private readonly bucketEvidencias = 'recoleccion_fotos';
+  private readonly bucketEvidencias = 'participacion_evidencias';
 
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly authService: PlantacionAuthService,
+    private readonly imagenService: ParticipacionImagenService,
   ) {}
 
   async crearPendienteParaRegistro(
@@ -51,160 +37,88 @@ export class PlantacionEvidenciasService {
     authId: string,
     files: PlantacionEvidenceFileInput[] = [],
   ) {
+    this.exigirContrato(dto);
+    if (
+      !files.length ||
+      files.length > 10 ||
+      files.some((file) => !file.buffer)
+    )
+      throw new BadRequestException('Se requieren entre 1 y 10 fotos.');
+    // Metadata libre nunca puede declarar propietario/ámbito/tipo/derivado.
+    if (dto.metadata !== undefined)
+      throw new BadRequestException(
+        'metadata no se admite en cargas de reposición.',
+      );
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertCanWrite(usuario.rol);
-    this.validarFotos(files);
-
-    const supabase = this.supabaseService.getClient();
-    const tipoEntidadId = await this.resolveTipoEntidadRegistroPlantacionId();
-    const metadataPayload = this.parseMetadata(dto.metadata);
-    const fotosSubidas: FotoSubidaPlantacion[] = [];
-    const timestampBase = Date.now();
-
+    await this.operar(usuario.id, dto.subcampania_id!, 'AUTORIZAR');
+    const storage = this.supabaseService
+      .getAdminClient()
+      .storage.from(this.bucketEvidencias);
+    const uploaded: string[] = [];
+    const fotos: Record<string, unknown>[] = [];
+    let confirmacionIncierta = false;
     try {
-      for (const [index, file] of files.entries()) {
-        const image = ImageFilePolicy.resolve(file);
-        const safeOriginalName = String(
-          file.originalname || `evidencia_${index + 1}`,
-        )
-          .trim()
-          .replace(/[^a-zA-Z0-9._-]/g, '_');
-        const rutaStorage = [
-          'plantaciones',
-          'registros',
-          'pendientes',
-          String(usuario.id),
-          `${timestampBase}_${index}_${safeOriginalName}`,
-        ].join('/');
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from(this.bucketEvidencias)
-          .upload(rutaStorage, file.buffer!, {
-            contentType: image.mimeType,
+      for (const file of files) {
+        const prepared = await this.imagenService.preparar(file.buffer!);
+        const ruta = `reposiciones/${usuario.id}/${dto.subcampania_id}/${randomUUID()}`;
+        for (const [path, bytes, mime] of [
+          [`${ruta}/original`, prepared.original, prepared.mimeOriginal],
+          [`${ruta}/derivada.jpg`, prepared.derivada, 'image/jpeg'],
+        ] as const) {
+          const { error } = await storage.upload(path, bytes, {
+            contentType: mime,
             upsert: false,
           });
-
-        if (uploadError) {
-          this.logger.error(
-            'Error al subir evidencia pendiente de plantacion:',
-            uploadError,
-          );
-          throw new InternalServerErrorException(
-            'Error al subir evidencia pendiente de plantacion',
-          );
+          if (error)
+            throw new InternalServerErrorException(
+              'No se pudo subir la evidencia.',
+            );
+          uploaded.push(path);
         }
-
-        const storageObjectId =
-          typeof uploadData?.id === 'string' ? uploadData.id : null;
-        const hashSha256 = file.buffer
-          ? createHash('sha256').update(file.buffer).digest('hex')
-          : null;
-
-        fotosSubidas.push({
-          ruta_archivo: rutaStorage,
-          storage_object_id: storageObjectId,
-          mime_type: image.mimeType,
-          tamano_bytes: Number(file.size ?? 0),
-          formato: image.formato,
-          hash_sha256: hashSha256,
+        fotos.push({
+          ruta_original: `${ruta}/original`,
+          ruta_derivada: `${ruta}/derivada.jpg`,
+          mime_original: prepared.mimeOriginal,
+          tamano_original: prepared.original.length,
+          hash_original: prepared.hashOriginal,
+          hash_derivada: prepared.hashDerivada,
+          titulo: dto.titulo?.trim() || null,
+          descripcion: dto.descripcion?.trim() || null,
+          tomado_en: dto.tomado_en ?? null,
         });
       }
-
-      const tituloBase = dto.titulo?.trim() || null;
-      const descripcion = dto.descripcion?.trim() || null;
-      const evidenciasInsert = fotosSubidas.map((foto, index) => {
-        const titulo = tituloBase
-          ? fotosSubidas.length > 1
-            ? `${tituloBase} ${index + 1}`
-            : tituloBase
-          : `Evidencia plantacion ${index + 1}`;
-
-        return {
-          tipo_entidad_id: tipoEntidadId,
-          entidad_id: 0,
-          codigo_trazabilidad: null,
-          bucket: this.bucketEvidencias,
-          ruta_archivo: foto.ruta_archivo,
-          storage_object_id: foto.storage_object_id,
-          tipo_archivo: 'FOTO',
-          mime_type: foto.mime_type,
-          tamano_bytes: foto.tamano_bytes,
-          hash_sha256: foto.hash_sha256,
-          titulo,
-          descripcion,
-          metadata: {
-            ...(metadataPayload || {}),
-            origen: 'PLANTACION_REGISTRO_PENDIENTE',
-            estado: 'PENDIENTE_VINCULACION',
-            formato: foto.formato,
-          },
-          es_principal: false,
-          orden: index,
-          tomado_en: dto.tomado_en ?? null,
-          creado_por_usuario_id: usuario.id,
-        };
-      });
-
-      const { data, error } = await supabase
-        .from('evidencias_trazabilidad')
-        .insert(evidenciasInsert)
-        .select(
-          `
-          id,
-          tipo_entidad_id,
-          entidad_id,
-          codigo_trazabilidad,
-          bucket,
-          ruta_archivo,
-          storage_object_id,
-          tipo_archivo,
-          mime_type,
-          tamano_bytes,
-          hash_sha256,
-          titulo,
-          descripcion,
-          metadata,
-          es_principal,
-          orden,
-          tomado_en,
-          creado_en,
-          creado_por_usuario_id
-        `,
-        );
-
-      if (error) {
-        this.logger.error(
-          'Error al registrar evidencias pendientes de plantacion:',
-          error,
-        );
-        throw new InternalServerErrorException(
-          'Error al registrar evidencias pendientes de plantacion',
-        );
+      // Un error de transporte después de CREAR no autoriza a borrar objetos:
+      // el COMMIT puede haberse confirmado aunque se pierda su respuesta.
+      confirmacionIncierta = true;
+      const reply = await this.operar(
+        usuario.id,
+        dto.subcampania_id!,
+        'CREAR',
+        { fotos },
+        true,
+      );
+      if (reply.http_status >= 400) {
+        confirmacionIncierta = false;
+        this.exigirExito(reply);
       }
-
-      const evidencias = (data || []).map((evidencia: any) => {
-        const { data: publicUrlData } = supabase.storage
-          .from(evidencia.bucket)
-          .getPublicUrl(evidencia.ruta_archivo);
-
-        return {
-          ...evidencia,
-          public_url: publicUrlData.publicUrl,
-        };
-      });
-
+      // Una respuesta inesperada tampoco demuestra que no hubo COMMIT.
+      if (reply.http_status !== 201 || !Array.isArray(reply.body.data))
+        throw new InternalServerErrorException(
+          'No se pudo confirmar la evidencia creada.',
+        );
+      const evidencias = reply.body.data as Array<{ id: string }>;
       return {
         success: true,
         data: evidencias,
-        evidencia_ids: evidencias.map((evidencia: any) => Number(evidencia.id)),
+        evidencia_ids: evidencias.map((row) => Number(row.id)),
       };
     } catch (error) {
-      if (fotosSubidas.length > 0) {
-        await supabase.storage
-          .from(this.bucketEvidencias)
-          .remove(fotosSubidas.map((foto) => foto.ruta_archivo));
+      if (!confirmacionIncierta && uploaded.length) {
+        const { error: cleanupError } = await storage.remove(uploaded);
+        if (cleanupError)
+          this.logger.warn('Limpieza compensatoria interna pendiente.');
       }
-
       throw error;
     }
   }
@@ -213,181 +127,107 @@ export class PlantacionEvidenciasService {
     dto: DescartarEvidenciasPendientesPlantacionDto,
     authId: string,
   ) {
+    this.exigirContrato(dto);
+    if (
+      !Array.isArray(dto.evidencia_ids) ||
+      !dto.evidencia_ids.length ||
+      dto.evidencia_ids.some((id) => !Number.isSafeInteger(id) || id <= 0)
+    )
+      throw new BadRequestException(
+        'evidencia_ids debe contener enteros positivos.',
+      );
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertCanWrite(usuario.rol);
-
-    const evidenciaIds = this.normalizarEvidenciaIds(dto.evidencia_ids);
-    const supabase = this.supabaseService.getClient();
-    const tipoEntidadId = await this.resolveTipoEntidadRegistroPlantacionId();
-    const now = new Date().toISOString();
-
-    let query = supabase
-      .from('evidencias_trazabilidad')
-      .update({
-        eliminado_en: now,
-        eliminado_por_usuario_id: usuario.id,
-        actualizado_en: now,
-        actualizado_por_usuario_id: usuario.id,
-      })
-      .eq('tipo_entidad_id', tipoEntidadId)
-      .in('id', evidenciaIds)
-      .is('eliminado_en', null)
-      .or('entidad_id.is.null,entidad_id.eq.0');
-
-    if (String(usuario.rol ?? '').toUpperCase() !== 'ADMIN') {
-      query = query.eq('creado_por_usuario_id', usuario.id);
-    }
-
-    const { data, error } = await query.select('id, bucket, ruta_archivo');
-
-    if (error) {
-      this.logger.error(
-        'Error al marcar evidencias pendientes de plantacion como eliminadas:',
-        error,
-      );
-      throw new InternalServerErrorException(
-        'Error al descartar evidencias pendientes de plantacion',
-      );
-    }
-
-    const descartadas = ((data ?? []) as EvidenciaPendienteDescartadaRow[]).map(
-      (evidencia) => ({
-        id: Number(evidencia.id),
-        bucket: evidencia.bucket,
-        ruta_archivo: evidencia.ruta_archivo,
-      }),
+    const ids = [...new Set(dto.evidencia_ids)].sort((a, b) => a - b);
+    const reply = await this.operar(
+      usuario.id,
+      dto.subcampania_id!,
+      'DESCARTAR',
+      { evidencia_ids: ids },
     );
-
-    await this.removerArchivosStorage(descartadas);
-
-    const descartadasSet = new Set(
-      descartadas.map((evidencia) => evidencia.id),
-    );
-
+    const descartadas = reply.body.data as Array<{
+      id: string;
+      ruta_original: string;
+      ruta_derivada: string;
+    }>;
+    if (descartadas.length) {
+      const paths = descartadas.flatMap((row) => [
+        row.ruta_original,
+        row.ruta_derivada,
+      ]);
+      // Tombstone primero; repetir descarte permite reintentar la limpieza.
+      const { error } = await this.supabaseService
+        .getAdminClient()
+        .storage.from(this.bucketEvidencias)
+        .remove(paths);
+      if (error)
+        throw new InternalServerErrorException(
+          'Descarte registrado; la limpieza debe reintentarse.',
+        );
+    }
+    const descartadasIds = descartadas.map((row) => Number(row.id));
     return {
       success: true,
       data: {
-        evidencia_ids_descartadas: descartadas.map((evidencia) => evidencia.id),
-        evidencia_ids_ignoradas: evidenciaIds.filter(
-          (id) => !descartadasSet.has(id),
+        evidencia_ids_descartadas: descartadasIds,
+        evidencia_ids_ignoradas: ids.filter(
+          (id) => !descartadasIds.includes(id),
         ),
       },
     };
   }
 
-  private async resolveTipoEntidadRegistroPlantacionId(): Promise<number> {
-    const { data, error } = await this.supabaseService
-      .getClient()
-      .from('tipos_entidad_evidencia')
-      .select('id, activo')
-      .ilike('codigo', 'REGISTRO_PLANTACION')
-      .maybeSingle();
-
-    if (error) {
-      this.logger.error(
-        'Error al resolver tipo_entidad_evidencia REGISTRO_PLANTACION:',
-        error,
-      );
-      throw new InternalServerErrorException(
-        'Error al resolver tipo de entidad de evidencia de plantacion',
-      );
-    }
-
-    if (!data || !data.activo) {
-      throw new NotFoundException(
-        'No existe tipo_entidad_evidencia activo para REGISTRO_PLANTACION. Aplica la migracion 033.',
-      );
-    }
-
-    return Number(data.id);
-  }
-
-  private validarFotos(files: PlantacionEvidenceFileInput[]): void {
-    if (!files || files.length === 0) {
-      throw new BadRequestException(
-        'Se requiere al menos 1 foto para registrar evidencia de plantacion',
-      );
-    }
-
-    if (files.length > 10) {
-      throw new BadRequestException('Maximo 10 fotos permitidas');
-    }
-
-    for (const file of files) {
-      ImageFilePolicy.assertAllowedImage(file, { requireBuffer: true });
-    }
-  }
-
-  private parseMetadata(metadata?: string): Record<string, unknown> | null {
-    if (!metadata || !metadata.trim()) {
-      return null;
-    }
-
-    try {
-      const parsed = JSON.parse(metadata) as unknown;
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-        throw new Error('metadata debe ser un objeto JSON');
-      }
-
-      return parsed as Record<string, unknown>;
-    } catch {
-      throw new BadRequestException(
-        'metadata debe ser un JSON valido serializado como texto',
-      );
-    }
-  }
-
-  private normalizarEvidenciaIds(evidenciaIds?: number[]): number[] {
-    if (!Array.isArray(evidenciaIds)) {
-      throw new BadRequestException('evidencia_ids debe ser un arreglo');
-    }
-
-    const normalizados = evidenciaIds.map((id) => Number(id));
+  private exigirContrato(dto: {
+    subcampania_id?: number;
+    es_reposicion?: boolean;
+  }): void {
     if (
-      normalizados.length === 0 ||
-      normalizados.some((id) => !Number.isInteger(id) || id <= 0)
-    ) {
-      throw new BadRequestException(
-        'evidencia_ids debe contener enteros positivos',
-      );
-    }
-
-    return Array.from(new Set(normalizados)).sort((a, b) => a - b);
+      dto.es_reposicion !== true ||
+      !Number.isSafeInteger(dto.subcampania_id) ||
+      dto.subcampania_id! <= 0
+    )
+      throw new ConflictException({
+        error: {
+          codigo: 'CLIENTE_INCOMPATIBLE',
+          mensaje:
+            'La carga interna requiere subcampania_id y es_reposicion:true. Use cargas v1 para inicial.',
+        },
+      });
   }
-
-  private async removerArchivosStorage(
-    evidencias: Array<{
-      bucket: string | null;
-      ruta_archivo: string | null;
-    }>,
-  ): Promise<void> {
-    const rutasPorBucket = new Map<string, string[]>();
-
-    for (const evidencia of evidencias) {
-      if (!evidencia.bucket || !evidencia.ruta_archivo) {
-        continue;
-      }
-
-      const rutas = rutasPorBucket.get(evidencia.bucket) ?? [];
-      rutas.push(evidencia.ruta_archivo);
-      rutasPorBucket.set(evidencia.bucket, rutas);
-    }
-
-    for (const [bucket, rutas] of rutasPorBucket.entries()) {
-      const { error } = await this.supabaseService
-        .getClient()
-        .storage.from(bucket)
-        .remove(rutas);
-
-      if (error) {
-        this.logger.error(
-          'Error al eliminar archivos de evidencias pendientes de plantacion:',
-          error,
-        );
-        throw new InternalServerErrorException(
-          'Error al eliminar archivos de evidencias pendientes de plantacion',
-        );
-      }
-    }
+  private async operar(
+    actorId: number,
+    scope: number,
+    accion: string,
+    payload = {},
+    permitirRechazo = false,
+  ): Promise<RpcReply> {
+    const { data, error } = await this.supabaseService
+      .getAdminClient()
+      .rpc('pa_d_evidencias_reposicion', {
+        p_actor_id: actorId,
+        p_subcampania_id: scope,
+        p_accion: accion,
+        p_payload: payload,
+      });
+    if (error?.code === 'PT403')
+      throw new HttpException(
+        {
+          error: {
+            codigo: 'CUENTA_NO_DISPONIBLE',
+            mensaje: 'La cuenta no está activa.',
+          },
+        },
+        403,
+      );
+    if (error || !data || !Number.isInteger(data.http_status) || !data.body)
+      throw new InternalServerErrorException(
+        'No se pudo confirmar la operación de evidencia.',
+      );
+    if (!permitirRechazo) this.exigirExito(data as RpcReply);
+    return data as RpcReply;
+  }
+  private exigirExito(reply: RpcReply) {
+    if (reply.http_status >= 400)
+      throw new HttpException(reply.body, reply.http_status);
   }
 }

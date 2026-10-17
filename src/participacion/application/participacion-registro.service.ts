@@ -1,6 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import type { VerifiedActor } from '../../auth/verified-actor.guard';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { canonicalCommand } from '../comando-canonical';
@@ -218,6 +218,36 @@ export class ParticipacionRegistroService {
       'REGISTRAR_PLANTACION_INICIAL',
       payload,
     );
+    const enabled = this.config.get<string | boolean>(
+      'PARTICIPACION_INICIAL_ESCRITURA_HABILITADA',
+    );
+    if (enabled !== true && enabled !== 'true') {
+      // La pausa no crea un rechazo de negocio ni abre una clave nueva. El
+      // helper de075 devuelve solo terminal propio y compara la misma huella.
+      const huella = createHash('sha256')
+        .update('PA-COMANDO/1\nREGISTRAR_PLANTACION_INICIAL\n' + contenido)
+        .digest('hex');
+      let replay: unknown;
+      try {
+        const { data, error } = await this.supabase.getAdminClient().rpc(
+          'pa_c_replay',
+          { p_actor_id: actor.usuario_id, p_auth_id: actor.auth_id,
+            p_operacion: 'REGISTRAR_PLANTACION_INICIAL', p_comando_id: command,
+            p_huella: '\\x' + huella },
+        );
+        if (error) return this.inconcluso(command);
+        replay = data;
+      } catch { return this.inconcluso(command); }
+      if (replay !== null && replay !== undefined) {
+        try { return validateRpcReply(replay, command, 'REGISTRAR_PLANTACION_INICIAL'); }
+        catch { return this.inconcluso(command); }
+      }
+      return { http_status: 503, body: {
+        error: { codigo: 'RESULTADO_NO_DETERMINADO', mensaje: 'El registro está pausado temporalmente. Conserve la misma clave.',
+          campos: [], ambitos: [], reintento: 'MISMA_CLAVE' },
+        comando_id: command, resultado_concluyente: false,
+      }};
+    }
     const data = await this.rpc(
       actor,
       'pa_registro_inicial_ejecutar',

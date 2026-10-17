@@ -68,6 +68,7 @@ describe('PlantasService', () => {
     const supabase = createSupabaseMock(queues);
     const supabaseService = {
       getClient: jest.fn(() => supabase),
+      getAdminClient: jest.fn(() => supabase),
     } as unknown as SupabaseService;
 
     return {

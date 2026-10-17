@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ServiceUnavailableException,
   ConflictException,
   ForbiddenException,
   InternalServerErrorException,
@@ -88,6 +89,7 @@ function buildPreviewSupabase(config: {
 
   return {
     getClient: jest.fn().mockReturnValue({ from }),
+    getAdminClient: jest.fn().mockReturnValue({ from }),
   } as unknown as SupabaseService;
 }
 
@@ -254,7 +256,10 @@ describe('CampaniasDesactivacionService.desactivar', () => {
       { code: 'P0003', message: 'La campania no es elegible.' },
       UnprocessableEntityException,
     ],
-    [{ code: '40001', message: 'conflicto concurrente' }, ConflictException],
+    [
+      { code: '40001', message: 'conflicto concurrente' },
+      ServiceUnavailableException,
+    ],
     [{ code: 'P0001', message: 'El motivo es invalido.' }, BadRequestException],
     [
       {
@@ -282,3 +287,32 @@ describe('CampaniasDesactivacionService.desactivar', () => {
     ).rejects.toThrow(expectedException);
   });
 });
+
+// Un aborto técnico no es un rechazo de negocio ni autoriza repetir a ciegas.
+it.each(['55P03', '57014', '40P01', '40001'])(
+  'INT02-D: %s devuelve 503 inconcluso',
+  async (code) => {
+    const { supabase } = buildRpcSupabase({
+      data: null,
+      error: { code, message: 'abort concurrente' },
+    });
+    const service = new CampaniasDesactivacionService(
+      supabase,
+      buildAuthService(),
+    );
+    const action = service.desactivar(
+      15,
+      { motivo: 'Motivo válido' },
+      'auth-admin',
+    );
+    await expect(action).rejects.toMatchObject({
+      response: {
+        error: {
+          codigo: 'RESULTADO_NO_DETERMINADO',
+          resultado_concluyente: false,
+        },
+      },
+      status: 503,
+    });
+  },
+);

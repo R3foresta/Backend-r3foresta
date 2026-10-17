@@ -1,3 +1,4 @@
+import { throwSharedMutationFailure } from '../../common/db/pa-shared-rpc-error';
 import {
   BadRequestException,
   ConflictException,
@@ -50,6 +51,7 @@ export class SubcampaniasCancelacionService {
     >;
 
     if (rpc.error) {
+      throwSharedMutationFailure(rpc.error);
       this.logger.error('Error al cancelar subcampania:', rpc.error);
       const message = rpc.error.message ?? 'No se pudo cancelar la subcampaña.';
 

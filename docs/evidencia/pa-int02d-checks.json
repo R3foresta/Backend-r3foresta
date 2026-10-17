@@ -1,0 +1,64 @@
+{
+  "tarea": "PA-T-INT02-D-BE07",
+  "fecha_utc": "2026-10-16T23:17:19.273425+00:00",
+  "revision_git": "a045d9d7f5664007f0fbf9fcc8cf53bea226e7e4",
+  "entorno": {
+    "naturaleza": "LOCAL_CON_LOOPBACK_DEPENDENCIAS_EXTERNAS_SUSTITUIDAS",
+    "node": "v24.19.0",
+    "npm": "12.0.2",
+    "servicios_remotos": false
+  },
+  "build": {
+    "comando": "TMPDIR=/private/tmp npm run build",
+    "exit_code": 0
+  },
+  "unitarios": {
+    "comando": "TMPDIR=/private/tmp npm run test:unit -- --runInBand --json --outputFile=/private/tmp/pa-int02d-unitarios-cierre.json",
+    "exit_code": 0,
+    "success": true,
+    "numTotalTestSuites": 64,
+    "numPassedTestSuites": 64,
+    "numFailedTestSuites": 0,
+    "numTotalTests": 787,
+    "numPassedTests": 787,
+    "numFailedTests": 0
+  },
+  "openapi": {
+    "comando": "node scripts/qa/pa-int02c-openapi.cjs --check",
+    "exit_code": 0,
+    "rutas": 25,
+    "schemas": 52
+  },
+  "regresion_focal": {
+    "suites": 4,
+    "pruebas": 33,
+    "exit_code": 0,
+    "alcance": "activacion,lifecycle,cierre,equipo"
+  },
+  "activacion_abortos_tecnicos": {
+    "sqlstates": [
+      "55P03",
+      "57014",
+      "40P01",
+      "40001"
+    ],
+    "http_status": 503,
+    "codigo": "RESULTADO_NO_DETERMINADO",
+    "resultado_concluyente": false,
+    "sin_escrituras_separadas": true,
+    "sin_recibo_fabricado": true
+  },
+  "limites": [
+    "Build y unitarios no acreditan aplicación SQL, Storage remoto, publicación, despliegue ni piloto.",
+    "Las suites HTTP unitarias sustituyen servicios externos; SQL/PostGIS/Storage real de prueba se acredita en pa-int02d-local.json."
+  ],
+  "sha256": {
+    "src/subcampanias/tests/subcampanias-activacion.service.spec.ts": "ff991bb6830632775fe19288e48099c2c8a607029844aba183a2593c306f8786",
+    "src/subcampanias/application/subcampanias-activacion.service.ts": "25acf5bc4439f04f0a77a7904d6dd8006a96beeabc04848f1e50d566220c3079",
+    "src/subcampanias/application/subcampanias-rpc-error.ts": "ea6a838672bc9e3d888bf086c9ca4433fbc7a208da61e1d7c3c3f76e374b5fcc",
+    "src/common/db/pa-shared-rpc-error.ts": "ddb3a58b2974caa90c2a2a12751561c3618a1d8f9f43fbe2e21d720eae093186",
+    "scripts/qa/pa-int02c-openapi.cjs": "786561762f6aaef14ff17f806d8f3782a7780550f37036dd3bfba82176377409",
+    "src/participacion/participacion-openapi.generated.ts": "6bded7643fc5fa8e3de4595bdd8afab14740acc0c799896e8e087ded299b95f1",
+    "docs/pa-int02c-openapi.json": "a1ae8e5906c8d81c061b426fff528419f8b23c1b309beaf646b4c2713751cc3b"
+  }
+}

@@ -836,13 +836,23 @@ paths['/api/v1/impact/fotos/{evidencia_id}'].get.responses[200].headers = {
     description: 'no-store; URL del derivado válida por cinco minutos.',
   },
 };
+paths['/api/v1/impact/imagenes/{evidenciaId}'] = { get: {
+  summary: 'JPEG público sanitizado de evidencia vinculada elegible, incluido legado',
+  operationId: 'ImagenPublicaSanitizada', security: [],
+  parameters: [param('evidenciaId','path',id,true)],
+  responses: { 200: { description: 'JPEG sin EXIF, nunca original ni pendiente.',
+    headers: {'Cache-Control': {schema:text,description:'no-store'}},
+    content: {'image/jpeg': {schema:{type:'string',format:'binary'}}}},
+    404: {description:'Imagen no elegible o no encontrada.'},
+    503: {description:'Imagen no disponible temporalmente.'} }
+}};
 const document = {
   openapi: '3.0.3',
   info: {
-    title: 'R3Foresta Participación aliada — INT02-C / INT03-A',
-    version: '1.1.0',
+    title: 'R3Foresta Participación aliada — INT02-C / INT03-A / INT02-D',
+    version: '1.2.0',
     description:
-      'Gestión C y registro inicial recuperable INT03-A. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. Corte de rutas legadas y habilitación real dependen de INT02-D.',
+      'Gestión C y registro inicial recuperable INT03-A. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada.',
   },
   servers: [{ url: 'http://localhost:3000' }],
   paths,

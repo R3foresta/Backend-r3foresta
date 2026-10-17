@@ -1,11 +1,11 @@
 # Participación: integración y mantenimiento
 
-**Corte: 15 de octubre de 2026. Código B/C publicado en `main`, `e9777f8`.**
-Gestión de acceso contextual implementada; registro participante pendiente.
+**Corte: 16 de octubre de 2026. Base publicada `a045d9d` más árbol local INT02-D.**
+Gestión y registro participante implementados; D aporta corte/locks/superficie y entrega el entorno sintético para INT04. No acredita aplicación remota ni despliegue.
 
 ## Contrato que debe usar el cliente
 
-[OpenAPI generado](../../docs/pa-int02c-openapi.json): **14 rutas / 36 schemas**.
+[OpenAPI generado](../../docs/pa-int02c-openapi.json): **25 rutas / 52 schemas**.
 [Ejemplos HTTP](../../docs/pa-int02c-ejemplos.json): resultados de Nest con PostgreSQL
 sintético, sin tokens. Swagger completo en `/api/docs`; JSON en `/api/docs-json`.
 
@@ -74,7 +74,7 @@ el runner DB/HTTP. Revisar los cambios de evidencias antes de incluirlos en Git.
 
 INT03-A extiende el contrato con contexto/participantes, preparación/cargas,
 registro inicial LIFO y detalle propio: [guía de entrega a INT04](../../docs/pa-int03a-entrega-local.md).
-OpenAPI conserva C y añade diez rutas (24). Las cargas usan exclusivamente
+INT03-A añadió diez rutas a C (24 en ese corte); D incorpora imagen binaria pública, para 25 rutas actuales. Las cargas usan exclusivamente
 multipart, bucket privado, lease/generación y derivados sanitizados; el GET
 común recupera PREPARADO/terminal tras retiro. Registrar no vuelve a descontar
 Vivero. [Conciliación del día de entregas](../../docs/pa-int03a-conciliacion-entregas.md).
@@ -91,8 +91,35 @@ no acredita las políticas del Storage remoto ni el corte de INT02-D.
 `service_role` sigue privilegiado: continuidad probada entre RPC cooperativas,
 no ante SQL/importaciones que omiten sus locks. Mantener cuentas → ámbitos.
 
-Pendientes: manifest real revisado y transición B; aplicación remota/conciliación
-de entregas INT03-A; rutas equivalentes y carreras compartidas INT02-D; QA integrado y piloto.
+Pendientes: manifest real revisado y transición B; cotejo remoto/conciliación
+de entregas INT03-A; aplicación/cotejo remotos y corte real INT02-D; QA integrado y piloto.
+D verificó BE01–BE08 localmente: 787 unitarios, 33 grupos SQL, 28 carreras y 25 HTTP.
 La gestión C anticipó el motor común sin fotos y no completa esos recorridos.
 Instalar 071 no asigna permisos. No ejecutar fixtures en Supabase ni reaplicar SQL
 por la mera falta de evidencia; cotejar primero el entorno y las versiones.
+
+## INT02-D: corte y entorno integrado
+
+[Informe D](../../docs/pa-int02d-entrega-local.md), [compatibilidad](../../docs/pa-int02d-compatibilidad.md)
+y [preview INT04](../../docs/pa-int02d-preview.md). Usar
+`npm run preview:participacion-d -- --pg-bin /ruta/postgis/bin`; reúne registro,
+plan/lifecycle, reposición y fotos privadas/públicas con DB real aislada.
+Inicial/GET contexto legados dan409; upload/descarte internos requieren ámbito y
+`es_reposicion:true`. La reposición conserva rol interno/equipo y exige origen propio.
+
+`PARTICIPACION_INICIAL_ESCRITURA_HABILITADA=false` por omisión pausa nuevos POST sin
+rechazo durable:503 RESULTADO_NO_DETERMINADO/MISMA_CLAVE. GET/cargas y replay terminal
+siguen disponibles; habilitar expresamente solo tras pausa/drenaje/cotejo del destino.
+Nuevos derivados e imágenes antiguas elegibles se sirven anónimamente como JPEG
+sanitizado en `/api/v1/impact/imagenes/:id`; nunca original ni pendiente.
+
+077 toma campaña antes de subcampaña en entrega/devolución/cancelación individual;
+seis carreras adicionales con FKs reales verifican ambos órdenes frente a desactivación masiva.
+
+080 no habilita RLS ni concede DML al servicio: revoca solo diez tablas/una vista y
+DML de cuatro catálogos del alcance autorizado. Preflight verifica fuera de alcance
+`subcampania_meta_especie`, campaña/organizaciones, DML de `campania_estado`, otras
+vistas/definers y membresías; aborta ante exposición sin modificar esos objetos.
+`statement_timeout=30s` debe existir antes de la sentencia (067/hoisting PostgREST);
+`SET` interno por sí solo no demuestra cancelación. La evidencia D mide30s/5s en
+conexión limpia con configuración previa; versión/configuración REST remota se cotejan aparte.

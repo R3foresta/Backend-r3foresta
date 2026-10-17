@@ -1,3 +1,4 @@
+import { ParticipacionImagenService } from '../participacion/cargas/participacion-imagen.service';
 import { ActorModule } from '../auth/actor.module';
 import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../supabase/supabase.module';
@@ -15,6 +16,7 @@ import { PlantacionesService } from './application/plantaciones.service';
     PlantacionAuthService,
     PlantacionCreationService,
     PlantacionEvidenciasService,
+    ParticipacionImagenService,
   ],
   exports: [PlantacionesService],
 })

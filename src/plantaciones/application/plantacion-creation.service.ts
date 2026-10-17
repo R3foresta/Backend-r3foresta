@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { throwSharedMutationFailure } from '../../common/db/pa-shared-rpc-error';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { RegistrarPlantacionDto } from '../api/dto/registrar-plantacion.dto';
 import {
@@ -45,6 +51,15 @@ export class PlantacionCreationService {
   ) {}
 
   async registrar(dto: RegistrarPlantacionDto, authId: string) {
+    // El motor inicial legado no participa del corte ni toma locks/IO.
+    if (dto.es_reposicion !== true) {
+      throw new ConflictException({
+        error: {
+          codigo: 'CLIENTE_INCOMPATIBLE',
+          mensaje: 'Use el registro inicial v1.',
+        },
+      });
+    }
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertCanWrite(usuario.rol);
 
@@ -101,6 +116,7 @@ export class PlantacionCreationService {
       .single();
 
     if (error) {
+      throwSharedMutationFailure(error);
       this.logger.error('Error al registrar plantacion:', error);
       throw new BadRequestException(
         error.message || 'No se pudo registrar la plantacion.',

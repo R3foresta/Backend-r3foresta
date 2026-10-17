@@ -26,6 +26,7 @@ usan socket privado/DB sin TCP y destruyen exclusivamente su clúster al termina
 | `npm run test:db:acceso` | Gestión C: 22 grupos SQL, ocho carreras y 13 pruebas HTTP con RPC reales |
 | `npm run test:db:acceso:estado` | 26 casos del cotejador sobre estado sintético guardado; sin conectar DB |
 | `npm run test:db:registro -- --pg-bin /ruta/postgis/bin` | Registro INT03-A: PostgreSQL/PostGIS reales aislados, LIFO/snapshots/recibos, carreras y HTTP con objetos privados de prueba |
+| `npm run test:db:compartida -- --pg-bin /ruta/postgis/bin` | D + regresión A/C:077–080, permisos SQL reales, preflight adversario, plan/cierre/físicas/reposición, HTTP/Storage y30s/5s medidos |
 | `node scripts/qa/pa-int02c-openapi.cjs --check` | OpenAPI y proyección Swagger coinciden con el generador |
 
 B/C usan antecedentes mínimos post-067: no acreditan replay 001–067, PostGIS,
@@ -61,3 +62,5 @@ argumentos `--help`; un project-ref en un archivo no acredita su origen remoto.
 [Informes/evidencia](../docs/README.md). La verificación previa a `e9777f8` aprobó
 build y 58 suites/636 pruebas unitarias; esos resultados tienen fecha y alcance,
 no garantizan futuros cambios ni el entorno desplegado.
+
+INT04 usa el [previewD](../docs/pa-int02d-preview.md), `npm run preview:participacion-d`. `-- --check` se detiene/limpia; el launcherA se conserva como antecedente. D solo usa datos/archivos sintéticos y no acredita RLS/Storage/Supabase remotos ni replay completo.

@@ -1,3 +1,7 @@
+import { PrivateResponseInterceptor } from '../auth/private-response.interceptor';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { InternalActorGuard } from '../auth/internal-actor.guard';
+import { UseGuards, UseInterceptors } from '@nestjs/common';
 import {
   Controller,
   Post,
@@ -25,6 +29,9 @@ export class BlockchainController {
    * }
    */
   @Post('mint')
+  @UseGuards(InternalActorGuard)
+  @UseInterceptors(PrivateResponseInterceptor)
+  @ApiBearerAuth()
   async mintNFT(@Body() mintDto: MintNFTDto) {
     try {
       return await this.blockchainService.mintNFT(mintDto.to, mintDto.uri);
@@ -100,6 +107,9 @@ export class BlockchainController {
    * Obtener información de la wallet del backend
    */
   @Get('wallet')
+  @UseGuards(InternalActorGuard)
+  @UseInterceptors(PrivateResponseInterceptor)
+  @ApiBearerAuth()
   async getWalletInfo() {
     try {
       return await this.blockchainService.getWalletBalance();
@@ -115,6 +125,9 @@ export class BlockchainController {
    * Obtener información del contrato
    */
   @Get('contract-info')
+  @UseGuards(InternalActorGuard)
+  @UseInterceptors(PrivateResponseInterceptor)
+  @ApiBearerAuth()
   async getContractInfo() {
     try {
       return await this.blockchainService.getContractInfo();

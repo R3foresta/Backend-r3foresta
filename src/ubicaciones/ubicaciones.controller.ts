@@ -1,3 +1,7 @@
+import { PrivateResponseInterceptor } from '../auth/private-response.interceptor';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { InternalActorGuard } from '../auth/internal-actor.guard';
+import { UseGuards, UseInterceptors } from '@nestjs/common';
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import {
   ApiBody,
@@ -63,6 +67,9 @@ export class UbicacionesController {
 
   // TODO: verificar si es necesario el endpoint. Realmente no creo que este sea neceesario :)
   @Post('divisiones/flexible')
+  @UseGuards(InternalActorGuard)
+  @UseInterceptors(PrivateResponseInterceptor)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Crear o recuperar división flexible',
     description:

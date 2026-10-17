@@ -29,7 +29,9 @@
     "preview:participacion": "python3 scripts/qa/pa-int02c-preview.py",
     "test:db:acceso:estado": "python3 -m unittest discover -s test/db -p 'test_pa_int02c_estado_verificar.py'",
     "test:db:registro": "python3 scripts/qa/pa-int03a-db-test.py",
-    "preview:registro": "python3 scripts/qa/pa-int03a-db-test.py --serve"
+    "preview:registro": "python3 scripts/qa/pa-int03a-db-test.py --serve",
+    "test:db:compartida": "python3 scripts/qa/pa-int02d-db-test.py",
+    "preview:participacion-d": "python3 scripts/qa/pa-int02d-db-test.py --serve"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

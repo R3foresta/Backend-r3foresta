@@ -49,7 +49,8 @@ export class CampaniasConsultasService {
           'campania_id, organizacion_id, organizacion(id, nombre, tipo, activo, logo_url)',
         )
         .in('campania_id', ids),
-      supabase
+      this.supabaseService
+        .getAdminClient()
         .from('subcampania')
         .select('campania_id, estado, meta_total_arboles')
         .in('campania_id', ids)
@@ -121,7 +122,8 @@ export class CampaniasConsultasService {
           'organizacion_id, organizacion(id, nombre, tipo, activo, logo_url)',
         )
         .eq('campania_id', id),
-      supabase
+      this.supabaseService
+        .getAdminClient()
         .from('subcampania')
         .select('id, estado, meta_total_arboles')
         .eq('campania_id', id)

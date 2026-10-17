@@ -45,6 +45,7 @@ function buildSupabase(config: {
 
   return {
     getClient: jest.fn().mockReturnValue({ from: fromMock }),
+    getAdminClient: jest.fn().mockReturnValue({ from: fromMock }),
   } as unknown as SupabaseService;
 }
 
@@ -103,6 +104,7 @@ function buildGlobalSupabase(config: {
 
   return {
     getClient: jest.fn().mockReturnValue({ from: fromMock }),
+    getAdminClient: jest.fn().mockReturnValue({ from: fromMock }),
   } as unknown as SupabaseService;
 }
 

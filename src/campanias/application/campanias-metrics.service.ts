@@ -64,7 +64,8 @@ export class CampaniasMetricsService {
     const campaniaIds = (campaniasRows ?? []).map((c) => Number(c.id));
     const [subcampaniasResult, estadosResult] = await Promise.all([
       campaniaIds.length > 0
-        ? supabase
+        ? this.supabaseService
+            .getAdminClient()
             .from('subcampania')
             .select(
               'estado, area_hectareas, meta_total_arboles, total_plantado_inicial, total_repuesto, saldo_vivo_actual',
@@ -130,9 +131,8 @@ export class CampaniasMetricsService {
   async obtener(campaniaId: number): Promise<CampaniaMetrics> {
     await this.consultasService.asegurarExiste(campaniaId);
 
-    const supabase = this.supabaseService.getClient();
-
-    const { data: subcampaniasRows } = await supabase
+    const { data: subcampaniasRows } = await this.supabaseService
+      .getAdminClient()
       .from('subcampania')
       .select(
         'id, area_hectareas, zona_id, total_plantado_inicial, total_repuesto, saldo_vivo_actual',
@@ -163,11 +163,13 @@ export class CampaniasMetricsService {
     let eventosCount = 0;
     if (subIds.length > 0) {
       const [registrosCount, eventosPlantacionCount] = await Promise.all([
-        supabase
+        this.supabaseService
+          .getAdminClient()
           .from('registro_plantacion')
           .select('*', { count: 'exact', head: true })
           .in('subcampania_id', subIds),
-        supabase
+        this.supabaseService
+          .getAdminClient()
           .from('evento_plantacion')
           .select('*', { count: 'exact', head: true })
           .in('subcampania_id', subIds),

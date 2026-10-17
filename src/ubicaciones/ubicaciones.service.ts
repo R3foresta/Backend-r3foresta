@@ -123,7 +123,7 @@ export class UbicacionesService {
   }
 
   async ensureFlexibleDivision(dto: CreateFlexDivisionDto) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const nombreNormalizado = dto.nombre.trim();
 
     if (!nombreNormalizado) {

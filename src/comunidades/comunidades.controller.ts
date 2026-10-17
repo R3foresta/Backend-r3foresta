@@ -1,3 +1,7 @@
+import { PrivateResponseInterceptor } from '../auth/private-response.interceptor';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { InternalActorGuard } from '../auth/internal-actor.guard';
+import { UseGuards, UseInterceptors } from '@nestjs/common';
 import {
   Body,
   Controller,
@@ -73,6 +77,9 @@ export class ComunidadesController {
   }
 
   @Post()
+  @UseGuards(InternalActorGuard)
+  @UseInterceptors(PrivateResponseInterceptor)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Crear comunidad',
     description:
@@ -95,6 +102,9 @@ export class ComunidadesController {
   }
 
   @Patch(':id')
+  @UseGuards(InternalActorGuard)
+  @UseInterceptors(PrivateResponseInterceptor)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Actualizar comunidad',
     description:
@@ -124,6 +134,9 @@ export class ComunidadesController {
   }
 
   @Patch(':id/desactivar')
+  @UseGuards(InternalActorGuard)
+  @UseInterceptors(PrivateResponseInterceptor)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Desactivar comunidad',
     description: 'Realiza soft delete estableciendo activo=false.',

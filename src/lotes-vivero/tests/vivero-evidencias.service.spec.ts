@@ -112,6 +112,10 @@ describe('ViveroEvidenciasService', () => {
       assertCanWrite: jest.fn(),
     };
 
+    (supabaseService as any).getAdminClient = (
+      supabaseService as any
+    ).getClient;
+
     service = new ViveroEvidenciasService(
       supabaseService,
       authService as unknown as ViveroAuthService,

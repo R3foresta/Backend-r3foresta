@@ -112,7 +112,7 @@ export class PlantasService {
   }
 
   async crearTipoPlanta(dto: CreateTipoPlantaDto) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: existente } = await supabase
       .from('tipo_planta')
@@ -145,7 +145,7 @@ export class PlantasService {
   }
 
   async crear(dto: CreatePlantaDto, imagen?: Express.Multer.File) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     await this.assertTipoPlantaExiste(dto.tipo_planta_id);
     await this.assertNoDuplicado(dto.nombre_cientifico, dto.variedad);
@@ -194,7 +194,7 @@ export class PlantasService {
     dto: UpdatePlantaDto,
     imagen?: Express.Multer.File,
   ) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data: actual } = await supabase
       .from('planta')
       .select('id, nombre_cientifico, variedad, activo')
@@ -267,7 +267,7 @@ export class PlantasService {
   }
 
   async desactivar(id: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: actual } = await supabase
       .from('planta')
@@ -299,7 +299,7 @@ export class PlantasService {
   }
 
   private async assertSinProcesosActivos(plantaId: number) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const [recoleccionesResult, lotesViveroResult] = await Promise.all([
       supabase
         .from('recoleccion')
@@ -448,7 +448,7 @@ export class PlantasService {
     nombreCientifico: string,
   ): Promise<string> {
     const extension = this.resolveExtension(file);
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const slug = nombreCientifico
       .toLowerCase()
