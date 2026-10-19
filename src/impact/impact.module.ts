@@ -4,10 +4,27 @@ import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { ImpactController } from './impact.controller';
 import { ImpactService } from './impact.service';
+import { ActorModule } from '../auth/actor.module';
+import { VerifiedActorGuard } from '../auth/verified-actor.guard';
+import {
+  ImpactoConsultaController,
+  MisRegistrosController,
+} from './impact-consulta.controller';
+import { ImpactoConsultaService } from './application/impacto-consulta.service';
 
 @Module({
-  imports: [SupabaseModule],
-  controllers: [ImpactController, ImpactImagenController],
-  providers: [ImpactService, ParticipacionImagenService],
+  imports: [SupabaseModule, ActorModule],
+  controllers: [
+    ImpactController,
+    ImpactImagenController,
+    ImpactoConsultaController,
+    MisRegistrosController,
+  ],
+  providers: [
+    ImpactService,
+    ParticipacionImagenService,
+    ImpactoConsultaService,
+    VerifiedActorGuard,
+  ],
 })
 export class ImpactModule {}

@@ -25,7 +25,7 @@ export class ImpactController {
   constructor(private readonly impactService: ImpactService) {}
 
   @Get('organizations')
-  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
+  @Header('Cache-Control', 'no-store')
   @ApiOperation({
     summary: 'Listar organizaciones disponibles en el portal de impacto',
     description: 'Endpoint público y de solo lectura. No requiere x-auth-id.',
@@ -36,7 +36,7 @@ export class ImpactController {
   }
 
   @Get('organizations/:organizationId/dashboard')
-  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
+  @Header('Cache-Control', 'no-store')
   @ApiOperation({
     summary: 'Consultar el dashboard público de una organización',
     description:
@@ -52,7 +52,7 @@ export class ImpactController {
   }
 
   @Get('organizations/:organizationId/monitoring-timeline')
-  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
+  @Header('Cache-Control', 'no-store')
   @ApiOperation({
     summary: 'Consultar la serie histórica pública de plantación y mortandad',
     description:
@@ -73,11 +73,11 @@ export class ImpactController {
   }
 
   @Get('organizations/:organizationId/evidence')
-  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
+  @Header('Cache-Control', 'no-store')
   @ApiOperation({
     summary: 'Consultar la galería pública paginada de una organización',
     description:
-      'Permite filtrar evidencias de plantación por campaña, especie y rango de fechas.',
+      'Permite filtrar fotos elegibles por campaña, especie y fecha de plantación del registro. No publica títulos ni metadatos fotográficos.',
   })
   @ApiParam({ name: 'organizationId', type: Number })
   @ApiResponse({ status: 200, description: 'Galería pública paginada.' })
@@ -93,7 +93,7 @@ export class ImpactController {
   }
 
   @Get('organizations/:organizationId/campaigns/:campaignId')
-  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
+  @Header('Cache-Control', 'no-store')
   @ApiOperation({
     summary: 'Consultar una campaña del impacto de una organización',
     description:

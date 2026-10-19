@@ -43,11 +43,6 @@ type CampaignRow = {
   updated_at: string;
 };
 
-type CampaignStateRow = {
-  campania_id: number | string;
-  estado_derivado: string;
-};
-
 type CampaignAssociationRow = {
   campania_id: number | string;
 };
@@ -111,12 +106,7 @@ type EvidenceRow = {
   id: number | string;
   entidad_id: number | string;
   codigo_trazabilidad: string | null;
-  bucket: string;
-  ruta_archivo: string;
-  titulo: string | null;
   es_principal: boolean;
-  tomado_en: string | null;
-  creado_en: string;
 };
 
 type MortalityEventRow = {
@@ -158,6 +148,11 @@ type ImpactDataset = {
 };
 
 const PAGE_SIZE = 1000;
+const PUBLIC_SUBCAMPAIGN_STATES = [
+  'ACTIVA',
+  'COMPLETADA',
+  'FINALIZADA_PARCIAL',
+];
 
 @Injectable()
 export class ImpactService {
@@ -318,6 +313,14 @@ export class ImpactService {
     const allowedPlantingIds = new Set(
       dataset.plantings
         .filter((planting) => {
+          if (
+            !this.isPlantingWithinRange(
+              planting.fecha_plantacion,
+              query.from,
+              query.to,
+            )
+          )
+            return false;
           if (query.speciesId === undefined) return true;
           return (
             dataset.detailsByPlanting.get(Number(planting.id)) ?? []
@@ -330,8 +333,7 @@ export class ImpactService {
         ([plantingId, rows]) =>
           allowedPlantingIds.has(plantingId) ? rows : [],
       ),
-    ).filter((evidence) =>
-      this.isEvidenceWithinRange(evidence, query.from, query.to),
+      dataset.plantings,
     );
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 24;
@@ -359,7 +361,7 @@ export class ImpactService {
     const includeEvidence = options.includeEvidence ?? true;
     const includePolygons = options.includePolygons ?? true;
     const organization = await this.requireOrganization(organizationId);
-    const campaigns = await this.loadCampaigns(organizationId, campaignId);
+    let campaigns = await this.loadCampaigns(organizationId, campaignId);
     if (campaignId !== undefined && campaigns.length === 0) {
       throw new NotFoundException(
         `La campaña ${campaignId} no está asociada a la organización ${organizationId}.`,
@@ -382,37 +384,58 @@ export class ImpactService {
     }
 
     const supabase = this.supabaseService.getAdminClient();
-    const [statesResult, subcampaignResult] = await Promise.all([
-      supabase
-        .from('campania_estado')
-        .select('campania_id, estado_derivado')
-        .in('campania_id', campaignIds),
-      supabase
-        .from('subcampania')
-        .select(
-          'id, campania_id, nombre, descripcion, estado, fase_mantenimiento, zona_id, nombre_zona_snapshot, area_hectareas, meta_total_arboles, total_plantado_inicial, total_repuesto, saldo_vivo_actual, updated_at',
-        )
-        .in('campania_id', campaignIds)
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: false }),
-    ]);
+    const subcampaignResult = await supabase
+      .from('subcampania')
+      .select(
+        'id, campania_id, nombre, descripcion, estado, fase_mantenimiento, zona_id, nombre_zona_snapshot, area_hectareas, meta_total_arboles, total_plantado_inicial, total_repuesto, saldo_vivo_actual, updated_at',
+      )
+      .in('campania_id', campaignIds)
+      .in('estado', PUBLIC_SUBCAMPAIGN_STATES)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
 
-    if (statesResult.error || subcampaignResult.error) {
+    if (subcampaignResult.error) {
       throw new InternalServerErrorException(
         'No se pudo construir el impacto de la organización.',
       );
     }
 
-    const statusByCampaign = new Map<number, string>();
-    for (const row of (statesResult.data ?? []) as CampaignStateRow[]) {
-      statusByCampaign.set(
-        Number(row.campania_id),
-        String(row.estado_derivado),
+    const subcampaigns = (
+      (subcampaignResult.data ?? []) as SubcampaignRow[]
+    ).filter((row) => PUBLIC_SUBCAMPAIGN_STATES.includes(row.estado));
+    const publicCampaignIds = new Set(
+      subcampaigns.map((row) => Number(row.campania_id)),
+    );
+    campaigns = campaigns.filter((row) =>
+      publicCampaignIds.has(Number(row.id)),
+    );
+    if (campaignId !== undefined && campaigns.length === 0) {
+      throw new NotFoundException(
+        `La campaña ${campaignId} no está asociada a la organización ${organizationId}.`,
       );
     }
-
-    const subcampaigns = (subcampaignResult.data ?? []) as SubcampaignRow[];
+    // La vista operativa considera también hijas privadas: derivar solo desde
+    // el mismo alcance público evita revelar borradores/canceladas por el estado.
+    const statusByCampaign = new Map<number, string>(
+      campaigns.map((campaign) => {
+        const rows = subcampaigns.filter(
+          (row) => Number(row.campania_id) === Number(campaign.id),
+        );
+        const status = rows.some((row) => row.estado === 'ACTIVA')
+          ? 'ACTIVA'
+          : rows.some(
+                (row) => row.fase_mantenimiento === 'MANTENIMIENTO_ACTIVO',
+              )
+            ? 'EN_MANTENIMIENTO'
+            : rows.every(
+                  (row) => row.fase_mantenimiento === 'MONITOREO_HISTORICO',
+                )
+              ? 'MONITOREO_HISTORICO'
+              : 'BORRADOR';
+        return [Number(campaign.id), status];
+      }),
+    );
     const subcampaignIds = subcampaigns.map((row) => Number(row.id));
     const [currentLocationNameById, polygonBySubcampaign] = await Promise.all([
       this.loadCurrentLocationNames(subcampaigns),
@@ -763,10 +786,9 @@ export class ImpactService {
       async (from, to) =>
         supabase
           .from('evidencias_trazabilidad')
-          .select(
-            'id, entidad_id, codigo_trazabilidad, bucket, ruta_archivo, titulo, es_principal, tomado_en, creado_en',
-          )
+          .select('id, entidad_id, codigo_trazabilidad, es_principal')
           .eq('tipo_entidad_id', Number(evidenceType.id))
+          .eq('tipo_archivo', 'FOTO')
           .in('entidad_id', plantingIds)
           .is('eliminado_en', null)
           .order('es_principal', { ascending: false })
@@ -781,7 +803,18 @@ export class ImpactService {
     );
     const plantingById = new Map(plantings.map((row) => [Number(row.id), row]));
 
-    for (const row of evidenceRows) {
+    // Usar la misma decisión SQL 079 que la descarga pública. Una fila FOTO
+    // vinculada no acredita por sí sola una carga confirmada/sanitizada.
+    const eligibleEvidence: EvidenceRow[] = [];
+    for (let from = 0; from < evidenceRows.length; from += 20) {
+      const batch = evidenceRows.slice(from, from + 20);
+      const eligible = await Promise.all(
+        batch.map((row) => this.isPublicEvidence(String(row.id))),
+      );
+      eligibleEvidence.push(...batch.filter((_row, index) => eligible[index]));
+    }
+
+    for (const row of eligibleEvidence) {
       const plantingId = Number(row.entidad_id);
       const planting = plantingById.get(plantingId);
       if (!planting) continue;
@@ -794,9 +827,9 @@ export class ImpactService {
         campaignId: Number(subcampaign.campania_id),
         subcampaignId: Number(subcampaign.id),
         publicTraceabilityCode: row.codigo_trazabilidad ?? null,
-        title: row.titulo ?? null,
+        title: null,
         imageUrl: `/api/v1/impact/imagenes/${row.id}`,
-        takenAt: row.tomado_en ?? row.creado_en,
+        takenAt: null,
         isPrimary: Boolean(row.es_principal),
         species: [],
       };
@@ -804,6 +837,22 @@ export class ImpactService {
       result.get(plantingId)!.push(evidence);
     }
     return result;
+  }
+
+  private async isPublicEvidence(evidenciaId: string): Promise<boolean> {
+    const client = this.supabaseService.getAdminClient();
+    for (const name of ['pa_foto_publica', 'pa_d_foto_legada_publica']) {
+      const { data, error } = await client.rpc(name, {
+        p_evidencia_id: evidenciaId,
+      });
+      if (error || !data?.body || ![200, 404].includes(data.http_status)) {
+        throw new ServiceUnavailableException(
+          'No se pudo comprobar la disponibilidad de las imágenes públicas.',
+        );
+      }
+      if (data.http_status === 200) return true;
+    }
+    return false;
   }
 
   private mapCampaignCard(
@@ -1095,7 +1144,10 @@ export class ImpactService {
       treesPlantedInitial,
       treesReplanted,
       treesAliveReported,
-      progressPct: this.percentage(treesPlantedInitial, treesTarget),
+      progressPct:
+        treesTarget > 0
+          ? this.round((treesPlantedInitial / treesTarget) * 100, 2)
+          : null,
       survivalPct: this.percentage(
         treesAliveReported,
         treesPlantedInitial + treesReplanted,
@@ -1149,11 +1201,19 @@ export class ImpactService {
 
   private sortEvidenceChronologically(
     rows: ImpactEvidence[],
+    plantings: PlantingRow[],
   ): ImpactEvidence[] {
+    const dateByPlanting = new Map(
+      plantings.map((planting) => [
+        Number(planting.id),
+        planting.fecha_plantacion,
+      ]),
+    );
     return [...rows].sort(
       (a, b) =>
-        String(b.takenAt ?? '').localeCompare(String(a.takenAt ?? '')) ||
-        b.id - a.id,
+        String(dateByPlanting.get(b.plantingRecordId) ?? '').localeCompare(
+          String(dateByPlanting.get(a.plantingRecordId) ?? ''),
+        ) || b.id - a.id,
     );
   }
 
@@ -1164,14 +1224,13 @@ export class ImpactService {
     }
   }
 
-  private isEvidenceWithinRange(
-    evidence: ImpactEvidence,
+  private isPlantingWithinRange(
+    plantedAt: string,
     from?: string,
     to?: string,
   ): boolean {
     if (!from && !to) return true;
-    if (!evidence.takenAt) return false;
-    const timestamp = Date.parse(evidence.takenAt);
+    const timestamp = Date.parse(plantedAt);
     if (from && timestamp < this.dateBoundary(from, false)) return false;
     if (to && timestamp > this.dateBoundary(to, true)) return false;
     return true;

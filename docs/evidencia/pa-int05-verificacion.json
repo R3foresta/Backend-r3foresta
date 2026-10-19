@@ -1,0 +1,101 @@
+{
+  "tarea": "PA-T-INT05-BE01–BE06",
+  "fecha_utc": "2026-10-17T12:12:53.975010+00:00",
+  "base_git": "10e5dc59ee4eec9b94142fa7b2aeadaafc838263",
+  "estado": "VERIFICADO_LOCAL_SIN_COMMIT_PUSH_SQL_REMOTO_NI_DESPLIEGUE",
+  "build": {
+    "comando": "npm run build",
+    "exit_code": 0
+  },
+  "unitarios": {
+    "comando": "npm run test:unit -- --runInBand --cacheDirectory=/private/tmp/r3-jest",
+    "suites": 65,
+    "pruebas": 816,
+    "fallos": 0,
+    "exit_code": 0
+  },
+  "openapi": {
+    "comando": "node scripts/qa/pa-int02c-openapi.cjs --check",
+    "rutas": 30,
+    "schemas": 65,
+    "version": "1.3.0",
+    "exit_code": 0
+  },
+  "ejemplos_finales": {
+    "origen": "captura HTTP real sintética de test/db/pa-int05-http.spec.ts",
+    "archivo": "docs/pa-int05-ejemplos.json",
+    "sha256": "6334aaeb521ff8161e1e1be7a1da336c087f076a5feb73f26bf0846891d50fa6",
+    "verificacion_posterior": "3/3 unitarios de participacion-openapi.spec.ts tras copiar captura final; los manifests SQL/preview conservan la huella de entrada anterior de este artefacto generado."
+  },
+  "ensayos": {
+    "pa-int05-local.json": {
+      "estado": "CORRECTO",
+      "sha256": "2836b2282a5fa5c7c25eeffeda4e3ff4f0d44c69197ec3ec3ddf06dd1a69e7da",
+      "huellas_fuentes_ejecutadas_coinciden": true,
+      "artefactos_posteriores": [
+        "docs/pa-int05-ejemplos.json"
+      ]
+    },
+    "pa-int05-preview-local.json": {
+      "estado": "PREVIEW_VERIFICADO",
+      "sha256": "fae3c1b0468e46eb63c276e058f8d6d4b514cdb50cc8104f32e3b7036c1280d9",
+      "huellas_fuentes_ejecutadas_coinciden": true,
+      "artefactos_posteriores": [
+        "docs/pa-int05-ejemplos.json"
+      ]
+    },
+    "pa-int05-regresion-d.json": {
+      "estado": "PREVIEW_VERIFICADO",
+      "sha256": "41bd6c04d3d28415b715603034de83aaad60143f87c4501b17e0fa28ad126f3a",
+      "huellas_fuentes_ejecutadas_coinciden": true,
+      "artefactos_posteriores": []
+    }
+  },
+  "preview_activo_verificado": {
+    "url": "http://127.0.0.1:3305",
+    "http_status": 200,
+    "plantacion_inicial": 50,
+    "registros": 4,
+    "cache_control": "no-store",
+    "sintetico": true,
+    "estado_mutable_fuera_del_repositorio": true
+  },
+  "sha256_arbol_entrega": {
+    "ARCHITECTURE.md": "11f49906010dc94ef6917bfb7b229b3e9df8b21cb6259dc24fca8fb6efd04ff7",
+    "README.md": "f21187e9810c80bd1e75a881e1ecbff77663300805a0ba2b05ddcc1bd02eb3c8",
+    "docs/README.md": "a218355e6a31a86ead5ec2cac74a837ddfe609ce9ad91ff31aba5a59a52128c0",
+    "docs/pa-int02c-openapi.json": "d612f22d67399f5ff9cc4bdb0d04ca3d325f31ac878d24da8d8e627e40466756",
+    "docs/pa-int05-contrato.md": "46985747cabe2aa725aa4df03b757f5ccab85b7d0c1603d7275182e02a8d74d3",
+    "docs/pa-int05-ejemplos.json": "6334aaeb521ff8161e1e1be7a1da336c087f076a5feb73f26bf0846891d50fa6",
+    "docs/pa-int05-entrega-local.md": "c91f01f38251c4bdd2c62a8c9259c9952106dab64b2e3020758f1d26c6255f6c",
+    "documentacion/modulos/participacion.md": "198004285cf5fcb0045327e9de4e12f2ce77b2399b195834d6f6c16f20fb3c8e",
+    "migrations/081_pa_int05_consulta.sql": "108d3d9f7d17ef31f09dac79cc4e2fbc7cb0ebdc2b567aa031094b63a49d7233",
+    "package.json": "e73544c34a7827ab42af6532c062913e6bb3b60f195bc4db34e231533db4a25d",
+    "scripts/qa/pa-int02c-openapi.cjs": "7fe1b73d6e63f637fb80ed090f09f4e06dcc1af5117b0e43f80ba7cb498ebf39",
+    "scripts/qa/pa-int05-db-test.py": "2bfc3683ba60562db4945b2e20a0ed96e3d4b000fdd8b661aec2d71ac2e20502",
+    "scripts/qa/pa-int05-preview-server.ts": "dc6b86786957ded11e14d13a3dd9b12fae1bb5771b0b9fd0f987e8f81a3b5726",
+    "src/impact/application/impacto-consulta.service.ts": "20f929a1ce7d39b1f4e5fd2a767bdc76b53061ff11633c40ee6a174ae5bb5e88",
+    "src/impact/domain/policies/impacto-proyeccion.policy.ts": "79da28d5556319775462348be816949f6f2ddb852ecb1ae048b853e23c9961b1",
+    "src/impact/impact-consulta.controller.ts": "43ca9e686210f72c513367ddb1d2c2389e1c1559980cffe9324d1a91d68573ef",
+    "src/impact/impact-query.dto.ts": "d03414a4c8d6998c4909384535daae503af5d932e667ed294decb5e6f1d01f4c",
+    "src/impact/impact.controller.ts": "b0a89aa594b5a0292d93335a491125c9b39a283af038a0613d34bc3373ccdd63",
+    "src/impact/impact.module.ts": "de6206081776184ab83010b501a595be6be3b11f7cb5361eb8e80b6ae6d8bd94",
+    "src/impact/impact.service.spec.ts": "4dc17f4ce87e4dd2c8d7bfc132d91b424e4635faaec5502c02e0e7636edaaf26",
+    "src/impact/impact.service.ts": "c44b3bd9fdf48f15e12f39172eb1561fd56fa8d015f4169d3cca1321044dfb1c",
+    "src/impact/impacto-consulta.dto.ts": "9f70ce4825b6f593cdc2922fa88782e0b09d8a2b0280a3d1f14111b5c6b78f83",
+    "src/impact/impacto-consulta.spec.ts": "80c0f88f9b4e58c44c2073ed3695a30131a40df835c5f621cf181e4bed3fa768",
+    "src/participacion/participacion-openapi.generated.ts": "3ecf807528468312839dbf8fa2c62f46d4290b665f3e024e846394427d96aa5a",
+    "src/participacion/tests/participacion-openapi.spec.ts": "884f93602682e9b1a8dd291015ef53ab359f1c807a56863f2889b6423b32ca92",
+    "src/users/perfil-v1.http.spec.ts": "a1e0b6f94301217a639e52b1f0f7eb9b7d98ef52d36cf5dfccce4d0de1f6471b",
+    "test/README.md": "33440328d934a465bd5ccd9fd50e6fdf998225ac784c6e61d235de3187e23993",
+    "test/db/pa-int05-fixture.sql": "44d21f30892ecaf6d9340c3bbe0b1149b78e0e59106255fa34a1b02fe1007505",
+    "test/db/pa-int05-http.spec.ts": "0c4db04607cdbd3e534f91e905294957b0f00774a95c918581e02582cd755a48",
+    "test/jest-impacto-db.json": "20b74bf8cf71220d2bb07e118f509375a2a696325fb1b5bdddc83f2ad1a5c1e6"
+  },
+  "limites": [
+    "SQL068–081 aplicado solo al clúster sintético parcial; sin cotejo remoto",
+    "Sin commit/push INT05, despliegue, WebAuthn real, QA frontend/UX ni piloto",
+    "Storage de archivos privado de prueba; no acredita RLS/CDN/URLs históricos remotos",
+    "Primer intento unitario sandbox denegó listen EPERM; ejecución local autorizada completa aprobada"
+  ]
+}

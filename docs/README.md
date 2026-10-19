@@ -6,6 +6,7 @@ Esta carpeta conserva resultados fechados; no es otro backlog ni una receta de d
 
 | Entrega | Informe | Alcance |
 |---|---|---|
+| Impacto público y Mis registros INT05 | [Entrega](pa-int05-entrega-local.md), [contrato](pa-int05-contrato.md) y [ejemplos](pa-int05-ejemplos.json) | BE01–BE06 locales, migración081, proyección pública y propia, entorno3305; remoto y frontend separados |
 | Identidad y privacidad A | [Cierre](pa-int02a-continuacion-2026-10-14.md) y [entrega inicial](pa-int02a-entrega-local.md) | JWT, perfil, grants y QA de desarrollo |
 | Persistencia B | [Entrega](pa-int02b-entrega-local.md) | Vigencias/revisiones, bootstrap sintético y cotejo compacto de desarrollo |
 | Gestión C | [Entrega](pa-int02c-entrega-local.md) | 14 rutas, comandos/lecturas, carreras y entorno local frontend |

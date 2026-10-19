@@ -1,7 +1,7 @@
 # Arquitectura del backend
 
-**Corte documental: 17 de octubre de 2026. Entrega local `75a57eb` en `main`, migraciones hasta080.**
-La verificación conserva la base `a045d9d` más árbol INT02-D del 16 de octubre; el commit de entrega es posterior. Push, SQL remoto y despliegue pendientes.
+**Corte documental: 19 de octubre de 2026. INT05 verificada localmente, migraciones hasta081.**
+[Entrega y consolidación INT05](docs/pa-int05-entrega-local.md), [versiones de entrega](../r3foresta-docs/ESTADO.md): lectura pública y propia verificadas localmente; push, SQL remoto y despliegue pendientes. Los cortes de pruebas INT05 y D conservan sus bases y entornos originales.
 Describe implementación; el contrato de producto y el estado de cada entorno
 viven en [r3foresta-docs](https://github.com/R3foresta/r3foresta-docs).
 
@@ -19,7 +19,7 @@ identifican pruebas, fecha, revisión y entorno.
 | M3 | `src/campanias`, `subcampanias`, `plantaciones` | Plan/equipo/stock y hechos de campo |
 | Acceso contextual | `src/participacion` | Capacidades, miembros, comandos de acceso y autoridad, recuperación |
 | Registro participante | `src/participacion/application`, `cargas`, `domain/policies` | Contexto/personas, inicial LIFO, detalle propio, cargas/generaciones e imagen sanitizada |
-| Público | `src/impact`, `src/health` | Impacto y liveness |
+| Público / historial propio | `src/impact/application`, `domain/policies`, `src/health` | Impacto elegible, snapshots/seguimiento, Mis registros con JWT y liveness |
 | Infraestructura | `src/supabase`, `pinata`, `blockchain`, `evidencias-trazabilidad` | DB/Storage e integraciones |
 
 Los módulos operativos usan `api` → `application` → `domain/policies`, con pruebas
@@ -96,7 +96,10 @@ de 070; 070 crea permisos/revisiones/ACL; 071 instala bootstrap sin ejecutarlo;
 072/073 implementan gestión y lecturas privadas; 074 añade cargas/snapshots,
 075 registro inicial LIFO/lecturas y replay de preparación, 076 conserva el día
 DATE de entrada de entregas nuevas sin conciliar legado.077 ordena físicas/plan/reposición (campaña antes de hija también bajo FKs de eventos),078 lleva lifecycle a RPC,079 privatiza reposición y sanitiza foto pública,080 cierra el inventario fijo de tablas/vista/catálogos sin nuevos grants de servicio ni RLS. Preflight/postflight fallan ante drift fuera del alcance; no lo corrigen implícitamente. El backend privado consumidor debe
-acompañar el cierre de grants. [Evidencia por entrega](docs/README.md).
+acompañar el cierre de grants. 081 añade proyecciones STABLE de lectura pública/propia,
+sin nuevos hechos ni estado de campaña; agrega antes de unir personas/organizaciones,
+reutiliza elegibilidad de fotos y deduplica personas del detalle propio legado.
+Sus RPC/helpers siguen privados al servicio; no modifica transacciones de escritura. [Evidencia por entrega](docs/README.md).
 
 ## Pendientes materiales
 

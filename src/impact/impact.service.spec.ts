@@ -39,6 +39,7 @@ function makeBuilder(result: QueryResult): QueryBuilderMock {
 function makeSupabase(
   byTable: Record<string, QueryResult | QueryResult[]>,
   polygons: Record<number, unknown> = {},
+  publicEvidence: Record<number, 'modern' | 'legacy' | 'hidden'> = {},
 ) {
   const counters: Record<string, number> = {};
   const from = jest.fn((table: string) => {
@@ -53,8 +54,25 @@ function makeSupabase(
   });
   const client = {
     from,
-    rpc: jest.fn((_name: string, args: { p_id: number }) =>
-      Promise.resolve({ data: polygons[args.p_id] ?? null, error: null }),
+    rpc: jest.fn(
+      (name: string, args: { p_id?: number; p_evidencia_id?: string }) => {
+        if (name === 'pa_foto_publica' || name === 'pa_d_foto_legada_publica') {
+          const source =
+            publicEvidence[Number(args.p_evidencia_id)] ?? 'modern';
+          const eligible =
+            name === 'pa_foto_publica'
+              ? source === 'modern'
+              : source === 'legacy';
+          return Promise.resolve({
+            data: { http_status: eligible ? 200 : 404, body: { data: {} } },
+            error: null,
+          });
+        }
+        return Promise.resolve({
+          data: polygons[args.p_id!] ?? null,
+          error: null,
+        });
+      },
     ),
     storage: {
       from: jest.fn(() => ({
@@ -69,6 +87,36 @@ function makeSupabase(
       getAdminClient: jest.fn().mockReturnValue(client),
     } as unknown as SupabaseService,
     client,
+  };
+}
+
+function publicScopeFixture(states: string[]): Record<string, QueryResult> {
+  return {
+    organizacion: { data: { id: 3, nombre: 'Bosque SA', logo_url: null } },
+    campania_organizacion: { data: [{ campania_id: 8 }, { campania_id: 9 }] },
+    campania: {
+      data: [8, 9].map((id) => ({
+        id,
+        nombre: `Campaña ${id}`,
+        tipo: 'REFORESTACION',
+      })),
+    },
+    subcampania: {
+      data: states.map((estado, index) => ({
+        id: 21 + index,
+        campania_id: index === states.length - 1 ? 9 : 8,
+        nombre: `Zona ${21 + index}`,
+        estado,
+        fase_mantenimiento: 'MANTENIMIENTO_ACTIVO',
+        zona_id: 4,
+        nombre_zona_snapshot: 'Zona pública',
+        meta_total_arboles: estado === 'ACTIVA' ? 40 : 0,
+        total_plantado_inicial: estado === 'ACTIVA' ? 50 : 0,
+        total_repuesto: estado === 'ACTIVA' ? 5 : 0,
+        saldo_vivo_actual: estado === 'ACTIVA' ? 45 : 0,
+      })),
+    },
+    registro_plantacion: { data: [] },
   };
 }
 
@@ -118,6 +166,83 @@ describe('ImpactService', () => {
     });
     expect(response.data.map).toEqual({ plantingPoints: [], areas: [] });
     expect(response.data.speciesMix).toEqual([]);
+  });
+
+  it('mantiene el mismo alcance público en métricas, campañas y mapa sin limitar avance a 100%', async () => {
+    const { supabase, client } = makeSupabase(
+      publicScopeFixture([
+        'ACTIVA',
+        'COMPLETADA',
+        'FINALIZADA_PARCIAL',
+        'BORRADOR',
+        'CANCELADA',
+        'PAUSADA',
+        'BORRADOR',
+      ]),
+    );
+    const response = await new ImpactService(supabase).getOrganizationDashboard(
+      3,
+    );
+
+    expect(response.data.summary).toMatchObject({
+      campaignsCount: 1,
+      subcampaignsCount: 3,
+      treesTarget: 40,
+      treesPlantedInitial: 50,
+      treesReplanted: 5,
+      treesAliveReported: 45,
+      progressPct: 125,
+    });
+    expect(response.data.campaigns.map((row) => row.id)).toEqual([8]);
+    expect(response.data.campaigns[0].status).toBe('ACTIVA');
+    expect(response.data.map.areas.map((row) => row.subcampaignId)).toEqual([
+      21, 22, 23,
+    ]);
+    expect(client.from).not.toHaveBeenCalledWith('campania_estado');
+    const subcampaignQuery = client.from.mock.results[
+      client.from.mock.calls.findIndex(([table]) => table === 'subcampania')
+    ].value as QueryBuilderMock;
+    expect(subcampaignQuery.in).toHaveBeenCalledWith('estado', [
+      'ACTIVA',
+      'COMPLETADA',
+      'FINALIZADA_PARCIAL',
+    ]);
+    const plantingQuery = client.from.mock.results[
+      client.from.mock.calls.findIndex(
+        ([table]) => table === 'registro_plantacion',
+      )
+    ].value as QueryBuilderMock;
+    expect(plantingQuery.in).toHaveBeenCalledWith(
+      'subcampania_id',
+      [21, 22, 23],
+    );
+  });
+
+  it.each(['BORRADOR', 'CANCELADA', 'PAUSADA'])(
+    'no revela una campaña cuyas hijas solo están en %s',
+    async (estado) => {
+      const { supabase, client } = makeSupabase(
+        publicScopeFixture([estado, estado]),
+      );
+      const service = new ImpactService(supabase);
+      const dashboard = await service.getOrganizationDashboard(3);
+      expect(dashboard.data.campaigns).toEqual([]);
+      expect(dashboard.data.summary.campaignsCount).toBe(0);
+      expect(dashboard.data.map).toEqual({ areas: [], plantingPoints: [] });
+      await expect(service.getCampaignDetail(3, 8)).rejects.toMatchObject({
+        status: 404,
+      });
+      expect(client.from).not.toHaveBeenCalledWith('registro_plantacion');
+      expect(client.rpc).not.toHaveBeenCalled();
+    },
+  );
+
+  it('deriva estado histórico únicamente de hijas públicas', async () => {
+    const { supabase } = makeSupabase(
+      publicScopeFixture(['COMPLETADA', 'BORRADOR']),
+    );
+    const response = await new ImpactService(supabase).getCampaignDetail(3, 8);
+    expect(response.data.campaign.status).toBe('EN_MANTENIMIENTO');
   });
 
   it('agrega impacto y publica GPS/evidencia sin datos operativos internos', async () => {
@@ -217,6 +342,20 @@ describe('ImpactService', () => {
               tomado_en: '2026-07-15T14:00:00Z',
               creado_en: '2026-07-15T15:00:00Z',
             },
+            {
+              id: 42,
+              entidad_id: 31,
+              titulo: 'Foto histórica elegible',
+              es_principal: false,
+              creado_en: '2026-07-15T15:00:00Z',
+            },
+            {
+              id: 43,
+              entidad_id: 31,
+              titulo: 'Foto pendiente no publicar',
+              es_principal: false,
+              creado_en: '2026-07-15T15:00:00Z',
+            },
           ],
           error: null,
         },
@@ -233,6 +372,7 @@ describe('ImpactService', () => {
           ],
         },
       },
+      { 42: 'legacy', 43: 'hidden' },
     );
     const service = new ImpactService(supabase);
 
@@ -247,7 +387,7 @@ describe('ImpactService', () => {
       survivalPct: 80,
       hectares: 2.5,
       plantingRecordsCount: 1,
-      evidenceCount: 1,
+      evidenceCount: 2,
     });
     expect(response.data.map.plantingPoints[0]).toMatchObject({
       latitude: -17.338,
@@ -258,7 +398,8 @@ describe('ImpactService', () => {
     expect(response.data.evidencePreview[0]).toMatchObject({
       publicTraceabilityCode: 'PLT-031-SUB-021',
       imageUrl: '/api/v1/impact/imagenes/41',
-      title: 'Jornada de plantación',
+      title: null,
+      takenAt: null,
       species: [
         {
           id: 5,
@@ -281,12 +422,22 @@ describe('ImpactService', () => {
       },
     ]);
     expect(client.from).toHaveBeenCalledWith('registro_plantacion_detalle');
+    expect(response.data.evidencePreview.map((row) => row.id)).toEqual([
+      41, 42,
+    ]);
+    expect(client.rpc).toHaveBeenCalledWith('pa_d_foto_legada_publica', {
+      p_evidencia_id: '42',
+    });
 
     const serialized = JSON.stringify(response);
     expect(serialized).not.toContain('responsable');
     expect(serialized).not.toContain('hash_sha256');
     expect(serialized).not.toContain('private-name');
     expect(serialized).not.toContain('ruta_archivo');
+    expect(serialized).not.toContain('Foto pendiente no publicar');
+    expect(serialized).not.toContain('Jornada de plantación');
+    expect(serialized).not.toContain('Foto histórica elegible');
+    expect(serialized).not.toContain('2026-07-15T14:00:00Z');
   });
 
   it('carga especies en el detalle y resuelve una ubicación sin snapshot', async () => {
@@ -411,7 +562,7 @@ describe('ImpactService', () => {
     expect(client.from).toHaveBeenCalledWith('registro_plantacion_detalle');
   });
 
-  it('pagina y filtra la galería pública por especie y fecha', async () => {
+  it('pagina y filtra la galería por especie y fecha del registro sin publicar metadatos fotográficos', async () => {
     const { supabase, client } = makeSupabase({
       organizacion: {
         data: { id: 3, nombre: 'Bosque SA', logo_url: null },
@@ -557,7 +708,7 @@ describe('ImpactService', () => {
       pageSize: 1,
       speciesId: 5,
       from: '2026-07-15',
-      to: '2026-07-16',
+      to: '2026-07-15',
     });
 
     expect(response.data).toMatchObject({
@@ -570,10 +721,16 @@ describe('ImpactService', () => {
       expect.objectContaining({
         id: 42,
         publicTraceabilityCode: 'PLT-031',
+        title: null,
+        takenAt: null,
         species: [expect.objectContaining({ id: 5, quantity: 20 })],
       }),
     ]);
-    expect(client.rpc).not.toHaveBeenCalled();
+    expect(client.rpc.mock.calls.map(([name]) => name)).toEqual([
+      'pa_foto_publica',
+      'pa_foto_publica',
+      'pa_foto_publica',
+    ]);
   });
 
   it('construye una serie acumulada con plantación, mortandad y reposición', async () => {

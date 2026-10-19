@@ -836,23 +836,326 @@ paths['/api/v1/impact/fotos/{evidencia_id}'].get.responses[200].headers = {
     description: 'no-store; URL del derivado válida por cinco minutos.',
   },
 };
-paths['/api/v1/impact/imagenes/{evidenciaId}'] = { get: {
-  summary: 'JPEG público sanitizado de evidencia vinculada elegible, incluido legado',
-  operationId: 'ImagenPublicaSanitizada', security: [],
-  parameters: [param('evidenciaId','path',id,true)],
-  responses: { 200: { description: 'JPEG sin EXIF, nunca original ni pendiente.',
-    headers: {'Cache-Control': {schema:text,description:'no-store'}},
-    content: {'image/jpeg': {schema:{type:'string',format:'binary'}}}},
-    404: {description:'Imagen no elegible o no encontrada.'},
-    503: {description:'Imagen no disponible temporalmente.'} }
-}};
+paths['/api/v1/impact/imagenes/{evidenciaId}'] = {
+  get: {
+    summary:
+      'JPEG público sanitizado de evidencia vinculada elegible, incluido legado',
+    operationId: 'ImagenPublicaSanitizada',
+    security: [],
+    parameters: [param('evidenciaId', 'path', id, true)],
+    responses: {
+      200: {
+        description: 'JPEG sin EXIF, nunca original ni pendiente.',
+        headers: { 'Cache-Control': { schema: text, description: 'no-store' } },
+        content: {
+          'image/jpeg': { schema: { type: 'string', format: 'binary' } },
+        },
+      },
+      404: { description: 'Imagen no elegible o no encontrada.' },
+      503: { description: 'Imagen no disponible temporalmente.' },
+    },
+  },
+};
+// INT05: consulta común pública y recuperación histórica propia. La proyección
+// corresponde a 081; ninguna respuesta incluye perfiles, stock u observaciones.
+const nullableId = {
+  ...text,
+  nullable: true,
+  pattern: '^[1-9][0-9]*$',
+  maxLength: 19,
+};
+const total = { type: 'integer', minimum: 0 };
+const impactPagination = {
+  cursor: id,
+  limite: { ...count, minimum: 1, maximum: 100, default: 20 },
+};
+const impactFilters = {
+  campania_id: id,
+  subcampania_id: id,
+  organizacion_id: id,
+  planta_id: id,
+  desde: date,
+  hasta: date,
+  ...impactPagination,
+};
+schemas.ImpactoConsultaQuery = obj(impactFilters, Object.keys(impactFilters));
+schemas.MisRegistrosQuery = obj(
+  impactPagination,
+  Object.keys(impactPagination),
+);
+schemas.ImpactoAfiliacion = obj({
+  estado: {
+    type: 'string',
+    enum: ['DECLARADA', 'NO_DECLARADA', 'HISTORICA_NO_DISPONIBLE'],
+  },
+  tipo: {
+    type: 'string',
+    nullable: true,
+    enum: ['ORGANIZACION_REGISTRADA', 'OTRA', null],
+  },
+  nombre: nullableText,
+  organizacion_id: nullableId,
+});
+schemas.ImpactoPersona = obj({
+  nombre: nullableText,
+  es_responsable: bool,
+  afiliacion: ref('ImpactoAfiliacion'),
+});
+schemas.ImpactoRegistro = obj({
+  id,
+  codigo_trazabilidad: text,
+  campania_id: id,
+  subcampania_id: id,
+  campania_nombre: text,
+  subcampania_nombre: text,
+  fecha_plantacion: date,
+  cantidad_total_plantada: quantity,
+  es_reposicion: bool,
+  registro_plantacion_origen_id: nullableId,
+  latitud: { type: 'number', minimum: -90, maximum: 90 },
+  longitud: { type: 'number', minimum: -180, maximum: 180 },
+  gps_dentro_poligono: bool,
+  especies: array(
+    obj({ planta_id: id, nombre: nullableText, cantidad: quantity }),
+  ),
+  personas: array(ref('ImpactoPersona'), 1, 101),
+  fotos: array(
+    obj({
+      id,
+      url: { ...text, pattern: '^/api/v1/impact/imagenes/[1-9][0-9]*$' },
+    }),
+  ),
+  seguimiento: obj({
+    bajas_reportadas: total,
+    reposiciones_registradas: total,
+    bajas: array(obj({ evento_id: id, fecha: instant, cantidad: quantity })),
+    reposiciones: array(
+      obj({
+        registro_id: id,
+        fecha: date,
+        cantidad: quantity,
+        url_publica: {
+          ...text,
+          pattern: '^/api/v1/impact/registros/[1-9][0-9]*$',
+        },
+      }),
+    ),
+  }),
+  organizaciones_campania: array(obj({ id, nombre: text })),
+  url_publica: { ...text, pattern: '^/api/v1/impact/registros/[1-9][0-9]*$' },
+});
+schemas.ImpactoCampania = obj({
+  id,
+  nombre: text,
+  plantacion_inicial: total,
+  url_publica: { ...text, pattern: '^/api/v1/impact/campanias/[1-9][0-9]*$' },
+});
+schemas.ImpactoSubcampania = obj({
+  id,
+  campania_id: id,
+  nombre: text,
+  estado: {
+    type: 'string',
+    enum: ['ACTIVA', 'COMPLETADA', 'FINALIZADA_PARCIAL'],
+  },
+  zona: nullableText,
+  poligono: {
+    ...obj({
+      type: { type: 'string', enum: ['Polygon'] },
+      coordinates: array(array(array({ type: 'number' }, 2, 2), 4), 1),
+    }),
+    nullable: true,
+    description:
+      'Zona de trabajo; no representa superficie efectivamente plantada.',
+  },
+  meta_inicial: total,
+  plantacion_inicial: total,
+  faltantes: {
+    ...total,
+    description:
+      'max(meta_inicial - plantacion_inicial, 0); bajas y reposiciones no lo modifican.',
+  },
+  avance_porcentaje: {
+    type: 'number',
+    minimum: 0,
+    nullable: true,
+    description:
+      '100 * plantacion_inicial / meta_inicial; puede superar 100. null si no hay meta positiva.',
+  },
+  reposiciones: total,
+  bajas_reportadas: total,
+  registros: total,
+  url_publica: {
+    ...text,
+    pattern: '^/api/v1/impact/subcampanias/[1-9][0-9]*$',
+  },
+});
+schemas.ImpactoPunto = obj({
+  registro_id: id,
+  subcampania_id: id,
+  latitud: { type: 'number', minimum: -90, maximum: 90 },
+  longitud: { type: 'number', minimum: -180, maximum: 180 },
+  cantidad_total_plantada: quantity,
+  es_reposicion: bool,
+  url_publica: { ...text, pattern: '^/api/v1/impact/registros/[1-9][0-9]*$' },
+});
+schemas.ImpactoConsulta = obj({
+  indicadores: obj({
+    plantacion_inicial: total,
+    reposiciones: total,
+    bajas_reportadas: total,
+    registros: total,
+  }),
+  campanias: array(ref('ImpactoCampania')),
+  subcampanias: array(ref('ImpactoSubcampania')),
+  mapa: array(ref('ImpactoPunto')),
+  registros: array(ref('ImpactoRegistro'), 0, 100),
+  siguiente_cursor: nullableId,
+});
+schemas.MisRegistros = obj({
+  registros: array(
+    obj({
+      id,
+      subcampania_id: id,
+      fecha_plantacion: date,
+      codigo_trazabilidad: text,
+      cantidad_total_plantada: quantity,
+      es_reposicion: bool,
+      relaciones: {
+        ...array({ type: 'string', enum: ['AUTOR', 'PARTICIPANTE'] }, 1, 2),
+        uniqueItems: true,
+      },
+      url_publica: {
+        ...nullableText,
+        pattern: '^/api/v1/impact/registros/[1-9][0-9]*$',
+      },
+      url_detalle_propio: {
+        ...text,
+        pattern: '^/api/v1/plantaciones/[1-9][0-9]*/detalle-propio$',
+      },
+    }),
+    0,
+    100,
+  ),
+  siguiente_cursor: nullableId,
+});
+for (const name of ['ImpactoConsulta', 'ImpactoRegistro', 'MisRegistros'])
+  schemas[name + 'Respuesta'] = obj({ data: ref(name) });
+const publicHeaders = {
+  'Cache-Control': { schema: text, description: 'no-store' },
+};
+function impactResponse(schema, description, privateRead = false) {
+  return {
+    ...response(schema, description),
+    headers: privateRead ? headers : publicHeaders,
+  };
+}
+function impactRead(route, summary, schema, params, privateRead = false) {
+  paths[route] = {
+    get: {
+      summary,
+      operationId: summary.replace(/[^a-zA-Z]/g, ''),
+      description: privateRead
+        ? 'JWT vigente y cuenta activa. Autoría o participación histórica; no exige permiso operativo. Una fila por registro y relaciones identificables. No concede crédito individual ni campos privados del autor al participante. Cursor decimal exclusivo: id < cursor, orden id DESC. Solo cursor y limite; campos desconocidos rechazados con 422.'
+        : 'Sin JWT, cuenta, perfil ni capacidades; misma proyección con sesión ausente o vencida. Solo ACTIVA, COMPLETADA y FINALIZADA_PARCIAL, sin borrados. Filtros estrictos: desconocidos o incompatibles con la ruta producen 422; desde/hasta inclusivos y desde <= hasta. Los agregados y el mapa incluyen todo el alcance filtrado; cursor y limite paginan solamente registros, en orden id DESC, id < cursor. planta_id selecciona registros que contienen la especie y conserva la cantidad grupal completa. Sin inferir stock, superficie plantada, afiliación vigente ni crédito exclusivo.',
+      security: privateRead ? [{ bearerAuth: [] }] : [],
+      parameters: params,
+      responses: {
+        200: impactResponse(
+          schema + 'Respuesta',
+          privateRead
+            ? 'Lista propia histórica deduplicada.'
+            : 'Proyección pública elegible.',
+          privateRead,
+        ),
+        ...(privateRead
+          ? {
+              401: impactResponse(
+                'ErrorFueraDeRecibo',
+                'Sesión ausente o vencida.',
+                true,
+              ),
+              403: impactResponse(
+                'ErrorFueraDeRecibo',
+                'CUENTA_INACTIVA; recuperar sesión con una cuenta activa.',
+                true,
+              ),
+            }
+          : {}),
+        404: impactResponse(
+          'ErrorFueraDeRecibo',
+          'RECURSO_NO_VISIBLE; no confirma existencia de ámbitos internos o ajenos.',
+          true,
+        ),
+        422: impactResponse(
+          'ErrorFueraDeRecibo',
+          'ENTRADA_INVALIDA; filtros, identificador o paginación inválidos.',
+          true,
+        ),
+        503: impactResponse(
+          'ErrorFueraDeRecibo',
+          'RESULTADO_NO_DETERMINADO; lectura no disponible temporalmente, reintento NO_APLICA.',
+          true,
+        ),
+      },
+    },
+  };
+}
+const impactParams = (names) =>
+  names.map((name) => param(name, 'query', impactFilters[name]));
+impactRead(
+  '/api/v1/impact/global',
+  'Impacto global público',
+  'ImpactoConsulta',
+  impactParams(Object.keys(impactFilters)),
+);
+impactRead(
+  '/api/v1/impact/campanias/{id}',
+  'Impacto público de campaña',
+  'ImpactoConsulta',
+  [
+    param('id', 'path', id, true),
+    ...impactParams(
+      Object.keys(impactFilters).filter((name) => name !== 'campania_id'),
+    ),
+  ],
+);
+impactRead(
+  '/api/v1/impact/subcampanias/{id}',
+  'Impacto público de subcampaña',
+  'ImpactoConsulta',
+  [
+    param('id', 'path', id, true),
+    ...impactParams(
+      Object.keys(impactFilters).filter(
+        (name) => !['campania_id', 'subcampania_id'].includes(name),
+      ),
+    ),
+  ],
+);
+impactRead(
+  '/api/v1/impact/registros/{id}',
+  'Registro grupal público',
+  'ImpactoRegistro',
+  [param('id', 'path', id, true)],
+);
+paths['/api/v1/impact/registros/{id}'].get.description =
+  'Detalle público compartible sin JWT, cuenta ni perfil. No acepta query. Devuelve 404 para inexistentes, borrados o ámbitos no elegibles sin distinguirlos. Nombres y afiliación son snapshots históricos; NO_DECLARADA e HISTORICA_NO_DISPONIBLE son estados distintos. Fotos solo vinculadas elegibles sanitizadas mediante /api/v1/impact/imagenes/:id; nunca originales, pendientes ni metadatos fotográficos.';
+impactRead(
+  '/api/v1/plantaciones/mis-registros',
+  'Mis registros históricos',
+  'MisRegistros',
+  impactParams(['cursor', 'limite']),
+  true,
+);
 const document = {
   openapi: '3.0.3',
   info: {
-    title: 'R3Foresta Participación aliada — INT02-C / INT03-A / INT02-D',
-    version: '1.2.0',
+    title:
+      'R3Foresta Participación aliada — INT02-C / INT03-A / INT02-D / INT05',
+    version: '1.3.0',
     description:
-      'Gestión C y registro inicial recuperable INT03-A. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada.',
+      'Gestión C, registro inicial recuperable INT03-A y consulta INT05 pública global/campaña/subcampaña/registro, con Mis registros histórico privado. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada.',
   },
   servers: [{ url: 'http://localhost:3000' }],
   paths,

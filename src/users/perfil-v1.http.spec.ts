@@ -326,7 +326,7 @@ describe('PA-T-INT02-A contrato HTTP', () => {
         .set('Authorization', `Bearer ${token({ sub: 'vol', exp: 1 })}`)
         .expect(200);
       expect(expired.body).toEqual(visitor.body);
-      expect(visitor.headers['cache-control']).toContain('public');
+      expect(visitor.headers['cache-control']).toBe('no-store');
     }
   });
 

@@ -1,12 +1,13 @@
 # Participación: integración y mantenimiento
 
-**Corte documental: 17 de octubre de 2026. Entrega D en commit local `75a57eb`, rama `main`.**
+**Corte documental: 19 de octubre de 2026. INT05 verificada en alcance técnico local.**
+[Contrato/matriz](../../docs/pa-int05-contrato.md), [ejemplos](../../docs/pa-int05-ejemplos.json), [entorno/consolidación](../../docs/pa-int05-entrega-local.md) y [versiones de entrega](../../../r3foresta-docs/ESTADO.md). Push, aplicación SQL y despliegue de INT05 pendientes; el corte original de pruebas conserva la base `10e5dc5`.
 Base original de las pruebas: `a045d9d` más árbol INT02-D del 16 de octubre. Push, SQL remoto y despliegue de D pendientes.
 Gestión y registro participante implementados; D aporta corte/locks/superficie y entrega el entorno sintético para INT04. No acredita aplicación remota ni despliegue.
 
 ## Contrato que debe usar el cliente
 
-[OpenAPI generado](../../docs/pa-int02c-openapi.json): **25 rutas / 52 schemas**.
+[OpenAPI generado](../../docs/pa-int02c-openapi.json): **30 rutas / 65 schemas**.
 [Ejemplos HTTP](../../docs/pa-int02c-ejemplos.json): resultados de Nest con PostgreSQL
 sintético, sin tokens. Swagger completo en `/api/docs`; JSON en `/api/docs-json`.
 
@@ -18,7 +19,7 @@ sintético, sin tokens. Swagger completo en `/api/docs`; JSON en `/api/docs-json
 | Autoridad global | `GET /usuarios/:id/autoridad`, `POST /usuarios/:id/roles`, `POST /usuarios/:id/inactivaciones` |
 | Recuperación propia | `GET /participacion/comandos/:comando_id?operacion=...` |
 
-Bearer de WebAuthn obligatorio. BIGINT y revisiones son cadenas; actor/rol vienen
+Las rutas privadas requieren Bearer de WebAuthn; Impacto público no lo exige. BIGINT y revisiones son cadenas; actor/rol vienen
 del servidor. Afiliación y logística no conceden permisos. ADMIN global tiene
 acceso derivado; administrador contextual incluye plantar, sin dos vigencias simultáneas.
 Gestión de administradores/roles/bajas requiere ADMIN global. Comprobar acción,
@@ -98,6 +99,22 @@ D verificó BE01–BE08 localmente: 787 unitarios, 33 grupos SQL, 28 carreras y 
 La gestión C anticipó el motor común sin fotos y no completa esos recorridos.
 Instalar 071 no asigna permisos. No ejecutar fixtures en Supabase ni reaplicar SQL
 por la mera falta de evidencia; cotejar primero el entorno y las versiones.
+
+## INT05: consulta pública y Mis registros
+
+`GET /api/v1/impact/global`, `/campanias/:id`, `/subcampanias/:id` y `/registros/:id`
+son públicos incluso con sesión vencida. No consultan perfil/capacidades.
+`GET /api/v1/plantaciones/mis-registros` exige JWT y cuenta activa: unión paginada
+por autoría/participación histórica, incluso tras retiro operativo.
+Los IDs nuevos son cadenas, los filtros estrictos y el JSON usa `no-store`;
+las respuestas privadas conservan `private, no-store` y `Vary: Authorization`.
+
+Usar `npm run preview:impacto -- --pg-bin /ruta/runtime-postgis/bin` en `127.0.0.1:3305`.
+Conserva los flujos sintéticos INT04 y añade 30 + 20 = 50 iniciales, 125%,
+ámbitos ocultos y snapshots/fotos/autor retirado. La migración081 es aditiva de
+lectura, con RPC privadas; no aplicarla al remoto sin cotejar destino074–080.
+Consultar [contrato](../../docs/pa-int05-contrato.md) para paginación/filtros,
+indicadores y campos por audiencia; [entrega](../../docs/pa-int05-entrega-local.md) para reproducir.
 
 ## INT02-D: corte y entorno integrado
 

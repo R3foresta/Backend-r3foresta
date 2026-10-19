@@ -46,7 +46,7 @@ export class ImpactEvidenceQueryDto {
   speciesId?: number;
 
   @ApiPropertyOptional({
-    description: 'Fecha ISO mínima de la evidencia, inclusive.',
+    description: 'Fecha ISO mínima de plantación del registro, inclusive.',
     example: '2026-01-01',
   })
   @IsOptional()
@@ -54,7 +54,7 @@ export class ImpactEvidenceQueryDto {
   from?: string;
 
   @ApiPropertyOptional({
-    description: 'Fecha ISO máxima de la evidencia, inclusive.',
+    description: 'Fecha ISO máxima de plantación del registro, inclusive.',
     example: '2026-12-31',
   })
   @IsOptional()

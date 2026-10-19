@@ -4891,6 +4891,806 @@ export const participacionOpenApi = {
           }
         }
       }
+    },
+    "/api/v1/impact/global": {
+      "get": {
+        "summary": "Impacto global público",
+        "operationId": "Impactoglobalpblico",
+        "description": "Sin JWT, cuenta, perfil ni capacidades; misma proyección con sesión ausente o vencida. Solo ACTIVA, COMPLETADA y FINALIZADA_PARCIAL, sin borrados. Filtros estrictos: desconocidos o incompatibles con la ruta producen 422; desde/hasta inclusivos y desde <= hasta. Los agregados y el mapa incluyen todo el alcance filtrado; cursor y limite paginan solamente registros, en orden id DESC, id < cursor. planta_id selecciona registros que contienen la especie y conserva la cantidad grupal completa. Sin inferir stock, superficie plantada, afiliación vigente ni crédito exclusivo.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "campania_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "subcampania_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "organizacion_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "planta_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proyección pública elegible.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactoConsultaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RECURSO_NO_VISIBLE; no confirma existencia de ámbitos internos o ajenos.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ENTRADA_INVALIDA; filtros, identificador o paginación inválidos.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RESULTADO_NO_DETERMINADO; lectura no disponible temporalmente, reintento NO_APLICA.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/impact/campanias/{id}": {
+      "get": {
+        "summary": "Impacto público de campaña",
+        "operationId": "Impactopblicodecampaa",
+        "description": "Sin JWT, cuenta, perfil ni capacidades; misma proyección con sesión ausente o vencida. Solo ACTIVA, COMPLETADA y FINALIZADA_PARCIAL, sin borrados. Filtros estrictos: desconocidos o incompatibles con la ruta producen 422; desde/hasta inclusivos y desde <= hasta. Los agregados y el mapa incluyen todo el alcance filtrado; cursor y limite paginan solamente registros, en orden id DESC, id < cursor. planta_id selecciona registros que contienen la especie y conserva la cantidad grupal completa. Sin inferir stock, superficie plantada, afiliación vigente ni crédito exclusivo.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "subcampania_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "organizacion_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "planta_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proyección pública elegible.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactoConsultaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RECURSO_NO_VISIBLE; no confirma existencia de ámbitos internos o ajenos.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ENTRADA_INVALIDA; filtros, identificador o paginación inválidos.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RESULTADO_NO_DETERMINADO; lectura no disponible temporalmente, reintento NO_APLICA.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/impact/subcampanias/{id}": {
+      "get": {
+        "summary": "Impacto público de subcampaña",
+        "operationId": "Impactopblicodesubcampaa",
+        "description": "Sin JWT, cuenta, perfil ni capacidades; misma proyección con sesión ausente o vencida. Solo ACTIVA, COMPLETADA y FINALIZADA_PARCIAL, sin borrados. Filtros estrictos: desconocidos o incompatibles con la ruta producen 422; desde/hasta inclusivos y desde <= hasta. Los agregados y el mapa incluyen todo el alcance filtrado; cursor y limite paginan solamente registros, en orden id DESC, id < cursor. planta_id selecciona registros que contienen la especie y conserva la cantidad grupal completa. Sin inferir stock, superficie plantada, afiliación vigente ni crédito exclusivo.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "organizacion_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "planta_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proyección pública elegible.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactoConsultaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RECURSO_NO_VISIBLE; no confirma existencia de ámbitos internos o ajenos.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ENTRADA_INVALIDA; filtros, identificador o paginación inválidos.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RESULTADO_NO_DETERMINADO; lectura no disponible temporalmente, reintento NO_APLICA.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/impact/registros/{id}": {
+      "get": {
+        "summary": "Registro grupal público",
+        "operationId": "Registrogrupalpblico",
+        "description": "Detalle público compartible sin JWT, cuenta ni perfil. No acepta query. Devuelve 404 para inexistentes, borrados o ámbitos no elegibles sin distinguirlos. Nombres y afiliación son snapshots históricos; NO_DECLARADA e HISTORICA_NO_DISPONIBLE son estados distintos. Fotos solo vinculadas elegibles sanitizadas mediante /api/v1/impact/imagenes/:id; nunca originales, pendientes ni metadatos fotográficos.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proyección pública elegible.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactoRegistroRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RECURSO_NO_VISIBLE; no confirma existencia de ámbitos internos o ajenos.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ENTRADA_INVALIDA; filtros, identificador o paginación inválidos.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RESULTADO_NO_DETERMINADO; lectura no disponible temporalmente, reintento NO_APLICA.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plantaciones/mis-registros": {
+      "get": {
+        "summary": "Mis registros históricos",
+        "operationId": "Misregistroshistricos",
+        "description": "JWT vigente y cuenta activa. Autoría o participación histórica; no exige permiso operativo. Una fila por registro y relaciones identificables. No concede crédito individual ni campos privados del autor al participante. Cursor decimal exclusivo: id < cursor, orden id DESC. Solo cursor y limite; campos desconocidos rechazados con 422.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista propia histórica deduplicada.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MisRegistrosRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o vencida.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CUENTA_INACTIVA; recuperar sesión con una cuenta activa.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RECURSO_NO_VISIBLE; no confirma existencia de ámbitos internos o ajenos.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ENTRADA_INVALIDA; filtros, identificador o paginación inválidos.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RESULTADO_NO_DETERMINADO; lectura no disponible temporalmente, reintento NO_APLICA.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6937,6 +7737,726 @@ export const participacionOpenApi = {
           {
             "$ref": "#/components/schemas/Recibo"
           }
+        ]
+      },
+      "ImpactoConsultaQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "campania_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "subcampania_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "organizacion_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "planta_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "cursor": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "limite": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          }
+        },
+        "required": []
+      },
+      "MisRegistrosQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "limite": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          }
+        },
+        "required": []
+      },
+      "ImpactoAfiliacion": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "estado": {
+            "type": "string",
+            "enum": [
+              "DECLARADA",
+              "NO_DECLARADA",
+              "HISTORICA_NO_DISPONIBLE"
+            ]
+          },
+          "tipo": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "ORGANIZACION_REGISTRADA",
+              "OTRA",
+              null
+            ]
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "organizacion_id": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[1-9][0-9]*$",
+            "maxLength": 19
+          }
+        },
+        "required": [
+          "estado",
+          "tipo",
+          "nombre",
+          "organizacion_id"
+        ]
+      },
+      "ImpactoPersona": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "es_responsable": {
+            "type": "boolean"
+          },
+          "afiliacion": {
+            "$ref": "#/components/schemas/ImpactoAfiliacion"
+          }
+        },
+        "required": [
+          "nombre",
+          "es_responsable",
+          "afiliacion"
+        ]
+      },
+      "ImpactoRegistro": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "codigo_trazabilidad": {
+            "type": "string"
+          },
+          "campania_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "subcampania_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "campania_nombre": {
+            "type": "string"
+          },
+          "subcampania_nombre": {
+            "type": "string"
+          },
+          "fecha_plantacion": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "cantidad_total_plantada": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "es_reposicion": {
+            "type": "boolean"
+          },
+          "registro_plantacion_origen_id": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[1-9][0-9]*$",
+            "maxLength": 19
+          },
+          "latitud": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitud": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "gps_dentro_poligono": {
+            "type": "boolean"
+          },
+          "especies": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "planta_id": {
+                  "$ref": "#/components/schemas/Id"
+                },
+                "nombre": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "cantidad": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 2147483647
+                }
+              },
+              "required": [
+                "planta_id",
+                "nombre",
+                "cantidad"
+              ]
+            }
+          },
+          "personas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImpactoPersona"
+            },
+            "minItems": 1,
+            "maxItems": 101
+          },
+          "fotos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/Id"
+                },
+                "url": {
+                  "type": "string",
+                  "pattern": "^/api/v1/impact/imagenes/[1-9][0-9]*$"
+                }
+              },
+              "required": [
+                "id",
+                "url"
+              ]
+            }
+          },
+          "seguimiento": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "bajas_reportadas": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "reposiciones_registradas": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bajas": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "evento_id": {
+                      "$ref": "#/components/schemas/Id"
+                    },
+                    "fecha": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    },
+                    "cantidad": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 2147483647
+                    }
+                  },
+                  "required": [
+                    "evento_id",
+                    "fecha",
+                    "cantidad"
+                  ]
+                }
+              },
+              "reposiciones": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "registro_id": {
+                      "$ref": "#/components/schemas/Id"
+                    },
+                    "fecha": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "cantidad": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 2147483647
+                    },
+                    "url_publica": {
+                      "type": "string",
+                      "pattern": "^/api/v1/impact/registros/[1-9][0-9]*$"
+                    }
+                  },
+                  "required": [
+                    "registro_id",
+                    "fecha",
+                    "cantidad",
+                    "url_publica"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "bajas_reportadas",
+              "reposiciones_registradas",
+              "bajas",
+              "reposiciones"
+            ]
+          },
+          "organizaciones_campania": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/Id"
+                },
+                "nombre": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "nombre"
+              ]
+            }
+          },
+          "url_publica": {
+            "type": "string",
+            "pattern": "^/api/v1/impact/registros/[1-9][0-9]*$"
+          }
+        },
+        "required": [
+          "id",
+          "codigo_trazabilidad",
+          "campania_id",
+          "subcampania_id",
+          "campania_nombre",
+          "subcampania_nombre",
+          "fecha_plantacion",
+          "cantidad_total_plantada",
+          "es_reposicion",
+          "registro_plantacion_origen_id",
+          "latitud",
+          "longitud",
+          "gps_dentro_poligono",
+          "especies",
+          "personas",
+          "fotos",
+          "seguimiento",
+          "organizaciones_campania",
+          "url_publica"
+        ]
+      },
+      "ImpactoCampania": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "plantacion_inicial": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "url_publica": {
+            "type": "string",
+            "pattern": "^/api/v1/impact/campanias/[1-9][0-9]*$"
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "plantacion_inicial",
+          "url_publica"
+        ]
+      },
+      "ImpactoSubcampania": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "campania_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "ACTIVA",
+              "COMPLETADA",
+              "FINALIZADA_PARCIAL"
+            ]
+          },
+          "zona": {
+            "type": "string",
+            "nullable": true
+          },
+          "poligono": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "Polygon"
+                ]
+              },
+              "coordinates": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "minItems": 4
+                },
+                "minItems": 1
+              }
+            },
+            "required": [
+              "type",
+              "coordinates"
+            ],
+            "nullable": true,
+            "description": "Zona de trabajo; no representa superficie efectivamente plantada."
+          },
+          "meta_inicial": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "plantacion_inicial": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "faltantes": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "max(meta_inicial - plantacion_inicial, 0); bajas y reposiciones no lo modifican."
+          },
+          "avance_porcentaje": {
+            "type": "number",
+            "minimum": 0,
+            "nullable": true,
+            "description": "100 * plantacion_inicial / meta_inicial; puede superar 100. null si no hay meta positiva."
+          },
+          "reposiciones": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bajas_reportadas": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "registros": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "url_publica": {
+            "type": "string",
+            "pattern": "^/api/v1/impact/subcampanias/[1-9][0-9]*$"
+          }
+        },
+        "required": [
+          "id",
+          "campania_id",
+          "nombre",
+          "estado",
+          "zona",
+          "poligono",
+          "meta_inicial",
+          "plantacion_inicial",
+          "faltantes",
+          "avance_porcentaje",
+          "reposiciones",
+          "bajas_reportadas",
+          "registros",
+          "url_publica"
+        ]
+      },
+      "ImpactoPunto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registro_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "subcampania_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "latitud": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitud": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "cantidad_total_plantada": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "es_reposicion": {
+            "type": "boolean"
+          },
+          "url_publica": {
+            "type": "string",
+            "pattern": "^/api/v1/impact/registros/[1-9][0-9]*$"
+          }
+        },
+        "required": [
+          "registro_id",
+          "subcampania_id",
+          "latitud",
+          "longitud",
+          "cantidad_total_plantada",
+          "es_reposicion",
+          "url_publica"
+        ]
+      },
+      "ImpactoConsulta": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "indicadores": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "plantacion_inicial": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "reposiciones": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bajas_reportadas": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "registros": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "plantacion_inicial",
+              "reposiciones",
+              "bajas_reportadas",
+              "registros"
+            ]
+          },
+          "campanias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImpactoCampania"
+            }
+          },
+          "subcampanias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImpactoSubcampania"
+            }
+          },
+          "mapa": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImpactoPunto"
+            }
+          },
+          "registros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImpactoRegistro"
+            },
+            "minItems": 0,
+            "maxItems": 100
+          },
+          "siguiente_cursor": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[1-9][0-9]*$",
+            "maxLength": 19
+          }
+        },
+        "required": [
+          "indicadores",
+          "campanias",
+          "subcampanias",
+          "mapa",
+          "registros",
+          "siguiente_cursor"
+        ]
+      },
+      "MisRegistros": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registros": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/Id"
+                },
+                "subcampania_id": {
+                  "$ref": "#/components/schemas/Id"
+                },
+                "fecha_plantacion": {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "codigo_trazabilidad": {
+                  "type": "string"
+                },
+                "cantidad_total_plantada": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 2147483647
+                },
+                "es_reposicion": {
+                  "type": "boolean"
+                },
+                "relaciones": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "AUTOR",
+                      "PARTICIPANTE"
+                    ]
+                  },
+                  "minItems": 1,
+                  "maxItems": 2,
+                  "uniqueItems": true
+                },
+                "url_publica": {
+                  "type": "string",
+                  "nullable": true,
+                  "pattern": "^/api/v1/impact/registros/[1-9][0-9]*$"
+                },
+                "url_detalle_propio": {
+                  "type": "string",
+                  "pattern": "^/api/v1/plantaciones/[1-9][0-9]*/detalle-propio$"
+                }
+              },
+              "required": [
+                "id",
+                "subcampania_id",
+                "fecha_plantacion",
+                "codigo_trazabilidad",
+                "cantidad_total_plantada",
+                "es_reposicion",
+                "relaciones",
+                "url_publica",
+                "url_detalle_propio"
+              ]
+            },
+            "minItems": 0,
+            "maxItems": 100
+          },
+          "siguiente_cursor": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[1-9][0-9]*$",
+            "maxLength": 19
+          }
+        },
+        "required": [
+          "registros",
+          "siguiente_cursor"
+        ]
+      },
+      "ImpactoConsultaRespuesta": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ImpactoConsulta"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ImpactoRegistroRespuesta": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ImpactoRegistro"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "MisRegistrosRespuesta": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/MisRegistros"
+          }
+        },
+        "required": [
+          "data"
         ]
       }
     },

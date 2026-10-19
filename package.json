@@ -31,7 +31,9 @@
     "test:db:registro": "python3 scripts/qa/pa-int03a-db-test.py",
     "preview:registro": "python3 scripts/qa/pa-int03a-db-test.py --serve",
     "test:db:compartida": "python3 scripts/qa/pa-int02d-db-test.py",
-    "preview:participacion-d": "python3 scripts/qa/pa-int02d-db-test.py --serve"
+    "preview:participacion-d": "python3 scripts/qa/pa-int02d-db-test.py --serve",
+    "test:db:impacto": "python3 scripts/qa/pa-int05-db-test.py",
+    "preview:impacto": "python3 scripts/qa/pa-int05-db-test.py --serve"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

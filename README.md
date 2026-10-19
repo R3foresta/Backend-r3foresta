@@ -1,8 +1,8 @@
 # Backend R3Foresta
 
 API NestJS/Supabase para trazabilidad: **Recolección → Vivero → entrega física → Plantación**.
-Estado documental al **17 de octubre de 2026**: entrega INT02-D en el commit local `75a57eb` de `main`.
-Las pruebas conservan su base `a045d9d` más árbol D del 16 de octubre. Push, SQL remoto y despliegue de D pendientes.
+Estado documental al **19 de octubre de 2026**: INT05 BE01–BE06 implementadas y verificadas localmente; el corte original de pruebas conserva la base `10e5dc5`.
+[Contrato, entorno y consolidación](docs/pa-int05-entrega-local.md), [versiones de entrega y pendientes](../r3foresta-docs/ESTADO.md). SQL remoto, push, despliegue y piloto pendientes.
 
 ## Empezar
 
@@ -33,6 +33,9 @@ ver [guía de participación](documentacion/modulos/participacion.md).
 Para integrar INT04 con registro, reposición interna y fotos/PostGIS reales,
 usar `npm run preview:participacion-d -- --pg-bin /ruta/runtime-postgis/bin`
 en `127.0.0.1:3303`; [fixture y verificación](docs/pa-int02d-preview.md).
+Para Impacto global/campaña/subcampaña/registro y «Mis registros», usar
+`npm run preview:impacto -- --pg-bin /ruta/runtime-postgis/bin` en `127.0.0.1:3305`;
+[contrato INT05 y fixture](docs/pa-int05-entrega-local.md).
 La escritura inicial del backend normal requiere
 `PARTICIPACION_INICIAL_ESCRITURA_HABILITADA=true` explícito tras el corte;
 por omisión se pausa y conserva recuperación/terminales.
@@ -67,6 +70,10 @@ orden compartido con plan/físicas/lifecycle, corte inicial legado409, reposici�
 con origen propio y evidencias privadas, foto pública sanitizada y cierre de
 superficie reducido autorizado. [Informe, evidencia y límites](docs/pa-int02d-entrega-local.md).
 SQL aplicado, cotejo remoto, publicación y despliegue son hechos distintos.
+
+INT05 añade proyecciones públicas sin sesión, snapshots y seguimiento por grupo,
+lista propia histórica paginada y migración de lectura 081. Los aliases de Impacto
+comparten elegibilidad y fotos sanitizadas; [contrato](docs/pa-int05-contrato.md).
 
 Las rutas privadas cubiertas usan **Bearer JWT verificado**, cuenta activa y
 políticas de servidor; `x-auth-id` no autentica. Impacto conserva su audiencia

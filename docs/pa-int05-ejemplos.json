@@ -1,0 +1,1619 @@
+{
+  "global": {
+    "data": {
+      "mapa": [
+        {
+          "latitud": -16.52,
+          "longitud": -68.12,
+          "registro_id": "827000",
+          "url_publica": "/api/v1/impact/registros/827000",
+          "es_reposicion": false,
+          "subcampania_id": "827",
+          "cantidad_total_plantada": 20
+        },
+        {
+          "latitud": -16.51,
+          "longitud": -68.11,
+          "registro_id": "826001",
+          "url_publica": "/api/v1/impact/registros/826001",
+          "es_reposicion": true,
+          "subcampania_id": "826",
+          "cantidad_total_plantada": 4
+        },
+        {
+          "latitud": -16.51,
+          "longitud": -68.11,
+          "registro_id": "826000",
+          "url_publica": "/api/v1/impact/registros/826000",
+          "es_reposicion": false,
+          "subcampania_id": "826",
+          "cantidad_total_plantada": 25
+        },
+        {
+          "latitud": -16.5,
+          "longitud": -68.1,
+          "registro_id": "820000",
+          "url_publica": "/api/v1/impact/registros/820000",
+          "es_reposicion": false,
+          "subcampania_id": "820",
+          "cantidad_total_plantada": 5
+        }
+      ],
+      "campanias": [
+        {
+          "id": "800",
+          "nombre": "Campaña local INT03A",
+          "url_publica": "/api/v1/impact/campanias/800",
+          "plantacion_inicial": 30
+        },
+        {
+          "id": "801",
+          "nombre": "Campaña segunda INT05",
+          "url_publica": "/api/v1/impact/campanias/801",
+          "plantacion_inicial": 20
+        }
+      ],
+      "registros": [
+        {
+          "id": "827000",
+          "fotos": [],
+          "latitud": -16.52,
+          "especies": [
+            {
+              "nombre": "Molle histórico",
+              "cantidad": 20,
+              "planta_id": "9"
+            }
+          ],
+          "longitud": -68.12,
+          "personas": [
+            {
+              "nombre": null,
+              "afiliacion": {
+                "tipo": null,
+                "estado": "HISTORICA_NO_DISPONIBLE",
+                "nombre": null,
+                "organizacion_id": null
+              },
+              "es_responsable": true
+            },
+            {
+              "nombre": null,
+              "afiliacion": {
+                "tipo": null,
+                "estado": "HISTORICA_NO_DISPONIBLE",
+                "nombre": null,
+                "organizacion_id": null
+              },
+              "es_responsable": false
+            }
+          ],
+          "campania_id": "801",
+          "seguimiento": {
+            "bajas": [],
+            "reposiciones": [],
+            "bajas_reportadas": 0,
+            "reposiciones_registradas": 0
+          },
+          "url_publica": "/api/v1/impact/registros/827000",
+          "es_reposicion": false,
+          "subcampania_id": "827",
+          "campania_nombre": "Campaña segunda INT05",
+          "fecha_plantacion": "2026-10-16",
+          "subcampania_nombre": "Ámbito INT05 827",
+          "codigo_trazabilidad": "INT05-GRUPO-20-LEGADO",
+          "gps_dentro_poligono": true,
+          "cantidad_total_plantada": 20,
+          "organizaciones_campania": [
+            {
+              "id": "1",
+              "nombre": "Organización sintética"
+            },
+            {
+              "id": "2",
+              "nombre": "Organización segunda sintética"
+            }
+          ],
+          "registro_plantacion_origen_id": null
+        },
+        {
+          "id": "826001",
+          "fotos": [],
+          "latitud": -16.51,
+          "especies": [
+            {
+              "nombre": "Tara histórica",
+              "cantidad": 4,
+              "planta_id": "8"
+            }
+          ],
+          "longitud": -68.11,
+          "personas": [
+            {
+              "nombre": null,
+              "afiliacion": {
+                "tipo": null,
+                "estado": "HISTORICA_NO_DISPONIBLE",
+                "nombre": null,
+                "organizacion_id": null
+              },
+              "es_responsable": true
+            }
+          ],
+          "campania_id": "800",
+          "seguimiento": {
+            "bajas": [],
+            "reposiciones": [],
+            "bajas_reportadas": 0,
+            "reposiciones_registradas": 0
+          },
+          "url_publica": "/api/v1/impact/registros/826001",
+          "es_reposicion": true,
+          "subcampania_id": "826",
+          "campania_nombre": "Campaña local INT03A",
+          "fecha_plantacion": "2026-10-16",
+          "subcampania_nombre": "Ámbito INT05 826",
+          "codigo_trazabilidad": "INT05-REPOSICION-4",
+          "gps_dentro_poligono": true,
+          "cantidad_total_plantada": 4,
+          "organizaciones_campania": [
+            {
+              "id": "1",
+              "nombre": "Organización sintética"
+            },
+            {
+              "id": "2",
+              "nombre": "Organización segunda sintética"
+            }
+          ],
+          "registro_plantacion_origen_id": "826000"
+        },
+        {
+          "id": "826000",
+          "fotos": [
+            {
+              "id": "900050",
+              "url": "/api/v1/impact/imagenes/900050"
+            }
+          ],
+          "latitud": -16.51,
+          "especies": [
+            {
+              "nombre": "Tara histórica",
+              "cantidad": 25,
+              "planta_id": "8"
+            }
+          ],
+          "longitud": -68.11,
+          "personas": [
+            {
+              "nombre": "Plantador histórico INT05",
+              "afiliacion": {
+                "tipo": "ORGANIZACION_REGISTRADA",
+                "estado": "DECLARADA",
+                "nombre": "Organización sintética al plantar",
+                "organizacion_id": "1"
+              },
+              "es_responsable": true
+            },
+            {
+              "nombre": "Admin histórico INT05",
+              "afiliacion": {
+                "tipo": "ORGANIZACION_REGISTRADA",
+                "estado": "DECLARADA",
+                "nombre": "Organización segunda al plantar",
+                "organizacion_id": "2"
+              },
+              "es_responsable": false
+            },
+            {
+              "nombre": "Participante histórico INT05",
+              "afiliacion": {
+                "tipo": null,
+                "estado": "NO_DECLARADA",
+                "nombre": null,
+                "organizacion_id": null
+              },
+              "es_responsable": false
+            }
+          ],
+          "campania_id": "800",
+          "seguimiento": {
+            "bajas": [
+              {
+                "fecha": "2026-10-16T04:00:00.000000Z",
+                "cantidad": 6,
+                "evento_id": "900060"
+              }
+            ],
+            "reposiciones": [
+              {
+                "fecha": "2026-10-16",
+                "cantidad": 4,
+                "registro_id": "826001",
+                "url_publica": "/api/v1/impact/registros/826001"
+              }
+            ],
+            "bajas_reportadas": 6,
+            "reposiciones_registradas": 4
+          },
+          "url_publica": "/api/v1/impact/registros/826000",
+          "es_reposicion": false,
+          "subcampania_id": "826",
+          "campania_nombre": "Campaña local INT03A",
+          "fecha_plantacion": "2026-10-15",
+          "subcampania_nombre": "Ámbito histórico INT05 826",
+          "codigo_trazabilidad": "INT05-GRUPO-25",
+          "gps_dentro_poligono": true,
+          "cantidad_total_plantada": 25,
+          "organizaciones_campania": [
+            {
+              "id": "1",
+              "nombre": "Organización sintética"
+            },
+            {
+              "id": "2",
+              "nombre": "Organización segunda sintética"
+            }
+          ],
+          "registro_plantacion_origen_id": null
+        },
+        {
+          "id": "820000",
+          "fotos": [],
+          "latitud": -16.5,
+          "especies": [
+            {
+              "nombre": "Tara histórica",
+              "cantidad": 5,
+              "planta_id": "8"
+            }
+          ],
+          "longitud": -68.1,
+          "personas": [
+            {
+              "nombre": "Admin histórico INT05",
+              "afiliacion": {
+                "tipo": null,
+                "estado": "NO_DECLARADA",
+                "nombre": null,
+                "organizacion_id": null
+              },
+              "es_responsable": true
+            }
+          ],
+          "campania_id": "800",
+          "seguimiento": {
+            "bajas": [],
+            "reposiciones": [],
+            "bajas_reportadas": 5,
+            "reposiciones_registradas": 0
+          },
+          "url_publica": "/api/v1/impact/registros/820000",
+          "es_reposicion": false,
+          "subcampania_id": "820",
+          "campania_nombre": "Campaña local INT03A",
+          "fecha_plantacion": "2026-10-15",
+          "subcampania_nombre": "Subcampaña local INT03A 820",
+          "codigo_trazabilidad": "INT05-ORIGEN-820",
+          "gps_dentro_poligono": true,
+          "cantidad_total_plantada": 5,
+          "organizaciones_campania": [
+            {
+              "id": "1",
+              "nombre": "Organización sintética"
+            },
+            {
+              "id": "2",
+              "nombre": "Organización segunda sintética"
+            }
+          ],
+          "registro_plantacion_origen_id": null
+        }
+      ],
+      "indicadores": {
+        "registros": 4,
+        "reposiciones": 4,
+        "bajas_reportadas": 11,
+        "plantacion_inicial": 50
+      },
+      "subcampanias": [
+        {
+          "id": "820",
+          "zona": "Zona sintética",
+          "estado": "ACTIVA",
+          "nombre": "Subcampaña local INT03A 820",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 0,
+          "registros": 1,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/820",
+          "meta_inicial": 5,
+          "reposiciones": 0,
+          "bajas_reportadas": 5,
+          "avance_porcentaje": 100,
+          "plantacion_inicial": 5
+        },
+        {
+          "id": "821",
+          "zona": "Zona sintética",
+          "estado": "ACTIVA",
+          "nombre": "Subcampaña local INT03A 821",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 5,
+          "registros": 0,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/821",
+          "meta_inicial": 5,
+          "reposiciones": 0,
+          "bajas_reportadas": 0,
+          "avance_porcentaje": 0,
+          "plantacion_inicial": 0
+        },
+        {
+          "id": "822",
+          "zona": "Zona sintética",
+          "estado": "ACTIVA",
+          "nombre": "Subcampaña local INT03A 822",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 5,
+          "registros": 0,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/822",
+          "meta_inicial": 5,
+          "reposiciones": 0,
+          "bajas_reportadas": 0,
+          "avance_porcentaje": 0,
+          "plantacion_inicial": 0
+        },
+        {
+          "id": "823",
+          "zona": "Zona sintética",
+          "estado": "ACTIVA",
+          "nombre": "Subcampaña local INT03A 823",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 5,
+          "registros": 0,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/823",
+          "meta_inicial": 5,
+          "reposiciones": 0,
+          "bajas_reportadas": 0,
+          "avance_porcentaje": 0,
+          "plantacion_inicial": 0
+        },
+        {
+          "id": "824",
+          "zona": "Zona sintética",
+          "estado": "ACTIVA",
+          "nombre": "Subcampaña local INT03A 824",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 5,
+          "registros": 0,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/824",
+          "meta_inicial": 5,
+          "reposiciones": 0,
+          "bajas_reportadas": 0,
+          "avance_porcentaje": 0,
+          "plantacion_inicial": 0
+        },
+        {
+          "id": "825",
+          "zona": "Zona sintética",
+          "estado": "ACTIVA",
+          "nombre": "Subcampaña local INT03A 825",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 5,
+          "registros": 0,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/825",
+          "meta_inicial": 5,
+          "reposiciones": 0,
+          "bajas_reportadas": 0,
+          "avance_porcentaje": 0,
+          "plantacion_inicial": 0
+        },
+        {
+          "id": "826",
+          "zona": "Zona sintética INT05",
+          "estado": "ACTIVA",
+          "nombre": "Ámbito INT05 826",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 0,
+          "registros": 2,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/826",
+          "meta_inicial": 20,
+          "reposiciones": 4,
+          "bajas_reportadas": 6,
+          "avance_porcentaje": 125,
+          "plantacion_inicial": 25
+        },
+        {
+          "id": "827",
+          "zona": "Zona sintética INT05",
+          "estado": "COMPLETADA",
+          "nombre": "Ámbito INT05 827",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 0,
+          "registros": 1,
+          "campania_id": "801",
+          "url_publica": "/api/v1/impact/subcampanias/827",
+          "meta_inicial": 20,
+          "reposiciones": 0,
+          "bajas_reportadas": 0,
+          "avance_porcentaje": 100,
+          "plantacion_inicial": 20
+        }
+      ],
+      "siguiente_cursor": null
+    }
+  },
+  "campania": {
+    "data": {
+      "mapa": [
+        {
+          "latitud": -16.51,
+          "longitud": -68.11,
+          "registro_id": "826001",
+          "url_publica": "/api/v1/impact/registros/826001",
+          "es_reposicion": true,
+          "subcampania_id": "826",
+          "cantidad_total_plantada": 4
+        },
+        {
+          "latitud": -16.51,
+          "longitud": -68.11,
+          "registro_id": "826000",
+          "url_publica": "/api/v1/impact/registros/826000",
+          "es_reposicion": false,
+          "subcampania_id": "826",
+          "cantidad_total_plantada": 25
+        },
+        {
+          "latitud": -16.5,
+          "longitud": -68.1,
+          "registro_id": "820000",
+          "url_publica": "/api/v1/impact/registros/820000",
+          "es_reposicion": false,
+          "subcampania_id": "820",
+          "cantidad_total_plantada": 5
+        }
+      ],
+      "campanias": [
+        {
+          "id": "800",
+          "nombre": "Campaña local INT03A",
+          "url_publica": "/api/v1/impact/campanias/800",
+          "plantacion_inicial": 30
+        }
+      ],
+      "registros": [
+        {
+          "id": "826001",
+          "fotos": [],
+          "latitud": -16.51,
+          "especies": [
+            {
+              "nombre": "Tara histórica",
+              "cantidad": 4,
+              "planta_id": "8"
+            }
+          ],
+          "longitud": -68.11,
+          "personas": [
+            {
+              "nombre": null,
+              "afiliacion": {
+                "tipo": null,
+                "estado": "HISTORICA_NO_DISPONIBLE",
+                "nombre": null,
+                "organizacion_id": null
+              },
+              "es_responsable": true
+            }
+          ],
+          "campania_id": "800",
+          "seguimiento": {
+            "bajas": [],
+            "reposiciones": [],
+            "bajas_reportadas": 0,
+            "reposiciones_registradas": 0
+          },
+          "url_publica": "/api/v1/impact/registros/826001",
+          "es_reposicion": true,
+          "subcampania_id": "826",
+          "campania_nombre": "Campaña local INT03A",
+          "fecha_plantacion": "2026-10-16",
+          "subcampania_nombre": "Ámbito INT05 826",
+          "codigo_trazabilidad": "INT05-REPOSICION-4",
+          "gps_dentro_poligono": true,
+          "cantidad_total_plantada": 4,
+          "organizaciones_campania": [
+            {
+              "id": "1",
+              "nombre": "Organización sintética"
+            },
+            {
+              "id": "2",
+              "nombre": "Organización segunda sintética"
+            }
+          ],
+          "registro_plantacion_origen_id": "826000"
+        },
+        {
+          "id": "826000",
+          "fotos": [
+            {
+              "id": "900050",
+              "url": "/api/v1/impact/imagenes/900050"
+            }
+          ],
+          "latitud": -16.51,
+          "especies": [
+            {
+              "nombre": "Tara histórica",
+              "cantidad": 25,
+              "planta_id": "8"
+            }
+          ],
+          "longitud": -68.11,
+          "personas": [
+            {
+              "nombre": "Plantador histórico INT05",
+              "afiliacion": {
+                "tipo": "ORGANIZACION_REGISTRADA",
+                "estado": "DECLARADA",
+                "nombre": "Organización sintética al plantar",
+                "organizacion_id": "1"
+              },
+              "es_responsable": true
+            },
+            {
+              "nombre": "Admin histórico INT05",
+              "afiliacion": {
+                "tipo": "ORGANIZACION_REGISTRADA",
+                "estado": "DECLARADA",
+                "nombre": "Organización segunda al plantar",
+                "organizacion_id": "2"
+              },
+              "es_responsable": false
+            },
+            {
+              "nombre": "Participante histórico INT05",
+              "afiliacion": {
+                "tipo": null,
+                "estado": "NO_DECLARADA",
+                "nombre": null,
+                "organizacion_id": null
+              },
+              "es_responsable": false
+            }
+          ],
+          "campania_id": "800",
+          "seguimiento": {
+            "bajas": [
+              {
+                "fecha": "2026-10-16T04:00:00.000000Z",
+                "cantidad": 6,
+                "evento_id": "900060"
+              }
+            ],
+            "reposiciones": [
+              {
+                "fecha": "2026-10-16",
+                "cantidad": 4,
+                "registro_id": "826001",
+                "url_publica": "/api/v1/impact/registros/826001"
+              }
+            ],
+            "bajas_reportadas": 6,
+            "reposiciones_registradas": 4
+          },
+          "url_publica": "/api/v1/impact/registros/826000",
+          "es_reposicion": false,
+          "subcampania_id": "826",
+          "campania_nombre": "Campaña local INT03A",
+          "fecha_plantacion": "2026-10-15",
+          "subcampania_nombre": "Ámbito histórico INT05 826",
+          "codigo_trazabilidad": "INT05-GRUPO-25",
+          "gps_dentro_poligono": true,
+          "cantidad_total_plantada": 25,
+          "organizaciones_campania": [
+            {
+              "id": "1",
+              "nombre": "Organización sintética"
+            },
+            {
+              "id": "2",
+              "nombre": "Organización segunda sintética"
+            }
+          ],
+          "registro_plantacion_origen_id": null
+        },
+        {
+          "id": "820000",
+          "fotos": [],
+          "latitud": -16.5,
+          "especies": [
+            {
+              "nombre": "Tara histórica",
+              "cantidad": 5,
+              "planta_id": "8"
+            }
+          ],
+          "longitud": -68.1,
+          "personas": [
+            {
+              "nombre": "Admin histórico INT05",
+              "afiliacion": {
+                "tipo": null,
+                "estado": "NO_DECLARADA",
+                "nombre": null,
+                "organizacion_id": null
+              },
+              "es_responsable": true
+            }
+          ],
+          "campania_id": "800",
+          "seguimiento": {
+            "bajas": [],
+            "reposiciones": [],
+            "bajas_reportadas": 5,
+            "reposiciones_registradas": 0
+          },
+          "url_publica": "/api/v1/impact/registros/820000",
+          "es_reposicion": false,
+          "subcampania_id": "820",
+          "campania_nombre": "Campaña local INT03A",
+          "fecha_plantacion": "2026-10-15",
+          "subcampania_nombre": "Subcampaña local INT03A 820",
+          "codigo_trazabilidad": "INT05-ORIGEN-820",
+          "gps_dentro_poligono": true,
+          "cantidad_total_plantada": 5,
+          "organizaciones_campania": [
+            {
+              "id": "1",
+              "nombre": "Organización sintética"
+            },
+            {
+              "id": "2",
+              "nombre": "Organización segunda sintética"
+            }
+          ],
+          "registro_plantacion_origen_id": null
+        }
+      ],
+      "indicadores": {
+        "registros": 3,
+        "reposiciones": 4,
+        "bajas_reportadas": 11,
+        "plantacion_inicial": 30
+      },
+      "subcampanias": [
+        {
+          "id": "820",
+          "zona": "Zona sintética",
+          "estado": "ACTIVA",
+          "nombre": "Subcampaña local INT03A 820",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 0,
+          "registros": 1,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/820",
+          "meta_inicial": 5,
+          "reposiciones": 0,
+          "bajas_reportadas": 5,
+          "avance_porcentaje": 100,
+          "plantacion_inicial": 5
+        },
+        {
+          "id": "821",
+          "zona": "Zona sintética",
+          "estado": "ACTIVA",
+          "nombre": "Subcampaña local INT03A 821",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 5,
+          "registros": 0,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/821",
+          "meta_inicial": 5,
+          "reposiciones": 0,
+          "bajas_reportadas": 0,
+          "avance_porcentaje": 0,
+          "plantacion_inicial": 0
+        },
+        {
+          "id": "822",
+          "zona": "Zona sintética",
+          "estado": "ACTIVA",
+          "nombre": "Subcampaña local INT03A 822",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 5,
+          "registros": 0,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/822",
+          "meta_inicial": 5,
+          "reposiciones": 0,
+          "bajas_reportadas": 0,
+          "avance_porcentaje": 0,
+          "plantacion_inicial": 0
+        },
+        {
+          "id": "823",
+          "zona": "Zona sintética",
+          "estado": "ACTIVA",
+          "nombre": "Subcampaña local INT03A 823",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 5,
+          "registros": 0,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/823",
+          "meta_inicial": 5,
+          "reposiciones": 0,
+          "bajas_reportadas": 0,
+          "avance_porcentaje": 0,
+          "plantacion_inicial": 0
+        },
+        {
+          "id": "824",
+          "zona": "Zona sintética",
+          "estado": "ACTIVA",
+          "nombre": "Subcampaña local INT03A 824",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 5,
+          "registros": 0,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/824",
+          "meta_inicial": 5,
+          "reposiciones": 0,
+          "bajas_reportadas": 0,
+          "avance_porcentaje": 0,
+          "plantacion_inicial": 0
+        },
+        {
+          "id": "825",
+          "zona": "Zona sintética",
+          "estado": "ACTIVA",
+          "nombre": "Subcampaña local INT03A 825",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 5,
+          "registros": 0,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/825",
+          "meta_inicial": 5,
+          "reposiciones": 0,
+          "bajas_reportadas": 0,
+          "avance_porcentaje": 0,
+          "plantacion_inicial": 0
+        },
+        {
+          "id": "826",
+          "zona": "Zona sintética INT05",
+          "estado": "ACTIVA",
+          "nombre": "Ámbito INT05 826",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 0,
+          "registros": 2,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/826",
+          "meta_inicial": 20,
+          "reposiciones": 4,
+          "bajas_reportadas": 6,
+          "avance_porcentaje": 125,
+          "plantacion_inicial": 25
+        }
+      ],
+      "siguiente_cursor": null
+    }
+  },
+  "subcampania": {
+    "data": {
+      "mapa": [
+        {
+          "latitud": -16.51,
+          "longitud": -68.11,
+          "registro_id": "826001",
+          "url_publica": "/api/v1/impact/registros/826001",
+          "es_reposicion": true,
+          "subcampania_id": "826",
+          "cantidad_total_plantada": 4
+        },
+        {
+          "latitud": -16.51,
+          "longitud": -68.11,
+          "registro_id": "826000",
+          "url_publica": "/api/v1/impact/registros/826000",
+          "es_reposicion": false,
+          "subcampania_id": "826",
+          "cantidad_total_plantada": 25
+        }
+      ],
+      "campanias": [
+        {
+          "id": "800",
+          "nombre": "Campaña local INT03A",
+          "url_publica": "/api/v1/impact/campanias/800",
+          "plantacion_inicial": 25
+        }
+      ],
+      "registros": [
+        {
+          "id": "826001",
+          "fotos": [],
+          "latitud": -16.51,
+          "especies": [
+            {
+              "nombre": "Tara histórica",
+              "cantidad": 4,
+              "planta_id": "8"
+            }
+          ],
+          "longitud": -68.11,
+          "personas": [
+            {
+              "nombre": null,
+              "afiliacion": {
+                "tipo": null,
+                "estado": "HISTORICA_NO_DISPONIBLE",
+                "nombre": null,
+                "organizacion_id": null
+              },
+              "es_responsable": true
+            }
+          ],
+          "campania_id": "800",
+          "seguimiento": {
+            "bajas": [],
+            "reposiciones": [],
+            "bajas_reportadas": 0,
+            "reposiciones_registradas": 0
+          },
+          "url_publica": "/api/v1/impact/registros/826001",
+          "es_reposicion": true,
+          "subcampania_id": "826",
+          "campania_nombre": "Campaña local INT03A",
+          "fecha_plantacion": "2026-10-16",
+          "subcampania_nombre": "Ámbito INT05 826",
+          "codigo_trazabilidad": "INT05-REPOSICION-4",
+          "gps_dentro_poligono": true,
+          "cantidad_total_plantada": 4,
+          "organizaciones_campania": [
+            {
+              "id": "1",
+              "nombre": "Organización sintética"
+            },
+            {
+              "id": "2",
+              "nombre": "Organización segunda sintética"
+            }
+          ],
+          "registro_plantacion_origen_id": "826000"
+        },
+        {
+          "id": "826000",
+          "fotos": [
+            {
+              "id": "900050",
+              "url": "/api/v1/impact/imagenes/900050"
+            }
+          ],
+          "latitud": -16.51,
+          "especies": [
+            {
+              "nombre": "Tara histórica",
+              "cantidad": 25,
+              "planta_id": "8"
+            }
+          ],
+          "longitud": -68.11,
+          "personas": [
+            {
+              "nombre": "Plantador histórico INT05",
+              "afiliacion": {
+                "tipo": "ORGANIZACION_REGISTRADA",
+                "estado": "DECLARADA",
+                "nombre": "Organización sintética al plantar",
+                "organizacion_id": "1"
+              },
+              "es_responsable": true
+            },
+            {
+              "nombre": "Admin histórico INT05",
+              "afiliacion": {
+                "tipo": "ORGANIZACION_REGISTRADA",
+                "estado": "DECLARADA",
+                "nombre": "Organización segunda al plantar",
+                "organizacion_id": "2"
+              },
+              "es_responsable": false
+            },
+            {
+              "nombre": "Participante histórico INT05",
+              "afiliacion": {
+                "tipo": null,
+                "estado": "NO_DECLARADA",
+                "nombre": null,
+                "organizacion_id": null
+              },
+              "es_responsable": false
+            }
+          ],
+          "campania_id": "800",
+          "seguimiento": {
+            "bajas": [
+              {
+                "fecha": "2026-10-16T04:00:00.000000Z",
+                "cantidad": 6,
+                "evento_id": "900060"
+              }
+            ],
+            "reposiciones": [
+              {
+                "fecha": "2026-10-16",
+                "cantidad": 4,
+                "registro_id": "826001",
+                "url_publica": "/api/v1/impact/registros/826001"
+              }
+            ],
+            "bajas_reportadas": 6,
+            "reposiciones_registradas": 4
+          },
+          "url_publica": "/api/v1/impact/registros/826000",
+          "es_reposicion": false,
+          "subcampania_id": "826",
+          "campania_nombre": "Campaña local INT03A",
+          "fecha_plantacion": "2026-10-15",
+          "subcampania_nombre": "Ámbito histórico INT05 826",
+          "codigo_trazabilidad": "INT05-GRUPO-25",
+          "gps_dentro_poligono": true,
+          "cantidad_total_plantada": 25,
+          "organizaciones_campania": [
+            {
+              "id": "1",
+              "nombre": "Organización sintética"
+            },
+            {
+              "id": "2",
+              "nombre": "Organización segunda sintética"
+            }
+          ],
+          "registro_plantacion_origen_id": null
+        }
+      ],
+      "indicadores": {
+        "registros": 2,
+        "reposiciones": 4,
+        "bajas_reportadas": 6,
+        "plantacion_inicial": 25
+      },
+      "subcampanias": [
+        {
+          "id": "826",
+          "zona": "Zona sintética INT05",
+          "estado": "ACTIVA",
+          "nombre": "Ámbito INT05 826",
+          "poligono": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "faltantes": 0,
+          "registros": 2,
+          "campania_id": "800",
+          "url_publica": "/api/v1/impact/subcampanias/826",
+          "meta_inicial": 20,
+          "reposiciones": 4,
+          "bajas_reportadas": 6,
+          "avance_porcentaje": 125,
+          "plantacion_inicial": 25
+        }
+      ],
+      "siguiente_cursor": null
+    }
+  },
+  "registro": {
+    "data": {
+      "id": "826000",
+      "fotos": [
+        {
+          "id": "900050",
+          "url": "/api/v1/impact/imagenes/900050"
+        }
+      ],
+      "latitud": -16.51,
+      "especies": [
+        {
+          "nombre": "Tara histórica",
+          "cantidad": 25,
+          "planta_id": "8"
+        }
+      ],
+      "longitud": -68.11,
+      "personas": [
+        {
+          "nombre": "Plantador histórico INT05",
+          "afiliacion": {
+            "tipo": "ORGANIZACION_REGISTRADA",
+            "estado": "DECLARADA",
+            "nombre": "Organización sintética al plantar",
+            "organizacion_id": "1"
+          },
+          "es_responsable": true
+        },
+        {
+          "nombre": "Admin histórico INT05",
+          "afiliacion": {
+            "tipo": "ORGANIZACION_REGISTRADA",
+            "estado": "DECLARADA",
+            "nombre": "Organización segunda al plantar",
+            "organizacion_id": "2"
+          },
+          "es_responsable": false
+        },
+        {
+          "nombre": "Participante histórico INT05",
+          "afiliacion": {
+            "tipo": null,
+            "estado": "NO_DECLARADA",
+            "nombre": null,
+            "organizacion_id": null
+          },
+          "es_responsable": false
+        }
+      ],
+      "campania_id": "800",
+      "seguimiento": {
+        "bajas": [
+          {
+            "fecha": "2026-10-16T04:00:00.000000Z",
+            "cantidad": 6,
+            "evento_id": "900060"
+          }
+        ],
+        "reposiciones": [
+          {
+            "fecha": "2026-10-16",
+            "cantidad": 4,
+            "registro_id": "826001",
+            "url_publica": "/api/v1/impact/registros/826001"
+          }
+        ],
+        "bajas_reportadas": 6,
+        "reposiciones_registradas": 4
+      },
+      "url_publica": "/api/v1/impact/registros/826000",
+      "es_reposicion": false,
+      "subcampania_id": "826",
+      "campania_nombre": "Campaña local INT03A",
+      "fecha_plantacion": "2026-10-15",
+      "subcampania_nombre": "Ámbito histórico INT05 826",
+      "codigo_trazabilidad": "INT05-GRUPO-25",
+      "gps_dentro_poligono": true,
+      "cantidad_total_plantada": 25,
+      "organizaciones_campania": [
+        {
+          "id": "1",
+          "nombre": "Organización sintética"
+        },
+        {
+          "id": "2",
+          "nombre": "Organización segunda sintética"
+        }
+      ],
+      "registro_plantacion_origen_id": null
+    }
+  },
+  "mis_registros": {
+    "data": {
+      "registros": [
+        {
+          "id": "832000",
+          "relaciones": [
+            "AUTOR"
+          ],
+          "url_publica": null,
+          "es_reposicion": false,
+          "subcampania_id": "832",
+          "fecha_plantacion": "2026-10-16",
+          "url_detalle_propio": "/api/v1/plantaciones/832000/detalle-propio",
+          "codigo_trazabilidad": "INT05-OCULTO-832",
+          "cantidad_total_plantada": 55
+        },
+        {
+          "id": "831000",
+          "relaciones": [
+            "AUTOR"
+          ],
+          "url_publica": null,
+          "es_reposicion": false,
+          "subcampania_id": "831",
+          "fecha_plantacion": "2026-10-16",
+          "url_detalle_propio": "/api/v1/plantaciones/831000/detalle-propio",
+          "codigo_trazabilidad": "INT05-OCULTO-831",
+          "cantidad_total_plantada": 55
+        },
+        {
+          "id": "830000",
+          "relaciones": [
+            "AUTOR"
+          ],
+          "url_publica": null,
+          "es_reposicion": false,
+          "subcampania_id": "830",
+          "fecha_plantacion": "2026-10-16",
+          "url_detalle_propio": "/api/v1/plantaciones/830000/detalle-propio",
+          "codigo_trazabilidad": "INT05-OCULTO-830",
+          "cantidad_total_plantada": 55
+        },
+        {
+          "id": "829000",
+          "relaciones": [
+            "AUTOR"
+          ],
+          "url_publica": null,
+          "es_reposicion": false,
+          "subcampania_id": "829",
+          "fecha_plantacion": "2026-10-16",
+          "url_detalle_propio": "/api/v1/plantaciones/829000/detalle-propio",
+          "codigo_trazabilidad": "INT05-OCULTO-829",
+          "cantidad_total_plantada": 55
+        },
+        {
+          "id": "828000",
+          "relaciones": [
+            "AUTOR"
+          ],
+          "url_publica": null,
+          "es_reposicion": false,
+          "subcampania_id": "828",
+          "fecha_plantacion": "2026-10-16",
+          "url_detalle_propio": "/api/v1/plantaciones/828000/detalle-propio",
+          "codigo_trazabilidad": "INT05-OCULTO-828",
+          "cantidad_total_plantada": 55
+        },
+        {
+          "id": "827000",
+          "relaciones": [
+            "PARTICIPANTE"
+          ],
+          "url_publica": "/api/v1/impact/registros/827000",
+          "es_reposicion": false,
+          "subcampania_id": "827",
+          "fecha_plantacion": "2026-10-16",
+          "url_detalle_propio": "/api/v1/plantaciones/827000/detalle-propio",
+          "codigo_trazabilidad": "INT05-GRUPO-20-LEGADO",
+          "cantidad_total_plantada": 20
+        },
+        {
+          "id": "826000",
+          "relaciones": [
+            "AUTOR",
+            "PARTICIPANTE"
+          ],
+          "url_publica": "/api/v1/impact/registros/826000",
+          "es_reposicion": false,
+          "subcampania_id": "826",
+          "fecha_plantacion": "2026-10-15",
+          "url_detalle_propio": "/api/v1/plantaciones/826000/detalle-propio",
+          "codigo_trazabilidad": "INT05-GRUPO-25",
+          "cantidad_total_plantada": 25
+        }
+      ],
+      "siguiente_cursor": null
+    }
+  }
+}
