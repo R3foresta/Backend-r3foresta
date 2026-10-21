@@ -346,10 +346,20 @@ export function ApiFindAllRecolecciones() {
   return applyDecorators(
     ApiOperation({
       summary: 'Listar recolecciones del usuario',
-      description: 'Obtiene recolecciones con filtros opcionales y paginación.',
+      description:
+        'Obtiene las recolecciones propias de la cuenta autenticada por Bearer JWT, incluso para ADMIN, con filtros opcionales y paginación. Requiere cuenta activa con rol interno.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
+    ApiHeader({
+      name: 'x-auth-id',
+      required: false,
+      description:
+        'Opcional: debe coincidir con sub del JWT. No sustituye Authorization: Bearer.',
+    }),
+    ApiResponse({ status: 401, description: 'Bearer ausente o inválido' }),
+    ApiResponse({
+      status: 403,
+      description: 'Cuenta inactiva o sin rol interno',
+    }),
     ...commonListQueries,
     tipoMaterialQuery,
     ApiQuery({ name: 'vivero_id', required: false, type: Number }),

@@ -61,7 +61,10 @@ Saldo operativo: ver [ADR 001](../arquitectura/adr/001-saldo-operativo-recolecci
 
 ## Endpoints
 
-Todos exigen header `x-auth-id`. Aquellos marcados con `*` también exigen `x-user-role`.
+Todas las rutas requieren Bearer JWT y cuenta interna activa mediante
+`InternalActorGuard`. El guard adapta los headers legados desde la identidad
+verificada; los marcados con `*` consumen además el rol derivado del servidor.
+`x-auth-id` es opcional y debe coincidir con `sub`; no autentica por sí solo.
 
 | HTTP | Ruta | DTO | Rol | Notas |
 |---|---|---|---|---|
@@ -70,10 +73,19 @@ Todos exigen header `x-auth-id`. Aquellos marcados con `*` también exigen `x-us
 | PATCH | `/api/recolecciones/:id/submit` * | — | dueño | `BORRADOR` → `PENDIENTE_VALIDACION` |
 | PATCH | `/api/recolecciones/:id/approve` * | — | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `VALIDADO`. Ejecuta Pinata + mint |
 | PATCH | `/api/recolecciones/:id/reject` * | `RejectValidationDto` | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `RECHAZADO`. `motivo_rechazo` 10–500 chars |
-| GET | `/api/recolecciones/pending-validation` * | `FiltersRecoleccionDto` (query) | VALIDADOR / ADMIN | Lista para bandeja de validación |
-| GET | `/api/recolecciones` | `FiltersRecoleccionDto` (query) | GENERAL+ | Filtra por usuario del header |
-| GET | `/api/recolecciones/vivero/:viveroId` | `FiltersRecoleccionDto` (query) | abierto | No exige `x-auth-id` |
-| GET | `/api/recolecciones/:id` | `RecoleccionElegibilidadViveroQueryDto` | abierto | Devuelve detalle + flag de elegibilidad para vivero si se pasa `cantidad_solicitada_vivero` |
+| GET | `/api/recolecciones/pending-validation` * | `FiltersRecoleccionDto` (query) | cuenta interna | VALIDADOR / ADMIN ven pendientes globales; las demás cuentas internas, propios |
+| GET | `/api/recolecciones` | `FiltersRecoleccionDto` (query) | cuenta interna | Lista propia de la identidad verificada, incluso para ADMIN |
+| GET | `/api/recolecciones/vivero/:viveroId` | `FiltersRecoleccionDto` (query) | cuenta interna | Requiere Bearer |
+| GET | `/api/recolecciones/:id` | `RecoleccionElegibilidadViveroQueryDto` | cuenta interna | Devuelve detalle + flag de elegibilidad para vivero si se pasa `cantidad_solicitada_vivero` |
+
+La lectura de fotos desde `evidencias_trazabilidad` usa `getAdminClient()`:
+es una tabla privada tras el cierre de superficie 080/083. El rol ADMIN de la
+cuenta no convierte al cliente público de Supabase en cliente privado.
+La [regresión HTTP](../../src/recolecciones/tests/recolecciones-lectura.http.spec.ts)
+simula SELECT público denegado y comprueba listado con fotos, filtro propio,
+401 sin Bearer y 403 fuera de la audiencia interna.
+[Versión, entorno y límites de la verificación local del 21 de octubre de 2026](../../docs/evidencia/recolecciones-lectura-privada-local-2026-10-21.json);
+no acredita SQL o despliegue remoto.
 
 ## DTO de creación (resumen)
 

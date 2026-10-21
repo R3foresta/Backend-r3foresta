@@ -316,7 +316,7 @@ export class RecoleccionEvidenciasService {
   }
 
   async getEvidenciasMapByRecoleccionIds(recoleccionIds: number[]) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const map = new Map<number, any[]>();
     const ids = Array.from(
       new Set(

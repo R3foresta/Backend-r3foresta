@@ -14,21 +14,20 @@ En producción la URL viene de la variable `VITE_API_URL` (o equivalente) del fr
 
 ## Autenticación
 
-Todos los endpoints excepto los públicos exigen:
+Todas las rutas de `/api/recolecciones` requieren el JWT emitido por WebAuthn:
 
 ```txt
-x-auth-id: <auth_id_de_supabase>
+Authorization: Bearer <token>
 ```
 
-Algunos exigen también el rol declarado por el cliente:
+`InternalActorGuard` verifica el JWT y resuelve cuenta activa y rol en el servidor.
+La audiencia interna incluye `ADMIN`, `GENERAL` y `VALIDADOR`; las reglas de cada
+operación siguen aplicándose. `x-auth-id` es opcional y, si se envía, debe coincidir
+con `sub`. `x-user-role` no concede permisos: el guard lo deriva de la cuenta.
 
-```txt
-x-user-role: GENERAL | VALIDADOR | ADMIN
-```
-
-> El `auth_id` es el **id de Supabase Auth**, no el `id` interno de la tabla `usuario`. El backend resuelve el usuario operativo y valida permisos.
-
-JWT bearer **NO** está vigente para estos endpoints — aunque el módulo `auth` emite JWT, el resto del backend identifica al caller por `x-auth-id`.
+Abrir la URL directamente en la barra del navegador no agrega el Bearer almacenado
+por la PWA y devuelve 401. Un 500 con `Error al obtener evidencias de recolecciones`
+corresponde a una lectura posterior a la autenticación en el backend.
 
 ## Endpoints disponibles
 
@@ -41,7 +40,7 @@ JWT bearer **NO** está vigente para estos endpoints — aunque el módulo `auth
 | PATCH | `/api/recolecciones/:id/reject` | Rechazar con motivo (solo VALIDADOR / ADMIN) |
 | GET | `/api/recolecciones/pending-validation` | Bandeja del validador |
 | GET | `/api/recolecciones` | Lista propia con filtros |
-| GET | `/api/recolecciones/vivero/:viveroId` | Recolecciones aptas para un vivero (público) |
+| GET | `/api/recolecciones/vivero/:viveroId` | Recolecciones aptas para un vivero (cuenta interna) |
 | GET | `/api/recolecciones/:id` | Detalle. Pasa `cantidad_solicitada_vivero` para chequear elegibilidad de consumo |
 
 ## Flujo recomendado en la UI
@@ -72,7 +71,7 @@ Una vez `VALIDADO`, la recolección **no** se puede editar y queda disponible co
 ```txt
 POST /api/recolecciones
 Content-Type: multipart/form-data
-x-auth-id: <auth_id>
+Authorization: Bearer <token>
 ```
 
 Campos FormData:
@@ -119,7 +118,7 @@ Sin body. Transiciona de `BORRADOR` a `PENDIENTE_VALIDACION`.
 
 ## PATCH /api/recolecciones/:id/approve y /:id/reject
 
-Headers obligatorios: `x-auth-id` y `x-user-role` (debe ser `VALIDADOR` o `ADMIN`).
+Requiere Bearer y rol `VALIDADOR` o `ADMIN` verificado por el servidor.
 
 Body de `reject`:
 
@@ -144,15 +143,17 @@ Query string admite `FiltersRecoleccionDto`:
 | `page` | int ≥ 1 | default 1 |
 | `limit` | int 1–50 | default 10 |
 
-Filtra automáticamente por el `auth_id` del header. Para ver recolecciones de otros usuarios usa la bandeja de validación o el filtro por vivero.
+Filtra automáticamente por la identidad verificada del JWT, también para `ADMIN`.
+Para ver recolecciones de otros usuarios usa la bandeja de validación o el filtro por vivero.
 
 ## GET /api/recolecciones/pending-validation
 
-Mismos filtros + headers `x-auth-id` y `x-user-role` (debe ser VALIDADOR / ADMIN).
+Mismos filtros y Bearer. `VALIDADOR` y `ADMIN` ven pendientes globales;
+las demás cuentas internas ven los propios.
 
 ## GET /api/recolecciones/:id
 
-Endpoint público (no requiere `x-auth-id`). Query opcional:
+Requiere Bearer y cuenta interna. Query opcional:
 
 | Parámetro | Tipo | Para qué |
 |---|---|---|

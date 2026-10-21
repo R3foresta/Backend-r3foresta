@@ -1,0 +1,25 @@
+{
+  "fecha": "2026-10-21",
+  "entorno": "Local; Supabase simulado; sin .env ni servicios externos",
+  "base_git": "fbf25290f871e0a27ed8b077204f3dacd1320e51",
+  "estado": "Base más árbol de trabajo; cambio sin commit ni despliegue por esta verificación",
+  "node": "v24.19.0",
+  "archivos_sha256": {
+    "src/recolecciones/application/recoleccion-evidencias.service.ts": "f864d166fddaca1209c96ffd39ccd4c2853f12c5d8252d51fc73963897bae4e3",
+    "src/recolecciones/api/docs/recolecciones.swagger.ts": "cf03c82db9d497a0216cbf84f6d20a34130bd1ae87a71fda988d500e24e839cc",
+    "src/recolecciones/tests/recolecciones-lectura.http.spec.ts": "13e64fa3e797c22417a2835e7a427e2886ab160b886f3edd36c6fc4a548ed8dd"
+  },
+  "reproduccion": "Antes de la corrección, GET autenticado con ADMIN devolvió 500 al simular 42501 sobre evidencias_trazabilidad para el cliente público.",
+  "correccion": "getEvidenciasMapByRecoleccionIds usa getAdminClient sin fallback público.",
+  "comprobaciones": {
+    "build": "npm run build: aprobado",
+    "unitarios": "npm run test:unit -- --runInBand: 68 suites, 871 pruebas aprobadas",
+    "regresion_http": [
+      "ADMIN con Bearer: 200, fotos y paginación; mantiene filtro por usuario y exclusión de evidencias eliminadas",
+      "Sin Bearer con x-auth-id: 401 antes de consultar datos",
+      "VOLUNTARIO con x-user-role ADMIN: 403 antes de consultar datos"
+    ],
+    "openapi_participacion": "node scripts/qa/pa-int02c-openapi.cjs --check: aprobado; 33 rutas, 71 schemas"
+  },
+  "limites": "No prueba catálogo/permisos remotos ni respuesta HTTP de Render tras el cambio. No aplica SQL, publica ni despliega. Las escrituras de evidencias quedan fuera de este arreglo de lectura."
+}
