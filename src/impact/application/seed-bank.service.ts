@@ -113,21 +113,22 @@ export class SeedBankService {
 
   async photo(id: number, photoId: number): Promise<Buffer> {
     return this.read(async () => {
-      // Revalidar pertenencia, estado y borrado en cada descarga; no basta URL previa.
-      const { items } = await this.load(id);
-      if (items[0]?.estado_registro !== 'VALIDADO')
-        throw new NotFoundException('Imagen no encontrada.');
-      const photo = (await this.photos(id)).find(
-        (item) => this.photoId(item) === photoId,
-      );
-      if (!photo) throw new NotFoundException('Imagen no encontrada.');
-      const { data, error } = await this.supabase
-        .getAdminClient()
-        .storage.from('recoleccion_fotos')
-        .download(String(photo.ruta_archivo));
-      if (error || !data || data.size > MAX_FOTO_BYTES) this.unavailable();
-      const bytes = Buffer.from(await data.arrayBuffer());
-      return (await this.images.preparar(bytes)).derivada;
+      return this.images.prepararPublica(async () => {
+        // Revalidar pertenencia, estado y borrado en cada descarga; no basta URL previa.
+        const { items } = await this.load(id);
+        if (items[0]?.estado_registro !== 'VALIDADO')
+          throw new NotFoundException('Imagen no encontrada.');
+        const photo = (await this.photos(id)).find(
+          (item) => this.photoId(item) === photoId,
+        );
+        if (!photo) throw new NotFoundException('Imagen no encontrada.');
+        const { data, error } = await this.supabase
+          .getAdminClient()
+          .storage.from('recoleccion_fotos')
+          .download(String(photo.ruta_archivo));
+        if (error || !data || data.size > MAX_FOTO_BYTES) this.unavailable();
+        return Buffer.from(await data.arrayBuffer());
+      });
     });
   }
 

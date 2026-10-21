@@ -1,4 +1,8 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { Worker } from 'node:worker_threads';
 
@@ -10,6 +14,12 @@ export type ImagenPreparada = {
   mimeOriginal: string;
   hashOriginal: string;
   hashDerivada: string;
+};
+type FotoPublicaPendiente = {
+  cargar: () => Promise<Buffer>;
+  resolver: (bytes: Buffer) => void;
+  rechazar: (error: unknown) => void;
+  timer?: ReturnType<typeof setTimeout>;
 };
 export function hashBytes(bytes: Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex');
@@ -52,6 +62,61 @@ const {parentPort,workerData} = require('node:worker_threads');
 @Injectable()
 export class ParticipacionImagenService {
   private enProceso = 0;
+  private descargandoPublicas = 0;
+  private readonly publicasPendientes: FotoPublicaPendiente[] = [];
+
+  // Encolar antes de descargar: no retener 32 originales grandes en memoria.
+  // La cola solo se usa para lecturas públicas; las cargas conservan su contrato.
+  prepararPublica(cargar: () => Promise<Buffer>): Promise<Buffer> {
+    if (this.publicasPendientes.length >= 32)
+      return Promise.reject(
+        new ServiceUnavailableException(
+          'Imágenes ocupadas. Reintente la lectura.',
+        ),
+      );
+    return new Promise((resolver, rechazar) => {
+      const trabajo: FotoPublicaPendiente = { cargar, resolver, rechazar };
+      trabajo.timer = setTimeout(() => {
+        const index = this.publicasPendientes.indexOf(trabajo);
+        if (index < 0) return;
+        this.publicasPendientes.splice(index, 1);
+        rechazar(
+          new ServiceUnavailableException(
+            'La imagen no pudo prepararse a tiempo. Reintente la lectura.',
+          ),
+        );
+      }, 30_000);
+      this.publicasPendientes.push(trabajo);
+      this.drenarPublicas();
+    });
+  }
+
+  private drenarPublicas(): void {
+    while (
+      this.publicasPendientes.length &&
+      this.enProceso + this.descargandoPublicas < 2
+    ) {
+      const trabajo = this.publicasPendientes.shift()!;
+      clearTimeout(trabajo.timer);
+      this.descargandoPublicas++;
+      void this.ejecutarPublica(trabajo);
+    }
+  }
+
+  private async ejecutarPublica(trabajo: FotoPublicaPendiente): Promise<void> {
+    let descargando = true;
+    try {
+      const bytes = await trabajo.cargar();
+      this.descargandoPublicas--;
+      descargando = false;
+      trabajo.resolver((await this.preparar(bytes)).derivada);
+    } catch (error) {
+      trabajo.rechazar(error);
+    } finally {
+      if (descargando) this.descargandoPublicas--;
+      this.drenarPublicas();
+    }
+  }
 
   async preparar(bytes: Buffer): Promise<ImagenPreparada> {
     if (
@@ -64,7 +129,7 @@ export class ParticipacionImagenService {
         'FOTO_INVALIDA',
         'La foto debe tener entre 1 byte y 10 MiB.',
       );
-    if (this.enProceso >= 2)
+    if (this.enProceso + this.descargandoPublicas >= 2)
       this.fallar(503, 'DECODIFICADOR_OCUPADO', 'Reintente la misma carga.');
     this.enProceso++;
     let workerCreado = false;
@@ -102,16 +167,19 @@ export class ParticipacionImagenService {
             else resolve(value!);
           };
           const timer = setTimeout(() => finish(new Error('timeout')), 15_000);
-          worker.once('message', (value) =>
-            value.error
-              ? finish(new Error('decode'))
-              : finish(undefined, value),
+          worker.once(
+            'message',
+            (value: { error: true } | { mime: string; bytes: Uint8Array }) =>
+              'error' in value
+                ? finish(new Error('decode'))
+                : finish(undefined, value),
           );
           worker.once('error', (error) => finish(error));
           worker.once('exit', () => {
             // Un timeout HTTP no libera capacidad hasta que el worker realmente
             // termina; una operación nativa aún en curso no abre más decoders.
             this.enProceso--;
+            this.drenarPublicas();
             finish(new Error('exit'));
           });
         },
@@ -131,7 +199,10 @@ export class ParticipacionImagenService {
         'La foto no se pudo decodificar. Se admiten JPG, PNG, WEBP, HEIC y HEIF de una imagen, hasta 40 megapíxeles.',
       );
     } finally {
-      if (!workerCreado) this.enProceso--;
+      if (!workerCreado) {
+        this.enProceso--;
+        this.drenarPublicas();
+      }
     }
   }
   private fallar(status: number, codigo: string, mensaje: string): never {

@@ -969,4 +969,45 @@ describe('ImpactService fotos públicas INT02-D', () => {
     expect(h.bucket).toHaveBeenCalledWith('recoleccion_fotos');
     expect(h.download).toHaveBeenCalledTimes(1);
   });
+  it('entrega siete fotos públicas simultáneas sin rechazar las que esperan sanitización', async () => {
+    const original = await sharp({
+      create: { width: 3, height: 2, channels: 3, background: '#52a35f' },
+    })
+      .jpeg()
+      .toBuffer();
+    const h = imageHarness(404, 200, original);
+    const photos = await Promise.all(
+      Array.from({ length: 7 }, (_, index) =>
+        h.service.imagenPublica(String(900 + index)),
+      ),
+    );
+    for (const photo of photos)
+      expect((await sharp(photo).metadata()).format).toBe('jpeg');
+    expect(h.download).toHaveBeenCalledTimes(7);
+  });
+  it('revalida una foto retirada después de entrar en cola y no descarga su original', async () => {
+    const h = imageHarness(404, 200);
+    h.rpc.mockResolvedValueOnce({
+      data: { http_status: 404, body: {} },
+      error: null,
+    });
+    // La primera lectura legada autoriza; la comprobación al tomar turno ya no.
+    h.rpc.mockResolvedValueOnce({
+      data: {
+        http_status: 200,
+        body: {
+          data: { bucket: 'recoleccion_fotos', ruta_original: 'historica.jpg' },
+        },
+      },
+      error: null,
+    });
+    h.rpc.mockResolvedValueOnce({
+      data: { http_status: 404, body: {} },
+      error: null,
+    });
+    await expect(h.service.imagenPublica('901')).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(h.download).not.toHaveBeenCalled();
+  });
 });

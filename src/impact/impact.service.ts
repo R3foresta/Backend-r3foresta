@@ -5,7 +5,10 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { ParticipacionImagenService } from '../participacion/cargas/participacion-imagen.service';
+import {
+  MAX_FOTO_BYTES,
+  ParticipacionImagenService,
+} from '../participacion/cargas/participacion-imagen.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import {
   ImpactEvidenceQueryDto,
@@ -740,18 +743,40 @@ export class ImpactService {
         );
       legacy = true;
     }
-    const { data: blob, error: downloadError } = await client.storage
-      .from(bucket)
-      .download(path);
-    if (downloadError || !blob)
-      throw new ServiceUnavailableException(
-        'Imagen no disponible temporalmente.',
-      );
-    const bytes = Buffer.from(await blob.arrayBuffer());
-    if (!legacy) return bytes;
+    const descargar = async () => {
+      const { data: blob, error: downloadError } = await client.storage
+        .from(bucket)
+        .download(path);
+      if (downloadError || !blob || blob.size > MAX_FOTO_BYTES)
+        throw new ServiceUnavailableException(
+          'Imagen no disponible temporalmente.',
+        );
+      return Buffer.from(await blob.arrayBuffer());
+    };
+    if (!legacy) return descargar();
     try {
-      return (await this.imagenService.preparar(bytes)).derivada;
-    } catch {
+      return await this.imagenService.prepararPublica(async () => {
+        // La espera puede durar varios segundos: revalidar retirada/borrado
+        // antes de descargar, no reutilizar una decisión anterior a la cola.
+        const { data: actual, error } = await client.rpc(
+          'pa_d_foto_legada_publica',
+          { p_evidencia_id: evidenciaId },
+        );
+        if (actual?.http_status === 404)
+          throw new NotFoundException('Imagen no encontrada.');
+        if (
+          error ||
+          actual?.http_status !== 200 ||
+          actual.body?.data?.bucket !== bucket ||
+          actual.body?.data?.ruta_original !== path
+        )
+          throw new ServiceUnavailableException(
+            'Imagen no disponible temporalmente.',
+          );
+        return descargar();
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
       throw new ServiceUnavailableException(
         'Imagen no disponible temporalmente.',
       );

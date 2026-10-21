@@ -1,0 +1,37 @@
+{
+  "fecha": "2026-10-21T21:35:43.784Z",
+  "base": "92803a5991876870ca1f32797d9983048119f424",
+  "node": "v24.19.0",
+  "sha256": {
+    "src/participacion/cargas/participacion-imagen.service.ts": "e2f0510c44c3468e1b94e1006267005d43ab28d25a1d273c7f7ae9fb225ac963",
+    "src/participacion/cargas/participacion-imagen-publica.service.spec.ts": "aa0eb9b51834883a1347ec1068aba09159aa2a6371dae43dcaf9b47626d3b12b",
+    "src/impact/impact.service.ts": "20f978a093e24965593d62780d5f39438d75912d6cdb3ac6cee657953c2ec41c",
+    "src/impact/impact.service.spec.ts": "408415949ed1b6d8c77026becbee951c162b80eae400fb8189dc18dd290c0d30",
+    "src/impact/application/seed-bank.service.ts": "82b4cee599aaf1b0cab5967d2047d0ac568707a8cef56183d9d42722bbb049c6"
+  },
+  "problemas": [
+    "El portal usaba la ruta de imagen relativa como si perteneciera a Vercel.",
+    "Una ráfaga real de siete fotografías en Render devolvió dos200 y cinco503 con el sanitizador anterior."
+  ],
+  "solucion": "Resolver fotos contra el origen API y encolar lecturas antes de descargar, con dos trabajos activos,32 pendientes y30s de espera; revalidar permisos al tomar turno.",
+  "pruebas": {
+    "backend": {
+      "success": true,
+      "suites": 71,
+      "tests": 950
+    },
+    "frontend": {
+      "tests": 18,
+      "build": true,
+      "eslint": true,
+      "entorno": "Copia temporal del portal, dependencias locales; cachés de compilación locales y configLoader runner."
+    },
+    "regresion": "Siete fotos simultáneas fallan antes del cambio y pasan después; decoder real sin EXIF, límite de cola, timeout, error de descarga y retirada durante la espera."
+  },
+  "limites": [
+    "La prueba masiva usa fotografías sintéticas y Storage simulado; no modifica registros reales.",
+    "La consulta local real tuvo errores intermitentes de DB/Storage y tiempos de espera; no se acredita con ella un pase de las siete descargas.",
+    "La publicación y el despliegue se verifican aparte de esta evidencia previa al commit.",
+    "INT07 pendiente permanece fuera del commit. Los avisos de sprites de MapLibre son independientes de las fotografías."
+  ]
+}

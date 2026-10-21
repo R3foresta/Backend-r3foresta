@@ -310,6 +310,16 @@ No incluye:
 La evidencia pública se limita al tipo `REGISTRO_PLANTACION` y expone una URL
 de imagen ya resuelta, nunca la estructura interna de Storage.
 
+Las URLs de `/api/v1/impact/imagenes/:id` son relativas al backend: el portal
+debe resolverlas contra su `VITE_API_URL`, también en previews, registros,
+galerías y visor. Las lecturas que sanitizan originales esperan en una cola
+limitada antes de descargar: dos trabajos activos, hasta 32 pendientes y
+30 segundos máximos de espera. Los permisos se comprueban de nuevo al tomar
+turno; una foto retirada no se descarga. Se conservan los límites de 10 MiB,
+40 megapíxeles y la eliminación de EXIF/XMP/ICC. Saturación/espera vencida devuelve
+503; una retirada devuelve 404. No se aumenta el número de decodificadores.
+[Verificación del arreglo del 21 de octubre de 2026](../../docs/evidencia/impacto-fotos-2026-10-21.json).
+
 ## Integración frontend
 
 - Usar `GET /organizations` para el selector.
