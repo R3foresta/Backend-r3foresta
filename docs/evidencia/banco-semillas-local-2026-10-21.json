@@ -1,0 +1,80 @@
+{
+  "fecha": "2026-10-21T19:30:48.209Z",
+  "node": "v24.19.0",
+  "base_git": "56262f6b1dcff2645ede2a394f8c7b29e4986617",
+  "fuente_sha256": {
+    "documentacion/README.md": "4d5ff81b9063fe54c0cf46ca12ac9cd6fd11c2ad4456d54f3a56d1b752f2679d",
+    "documentacion/frontend/banco-semillas.md": "c017bba8b0b381f6eef9816ab9c89536271e7b91de9f50430d8a099cfa49fa0c",
+    "scripts/qa/seed-bank-readonly.cjs": "10fa12e9a7bf2b33f5186392ae9af540053db8346963dc8ead40e2a997b1dc96",
+    "src/impact/application/seed-bank.service.ts": "d085a08901649d6527e5286294775a8f713a3ceea6d502abba0e3430ed0ebef6",
+    "src/impact/domain/policies/seed-bank.policy.ts": "7568e76a408955e033cf58e3ebdfe72131d322875f2cc15a9a6516200c34411b",
+    "src/impact/impact.module.ts": "b43608129bbffbfa20aea22e07b12eb5f9ca483930872f7e94d56834aea0f3af",
+    "src/impact/seed-bank/seed-bank.controller.ts": "e462fc69b5a15a759eae4e10a53d04f941f588c8b5c51844c753ed313df5da09",
+    "src/impact/seed-bank/seed-bank.dto.ts": "1555ce60e7bfe14ef48ee3f34b605ae4bf1e0081738a5fd27b69782ea92e702f",
+    "src/impact/seed-bank/seed-bank.module.ts": "c8c02902e52c028d3433e8938e23dc349c3a35627ffb0e8c0f7879990e00075e",
+    "src/impact/seed-bank/seed-bank.schemas.ts": "7bd4edec8fa1ba9c19be7a954302522ddfe06302bcae92fadd298c9ddbb39b34",
+    "src/impact/seed-bank/seed-bank.types.ts": "5bc448bd55b6faac695dee430104a7380a3c844ebcfc42967c6545f631a12f1b",
+    "src/impact/seed-bank/tests/seed-bank.http.spec.ts": "7365e1ab3667b3c206a9b5a3cd58555f93e7542fa0f0ca9f1bd5c18460f4067a",
+    "src/impact/seed-bank/tests/seed-bank.policy.spec.ts": "41e3864cb6850f0029979d727a4bb7131eb5147b05a5c6fb245e092ac8ad6374",
+    "test/fixtures/seed-bank.fixture.ts": "17abbb289a4db037b1f6416fc8309c090dc9a63abd7176533008e0a74fbb3902"
+  },
+  "alcance": "Banco público SEMILLA; resumen global, lista filtrable/paginada, ficha y JPEG sanitizado. Solo SELECT/descarga; sin migraciones ni escrituras.",
+  "contrato": "documentacion/frontend/banco-semillas.md",
+  "ajuste_portal": "fotos[].url es relativa al backend; explorer_url sigue HTTP(S) absoluto.",
+  "verificacion": {
+    "build": "Aprobado en árbol de trabajo y copia aislada de HEAD más semillas, sin INT07 pendiente.",
+    "unitarios_arbol": {
+      "suites": 70,
+      "pruebas": 944,
+      "aprobado": true
+    },
+    "aislado_sin_int07": {
+      "suites": 5,
+      "pruebas": 114,
+      "aprobado": true
+    },
+    "especificas_semillas": {
+      "suites": 2,
+      "pruebas": 73,
+      "aprobado": true
+    },
+    "eslint": "Archivos nuevos de semillas y fixture: sin errores ni warnings; ejecutado sin --fix.",
+    "openapi": "Participación reproducible:33 rutas/71 schemas; Swagger de semillas verificado por HTTP.",
+    "api_real": {
+      "origen": "http://127.0.0.1:3306",
+      "credenciales_cliente": "omitidas",
+      "esquemas_zod": "Resumen, listado y detalle:200 y válidos; comprobado otra vez con build final.",
+      "recolecciones": 131,
+      "todas_las_paginas": true,
+      "conciliacion_por_unidad": true
+    },
+    "navegador_portal": {
+      "fecha": "2026-10-21T19:26:05.646Z",
+      "origen": "http://127.0.0.1:5181",
+      "fotos_decodificadas": 2,
+      "errores": [],
+      "vistas": [
+        1440,
+        390,
+        320
+      ],
+      "comprobaciones": [
+        "Live public inventory renders the expected page and total count.",
+        "Browser pagination loads the next page from the real API.",
+        "A real collection opens its public quantity and origin detail.",
+        "The browser exposes the actual explorer URL for the selected minted collection.",
+        "Sanitized photographs load from the real backend in the browser.",
+        "Live inventory has no horizontal overflow on desktop and 390/320 px screens.",
+        "Live JSON API requests are anonymous and the browser reports no runtime errors."
+      ]
+    }
+  },
+  "limites": [
+    "El árbol general contiene cambios ajenos de INT07, excluidos del snapshot aislado y del commit de semillas.",
+    "La lectura local usa el Supabase configurado sin modificar datos; no acredita despliegue de Render.",
+    "No se ejecutan migraciones ni se acuña. Los nuevos endpoints no dependen de084.",
+    "La publicación Git se acredita por el historial y el resultado de push, independientes de esta evidencia anterior al commit.",
+    "Fotos solo de recolecciones VALIDADO; observaciones y captions sin aprobación separada permanecen null.",
+    "Lecturas por bloques sin snapshot SQL entre consultas; conteos cambiantes producen503 y requieren repetir."
+  ]
+}

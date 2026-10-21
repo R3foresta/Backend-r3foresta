@@ -17,6 +17,7 @@ Entrada principal del repositorio: [README.md](../README.md). Arquitectura y lí
 
 - [Referencia general HTTP](frontend/api-reference.md).
 - M1: [Recolecciones](modulos/recolecciones.md) y [guía frontend](frontend/recolecciones.md).
+- Consulta pública M1: [Banco de semillas](frontend/banco-semillas.md), con resumen global, filtros, ficha y fotos sanitizadas sin sesión.
 - M2: [Lotes de Vivero](modulos/lotes-vivero.md), [frontend](frontend/lotes-vivero.md) y [asignación física M2→M3](frontend/guia-migracion-asignacion-fisica.md).
 - M3: [Campañas](frontend/modulos/campanias.md), [Subcampañas](frontend/modulos/subcampanias.md), [Plantaciones](frontend/modulos/plantaciones.md), [Organizaciones](frontend/modulos/organizaciones.md) e [Impacto](frontend/impact-portal.md).
 - Catálogos: [Plantas](modulos/plantas.md), [Storage](modulos/plantas-storage.md) y [Ubicaciones](frontend/modulos/ubicaciones.md).

@@ -11,9 +11,10 @@ import {
   MisRegistrosController,
 } from './impact-consulta.controller';
 import { ImpactoConsultaService } from './application/impacto-consulta.service';
+import { SeedBankModule } from './seed-bank/seed-bank.module';
 
 @Module({
-  imports: [SupabaseModule, ActorModule],
+  imports: [SupabaseModule, ActorModule, SeedBankModule],
   controllers: [
     ImpactController,
     ImpactImagenController,
