@@ -1,5 +1,6 @@
 import {
   ForbiddenException,
+  InternalServerErrorException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
@@ -22,7 +23,7 @@ function buildSupabase(config: {
   subcampaniaCount: number;
   updateResult?: { data: any; error: any };
   updateBorrarError?: any;
-}): { supabase: SupabaseService; subcampaniaFilters: SubcampaniaCountArgs } {
+}) {
   const subcampaniaFilters: SubcampaniaCountArgs = {};
 
   const fromMock = jest.fn((tabla: string) => {
@@ -82,10 +83,13 @@ function buildSupabase(config: {
   });
 
   const supabase = {
-    getClient: jest.fn().mockReturnValue({ from: fromMock }),
+    getAdminClient: jest.fn().mockReturnValue({ from: fromMock }),
+    getClient: jest.fn(() => {
+      throw new Error('El cliente público no tiene permisos de escritura.');
+    }),
   } as unknown as SupabaseService;
 
-  return { supabase, subcampaniaFilters };
+  return { supabase, subcampaniaFilters, from: fromMock };
 }
 
 function buildAuthService(rol: string): CampaniasAuthService {
@@ -100,7 +104,7 @@ function buildAuthService(rol: string): CampaniasAuthService {
 }
 
 describe('CampaniasEdicionService.editar (RN-PLA-38)', () => {
-  it('permite editar nombre/descripcion/fechas aunque haya subcampañas', async () => {
+  it('edita nombre/descripcion/fechas con subcampañas aunque el cliente público no pueda escribir', async () => {
     const { supabase } = buildSupabase({
       campaniaActual: { id: 10, tipo: 'REFORESTACION' },
       subcampaniaCount: 5,
@@ -123,6 +127,7 @@ describe('CampaniasEdicionService.editar (RN-PLA-38)', () => {
     );
 
     expect(result.success).toBe(true);
+    expect(supabase.getClient).not.toHaveBeenCalled();
   });
 
   it('bloquea cambio de tipo con 422 cuando existe cualquier subcampaña (incluye soft-deleted)', async () => {
@@ -165,7 +170,7 @@ describe('CampaniasEdicionService.editar (RN-PLA-38)', () => {
 });
 
 describe('CampaniasEdicionService.borrar soft-delete (RN-PLA-38)', () => {
-  it('permite desactivar si no hay subcampañas vivas', async () => {
+  it('desactiva sin subcampañas vivas aunque el cliente público no pueda escribir', async () => {
     const { supabase, subcampaniaFilters } = buildSupabase({
       campaniaActual: { id: 10, tipo: 'REFORESTACION' },
       subcampaniaCount: 0,
@@ -180,6 +185,7 @@ describe('CampaniasEdicionService.borrar soft-delete (RN-PLA-38)', () => {
     // El filtro de count debe excluir CANCELADA y considerar solo vivas.
     expect(subcampaniaFilters.soloVivas).toBe(true);
     expect(subcampaniaFilters.excluyeCanceladas).toBe(true);
+    expect(supabase.getClient).not.toHaveBeenCalled();
   });
 
   it('permite desactivar cuando todas las subcampañas están CANCELADA (count=0 tras filtros)', async () => {
@@ -210,4 +216,56 @@ describe('CampaniasEdicionService.borrar soft-delete (RN-PLA-38)', () => {
       UnprocessableEntityException,
     );
   });
+});
+
+describe('CampaniasEdicionService: autoridad y ausencia del cliente privado', () => {
+  it.each(['editar', 'borrar'] as const)(
+    '%s conserva ADMIN antes de consultar o escribir',
+    async (operation) => {
+      const { supabase, from } = buildSupabase({
+        campaniaActual: { id: 10, tipo: 'REFORESTACION' },
+        subcampaniaCount: 0,
+      });
+      const service = new CampaniasEdicionService(
+        supabase,
+        buildAuthService('GENERAL'),
+      );
+      const result =
+        operation === 'editar'
+          ? service.editar(10, { nombre: 'Nombre propuesto' }, 'auth-1')
+          : service.borrar(10, 'auth-1');
+
+      await expect(result).rejects.toThrow(ForbiddenException);
+      expect(from).not.toHaveBeenCalled();
+      expect(supabase.getAdminClient).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['editar', 'borrar'] as const)(
+    '%s falla antes de DML si falta cliente privado, sin fallback público',
+    async (operation) => {
+      const { supabase, from } = buildSupabase({
+        campaniaActual: { id: 10, tipo: 'REFORESTACION' },
+        subcampaniaCount: 0,
+      });
+      const failure = new InternalServerErrorException(
+        'Cliente privado no disponible.',
+      );
+      jest.mocked(supabase.getAdminClient).mockImplementation(() => {
+        throw failure;
+      });
+      const service = new CampaniasEdicionService(
+        supabase,
+        buildAuthService('ADMIN'),
+      );
+      const result =
+        operation === 'editar'
+          ? service.editar(10, { nombre: 'Nombre propuesto' }, 'auth-1')
+          : service.borrar(10, 'auth-1');
+
+      await expect(result).rejects.toBe(failure);
+      expect(from).not.toHaveBeenCalled();
+      expect(supabase.getClient).not.toHaveBeenCalled();
+    },
+  );
 });

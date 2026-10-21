@@ -1,0 +1,76 @@
+{
+  "tarea": "PA-T-INT07-BE01",
+  "estado": "P01_P02_P03_CONFIRMADAS_T01_T02_T04_DEFINIDAS_T03_PENDIENTE",
+  "fecha_local": "2026-10-19T21:33:36.838352-04:00",
+  "zona": "America/La_Paz",
+  "fuente_humana": "Respuestas explícitas de Pablo a las tres preguntas de este chat; no aprobación integral de INT07.",
+  "decisiones_producto": [
+    {
+      "id": "P01",
+      "estado": "CONFIRMADA",
+      "respuesta": "Retirar ese acceso (recomendado)",
+      "regla": "Retirar participación errónea retira Mis registros/detalle/historia propios salvo autoría u otra relación válida; conservar snapshots y auditoría administrativa."
+    },
+    {
+      "id": "P02",
+      "estado": "CONFIRMADA",
+      "respuesta": "Sí, incluir cuentas históricas inactivas (recomendado)",
+      "regla": "Admitir alta/restauración histórica de personas registradas hoy inactivas; sin reactivación/permisos ni cambio del guard de lector/ejecutor."
+    },
+    {
+      "id": "P03",
+      "estado": "CONFIRMADA",
+      "respuesta": "Ficha mínima y fotos privadas (recomendado)",
+      "regla": "Ficha pública mínima del revertido; enlace al vigente públicamente elegible si es duplicado; conservar fotos privadas, sin actor/motivo/historia detallada públicos."
+    }
+  ],
+  "definiciones_tecnicas": [
+    {
+      "id": "T01",
+      "estado": "DEFINIDA_REVISADA_SIN_IMPLEMENTAR",
+      "regla": "Liberación por créditos adicionales/revisión DESC y asignación ASC, luego originales por asignación ASC; débito al crédito exacto. Conciliación global de asignación incluye originales revertidos más consumos adicionales menos liberaciones."
+    },
+    {
+      "id": "T02",
+      "estado": "DEFINIDA_REVISADA_SIN_IMPLEMENTAR",
+      "regla": "Dos iniciales distintas, mismo ámbito/fecha/especies/cantidades efectivas; revisiones de ambos grupos; conservar dependencias reales del registro vigente y referencias sin cadenas."
+    },
+    {
+      "id": "T04",
+      "estado": "DEFINIDA_REVISADA_SIN_IMPLEMENTAR",
+      "regla": "Schemas INT05 intactos con valores efectivos; nuevas rutas de estado público/propio e historia propia reducida/auditoría administrativa. ParticipanteSnapshotCorreccion es nuevo, no amplía ParticipanteSnapshot de INT05."
+    }
+  ],
+  "frontera_pendiente": {
+    "id": "T03",
+    "estado": "PENDIENTE",
+    "cotejo": "No se encontró alta operativa de mortandad en backend/PWA/scripts/jobs/SQL de docs; tablas, contratos y fixtures no acreditan ese flujo.",
+    "clarificacion_solicitada": "Confirmar si existe un escritor real externo o si el alta todavía no está implementada.",
+    "alcance": "No acredita BE06 ni carreras contra escritor externo. BE02 de registros/participación puede avanzar con su contrato definido."
+  },
+  "verificacion": {
+    "tipo": "CONTINUACION_DOCUMENTAL_Y_CONSISTENCIA_DE_CONTRATOS",
+    "json_y_enlaces_locales": "APROBADOS",
+    "ejemplos_sinteticos_de_P01_P02_P03": "COHERENTES_CON_LAS_RESPUESTAS_NO_SON_HTTP_REAL",
+    "openapi": "GENERADOR_CHECK_APROBADO_30_RUTAS_65_SCHEMAS_SIN_PUBLICAR_RUTAS_INT07",
+    "codigo_runtime_y_scripts_previamente_verificados": "HUELLAS_INTACTAS_RESPECTO_AL_CORTE_INICIAL",
+    "build_unitarios_catalogo": "No repetidos: sin cambios en esos fuentes; resultados y límites conservados en pa-int07-be01-local.json."
+  },
+  "evidencia_inicial": "pa-int07-be01-local.json",
+  "limites": [
+    "No hay API, RPC ni migración de corrección implementadas.",
+    "No se ejecutaron comandos sobre registros reales ni se consultó remoto.",
+    "Las confirmaciones P01–P03 no acreditan implementación, SQL aplicado, push, despliegue o piloto.",
+    "La evidencia inicial se conserva con sus pendientes/huellas históricos; esta continuación registra su resolución parcial."
+  ],
+  "sha256": {
+    "docs/pa-int07-contrato.md": "3d827767fc338db4691e39db46baa380325dccf6331d35cdd2f68686a98c7f31",
+    "docs/pa-int07-ejemplos-candidatos.json": "33b7b69457cecb1138c4d0fd86e3de9f901218c1c330a2391e4bdff306f17804",
+    "docs/README.md": "f5f58a129fa9fe72256f1bdb26482dced4afbf33278f60f35c8bd2177839faa0",
+    "documentacion/modulos/participacion.md": "b79540212f7592acb0346a9b2a8d92229afb95fd56e9e9ac9ac9274e1b78ca0f",
+    "../r3foresta-docs/specs/plantacion/participacion-aliada/04-correccion-excepcional/spec.md": "95608cc0455ea63d888e99dd431cb72607d47e8ddbfca73776eecdbc8ff94f48",
+    "../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/pa-t-int07.md": "e22a7af4de666f4e5c3984ee4b0c2d9706684153ae7ad0065dfa622ad9261ad8",
+    "../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md": "e53351550ac3a75c60999ec187737063a09cddb9a07da27352e01b34f317aa4d",
+    "../r3foresta-docs/ESTADO.md": "1ff9fa3466fc563127d22e9539b268d85386a69be8fd97667275b2c6e29d202e"
+  }
+}

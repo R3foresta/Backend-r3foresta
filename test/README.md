@@ -30,6 +30,10 @@ usan socket privado/DB sin TCP y destruyen exclusivamente su clúster al termina
 | `npm run test:db:impacto -- --pg-bin /ruta/postgis/bin` | INT05: SQL/PostGIS/HTTP/Storage aislados, alcance50, snapshots, seguimiento, fotos y unión histórica propia |
 | `npm run preview:impacto -- --pg-bin /ruta/postgis/bin --check` | Preview INT05/INT04 sintético y limpieza, sin servicios externos |
 | `node scripts/qa/pa-int02c-openapi.cjs --check` | OpenAPI y proyección Swagger coinciden con el generador |
+| `python3 scripts/qa/pa-int07-catalogo-test.py --pg-bin /ruta/postgresql/bin` | Utilidad BE01 de catálogo, ACL heredadas/por columna/vacías, triggers y ausencia de efectos; clúster privado desechable sin TCP ni PostGIS. No prueba correcciones INT07. |
+| `python3 scripts/qa/pa-int07-persistencia-test.py --pg-bin /ruta/postgresql/bin` | BE02 parcial082: instalación/repetición, drift, materialización fiel, conservación y ACL/RLS. Antecedente focal sin PostGIS; no ejecuta correcciones ni RPC075–081. |
+| `python3 scripts/qa/pa-superficie-compat-test.py --pg-bin /ruta/postgresql/bin` | Cierre aditivo 083: permisos SQL reales, conservación de SELECT/servicio y rollback ante drift. Usar PG17 para cubrir MAINTAIN; clúster sintético desechable sin TCP/.env, sin aplicación remota. |
+| `python3 scripts/qa/pa-superficie-083-diagnostico-test.py --pg-bin /ruta/postgresql/bin` | Diagnóstico de 083: bloqueos completos, dependencias y permisos de vistas, metadatos de ubicación y READ ONLY real. No aplica la migración ni modifica permisos del destino. |
 
 B/C usan antecedentes mínimos post-067: no acreditan replay 001–067, PostGIS,
 Storage ni garantías del registro participante/INT02-D. Los runners pueden regenerar

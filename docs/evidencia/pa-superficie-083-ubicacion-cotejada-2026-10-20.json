@@ -1,0 +1,217 @@
+{
+  "tarea": "RECUPERACION_SUPERFICIE_083_VISTA_TERRITORIAL_COTEJADA",
+  "fecha": "2026-10-20",
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "procedencia": "Diagnóstico READ ONLY aportado por Pablo en el mismo proyecto de desarrollo confirmado. Sin conexión ni SQL remoto del agente.",
+  "diagnostico_aportado": {
+    "archivo": "/Users/pabloandresfernandezcari/.codex/attachments/bfdb1050-0234-41b6-940f-349d197ecd99/Pasted text.txt",
+    "sha256": "7e3bd16339de2389dd6d56791026f202ab5ffa339ec91a645930866715ae90d2",
+    "contrato": "PA-SUPERFICIE-083-DIAGNOSTICO/1",
+    "entorno": {
+      "postgresql": "17.6",
+      "aislamiento": "repeatable read",
+      "solo_lectura": "on"
+    },
+    "bloqueos_preflight": [
+      {
+        "rol": "anon",
+        "codigo": "PA_D_VISTA_PUBLICA_NO_AUTORIZADA",
+        "objeto": "v_ubicacion_enriquecida",
+        "esquema": "public",
+        "privilegio": "DELETE"
+      },
+      {
+        "rol": "anon",
+        "codigo": "PA_D_VISTA_PUBLICA_NO_AUTORIZADA",
+        "objeto": "v_ubicacion_enriquecida",
+        "esquema": "public",
+        "privilegio": "INSERT"
+      },
+      {
+        "rol": "anon",
+        "codigo": "PA_D_VISTA_PUBLICA_NO_AUTORIZADA",
+        "objeto": "v_ubicacion_enriquecida",
+        "esquema": "public",
+        "privilegio": "UPDATE"
+      },
+      {
+        "rol": "authenticated",
+        "codigo": "PA_D_VISTA_PUBLICA_NO_AUTORIZADA",
+        "objeto": "v_ubicacion_enriquecida",
+        "esquema": "public",
+        "privilegio": "DELETE"
+      },
+      {
+        "rol": "authenticated",
+        "codigo": "PA_D_VISTA_PUBLICA_NO_AUTORIZADA",
+        "objeto": "v_ubicacion_enriquecida",
+        "esquema": "public",
+        "privilegio": "INSERT"
+      },
+      {
+        "rol": "authenticated",
+        "codigo": "PA_D_VISTA_PUBLICA_NO_AUTORIZADA",
+        "objeto": "v_ubicacion_enriquecida",
+        "esquema": "public",
+        "privilegio": "UPDATE"
+      }
+    ],
+    "riesgos_postflight_herencia": [],
+    "membresias_relevantes": [],
+    "requisitos_servicio_insatisfechos": [],
+    "alcance": "Diagnóstico v1 del manifiesto anterior a la inclusión territorial; separa grants previstos de los seis bloqueos DML de esta vista."
+  },
+  "vista_cotejada": {
+    "nombre": "public.v_ubicacion_enriquecida",
+    "tipo": "v",
+    "owner": "postgres",
+    "definicion_md5": "606333c9b255ffb8548c93b4a3cec319",
+    "reloptions": null,
+    "columnas": [
+      {
+        "tipo": "bigint",
+        "nombre": "id",
+        "nullable": true,
+        "posicion": 1
+      },
+      {
+        "tipo": "bigint",
+        "nombre": "ubicacion_id",
+        "nullable": true,
+        "posicion": 2
+      },
+      {
+        "tipo": "text",
+        "nombre": "nombre",
+        "nullable": true,
+        "posicion": 3
+      },
+      {
+        "tipo": "text",
+        "nombre": "referencia",
+        "nullable": true,
+        "posicion": 4
+      },
+      {
+        "tipo": "numeric(9,6)",
+        "nombre": "latitud",
+        "nullable": true,
+        "posicion": 5
+      },
+      {
+        "tipo": "numeric(9,6)",
+        "nombre": "longitud",
+        "nullable": true,
+        "posicion": 6
+      },
+      {
+        "tipo": "integer",
+        "nombre": "precision_m",
+        "nullable": true,
+        "posicion": 7
+      },
+      {
+        "tipo": "text",
+        "nombre": "fuente",
+        "nullable": true,
+        "posicion": 8
+      },
+      {
+        "tipo": "bigint",
+        "nombre": "pais_id",
+        "nullable": true,
+        "posicion": 9
+      },
+      {
+        "tipo": "character(2)",
+        "nombre": "pais_codigo_iso2",
+        "nullable": true,
+        "posicion": 10
+      },
+      {
+        "tipo": "text",
+        "nombre": "pais_nombre",
+        "nullable": true,
+        "posicion": 11
+      },
+      {
+        "tipo": "bigint",
+        "nombre": "division_id",
+        "nullable": true,
+        "posicion": 12
+      },
+      {
+        "tipo": "jsonb",
+        "nombre": "division_ruta",
+        "nullable": true,
+        "posicion": 13
+      }
+    ],
+    "raices": [
+      "public.division_administrativa"
+    ],
+    "ancestro_privado": false,
+    "dependencias_transitivas": [
+      {
+        "tipo": "r",
+        "esquema": "public",
+        "relacion": "division_administrativa"
+      },
+      {
+        "tipo": "r",
+        "esquema": "public",
+        "relacion": "division_tipo"
+      },
+      {
+        "tipo": "r",
+        "esquema": "public",
+        "relacion": "pais"
+      },
+      {
+        "tipo": "r",
+        "esquema": "public",
+        "relacion": "ubicacion"
+      }
+    ],
+    "updatable_sin_triggers": 0,
+    "updatable_con_triggers": 0,
+    "reglas_no_return": [],
+    "triggers_no_internos": [],
+    "conclusion": "Coincide con la vista territorial documentada en ADR002. SELECT público tiene un consumidor existente. Los seis bloqueos son DML concedido adicionalmente; no hay ancestro privado ni capacidad de escritura indicada por reglas/triggers."
+  },
+  "revision_candidata": {
+    "archivo": "migrations/083_pa_superficie_privada_compat.sql",
+    "sha256": "e4b413bd08c5d8e08c526d7e3a58ea56a10dd782e27e7e59db26742013e10aea",
+    "sha256_corte_anterior": "58e9993b2d77aeef9dc68f1a78d90f67e71622161001a6ed18f6b71beacd559b",
+    "estado": "CANDIDATA_NO_APLICADA_EN_DESTINO",
+    "cambio": "Incluye expresamente la vista territorial opcional como solo lectura; verifica huella, firma de 13 columnas, cuatro bases, opciones y ausencia de reglas/triggers antes de retirar permisos adicionales de PUBLIC/anon/authenticated. Conserva SELECT existente, servicio y otros beneficiarios.",
+    "080_intacta_sha256": "d52b8e518c42d3e3e43b8c3262eab4165e28f2b7a23b32339637069336e323ea"
+  },
+  "verificacion_local": [
+    {
+      "archivo": "docs/evidencia/pa-superficie-083-ubicacion-pg14-local.json",
+      "sha256": "fc543652d5189a958bcd84d74a4a9df1eac9fe447cc3de46fae77510da2d5189",
+      "postgresql": "14.17 (Homebrew)",
+      "comprobaciones": 36
+    },
+    {
+      "archivo": "docs/evidencia/pa-superficie-083-ubicacion-pg17-local.json",
+      "sha256": "661d0452334cb557924a8667ce8cec8497322adbe83d071720d9784275953c34",
+      "postgresql": "17.11 (Postgres.app)",
+      "comprobaciones": 37
+    }
+  ],
+  "ensayo_preparado": {
+    "archivo": "/private/tmp/pa-083-ubicacion-rollback.sql",
+    "sha256": "11fc6bf662dbf932396c0e3ee1107ad02047dacb7894d5e103087ff63706b533",
+    "estado": "PENDIENTE_DE_EJECUCION_Y_RESPUESTA_DEL_USUARIO",
+    "diferencia_funcional": "COMMIT final del cuerpo sustituido por ROLLBACK; igualdad con fuente comprobada al reconstruir ese último statement.",
+    "alcance": "Revocaciones transaccionales revertidas; no instala083 ni acredita cierre permanente. El ensayo anterior se conserva intacto."
+  },
+  "siguiente_paso": "Ejecutar completo el nuevo ensayo en desarrollo y aportar primer error o confirmación de éxito. El COMMIT definitivo requiere actualizar y comprobar ambos consumidores local/Render, luego seguir083→081→082.",
+  "limites": [
+    "PostgreSQL del destino17.6; verificaciones aisladas en14.17 y17.11 con fixtures sintéticos, sin TCP/.env ni RPC de negocio.",
+    "El diagnóstico de catálogo no demuestra ausencia de SQL dinámico u otros escritores. La huella MD5 es de cotejo, no una firma de seguridad.",
+    "Ningún SQL remoto, commit, push o despliegue fue realizado por el agente. La revisión candidata y las pruebas locales no acreditan instalación ni actualización de Render."
+  ]
+}

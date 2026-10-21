@@ -1,0 +1,47 @@
+{
+  "tarea": "CIERRE_ADITIVO_SUPERFICIE_083",
+  "estado": "APROBADO",
+  "postgresql": "17.11 (Postgres.app)",
+  "entorno": "CLUSTER_SINTETICO_PRIVADO_SIN_TCP_SIN_ENV",
+  "postgis_requerido": false,
+  "comprobaciones": [
+    "Clúster privado sin TCP",
+    "Migración no contiene GRANT",
+    "Comunidad ausente admitida y cierre completo de privilegios disponibles",
+    "Filas, secuencia, funciones, RLS/policies, servicio, terceros y SELECT readonly conservados",
+    "No fabrica comunidad",
+    "Conserva SELECT limitado a columna sin ampliarlo",
+    "No fabrica SELECT donde no existía",
+    "Cierra grants explícitos por columna de objeto privado",
+    "Cierra escritura por columna readonly y conserva privilegios de terceros",
+    "Reaplicación idempotente sin mutación de datos o SELECT",
+    "Comunidad presente se cierra como catálogo readonly, con servicio y SELECT conservados",
+    "PG17 retira MAINTAIN readonly y conserva SELECT/MAINTAIN servicio",
+    "Fixture aplica080 original con comunidad presente",
+    "080 original deja MAINTAIN de catálogo en PG17 antes de083",
+    "083 después de080 aplicada conserva SELECT/servicio y completa cierre",
+    "Servicio insuficiente rechaza sin alterar datos ni grants",
+    "Servicio sin INSERT en campania aborta antes de cerrar clientes",
+    "Servicio sin DELETE en campania_organizacion aborta antes de cerrar clientes",
+    "Servicio sin DELETE en subcampania_meta_especie aborta antes de cerrar clientes",
+    "Grant heredado desconocido revierte todos los REVOKE y conserva filas",
+    "No repara ni altera membresía heredada",
+    "Vista pública fuera de inventario bloquea sin revocarla por inferencia",
+    "Vista actualizable ajena de raíz readonly bloquea escritura por columna",
+    "Vista ajena solo SELECT sobre readonly se conserva sin falso bloqueo",
+    "Vista transitiva de raíz privada en otro esquema bloquea SELECT",
+    "Definer público de código bloquea sin modificar función/ACL",
+    "Definer público exclusivo de subcampania_meta_especie bloquea sin alterar función ni grants",
+    "Definer público exclusivo de v_lote_vivero_saldos bloquea sin alterar función ni grants"
+  ],
+  "fuentes_sha256": {
+    "migrations/083_pa_superficie_privada_compat.sql": "58e9993b2d77aeef9dc68f1a78d90f67e71622161001a6ed18f6b71beacd559b",
+    "migrations/080_pa_int02d_superficie_privada.sql": "d52b8e518c42d3e3e43b8c3262eab4165e28f2b7a23b32339637069336e323ea",
+    "scripts/qa/pa-superficie-compat-test.py": "d1e8f20213eaf8e45fddd38e1809324c609a1c5e00ae4091ddad38f0fc111d7f"
+  },
+  "limites": [
+    "No acredita SQL aplicado, datos, permisos o despliegue de un destino remoto.",
+    "No ejecuta RPC ni escribe servicios externos; los fixtures son sintéticos.",
+    "No verifica consumidores local/Render ni su despliegue; preceden al cierre real."
+  ]
+}

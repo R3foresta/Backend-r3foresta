@@ -1,0 +1,144 @@
+{
+  "tarea": "PA-T-INT07-BE01",
+  "estado": "EN_CURSO_CONTRATO_CANDIDATO_SIN_CORRECCIONES_IMPLEMENTADAS",
+  "fecha_local": "2026-10-19T12:53:49.176706-04:00",
+  "zona": "America/La_Paz",
+  "base_git": "8dc8efcd2673142693e23e95a9b0f88723b074ba",
+  "arbol_backend_al_iniciar": "LIMPIO",
+  "migracion_maxima_local": "081",
+  "entorno": {
+    "node": "v24.19.0",
+    "npm": "12.0.2",
+    "servicios_remotos_consultados": false,
+    "env_cargado": false,
+    "sql_int07_aplicado": false,
+    "push": false,
+    "despliegue": false
+  },
+  "verificacion": {
+    "build": {
+      "comando": "npm run build",
+      "estado": "APROBADO"
+    },
+    "unitarios": {
+      "comando": "npm run test:unit -- --runInBand --silent --cacheDirectory=/private/tmp/r3-jest-int07",
+      "estado": "APROBADO",
+      "suites": 65,
+      "pruebas": 816,
+      "dependencias_externas": "SUSTITUIDAS"
+    },
+    "openapi": {
+      "comando": "node scripts/qa/pa-int02c-openapi.cjs --check",
+      "estado": "APROBADO",
+      "rutas": 30,
+      "schemas": 65,
+      "rutas_candidatas_publicadas": false
+    },
+    "catalogo": {
+      "comando": "python3 scripts/qa/pa-int07-catalogo-test.py --pg-bin /opt/homebrew/Cellar/postgresql@14/14.17/bin --evidence /private/tmp/pa-int07-catalogo-final.json",
+      "estado": "APROBADO",
+      "postgresql": "14.17 (Homebrew)",
+      "postgis": false,
+      "entorno": "CLUSTER_SINTETICO_DESECHABLE_SIN_TCP_SIN_ENV",
+      "comprobaciones": [
+        "Transacción READ ONLY real",
+        "Clúster privado sin escucha TCP",
+        "Snapshot REPEATABLE READ",
+        "Objetos ausentes informados sin abortar",
+        "Roles ausentes tolerados y PUBLIC como pseudorol",
+        "Fixture crea ACL explícita vacía de función, tabla, secuencia y esquema",
+        "Cotejo repetible sin efectos de negocio o catálogo",
+        "Filas, contadores y valor de secuencia intactos",
+        "Sin filas, defaults, expresiones o cuerpos SQL completos",
+        "Descubre vistas dependientes transitivas en otros esquemas",
+        "Inventaría FKs y restricciones reales",
+        "Inventaría trigger real adjunto",
+        "Descubre escritor fuera de public y todos sus overloads mediante huellas",
+        "Marca candidato de mortandad/trigger sin afirmar disciplina de locks",
+        "Detecta SELECT heredado por anon",
+        "Detecta privilegio de PUBLIC pseudorol",
+        "Detecta UPDATE específico de columna",
+        "No confunde grant de columna con UPDATE de tabla",
+        "Detecta USAGE de secuencia heredado",
+        "Detecta EXECUTE privado de overload",
+        "Conserva EXECUTE PUBLIC por default en la otra sobrecarga",
+        "ACL función {} no recupera EXECUTE PUBLIC del default",
+        "ACL tabla {} se procesa sin conceder privilegios PUBLIC",
+        "ACL secuencia {} se procesa sin conceder privilegios PUBLIC",
+        "ACL esquema {} se procesa sin conceder privilegios PUBLIC",
+        "Inventaría RLS y huellas de políticas sin expresiones",
+        "READ ONLY rechaza escritura inyectada y conserva el estado"
+      ],
+      "limites": [
+        "Verifica utilidad de catálogo, no SQL ni RPC de INT07.",
+        "No acredita escritores, locks, datos o privilegios del destino Supabase.",
+        "No requiere ni verifica PostGIS."
+      ]
+    }
+  },
+  "revisiones": {
+    "contratos": "REVISION_INDEPENDIENTE_Y_AJUSTES_APLICADOS",
+    "lectores_y_audiencias": "REVISION_INDEPENDIENTE_Y_AJUSTES_APLICADOS"
+  },
+  "incidencias_resueltas": [
+    "Primera ejecución unitaria: 674 aprobadas y 142 EPERM por listen del sandbox. Repetición con sockets locales autorizados:816 aprobadas.",
+    "Prueba inicial del cotejador detectó aclexplode con array ACL vacío. Corregido con guardas de cardinalidad y regresiones de NULL/default/vacío.",
+    "Fixture de ACL vacías corregido para comprobar cardinalidad sin asumir dimensiones del array."
+  ],
+  "pendientes": [
+    "P01 lectura propia tras retiro por corrección",
+    "P02 cuentas históricas inactivas",
+    "P03 publicación de revertidos/fotos/historial",
+    "T01 política de liberación parcial",
+    "T02 compatibilidad de duplicados",
+    "T03 escritor real de baja y catálogo destino",
+    "T04 schema/ruta de lectura de estado/historia",
+    "BE02–BE08 y FE01–FE08"
+  ],
+  "limites": [
+    "Build/unitarios son regresión de la base existente, no pruebas de correcciones.",
+    "El cotejador se ensayó en catálogo sintético PostgreSQL14.17, no en esquema completo post081 ni destino PostgreSQL17/Supabase.",
+    "Sin PostGIS ni carreras de corrección: no hay RPC de corrección implementada.",
+    "Las rutas, recibos y ejemplos de INT07 son candidatos no enviados a una API ni publicados en OpenAPI.",
+    "La ausencia de escritor de mortandad en fuentes locales no demuestra ausencia en destino o servicios externos.",
+    "Estado canónico actualizado conservando casillas abiertas; no acredita cierre de BE01 o PA-S04."
+  ],
+  "sha256": {
+    "docs/pa-int07-contrato.md": "f13d384fb486e60db3f0ff1fc134036f0c9a2a3e7feb7bcbcf4e71e8dec68114",
+    "docs/pa-int07-ejemplos-candidatos.json": "572e7c70c79eaee935894aa31ea15630a7a9bcae6c610b4f2fb2b6bdd4b6bc85",
+    "scripts/qa/pa-int07-catalogo.sql": "ae1772edc95e29c6d5abc54ba0517bef3d120a1404725709cbe78642b48ac13e",
+    "scripts/qa/pa-int07-catalogo-test.py": "07f5f9fd7b1b6e27069cd36b4a42170516ec5e2dffe4a93c189152fcbd0806f8",
+    "docs/README.md": "490326c2453569a0d78d516e39f7eeeed31f819a7fb043332462ed71c2eeae65",
+    "test/README.md": "2df3eb743c39fe50fb31e0bd11358e5a99611b458c3dd3af9cb4d36c1de27c7f",
+    "documentacion/modulos/participacion.md": "b0e58365e0dfdbf30d186ecbbbfc9da7f98337856a292f0f63a98db38ea3b72c",
+    "src/participacion/dto/comandos.dto.ts": "117412b9c53266bd1d7fef3bc9a5130eb0293905ab06f2c08afea38509206707",
+    "src/participacion/comando-recibo.ts": "f8db6c6c50a83580b46a94ba33f37523f44cc55b7f95f623507ba653c508c479",
+    "src/participacion/comando-canonical.ts": "e2539ce1d5108df8a34d5db36c87fe77b098918cf2fc73adddf97d6d16a8c4f0",
+    "src/participacion/participacion-comandos.service.ts": "f64bb774d44e0c9067445cc7c88e58ae075db7ee139dcc4f6fc1a185a71ab98e",
+    "src/participacion/application/participacion-registro.service.ts": "9e65ded0d033cb54450fa408dc64f0cc3159ee135c25be74d031b71acba70bd2",
+    "src/participacion/domain/policies/registro-proyeccion.policy.ts": "e6421fb4cb5eded475b0ee6264b8db05692e0e1968fa4a8ffd44278605b181b0",
+    "src/plantaciones/application/plantacion-creation.service.ts": "6bd77af7c1cb4feed4c09643e347336d5fa5e90d72d6e870e98c7946337d92b6",
+    "src/impact/impact.service.ts": "c44b3bd9fdf48f15e12f39172eb1561fd56fa8d015f4169d3cca1321044dfb1c",
+    "src/impact/domain/policies/impacto-proyeccion.policy.ts": "79da28d5556319775462348be816949f6f2ddb852ecb1ae048b853e23c9961b1",
+    "src/campanias/application/campanias-activity.service.ts": "51458018aa348448f1f33f7aae6b833804b66d3fe83caf433e7258e4339ac0b6",
+    "src/campanias/application/campanias-metrics.service.ts": "bfd33b57984b55785b343897f9d94cd3bd40fbaab86e5071df023eed2aa9524d",
+    "src/subcampanias/application/subcampanias-consultas.service.ts": "5d4894a6ec8aad28a152d1bdaef0d32546844ec7fbd0f35e182d36b563d04a03",
+    "migrations/024_vivero_asignacion_subcampania.sql": "2a545241a7f7ad2f32e55b134f836fc96e95fbe89fd8ebbf5bdb0a3d3c4083ba",
+    "migrations/029_m3_subcampania.sql": "b41f38e34185027687970f2fad9c4be9fdc0926bc56e9d9b6cd07702f7468569",
+    "migrations/030_m3_registro_plantacion.sql": "9856cc0e357335a2afd61d8a0af29e97befc67cca28051bcdead4f375eb3253f",
+    "migrations/031_m3_evento_plantacion.sql": "216b47cf2c600b16bf82f2cf1ca48bd208eb4540ac8533a62cbc590d8a0ae512",
+    "migrations/068_pa_participacion_comando.sql": "838e1e658d178e59af5318e5b64514aef6b02317c1d4b19a3bd71af77e353a45",
+    "migrations/072_pa_int02c_comandos_acceso.sql": "747b74f9a1d4c0eab006544119c4a5d505c757939a4eeedaec77e95f25233ee7",
+    "migrations/074_pa_int03a_cargas.sql": "fa72c23c500cb743fa1afa0452ea088bcf0cff8d15b3e3956b763e7adb2cf045",
+    "migrations/075_pa_int03a_registro.sql": "be438c7b27f25f2e14f607bcfd307678cd401ac5f2d6746e29a37058ade24169",
+    "migrations/076_pa_int03a_fecha_entrega.sql": "c12ae6f68ad43799946a5a335d5eff64bd9b17446ad31dd0670447f6f32cf2ae",
+    "migrations/077_pa_int02d_operaciones_compartidas.sql": "c11660a287349ccadc45ff0026008f193834e55cf28f2ce89b99ba46a799088b",
+    "migrations/078_pa_int02d_lifecycle.sql": "bfe78a412ef71d795eff20167e1f73f02a7b6091779f2808e0f6e10ccde6aa0f",
+    "migrations/079_pa_int02d_evidencias.sql": "509b6b2a4a50de012d060f469d85a781b5b6947a03d47669f934e8f99d8f5f3d",
+    "migrations/080_pa_int02d_superficie_privada.sql": "d52b8e518c42d3e3e43b8c3262eab4165e28f2b7a23b32339637069336e323ea",
+    "migrations/081_pa_int05_consulta.sql": "108d3d9f7d17ef31f09dac79cc4e2fbc7cb0ebdc2b567aa031094b63a49d7233",
+    "../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/pa-t-int07.md": "92092ead1d7bf4761adf394e27bb39a2f4bb9ec7da898596f56db066ef6e907d",
+    "../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md": "4ea09bf79a8f2b57c2320529adf23d852eb20a41ed3ba3f259dc314d3e680b39",
+    "../r3foresta-docs/ESTADO.md": "6eedd317d457d5c671d0153890c7ecf6d893fb8175efe5927a709844a989a950"
+  }
+}

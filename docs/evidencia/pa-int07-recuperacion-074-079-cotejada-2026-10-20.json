@@ -1,0 +1,146 @@
+{
+  "tarea": "PA-T-INT07_RECUPERACION_ANTECEDENTES",
+  "fecha": "2026-10-20",
+  "zona": "America/La_Paz",
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "procedencia": "Catálogo aportado por el usuario y continuidad del proyecto de desarrollo confirmado en este chat; sin conexión remota del agente.",
+  "catalogo_aportado_sha256": "b92ccef1aa73896262ea73f56e94d9805bc246769904cdf4f42e207c63a3de99",
+  "catalogo_previo_sha256": "351ef487c159e658dbe90ad8b6fe35491911f3f54f70914dd954952b781d81ec",
+  "entorno_declarado": {
+    "postgresql": "17.6",
+    "aislamiento": "repeatable read",
+    "lock_timeout": "0",
+    "solo_lectura": "on",
+    "zona_horaria": "UTC",
+    "postgresql_num": "170006",
+    "postgis_extension": "3.3.7",
+    "statement_timeout": "2min"
+  },
+  "recuperacion_074_079": {
+    "ejecucion": "Usuario confirma archivo completo sin errores; el catálogo posterior acredita objetos persistidos.",
+    "archivo": "scripts/sql/pa-int07-recuperar-074-preservar-079.sql",
+    "sha256": "d5d02c7485d763ab9c3f065fdaafd5d9120166b9af981962a62a897b395bd8fb",
+    "columnas_nuevas": 47,
+    "tablas_nuevas": [
+      "participacion_carga",
+      "participacion_carga_generacion"
+    ],
+    "revision_registro": {
+      "tipo": "bigint",
+      "orden": 23,
+      "nombre": "revision_registro",
+      "esquema": "public",
+      "generada": "",
+      "relacion": "registro_plantacion",
+      "identidad": "",
+      "default_md5": "cfcd208495d565ef66e7dff9f98764da",
+      "obligatorio": true
+    },
+    "columnas_082_cotejadas": 36,
+    "columnas_082_ausentes_o_incompatibles": [],
+    "079_huellas_previas_conservadas": {
+      "pa_d_evidencias_reposicion": "7557e8225fba2d14a6851827ebc36785",
+      "pa_d_foto_legada_publica": "91dc41a10a30c04b6dc666d0cf99f839",
+      "pa_foto_publica": "a332a68f651431485ada3aeb9600f821"
+    }
+  },
+  "077": {
+    "metodo": "Definiciones077 y DO original de opciones ALTER FUNCTION compilados en PG14.17 con check_function_bodies=off y tipos/tabla mínimos sintéticos, sin invocar RPC. Compara pg_get_functiondef MD5 y firma con catálogo aportado PG17.6. No prueba ejecución ni FKs/locks.",
+    "resultados": [
+      {
+        "nombre": "fn_campania_desactivar_sin_plantaciones",
+        "argumentos": "p_campania_id bigint, p_actor_user_id bigint, p_motivo text",
+        "definicion_md5": "2b568070d7653ba05f49f67c0f1dde93",
+        "md5_aportado": "2b568070d7653ba05f49f67c0f1dde93",
+        "coincide": true
+      },
+      {
+        "nombre": "fn_m2_m3_aplicar_devolucion_fisica",
+        "argumentos": "p_asignacion_id bigint, p_cantidad_devuelta integer, p_motivo_devolucion motivo_devolucion_plantacion, p_usuario_devolucion_id bigint, p_fecha_devolucion date, p_observaciones text",
+        "definicion_md5": "b5c790935ccd7ade650598df30bbaa2f",
+        "md5_aportado": "b5c790935ccd7ade650598df30bbaa2f",
+        "coincide": true
+      },
+      {
+        "nombre": "fn_m3_devolver_asignacion_vivero",
+        "argumentos": "p_asignacion_id bigint, p_cantidad_devuelta integer, p_motivo_devolucion motivo_devolucion_plantacion, p_usuario_devolucion_id bigint, p_fecha_devolucion date, p_observaciones text",
+        "definicion_md5": "ba0620b0fc1736e2e6f4f30ff4ca4233",
+        "md5_aportado": "ba0620b0fc1736e2e6f4f30ff4ca4233",
+        "coincide": true
+      },
+      {
+        "nombre": "fn_m3_registrar_plantacion",
+        "argumentos": "p_subcampania_id bigint, p_es_reposicion boolean, p_registro_plantacion_origen_id bigint, p_fecha_plantacion date, p_responsable_id bigint, p_latitud numeric, p_longitud numeric, p_observaciones text, p_coresponsable_ids bigint[], p_detalles jsonb, p_evidencia_ids bigint[]",
+        "definicion_md5": "809854e16804cf136494df782929a53f",
+        "md5_aportado": "809854e16804cf136494df782929a53f",
+        "coincide": true
+      },
+      {
+        "nombre": "fn_subcampania_cancelar",
+        "argumentos": "p_id bigint, p_actor_user_id bigint, p_motivo text",
+        "definicion_md5": "ba80fb5522c73b5c830dbbd2e052970a",
+        "md5_aportado": "ba80fb5522c73b5c830dbbd2e052970a",
+        "coincide": true
+      },
+      {
+        "nombre": "fn_subcampania_cancelar_interna",
+        "argumentos": "p_id bigint, p_actor_user_id bigint, p_motivo text, p_contexto jsonb",
+        "definicion_md5": "e8a44edcc6b3ec82e03d3c62105eab81",
+        "md5_aportado": "e8a44edcc6b3ec82e03d3c62105eab81",
+        "coincide": true
+      },
+      {
+        "nombre": "fn_subcampania_revisar_plan",
+        "argumentos": "p_subcampania_id bigint, p_meta_total_arboles integer, p_metas jsonb, p_actor_user_id bigint, p_revision_esperada bigint",
+        "definicion_md5": "e61432bfd901785ffa3f2e1bb093706c",
+        "md5_aportado": "e61432bfd901785ffa3f2e1bb093706c",
+        "coincide": true
+      },
+      {
+        "nombre": "fn_vivero_asignar_stock_subcampania",
+        "argumentos": "p_lote_vivero_id bigint, p_subcampania_id bigint, p_cantidad_asignada integer, p_proposito proposito_asignacion, p_usuario_asignacion_id bigint, p_fecha_asignacion date, p_evidencia_ids bigint[], p_observaciones text",
+        "definicion_md5": "98ca589b62b4dce76e87c8ab2cd26d46",
+        "md5_aportado": "98ca589b62b4dce76e87c8ab2cd26d46",
+        "coincide": true
+      },
+      {
+        "nombre": "pa_d_cuenta",
+        "argumentos": "p_id bigint",
+        "definicion_md5": "6cdd4b5efc4fea3a5c9097d0550275b8",
+        "md5_aportado": "6cdd4b5efc4fea3a5c9097d0550275b8",
+        "coincide": true
+      }
+    ],
+    "fuente_sha256": "c11660a287349ccadc45ff0026008f193834e55cf28f2ce89b99ba46a799088b",
+    "conclusion": "9/9 definiciones y firmas coinciden; no repetir077 ni reinstalar076 que queda superada."
+  },
+  "siguiente_accion_preparada": {
+    "archivo": "scripts/sql/pa-int07-recuperar-075-078.sql",
+    "sha256": "e68947539848c444d8bea4d40f4672c6ef6168206beca0969ccd887c6264bfab",
+    "fuentes": [
+      {
+        "archivo": "migrations/075_pa_int03a_registro.sql",
+        "sha256": "be438c7b27f25f2e14f607bcfd307678cd401ac5f2d6746e29a37058ade24169"
+      },
+      {
+        "archivo": "migrations/078_pa_int02d_lifecycle.sql",
+        "sha256": "bfe78a412ef71d795eff20167e1f73f02a7b6091779f2808e0f6e10ccde6aa0f"
+      }
+    ],
+    "validacion": "Cuerpos fuente conservados con una única transacción; instalación/COMMIT remoto todavía pendientes.",
+    "motivo": "075 tiene ocho funciones exclusivas ausentes y replay anterior;078 tiene seis funciones exclusivas ausentes y polígono anterior.081 ausente evita sobrescribir detalle propio posterior.",
+    "operaciones": "Solo definiciones y ACL; no invoca funciones de negocio ni modifica las tablas operativas."
+  },
+  "pendientes": [
+    "Ejecución remota por usuario de la recuperación075+078 y cotejo posterior.",
+    "080 sigue sin cierre efectivo; revisar privilegios observados fuera de su inventario antes de aplicarla.",
+    "081 ausente;082 sigue sin instalar.",
+    "Storage/CDN y prueba de APIs no se acreditan mediante este catálogo."
+  ],
+  "limites": [
+    "No se leyeron filas de negocio ni secretos.",
+    "El agente no ejecutó SQL remoto.",
+    "Las huellas077 acreditan coincidencia de definición, no una prueba funcional o de concurrencia del destino.",
+    "No modifica las evidencias históricas ni los SQL de migraciones originales."
+  ]
+}

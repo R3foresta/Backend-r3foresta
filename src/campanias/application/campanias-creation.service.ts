@@ -50,7 +50,7 @@ export class CampaniasCreationService {
     const anio = new Date().getFullYear();
     const codigo = await this.codigosService.generarCodigo(anio);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: campania, error } = await supabase
       .from('campania')

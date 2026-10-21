@@ -1,0 +1,86 @@
+{
+  "tarea": "RECUPERACION_SUPERFICIE_083_ENSAYO_DESTINO",
+  "fecha": "2026-10-20",
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "procedencia": "Error y fuente de ensayo aportados por Pablo en este chat; continuidad del proyecto confirmado. Sin SQL remoto del agente.",
+  "fuente_083": {
+    "archivo": "migrations/083_pa_superficie_privada_compat.sql",
+    "sha256": "58e9993b2d77aeef9dc68f1a78d90f67e71622161001a6ed18f6b71beacd559b"
+  },
+  "ensayo": {
+    "archivo": "/private/tmp/pa-083-diagnostico-rollback.sql",
+    "sha256": "4255938d12cfa08eaed82f290f49c73803247d09cb42f2dd5858d79e260b89be",
+    "estado": "RECHAZADO_POR_PREFLIGHT",
+    "sqlstate": "P0001",
+    "error": "PA_D_VISTA_PUBLICA_NO_AUTORIZADA: public.v_ubicacion_enriquecida anon",
+    "posicion": "Bucle de vistas previo a la fase de REVOKE. No instalación ni cierre confirmado."
+  },
+  "modelo_documentado": {
+    "fuentes_sha256": {
+      "documentacion/arquitectura/adr/002-decisiones-db.md": "f8615869d9f7fb0a8734ddb37a0567f5e1b6e94c001270e796ffa149c9170a00",
+      "src/common/ubicaciones/ubicaciones-read.service.ts": "66fa630c7f94c79d8667c02256389fc548cba64a5a0dfbfc7b8578dd4f60c2a9",
+      "src/viveros/viveros.service.ts": "239a4094a62f5051c3743406e2aec1e1dfb85645c6f966c602fbbe9e15aac1c5",
+      "src/recolecciones/application/recoleccion-ubicacion.service.ts": "0064e0097a49661ea2ab30498d1f3a5c42617ea418bbebebe57c2bd09c9ee300"
+    },
+    "vista": "public.v_ubicacion_enriquecida",
+    "bases": [
+      "ubicacion",
+      "pais",
+      "division_administrativa",
+      "division_tipo"
+    ],
+    "proyeccion": [
+      "id",
+      "ubicacion_id",
+      "nombre",
+      "referencia",
+      "latitud",
+      "longitud",
+      "precision_m",
+      "fuente",
+      "pais_id",
+      "pais_codigo_iso2",
+      "pais_nombre",
+      "division_id",
+      "division_ruta"
+    ],
+    "audiencia": "SELECT explícito para anon/authenticated/service_role; consumidor con getClient para viveros y enriquecimiento de recolecciones.",
+    "limite": "DDL documental no acredita definición real ni permisos actuales del destino."
+  },
+  "causas_por_discriminar": [
+    "DML público adicional sobre vista derivada de una raíz de lectura.",
+    "Definición real con ancestro privado distinto del modelo documentado."
+  ],
+  "siguiente_accion": "Diagnóstico READ ONLY de todas las dependencias y bloqueos083, más definición/columnas/reglas/triggers de la vista; no revocar SELECT ni exceptuar por nombre sin cotejo.",
+  "limites": [
+    "Los fixtures de las 27/28 pruebas anteriores no incluían esta vista territorial del destino.",
+    "Grants INSERT/UPDATE/DELETE no demuestran que una vista sea actualizable; hay que revisar definición/reglas/triggers.",
+    "083 conserva la misma fuente; no se aplicó SQL ni se publicó el backend por el agente."
+  ],
+  "diagnostico_preparado": {
+    "archivo": "scripts/sql/pa-superficie-083-diagnostico.sql",
+    "sha256": "70cdb525b2ffbb1bb0ffe807fa3ebe606d311d5ef218f90eab3f711afdb97002",
+    "naturaleza": "READ ONLY/REPEATABLE READ/ROLLBACK. Devuelve un JSON; no aplica083 ni modifica grants.",
+    "contenido": "Todos los bloqueos preflight083 y metadatos reales de v_ubicacion_enriquecida, incluida definición SQL; sin filas de negocio.",
+    "verificador": {
+      "archivo": "scripts/qa/pa-superficie-083-diagnostico-test.py",
+      "sha256": "6ab3f7a7bc618dffc50330922dd256ae2f0a969545f2ed4cca0f2a766192b676"
+    },
+    "ensayos_locales": [
+      {
+        "archivo": "docs/evidencia/pa-superficie-083-diagnostico-pg14-local.json",
+        "sha256": "165188be0bb2be80b8936841a65298ac5d69d3c55b706e32875c73ac26b6b834",
+        "postgresql": "14.17 (Homebrew)",
+        "comprobaciones": 43
+      },
+      {
+        "archivo": "docs/evidencia/pa-superficie-083-diagnostico-pg17-local-r3.json",
+        "sha256": "683c97fa74cdf7bd9c63a59f18fe43ba1f69c5d23b526b5178948898f167aa51",
+        "postgresql": "17.11 (Postgres.app)",
+        "comprobaciones": 43
+      }
+    ],
+    "cortes_previos": "Los JSON pg17-local y pg17-local-r2 pertenecen a fuentes previas; el corte final está en pg17-local-r3.",
+    "estado_destino": "Pendiente de ejecución y respuesta del usuario."
+  }
+}

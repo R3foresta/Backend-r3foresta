@@ -1,0 +1,37 @@
+{
+  "tarea": "RECUPERACION_SUPERFICIE_083_ENSAYO_DESTINO",
+  "fecha": "2026-10-20",
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "procedencia": "Confirmación textual de Pablo en este chat: ejecución sin errores, seguida de confirmación explícita de la ruta /private/tmp/pa-083-ubicacion-rollback.sql. Sin ejecución remota del agente.",
+  "fuente_083": {
+    "archivo": "migrations/083_pa_superficie_privada_compat.sql",
+    "sha256": "e4b413bd08c5d8e08c526d7e3a58ea56a10dd782e27e7e59db26742013e10aea"
+  },
+  "ensayo": {
+    "archivo": "/private/tmp/pa-083-ubicacion-rollback.sql",
+    "sha256": "11fc6bf662dbf932396c0e3ee1107ad02047dacb7894d5e103087ff63706b533",
+    "estado": "SIN_ERRORES_REPORTADO_POR_USUARIO",
+    "resultado_reportado": "no devuelve erro entonces todo ok",
+    "archivo_confirmado": "este /private/tmp/pa-083-ubicacion-rollback.sql",
+    "cierre": "ROLLBACK",
+    "instala_083": false,
+    "cierre_permanente_acreditado": false
+  },
+  "cotejo_previo": {
+    "archivo": "docs/evidencia/pa-superficie-083-ubicacion-cotejada-2026-10-20.json",
+    "sha256": "3373520b3cc294a283cd7c585d2028b57864845501dd238c9c6bf0b8e94f3639"
+  },
+  "backend_compatibilidad": {
+    "archivos": "Cinco entradas getAdminClient en creación/edición/baja y asociaciones de campañas; guards/assertAdmin intactos.",
+    "huellas": "Seis fuentes/specs coinciden con adaptacion_backend_local.archivos_sha256 de la evidencia de recuperación075–078.",
+    "evidencia": "docs/evidencia/pa-int07-recuperacion-075-078-cotejada-2026-10-20.json",
+    "verificacion": "Build,66 suites/827 unitarios y OpenAPI aprobados en el corte documentado. Revisión independiente sin hallazgos accionables.",
+    "publicacion": "Sin commit/push/despliegue del agente. main tiene tres commits anteriores por delante de origin/main; un push publicaría también INT02-D e INT05."
+  },
+  "siguiente_paso": "Publicar y comprobar el backend privado en local y Render antes del COMMIT definitivo083. Después aplicar/cotejar081 y082.",
+  "limites": [
+    "El éxito se registra por confirmación humana, sin salida SQL ni consulta remota independiente.",
+    "Un ensayo con ROLLBACK no instala083, no cambia grants permanentemente ni acredita081/082.",
+    "Publicar el backend no acredita que un SQL haya sido aplicado. SQL aplicado no acredita despliegue."
+  ]
+}

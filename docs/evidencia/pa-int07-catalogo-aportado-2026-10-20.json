@@ -1,0 +1,191 @@
+{
+  "tarea": "PA-T-INT07_DIAGNOSTICO_082",
+  "fecha": "2026-10-20",
+  "zona": "America/La_Paz",
+  "fuente": "CATALOGO_APORTADO_POR_USUARIO_NO_CONEXION_REMOTA_DEL_AGENTE",
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "procedencia_proyecto": "Confirmación explícita de Pablo en este chat; elJSON no identifica proyecto.",
+  "archivo_aportado_sha256": "351ef487c159e658dbe90ad8b6fe35491911f3f54f70914dd954952b781d81ec",
+  "entorno_declarado_en_catalogo": {
+    "postgresql": "17.6",
+    "aislamiento": "repeatable read",
+    "lock_timeout": "0",
+    "solo_lectura": "on",
+    "zona_horaria": "UTC",
+    "postgresql_num": "170006",
+    "postgis_extension": "3.3.7",
+    "statement_timeout": "2min"
+  },
+  "error_aportado": "PA_INT07_ANTECEDENTE_INCOMPLETO: registro_plantacion.revision_registro",
+  "dependencias_082_inspeccionadas": 36,
+  "columnas_082_ausentes": [
+    {
+      "tabla": "registro_plantacion",
+      "columna": "revision_registro",
+      "tipo_esperado": "bigint"
+    },
+    {
+      "tabla": "registro_plantacion_coresponsable",
+      "columna": "nombre_snapshot",
+      "tipo_esperado": "text"
+    },
+    {
+      "tabla": "registro_plantacion_coresponsable",
+      "columna": "afiliacion_snapshot",
+      "tipo_esperado": "text"
+    },
+    {
+      "tabla": "registro_plantacion_coresponsable",
+      "columna": "afiliacion_estado",
+      "tipo_esperado": "text"
+    },
+    {
+      "tabla": "registro_plantacion_coresponsable",
+      "columna": "afiliacion_tipo",
+      "tipo_esperado": "text"
+    },
+    {
+      "tabla": "registro_plantacion_coresponsable",
+      "columna": "organizacion_id_snapshot",
+      "tipo_esperado": "bigint"
+    }
+  ],
+  "tipos_082_incompatibles": [],
+  "otros_objetos_ausentes": [
+    "evento_plantacion_efectivo",
+    "participacion_carga",
+    "participacion_carga_generacion",
+    "registro_plantacion_consumo_compensacion",
+    "registro_plantacion_consumo_credito",
+    "registro_plantacion_correccion",
+    "registro_plantacion_efectivo",
+    "registro_plantacion_grupo_revision",
+    "registro_plantacion_participante_efectivo"
+  ],
+  "funciones_por_nombre": {
+    "74": {
+      "nombres_encontrados": [
+        "pa_foto_publica"
+      ],
+      "nombres_ausentes": [
+        "pa_carga_proteger",
+        "pa_carga_generacion_proteger",
+        "pa_carga_dto",
+        "pa_cargas_respuesta",
+        "pa_cargas_operar",
+        "pa_cargas_mantenimiento"
+      ],
+      "limite": "Presencia por nombre no acredita cuerpo/version aplicada."
+    },
+    "75": {
+      "nombres_encontrados": [
+        "pa_c_replay"
+      ],
+      "nombres_ausentes": [
+        "pa_r_error",
+        "pa_r_ambito_leer",
+        "pa_registro_contexto_leer",
+        "pa_registro_participantes_leer",
+        "pa_r_payload_valido",
+        "pa_r_snapshot",
+        "pa_registro_inicial_ejecutar",
+        "pa_registro_detalle_propio_leer"
+      ],
+      "limite": "Presencia por nombre no acredita cuerpo/version aplicada."
+    },
+    "77": {
+      "nombres_encontrados": [
+        "pa_d_cuenta",
+        "fn_m3_registrar_plantacion",
+        "fn_vivero_asignar_stock_subcampania",
+        "fn_m3_devolver_asignacion_vivero",
+        "fn_m2_m3_aplicar_devolucion_fisica",
+        "fn_subcampania_cancelar_interna",
+        "fn_subcampania_cancelar",
+        "fn_campania_desactivar_sin_plantaciones",
+        "fn_subcampania_revisar_plan"
+      ],
+      "nombres_ausentes": [],
+      "limite": "Presencia por nombre no acredita cuerpo/version aplicada."
+    },
+    "78": {
+      "nombres_encontrados": [
+        "fn_subcampania_setear_poligono"
+      ],
+      "nombres_ausentes": [
+        "pa_d_subcampania_activar",
+        "pa_d_subcampania_cerrar",
+        "pa_d_equipo_agregar",
+        "pa_d_equipo_quitar",
+        "pa_d_subcampania_editar",
+        "pa_d_subcampania_borrar"
+      ],
+      "limite": "Presencia por nombre no acredita cuerpo/version aplicada."
+    },
+    "79": {
+      "nombres_encontrados": [
+        "pa_d_evidencias_reposicion",
+        "pa_foto_publica",
+        "pa_d_foto_legada_publica"
+      ],
+      "nombres_ausentes": [],
+      "limite": "Presencia por nombre no acredita cuerpo/version aplicada."
+    },
+    "81": {
+      "nombres_encontrados": [],
+      "nombres_ausentes": [
+        "pa_i_personas",
+        "pa_i_registro",
+        "pa_impacto_leer",
+        "pa_mis_registros_leer",
+        "pa_registro_detalle_propio_leer"
+      ],
+      "limite": "Presencia por nombre no acredita cuerpo/version aplicada."
+    }
+  },
+  "permisos_observados_ejemplo": [
+    {
+      "rol": "anon",
+      "tabla": "registro_plantacion",
+      "rls": false,
+      "privilegios_efectivos": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "SELECT",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    },
+    {
+      "rol": "authenticated",
+      "tabla": "registro_plantacion",
+      "rls": false,
+      "privilegios_efectivos": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "SELECT",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    }
+  ],
+  "conclusion": "El destino no presenta074–081 completos/secuenciales.082 detuvo su preflight; no corregir agregando columna aislada ni retirando esa validación.",
+  "causa_aun_no_demostrada": "No se conoce el primer error de074 ni si la ejecución se omitió o revirtió; éxito reportado previamente no equivale a COMMIT.",
+  "siguiente_accion": "Ejecutar074 completa como ensayo transaccional con ROLLBACK y revisar primer error. No reaplicar cadena completa o modificar grants fuera de alcance sin cotejo.",
+  "diagnostico_074": {
+    "archivo_local": "/private/tmp/pa-074-diagnostico-rollback.sql",
+    "fuente_sha256": "fa72c23c500cb743fa1afa0452ea088bcf0cff8d15b3e3956b763e7adb2cf045",
+    "diagnostico_sha256": "8693bdc61d53d48d988a49fc46481beb8f6e0f5a383e2a7ccb874b5a2198c6c9",
+    "diferencia_funcional": "COMMIT final reemplazado por ROLLBACK; no ejecutado por el agente contra el destino."
+  },
+  "limites": [
+    "No se leyeron filas de negocio ni secretos.",
+    "No se ejecutó SQL remoto ni se aplicaron migraciones por el agente.",
+    "Los hashes y nombres no sustituyen el cotejo de cuerpos SQL ni prueban operatividad de079.",
+    "El cierre080 no está efectivo según permisos aportados; no se amplía automáticamente el alcance de REVOKE."
+  ]
+}

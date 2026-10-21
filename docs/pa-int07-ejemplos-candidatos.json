@@ -1,0 +1,249 @@
+{
+  "estado": "DISENO_CANDIDATO_NO_API_DISPONIBLE",
+  "tarea": "PA-T-INT07-BE01",
+  "fecha": "2026-10-19",
+  "contrato": "pa-int07-contrato.md",
+  "escenarios_independientes": true,
+  "ejemplos": [
+    {
+      "caso": "AUMENTO_CANTIDAD",
+      "estado_inicial": { "registro_plantacion_id": "123", "cantidad": 10, "disponible": 5 },
+      "peticion": {
+        "metodo": "POST",
+        "ruta": "/api/v1/plantaciones/123/correcciones/cantidad",
+        "body": {
+          "comando_id": "4ff8f9bb-4280-463d-95c8-97a3f11f122c",
+          "revision_esperada": "0",
+          "revision_grupo_esperada": "0",
+          "motivo": "Se transcribieron 10 plantas; se plantaron 12.",
+          "especies": [{ "planta_id": "8", "cantidad": 12 }],
+          "confirmacion_error_registro": true,
+          "confirmacion_disponibilidad_fisica": false
+        }
+      },
+      "respuesta": {
+        "http": 200,
+        "body": {
+          "comando_id": "4ff8f9bb-4280-463d-95c8-97a3f11f122c",
+          "operacion": "CORREGIR_CANTIDAD_PLANTACION",
+          "estado": "CONFIRMADO",
+          "resultado": {
+            "tipo": "CORRECCION_PLANTACION",
+            "correccion_id": "91",
+            "registro_plantacion_id": "123",
+            "subcampania_id": "11",
+            "caso": "CANTIDAD",
+            "revision_anterior": "0",
+            "revision_nueva": "1",
+            "revision_grupo_anterior": "0",
+            "revision_grupo_nueva": "1",
+            "cambio": "CAMBIO_APLICADO",
+            "estado_logico": "VIGENTE",
+            "registro_vigente_id": null
+          },
+          "error": null,
+          "finalizado_en": "2026-10-19T16:00:00Z"
+        }
+      }
+    },
+    {
+      "caso": "DUPLICADO",
+      "estado_inicial": { "registro_vigente_id": "223", "registro_duplicado_id": "224", "revision_de_ambos": "0", "revision_grupo_de_ambos": "0" },
+      "peticion": {
+        "metodo": "POST",
+        "ruta": "/api/v1/plantaciones/224/reversiones",
+        "body": {
+          "comando_id": "883118ef-a3a0-4ed8-8460-00cce9d51e2a",
+          "revision_esperada": "0",
+          "revision_grupo_esperada": "0",
+          "causa": "DUPLICADO",
+          "motivo": "El mismo trabajo quedó registrado dos veces.",
+          "registro_vigente_id": "223",
+          "revision_vigente_esperada": "0",
+          "revision_grupo_vigente_esperada": "0"
+        }
+      },
+      "efecto_sintetico_esperado": {
+        "entrega": 100,
+        "cantidades_efectivas_antes": [30, 30],
+        "cantidades_efectivas_despues": [30, 0],
+        "disponible_antes": 40,
+        "disponible_despues": 70,
+        "vivero_delta": 0,
+        "originales_conservados": true
+      }
+    },
+    {
+      "caso": "OBSERVACIONES",
+      "peticion": {
+        "metodo": "POST",
+        "ruta": "/api/v1/plantaciones/323/correcciones/observaciones",
+        "body": {
+          "comando_id": "22961858-4913-490e-a0b3-e8dba18d2658",
+          "revision_esperada": "0",
+          "motivo": "Se transcribió una observación equivocada.",
+          "observaciones": "Plantación realizada junto al acceso norte."
+        }
+      }
+    },
+    {
+      "caso": "PARTICIPANTES",
+      "estado_inicial": {
+        "persona_46": { "cuenta_activa": false, "participacion_real_pasada": true },
+        "decision_aplicable": "P02_CONFIRMADA"
+      },
+      "peticion": {
+        "metodo": "POST",
+        "ruta": "/api/v1/plantaciones/423/correcciones/participantes",
+        "body": {
+          "comando_id": "9f7cc167-1794-4b0b-b3a6-d499b590b378",
+          "revision_esperada": "0",
+          "motivo": "Una persona que participó quedó fuera de la lista.",
+          "coresponsable_ids": ["45", "46"]
+        }
+      }
+    },
+    {
+      "caso": "REDUCCION_CANTIDAD",
+      "peticion": {
+        "metodo": "POST",
+        "ruta": "/api/v1/plantaciones/523/correcciones/cantidad",
+        "body": {
+          "comando_id": "0762590a-6468-44c6-b13b-c06e196fbd0d",
+          "revision_esperada": "1",
+          "revision_grupo_esperada": "1",
+          "motivo": "Se anotaron dos plantas de más, siguen físicamente disponibles.",
+          "especies": [{ "planta_id": "8", "cantidad": 10 }],
+          "confirmacion_error_registro": true,
+          "confirmacion_disponibilidad_fisica": true
+        }
+      },
+      "estado_inicial": { "cantidad": 12 },
+      "efecto_sintetico_esperado": { "consumo_delta": -2, "disponible_delta": 2, "vivero_delta": 0 }
+    },
+    {
+      "caso": "PLANTACION_NO_OCURRIDA",
+      "peticion": {
+        "metodo": "POST",
+        "ruta": "/api/v1/plantaciones/623/reversiones",
+        "body": {
+          "comando_id": "c776173d-7398-41c1-a752-053ccfc2a4f0",
+          "revision_esperada": "0",
+          "revision_grupo_esperada": "0",
+          "causa": "REGISTRO_ERRONEO",
+          "motivo": "El trabajo declarado en este registro no ocurrió."
+        }
+      }
+    },
+    {
+      "caso": "BAJA_ERRONEA",
+      "peticion": {
+        "metodo": "POST",
+        "ruta": "/api/v1/eventos-plantacion/723/reversiones",
+        "body": {
+          "comando_id": "b0a3c68a-4f0f-4600-a264-c28ac580b99b",
+          "revision_esperada": "0",
+          "revision_grupo_esperada": "1",
+          "motivo": "La baja de cuatro plantas se registró en este grupo por error."
+        }
+      },
+      "efecto_sintetico_esperado": { "mortalidad_delta": -4, "disponible_delta": 0, "vivero_delta": 0 }
+    },
+    {
+      "caso": "REPOSICION_ERRONEA",
+      "peticion": {
+        "metodo": "POST",
+        "ruta": "/api/v1/plantaciones/823/reversiones",
+        "body": {
+          "comando_id": "35e619c2-0f8f-4c26-8d45-83eabceddfad",
+          "revision_esperada": "0",
+          "revision_grupo_esperada": "2",
+          "revision_origen_esperada": "0",
+          "causa": "REGISTRO_ERRONEO",
+          "motivo": "La reposición de cinco plantas se anotó por error."
+        }
+      },
+      "efecto_sintetico_esperado": { "reposicion_delta": -5, "disponible_reposicion_delta": 5, "disponible_inicial_delta": 0, "vivero_delta": 0 }
+    },
+    {
+      "caso": "FICHA_PUBLICA_DUPLICADO_REVERTIDO",
+      "peticion": { "metodo": "GET", "ruta": "/api/v1/impact/registros/224/estado" },
+      "respuesta": {
+        "http": 200,
+        "body": {
+          "data": {
+            "registro_plantacion_id": "224",
+            "estado_logico": "REVERTIDO",
+            "tiene_correcciones": true,
+            "url_detalle_efectivo": null,
+            "registro_vigente": {
+              "registro_plantacion_id": "223",
+              "url_publica": "/api/v1/impact/registros/223"
+            }
+          },
+          "observado_en": "2026-10-19T16:02:00Z"
+        }
+      },
+      "decision_aplicable": "P03_CONFIRMADA",
+      "fotos_publicas_del_revertido": { "http": 404, "bytes_originales_conservados": true }
+    },
+    {
+      "caso": "PARTICIPACION_ERRONEA_RETIRADA",
+      "precondicion": "Cuenta activa sin autoría ni otra relación efectiva tras retirar su participación errónea.",
+      "peticion": { "metodo": "GET", "ruta": "/api/v1/plantaciones/423/estado-propio" },
+      "respuesta": {
+        "http": 404,
+        "body": {
+          "error": {
+            "codigo": "RECURSO_NO_VISIBLE",
+            "mensaje": "El recurso no está disponible.",
+            "campos": [],
+            "ambitos": [],
+            "reintento": "NO_APLICA"
+          },
+          "comando_id": null,
+          "resultado_concluyente": false
+        }
+      },
+      "decision_aplicable": "P01_CONFIRMADA"
+    },
+    {
+      "caso": "DEPENDENCIA_INCOMPATIBLE",
+      "respuesta": {
+        "http": 409,
+        "body": {
+          "comando_id": "883118ef-a3a0-4ed8-8460-00cce9d51e2a",
+          "operacion": "REVERTIR_REGISTRO_PLANTACION",
+          "estado": "RECHAZADO",
+          "resultado": null,
+          "error": {
+            "codigo": "DEPENDENCIAS_INCOMPATIBLES",
+            "mensaje": "El registro conserva hechos dependientes incompatibles.",
+            "campos": [],
+            "ambitos": ["11"],
+            "reintento": "NUEVA_CONFIRMACION"
+          },
+          "finalizado_en": "2026-10-19T16:01:00Z"
+        }
+      }
+    },
+    {
+      "caso": "RESULTADO_INCONCLUSO",
+      "respuesta": {
+        "http": 503,
+        "body": {
+          "error": {
+            "codigo": "RESULTADO_NO_DETERMINADO",
+            "mensaje": "No se pudo determinar el resultado del comando.",
+            "campos": [],
+            "ambitos": [],
+            "reintento": "MISMA_CLAVE"
+          },
+          "comando_id": "883118ef-a3a0-4ed8-8460-00cce9d51e2a",
+          "resultado_concluyente": false
+        }
+      },
+      "recuperacion": "/api/v1/participacion/comandos/883118ef-a3a0-4ed8-8460-00cce9d51e2a?operacion=REVERTIR_REGISTRO_PLANTACION"
+    }
+  ]
+}

@@ -1,0 +1,948 @@
+{
+  "tarea": "PA-T-INT07_RECUPERACION_ANTECEDENTES",
+  "fecha": "2026-10-20",
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "procedencia": "Catálogo aportado por usuario en continuidad del proyecto confirmado en el chat; no conexión remota del agente.",
+  "catalogo_sha256": "fe0f97cf7944ab9386f06d46a9d9082186d13a2cf4b0a34bcd0b6d1d29be149b",
+  "entorno_declarado": {
+    "postgresql": "17.6",
+    "aislamiento": "repeatable read",
+    "lock_timeout": "0",
+    "solo_lectura": "on",
+    "zona_horaria": "UTC",
+    "postgresql_num": "170006",
+    "postgis_extension": "3.3.7",
+    "statement_timeout": "2min"
+  },
+  "recuperacion_ejecutada": {
+    "archivo": "scripts/sql/pa-int07-recuperar-075-078.sql",
+    "sha256": "e68947539848c444d8bea4d40f4672c6ef6168206beca0969ccd887c6264bfab",
+    "funciones_nuevas": [
+      {
+        "nombre": "pa_d_equipo_agregar",
+        "argumentos": "p_id bigint, p_actor_id bigint, p_miembros jsonb"
+      },
+      {
+        "nombre": "pa_d_equipo_quitar",
+        "argumentos": "p_id bigint, p_actor_id bigint, p_usuario_id bigint"
+      },
+      {
+        "nombre": "pa_d_subcampania_activar",
+        "argumentos": "p_id bigint, p_actor_id bigint"
+      },
+      {
+        "nombre": "pa_d_subcampania_borrar",
+        "argumentos": "p_id bigint, p_actor_id bigint"
+      },
+      {
+        "nombre": "pa_d_subcampania_cerrar",
+        "argumentos": "p_id bigint, p_actor_id bigint, p_datos jsonb"
+      },
+      {
+        "nombre": "pa_d_subcampania_editar",
+        "argumentos": "p_id bigint, p_actor_id bigint, p_datos jsonb"
+      },
+      {
+        "nombre": "pa_r_ambito_leer",
+        "argumentos": "p_actor_id bigint, p_rol text, p_subcampania_id bigint"
+      },
+      {
+        "nombre": "pa_r_error",
+        "argumentos": "p_http integer, p_codigo text, p_mensaje text"
+      },
+      {
+        "nombre": "pa_r_payload_valido",
+        "argumentos": "p jsonb"
+      },
+      {
+        "nombre": "pa_r_snapshot",
+        "argumentos": "p_usuario_id bigint, p_fecha date, p_hoy date, p_declaraciones jsonb"
+      },
+      {
+        "nombre": "pa_registro_contexto_leer",
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_subcampania_id bigint"
+      },
+      {
+        "nombre": "pa_registro_detalle_propio_leer",
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_registro_id bigint"
+      },
+      {
+        "nombre": "pa_registro_inicial_ejecutar",
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_comando_id uuid, p_payload jsonb, p_contenido_canonico text"
+      },
+      {
+        "nombre": "pa_registro_participantes_leer",
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_subcampania_id bigint, p_consulta text, p_despues_id bigint, p_limite integer"
+      }
+    ],
+    "definiciones_cambiadas": [
+      {
+        "nombre": "fn_subcampania_setear_poligono",
+        "argumentos": "p_id integer, p_geojson jsonb, p_updated_by bigint",
+        "md5_antes": "21ffca5ed37587327d7c0e5699500ad0",
+        "md5_despues": "79d3317fd197d3812dc7e5dc24e2cf30"
+      },
+      {
+        "nombre": "pa_c_replay",
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_operacion text, p_comando_id uuid, p_huella bytea",
+        "md5_antes": "c239b08324cca9247d95ae1dd008e4d3",
+        "md5_despues": "9fffea0f60ad4c8566df7f41c59fe505"
+      }
+    ],
+    "comparacion_definiciones": {
+      "metodo": "Definiciones075 y078 compiladas en PG14.17 con check_function_bodies=off y tipos/tabla mínimos sintéticos, sin invocar RPC. Compara pg_get_functiondef MD5 y firma con catálogo aportado PG17.6. No prueba ejecución ni FKs/locks.",
+      "resultados": [
+        {
+          "nombre": "fn_subcampania_setear_poligono",
+          "argumentos": "p_id integer, p_geojson jsonb, p_updated_by bigint",
+          "definicion_md5": "79d3317fd197d3812dc7e5dc24e2cf30",
+          "md5_aportado": "79d3317fd197d3812dc7e5dc24e2cf30",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_c_replay",
+          "argumentos": "p_actor_id bigint, p_auth_id text, p_operacion text, p_comando_id uuid, p_huella bytea",
+          "definicion_md5": "9fffea0f60ad4c8566df7f41c59fe505",
+          "md5_aportado": "9fffea0f60ad4c8566df7f41c59fe505",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_d_equipo_agregar",
+          "argumentos": "p_id bigint, p_actor_id bigint, p_miembros jsonb",
+          "definicion_md5": "f1a088c312670a9e6ae932c0bcefabb8",
+          "md5_aportado": "f1a088c312670a9e6ae932c0bcefabb8",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_d_equipo_quitar",
+          "argumentos": "p_id bigint, p_actor_id bigint, p_usuario_id bigint",
+          "definicion_md5": "65d1fea1fb473ab26216dea8416a81da",
+          "md5_aportado": "65d1fea1fb473ab26216dea8416a81da",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_d_subcampania_activar",
+          "argumentos": "p_id bigint, p_actor_id bigint",
+          "definicion_md5": "68147013643aa2aa734dd837dbc59e7d",
+          "md5_aportado": "68147013643aa2aa734dd837dbc59e7d",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_d_subcampania_borrar",
+          "argumentos": "p_id bigint, p_actor_id bigint",
+          "definicion_md5": "844bbd5e79cd03a9ea03257fefcbc277",
+          "md5_aportado": "844bbd5e79cd03a9ea03257fefcbc277",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_d_subcampania_cerrar",
+          "argumentos": "p_id bigint, p_actor_id bigint, p_datos jsonb",
+          "definicion_md5": "64bc670e084ace0ced88c644ca90a151",
+          "md5_aportado": "64bc670e084ace0ced88c644ca90a151",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_d_subcampania_editar",
+          "argumentos": "p_id bigint, p_actor_id bigint, p_datos jsonb",
+          "definicion_md5": "107b242ae519be329e900a577d9a1890",
+          "md5_aportado": "107b242ae519be329e900a577d9a1890",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_r_ambito_leer",
+          "argumentos": "p_actor_id bigint, p_rol text, p_subcampania_id bigint",
+          "definicion_md5": "0fc59beac407d5df932a2a6c61566467",
+          "md5_aportado": "0fc59beac407d5df932a2a6c61566467",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_r_error",
+          "argumentos": "p_http integer, p_codigo text, p_mensaje text",
+          "definicion_md5": "e4027f5ad14c18cd0db8a961505e85c7",
+          "md5_aportado": "e4027f5ad14c18cd0db8a961505e85c7",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_r_payload_valido",
+          "argumentos": "p jsonb",
+          "definicion_md5": "4bd268593118bd596573e9492c972b32",
+          "md5_aportado": "4bd268593118bd596573e9492c972b32",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_r_snapshot",
+          "argumentos": "p_usuario_id bigint, p_fecha date, p_hoy date, p_declaraciones jsonb",
+          "definicion_md5": "c7e825f82cdff7449b83a1c88150368a",
+          "md5_aportado": "c7e825f82cdff7449b83a1c88150368a",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_registro_contexto_leer",
+          "argumentos": "p_actor_id bigint, p_auth_id text, p_subcampania_id bigint",
+          "definicion_md5": "10dea643ddb9d36f528486834bebaaa1",
+          "md5_aportado": "10dea643ddb9d36f528486834bebaaa1",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_registro_detalle_propio_leer",
+          "argumentos": "p_actor_id bigint, p_auth_id text, p_registro_id bigint",
+          "definicion_md5": "9a4ad2ad6cd2b655f5aaa1d86d13b521",
+          "md5_aportado": "9a4ad2ad6cd2b655f5aaa1d86d13b521",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_registro_inicial_ejecutar",
+          "argumentos": "p_actor_id bigint, p_auth_id text, p_comando_id uuid, p_payload jsonb, p_contenido_canonico text",
+          "definicion_md5": "906361265ce67d8fe9abcd051474d0ba",
+          "md5_aportado": "906361265ce67d8fe9abcd051474d0ba",
+          "coincide": true
+        },
+        {
+          "nombre": "pa_registro_participantes_leer",
+          "argumentos": "p_actor_id bigint, p_auth_id text, p_subcampania_id bigint, p_consulta text, p_despues_id bigint, p_limite integer",
+          "definicion_md5": "ea8e97eaeed359fedaa39ef43c9099f1",
+          "md5_aportado": "ea8e97eaeed359fedaa39ef43c9099f1",
+          "coincide": true
+        }
+      ]
+    },
+    "acl_64_comprobaciones": [
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "fn_subcampania_setear_poligono",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id integer, p_geojson jsonb, p_updated_by bigint"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "fn_subcampania_setear_poligono",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id integer, p_geojson jsonb, p_updated_by bigint"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "fn_subcampania_setear_poligono",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id integer, p_geojson jsonb, p_updated_by bigint"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "fn_subcampania_setear_poligono",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_id integer, p_geojson jsonb, p_updated_by bigint"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_c_replay",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_operacion text, p_comando_id uuid, p_huella bytea"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_c_replay",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_operacion text, p_comando_id uuid, p_huella bytea"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_c_replay",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_operacion text, p_comando_id uuid, p_huella bytea"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_c_replay",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_operacion text, p_comando_id uuid, p_huella bytea"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_d_equipo_agregar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_miembros jsonb"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_d_equipo_agregar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_miembros jsonb"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_d_equipo_agregar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_miembros jsonb"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_d_equipo_agregar",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_miembros jsonb"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_d_equipo_quitar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_usuario_id bigint"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_d_equipo_quitar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_usuario_id bigint"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_d_equipo_quitar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_usuario_id bigint"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_d_equipo_quitar",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_usuario_id bigint"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_d_subcampania_activar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_d_subcampania_activar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_d_subcampania_activar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_d_subcampania_activar",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_id bigint, p_actor_id bigint"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_d_subcampania_borrar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_d_subcampania_borrar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_d_subcampania_borrar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_d_subcampania_borrar",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_id bigint, p_actor_id bigint"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_d_subcampania_cerrar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_datos jsonb"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_d_subcampania_cerrar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_datos jsonb"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_d_subcampania_cerrar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_datos jsonb"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_d_subcampania_cerrar",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_datos jsonb"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_d_subcampania_editar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_datos jsonb"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_d_subcampania_editar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_datos jsonb"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_d_subcampania_editar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_datos jsonb"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_d_subcampania_editar",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_id bigint, p_actor_id bigint, p_datos jsonb"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_r_ambito_leer",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_rol text, p_subcampania_id bigint"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_r_ambito_leer",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_rol text, p_subcampania_id bigint"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_r_ambito_leer",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_rol text, p_subcampania_id bigint"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_r_ambito_leer",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_actor_id bigint, p_rol text, p_subcampania_id bigint"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_r_error",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_http integer, p_codigo text, p_mensaje text"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_r_error",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_http integer, p_codigo text, p_mensaje text"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_r_error",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_http integer, p_codigo text, p_mensaje text"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_r_error",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_http integer, p_codigo text, p_mensaje text"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_r_payload_valido",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p jsonb"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_r_payload_valido",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p jsonb"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_r_payload_valido",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p jsonb"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_r_payload_valido",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p jsonb"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_r_snapshot",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_usuario_id bigint, p_fecha date, p_hoy date, p_declaraciones jsonb"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_r_snapshot",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_usuario_id bigint, p_fecha date, p_hoy date, p_declaraciones jsonb"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_r_snapshot",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_usuario_id bigint, p_fecha date, p_hoy date, p_declaraciones jsonb"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_r_snapshot",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_usuario_id bigint, p_fecha date, p_hoy date, p_declaraciones jsonb"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_registro_contexto_leer",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_subcampania_id bigint"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_registro_contexto_leer",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_subcampania_id bigint"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_registro_contexto_leer",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_subcampania_id bigint"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_registro_contexto_leer",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_subcampania_id bigint"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_registro_detalle_propio_leer",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_registro_id bigint"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_registro_detalle_propio_leer",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_registro_id bigint"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_registro_detalle_propio_leer",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_registro_id bigint"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_registro_detalle_propio_leer",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_registro_id bigint"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_registro_inicial_ejecutar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_comando_id uuid, p_payload jsonb, p_contenido_canonico text"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_registro_inicial_ejecutar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_comando_id uuid, p_payload jsonb, p_contenido_canonico text"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_registro_inicial_ejecutar",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_comando_id uuid, p_payload jsonb, p_contenido_canonico text"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_registro_inicial_ejecutar",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_comando_id uuid, p_payload jsonb, p_contenido_canonico text"
+      },
+      {
+        "rol": "anon",
+        "existe": true,
+        "nombre": "pa_registro_participantes_leer",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_subcampania_id bigint, p_consulta text, p_despues_id bigint, p_limite integer"
+      },
+      {
+        "rol": "authenticated",
+        "existe": true,
+        "nombre": "pa_registro_participantes_leer",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_subcampania_id bigint, p_consulta text, p_despues_id bigint, p_limite integer"
+      },
+      {
+        "rol": "PUBLIC",
+        "existe": true,
+        "nombre": "pa_registro_participantes_leer",
+        "esquema": "public",
+        "execute": false,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_subcampania_id bigint, p_consulta text, p_despues_id bigint, p_limite integer"
+      },
+      {
+        "rol": "service_role",
+        "existe": true,
+        "nombre": "pa_registro_participantes_leer",
+        "esquema": "public",
+        "execute": true,
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_subcampania_id bigint, p_consulta text, p_despues_id bigint, p_limite integer"
+      }
+    ],
+    "otras_huellas_conservadas": true
+  },
+  "bloqueos_080_visibles": [
+    {
+      "objeto": "subcampania_meta_especie",
+      "rol": "anon",
+      "privilegios_incompatibles_con_preflight_080": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "SELECT",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    },
+    {
+      "objeto": "subcampania_meta_especie",
+      "rol": "authenticated",
+      "privilegios_incompatibles_con_preflight_080": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "SELECT",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    },
+    {
+      "objeto": "campania",
+      "rol": "anon",
+      "privilegios_incompatibles_con_preflight_080": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    },
+    {
+      "objeto": "campania",
+      "rol": "authenticated",
+      "privilegios_incompatibles_con_preflight_080": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    },
+    {
+      "objeto": "campania_organizacion",
+      "rol": "anon",
+      "privilegios_incompatibles_con_preflight_080": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    },
+    {
+      "objeto": "campania_organizacion",
+      "rol": "authenticated",
+      "privilegios_incompatibles_con_preflight_080": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    },
+    {
+      "objeto": "campania_estado",
+      "rol": "anon",
+      "privilegios_incompatibles_con_preflight_080": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    },
+    {
+      "objeto": "campania_estado",
+      "rol": "authenticated",
+      "privilegios_incompatibles_con_preflight_080": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    },
+    {
+      "objeto": "v_lote_vivero_saldos",
+      "rol": "anon",
+      "privilegios_incompatibles_con_preflight_080": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    },
+    {
+      "objeto": "v_lote_vivero_saldos",
+      "rol": "authenticated",
+      "privilegios_incompatibles_con_preflight_080": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    }
+  ],
+  "privilegios_efectivos_incompatibles": 62,
+  "conclusion": "075 y078 recuperadas y privadas al servicio; no repetirlas.080 sigue pendiente de conciliación revisada;081/082 no instaladas.",
+  "faltantes_de_cotejo": [
+    "Origen de grants en ACL tabla/columna y membresías relevantes.",
+    "Servicio sobre tipo_planta/comunidad/division_administrativa, omitidos por cotejador anterior.",
+    "Metadatos explícitos de fn_generar_codigo_campania y definers/vistas cubiertos por080."
+  ],
+  "limites": [
+    "No invocación de RPC remotas ni filas de negocio.",
+    "Comparación de definiciones no acredita prueba funcional del destino.",
+    "No se modificaron grants remotos.",
+    "080 no se reescribe ni amplía automáticamente por el diagnóstico."
+  ],
+  "adaptacion_backend_local": {
+    "cambio": "Cinco entradas de cliente en creación, edición/baja y asociaciones de campañas pasan a getAdminClient; conserva assertAdmin, guards, DTO y reglas.",
+    "archivos_sha256": {
+      "src/campanias/application/campanias-creation.service.ts": "23d6e7e1f00080200c2ab6f250c626d96e642209154ff263d303cc5380f0059d",
+      "src/campanias/application/campanias-edicion.service.ts": "f1f579567ca7b3f90a7ac139b6c5b36eb21e07a36e2d5b5584d06016959a8400",
+      "src/campanias/application/campanias-organizaciones.service.ts": "e218e213d1bae8623d122dbc172f305d5b0a31511718ea540d03cb668b82ef17",
+      "src/campanias/tests/campanias-creation.service.spec.ts": "11d6bd5eda22a6a52e8b8390fc7ae3e46f8b21e8eaf2fb07632969d8f5e342df",
+      "src/campanias/tests/campanias-edicion.service.spec.ts": "bfbe90a0e59730ab67f48ec5fa3aec39043cdc2faaa8670fb5bfc854481ccda4",
+      "src/campanias/tests/campanias-organizaciones.service.spec.ts": "2cf42da7b91eec62e9ceed38f5a66154c868c98813b2429ca032aa4ae0935e9b"
+    },
+    "verificacion": {
+      "node": "24.19.0",
+      "build": "APROBADO",
+      "unitarios": {
+        "suites": 66,
+        "pruebas": 827,
+        "resultado": "APROBADO",
+        "comando": "npm run test:unit -- --runInBand --cacheDirectory /private/tmp/pa-int07-unittest-cache",
+        "limite": "Servicios externos sustituidos. Primer intento del sandbox bloqueó sockets Supertest con EPERM; ejecución con sockets locales habilitados aprobada."
+      },
+      "focales": {
+        "suites": 3,
+        "pruebas": 22,
+        "casos": "Cliente público indisponible; operaciones autorizadas con payloads esperados; GENERAL rechazado antes de consultas; cliente privado ausente sin fallback."
+      },
+      "openapi": {
+        "resultado": "APROBADO",
+        "rutas": 30,
+        "schemas": 65
+      },
+      "diff_check": "APROBADO"
+    },
+    "estado_publicacion": "Sin commit, push ni despliegue por el agente. Requiere actualización del backend consumidor antes de cerrar grants."
+  },
+  "consumidores_confirmados_por_usuario": {
+    "local": "Backend para pruebas en este repositorio.",
+    "remoto": "Render en desarrollo, desplegado automáticamente al hacer push a main.",
+    "produccion": "Proyecto aún no está oficialmente en producción.",
+    "coordinacion": "Preparación local acreditada; no asumir que Render usa el cambio. El cierre SQL de permisos se coordina tras publicación/verificación del backend consumidor."
+  },
+  "siguiente_diagnostico_080": {
+    "archivo": "scripts/sql/pa-int07-diagnostico-080.sql",
+    "sha256": "946487057be11a494003cf175a68991218b75a97fecd4714536186700327ae70",
+    "naturaleza": "READ ONLY / REPEATABLE READ / ROLLBACK; reúne bloqueos sin RAISE ni revocaciones.",
+    "validacion_local": {
+      "estado": "APROBADO",
+      "postgresql": "14.17 (Homebrew)",
+      "entorno": "CLUSTER_SINTETICO_PRIVADO_SIN_TCP_SIN_ENV",
+      "comprobaciones": [
+        "READ ONLY real",
+        "REPEATABLE READ real",
+        "Sin TCP",
+        "Roles ausentes sin abortar",
+        "Diez relaciones objetivo ausentes reportadas juntas",
+        "Tres catálogos obligatorios ausentes, tipo_planta opcional",
+        "Diagnóstico repetible sin mutación",
+        "Filas/catálogo/ACL intactos",
+        "Sin defaults, datos ni cuerpos SQL completos",
+        "Detecta SELECT heredado fuera de alcance",
+        "Detecta DML directo fuera de alcance",
+        "Detecta UPDATE por columna fuera de alcance",
+        "Detecta DML de vista excepción",
+        "SELECT permitido de campania_estado sin bloqueo artificial",
+        "Detecta privilegio servicio faltante",
+        "ACL vacía y tres requisitos servicio de catálogo opcional presente",
+        "Detecta definer de códigos sin referencias textuales de tabla",
+        "Detecta definer público por prosrc",
+        "Descubre vista transitiva en otro esquema",
+        "Inventaría cadena relevante de membresía de dos niveles",
+        "Expone origen grantee del grant heredado",
+        "Expone ACL directa de columna",
+        "Incluye ambos helpers de códigos expresamente",
+        "Solo huellas de definiciones",
+        "Rechaza escritura inyectada y conserva estado"
+      ],
+      "limites": [
+        "Verifica utilidad diagnóstica, no instalación080 ni catálogo destino.",
+        "No invoca RPC de negocio ni usa PostGIS."
+      ]
+    },
+    "verificador_local": {
+      "archivo_temporal": "/private/tmp/pa-int07-diagnostico080-test.py",
+      "sha256": "25fea7f620c6db1ad0fd975192e0a287dd8040bf860a276c317e678758f46098"
+    },
+    "estado_remoto": "Pendiente de ejecución por usuario; no inferir resultado del destino desde el fixture."
+  }
+}

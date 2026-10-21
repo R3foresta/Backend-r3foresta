@@ -1,0 +1,444 @@
+{
+  "tarea": "RECUPERACION_SUPERFICIE_PRIVADA_083",
+  "fecha": "2026-10-20",
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "procedencia": "Diagnóstico aportado por usuario en continuidad del proyecto confirmado; sin conexión remota del agente.",
+  "diagnostico_aportado_sha256": "6034df1ac9709104b72057986bab0ff8753ebb9114cc6eb0b91f7e9b0754959d",
+  "contrato": "PA-INT07-DIAGNOSTICO-080/1",
+  "entorno_declarado": {
+    "postgresql": "17.6",
+    "aislamiento": "repeatable read",
+    "solo_lectura": "on"
+  },
+  "bloqueos_por_codigo": {
+    "PA_D_CATALOGO_REQUERIDO": 1,
+    "PA_D_FUERA_ALCANCE_DML_PUBLICO": 60,
+    "PA_D_FUERA_ALCANCE_SELECT_PUBLICO": 2
+  },
+  "comunidad": {
+    "rls": null,
+    "tipo": null,
+    "clase": "CATALOGO",
+    "owner": null,
+    "existe": false,
+    "nombre": "comunidad",
+    "esquema": "public",
+    "obligatorio": true,
+    "rls_forzada": null,
+    "acl_explicita": false
+  },
+  "membresias_relevantes": [],
+  "acl_columna": [],
+  "origen_grants_observados": [
+    [
+      "postgres",
+      "anon"
+    ],
+    [
+      "postgres",
+      "authenticated"
+    ]
+  ],
+  "maintain_publico_observado": [
+    {
+      "owner": "postgres",
+      "objeto": "asignacion_vivero_subcampania",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "asignacion_vivero_subcampania",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "campania",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "campania",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "campania_estado",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "campania_estado",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "campania_organizacion",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "campania_organizacion",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "division_administrativa",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "division_administrativa",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "evento_lote_vivero",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "evento_lote_vivero",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "evento_plantacion",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "evento_plantacion",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "evidencias_trazabilidad",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "evidencias_trazabilidad",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "lote_vivero",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "lote_vivero",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "planta",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "planta",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "registro_plantacion",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "registro_plantacion",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "registro_plantacion_coresponsable",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "registro_plantacion_coresponsable",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "registro_plantacion_detalle",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "registro_plantacion_detalle",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "subcampania_equipo",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "subcampania_equipo",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "subcampania_meta_especie",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "subcampania_meta_especie",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "tipo_planta",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "tipo_planta",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "v_lote_vivero_saldos",
+      "esquema": "public",
+      "grantee": "anon",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    },
+    {
+      "owner": "postgres",
+      "objeto": "v_lote_vivero_saldos",
+      "esquema": "public",
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "privilegio": "MAINTAIN",
+      "grant_option": false
+    }
+  ],
+  "definers_y_codigos": [
+    {
+      "owner": "postgres",
+      "nombre": "fn_generar_codigo_campania",
+      "esquema": "public",
+      "argumentos": "p_anio integer",
+      "definicion_md5": "225360d64affc1cfe1d5406154e768e0",
+      "security_definer": false,
+      "definer_alcance080": false
+    },
+    {
+      "owner": "postgres",
+      "nombre": "fn_generar_codigo_subcampania",
+      "esquema": "public",
+      "argumentos": "p_campania_id integer",
+      "definicion_md5": "bd15107ed4851c9fc43aa2b05cd156f0",
+      "security_definer": false,
+      "definer_alcance080": false
+    }
+  ],
+  "servicio_faltante": [
+    {
+      "nombre": "comunidad",
+      "concedido": null,
+      "privilegio": "INSERT",
+      "rol_existe": true,
+      "objeto_existe": false
+    },
+    {
+      "nombre": "comunidad",
+      "concedido": null,
+      "privilegio": "SELECT",
+      "rol_existe": true,
+      "objeto_existe": false
+    },
+    {
+      "nombre": "comunidad",
+      "concedido": null,
+      "privilegio": "UPDATE",
+      "rol_existe": true,
+      "objeto_existe": false
+    }
+  ],
+  "correccion_de_modelo": "Comunidad se representa mediante division_administrativa con tipo orden4 por país.080 exigía erróneamente otra tabla y su fixture la inventaba. No crear tabla/vista de compatibilidad.",
+  "propuesta": "083 aditiva autocontenida sustituye cierre080 con catálogos reales/legados opcionales y enumera todos los privilegios del servidor, incluidoMAINTAIN; sin grants nuevos ni cambios de dominio.",
+  "estado": "LISTO_PARA_ENSAYO_EN_DESTINO_SIN_APLICACION_REMOTA",
+  "dependencia_operativa": "Antes de COMMIT083: actualizar y comprobar backend local y Render de desarrollo con escrituras privadas de campañas. No se realizó commit, push ni despliegue por el agente. El ensayo conROLLBACK no exige ese cierre previo.",
+  "fuente_privilegios_pg17": "https://www.postgresql.org/docs/17/ddl-priv.html",
+  "limites": [
+    "Se observaron metadatos aportados, no filas de negocio.",
+    "No aplicar080 original ni añadir comunidad ficticia.",
+    "No inferir despliegue de Render a partir del build o tests locales."
+  ],
+  "reparacion_083": {
+    "archivo": "migrations/083_pa_superficie_privada_compat.sql",
+    "sha256": "58e9993b2d77aeef9dc68f1a78d90f67e71622161001a6ed18f6b71beacd559b",
+    "080_intacta_sha256": "d52b8e518c42d3e3e43b8c3262eab4165e28f2b7a23b32339637069336e323ea",
+    "verificador": "scripts/qa/pa-superficie-compat-test.py",
+    "verificador_sha256": "d1e8f20213eaf8e45fddd38e1809324c609a1c5e00ae4091ddad38f0fc111d7f",
+    "ensayos_locales": [
+      {
+        "archivo": "docs/evidencia/pa-superficie-083-pg14-local.json",
+        "sha256": "4a9e1042726cd50ad3a9da732c9452e99c7e923fc8c313616a6874468590a7c7",
+        "postgresql": "14.17 (Homebrew)",
+        "comprobaciones": 27
+      },
+      {
+        "archivo": "docs/evidencia/pa-superficie-083-pg17-local.json",
+        "sha256": "9123050a042a3c8b066341b0d0dd88e3ef8f03258526a1636a66bd28e5ae6d66",
+        "postgresql": "17.11 (Postgres.app)",
+        "comprobaciones": 28
+      }
+    ],
+    "limite": "Clústeres sintéticos aislados; no prueba SQL ni consumidores del destino.17.11 es distinta revisión menor del17.6aportado."
+  },
+  "ensayo_destino_preparado": {
+    "archivo_temporal": "/private/tmp/pa-083-diagnostico-rollback.sql",
+    "sha256": "4255938d12cfa08eaed82f290f49c73803247d09cb42f2dd5858d79e260b89be",
+    "diferencia_funcional": "COMMIT final por ROLLBACK; cuerpo original conservado.",
+    "estado": "Pendiente de ejecución por usuario; un éxito no instala083 ni confirma cambios de permisos.",
+    "naturaleza": "Ensayo transaccional con REVOKE y ROLLBACK; no es de solo lectura."
+  },
+  "082_pg17": {
+    "archivo": "docs/evidencia/pa-int07-be02-persistencia-pg17-local.json",
+    "sha256": "65575f8ef002e9626f199b000f687948bc3fc1370e5ae4f1457cb1b1beac652f",
+    "comprobaciones": 159,
+    "limite": "Persistencia parcial focal sinPostGIS ni ejecutores; no aplicación remota."
+  },
+  "runtime_pg17": {
+    "fuente": "https://github.com/PostgresApp/PostgresApp/releases/download/v2.9.6/Postgres-2.9.6-17.dmg",
+    "digest_oficial_verificado": "b38bb00b8c8702a568270aab85995c550f7f93d1503b818efdc5ff9a519b7168",
+    "version_local": "17.11 (Postgres.app)",
+    "naturaleza": "Copiado bajo/private/tmp; sin instalación ni cambio de servicios del sistema. Clústeres de ensayos sinTCP destruidos al terminar."
+  }
+}

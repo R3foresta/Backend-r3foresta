@@ -38,7 +38,7 @@ export class CampaniasEdicionService {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertAdmin(usuario.rol);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: actual, error: fetchError } = await supabase
       .from('campania')
@@ -136,7 +136,7 @@ export class CampaniasEdicionService {
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertAdmin(usuario.rol);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     const { data: actual, error: fetchError } = await supabase
       .from('campania')

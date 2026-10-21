@@ -1,6 +1,6 @@
 # Arquitectura del backend
 
-**Corte documental: 19 de octubre de 2026. INT05 verificada localmente, migraciones hasta081.**
+**Corte documental: 19 de octubre de 2026. INT05 verificada localmente; INT07 incorpora082 de persistencia parcial, sin ejecutores.**
 [Entrega y consolidación INT05](docs/pa-int05-entrega-local.md), [versiones de entrega](../r3foresta-docs/ESTADO.md): lectura pública y propia verificadas localmente; push, SQL remoto y despliegue pendientes. Los cortes de pruebas INT05 y D conservan sus bases y entornos originales.
 Describe implementación; el contrato de producto y el estado de cada entorno
 viven en [r3foresta-docs](https://github.com/R3foresta/r3foresta-docs).
@@ -100,6 +100,19 @@ acompañar el cierre de grants. 081 añade proyecciones STABLE de lectura públi
 sin nuevos hechos ni estado de campaña; agrega antes de unir personas/organizaciones,
 reutiliza elegibilidad de fotos y deduplica personas del detalle propio legado.
 Sus RPC/helpers siguen privados al servicio; no modifica transacciones de escritura. [Evidencia por entrega](docs/README.md).
+
+082 añade persistencia privada de correcciones (estados efectivos, revisiones,
+historial y consumo compensable) sin backfill ni cambios a originales/recibos.
+El servicio solo tiene SELECT sobre las tablas nuevas; no habilita comandos o
+altas de mortandad. El ensayo estructural focal no ejecuta075–081 ni demuestra
+concurrencia/lecturas efectivas de INT07. [Contrato y límites](docs/pa-int07-contrato.md#8-be02--persistencia-parcial-local).
+
+083 conserva 080 y añade un cierre compatible con el catálogo de desarrollo:
+comunidad como división administrativa, catálogos legados opcionales y todos los
+privilegios disponibles del servidor, incluido MAINTAIN en PG17. Su inventario
+explícito conserva SELECT de campañas/catálogos y permisos del servicio. En la
+recuperación manual sustituye el paso 080 antes de 081/082; requiere coordinar
+el backend consumidor. [Alcance y evidencia](docs/pa-superficie-083-recuperacion.md).
 
 ## Pendientes materiales
 

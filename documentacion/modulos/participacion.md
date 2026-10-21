@@ -5,6 +5,13 @@
 Base original de las pruebas: `a045d9d` más árbol INT02-D del 16 de octubre. Push, SQL remoto y despliegue de D pendientes.
 Gestión y registro participante implementados; D aporta corte/locks/superficie y entrega el entorno sintético para INT04. No acredita aplicación remota ni despliegue.
 
+INT07 inició BE01: [cotejo y contrato candidato](../../docs/pa-int07-contrato.md).
+P01–P03 están confirmadas y Pablo confirma que el alta de mortandad aún no existe.
+BE02 incorpora082 de persistencia parcial, sin DML ni ejecutores y solo ensayada
+en PostgreSQL aislado; [evidencia y límites](../../docs/evidencia/pa-int07-be02-persistencia-local.json).
+Las rutas del contrato no están disponibles
+ni forman parte del OpenAPI vigente. No enviar comandos de corrección todavía.
+
 ## Contrato que debe usar el cliente
 
 [OpenAPI generado](../../docs/pa-int02c-openapi.json): **30 rutas / 65 schemas**.
@@ -138,6 +145,13 @@ seis carreras adicionales con FKs reales verifican ambos órdenes frente a desac
 DML de cuatro catálogos del alcance autorizado. Preflight verifica fuera de alcance
 `subcampania_meta_especie`, campaña/organizaciones, DML de `campania_estado`, otras
 vistas/definers y membresías; aborta ante exposición sin modificar esos objetos.
+La recuperación de desarrollo del 20 de octubre adapta también las escrituras
+de campañas y sus asociaciones al cliente privado; coordinar el backend
+consumidor antes de conciliar sus grants. [Cotejo y límites](../../docs/pa-int07-contrato.md#9-cotejo-aportado-de-desarrollo--20-de-octubre-de-2026).
+El diagnóstico posterior encontró la precondición incorrecta de una tabla
+`comunidad` y grants MAINTAIN de PG17. [083](../../docs/pa-superficie-083-recuperacion.md)
+ofrece el cierre aditivo de ese inventario sin alterar 080 ni fabricar tablas;
+preserva las lecturas existentes de catálogos y campañas.
 `statement_timeout=30s` debe existir antes de la sentencia (067/hoisting PostgREST);
 `SET` interno por sí solo no demuestra cancelación. La evidencia D mide30s/5s en
 conexión limpia con configuración previa; versión/configuración REST remota se cotejan aparte.

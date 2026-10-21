@@ -1,0 +1,27 @@
+{
+  "fecha": "2026-10-20",
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "procedencia": "Confirmaciones del usuario en este chat; sin conexión remota del agente.",
+  "ensayo_074": "Usuario confirma ejecución completa sin errores del diagnóstico con ROLLBACK; no acredita instalación.",
+  "accion_preparada": "scripts/sql/pa-int07-recuperar-074-preservar-079.sql",
+  "sha256": "d5d02c7485d763ab9c3f065fdaafd5d9120166b9af981962a62a897b395bd8fb",
+  "fuentes": [
+    {
+      "archivo": "migrations/074_pa_int03a_cargas.sql",
+      "sha256": "fa72c23c500cb743fa1afa0452ea088bcf0cff8d15b3e3956b763e7adb2cf045"
+    },
+    {
+      "archivo": "migrations/079_pa_int02d_evidencias.sql",
+      "sha256": "509b6b2a4a50de012d060f469d85a781b5b6947a03d47669f934e8f99d8f5f3d"
+    }
+  ],
+  "verificacion": "Cuerpos fuente conservados; un único BEGIN/COMMIT; orden 074 antes de079. Validación estática, sin ensayo de este archivo contra el destino.",
+  "alcance": "Recuperar estructura074 y conservar última definición079 en la misma transacción. No modifica los archivos originales.",
+  "pendientes": [
+    "Ejecución y COMMIT remoto por el usuario.",
+    "Cotejo posterior de catálogo.",
+    "Recuperación restante de075/078/081 y revisión de versiones076/077.",
+    "Resolver drift de privilegios fuera del alcance de080 antes de intentar080.",
+    "Aplicación082 solo después de cotejar los antecedentes."
+  ]
+}
