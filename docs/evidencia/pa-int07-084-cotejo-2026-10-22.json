@@ -1,0 +1,89 @@
+{
+  "tarea": "PA-T-INT07_084_COTEJO_APORTADO",
+  "fecha_local": "2026-10-22",
+  "zona": "America/La_Paz",
+  "estado": "CATALOGO084_COTEJADO_EN_EL_ALCANCE_DECLARADO",
+  "procedencia": "JSON aportado directamente por Pablo, en continuidad de su reporte de Success y solicitud de cotejo en el mismo destino. Sin conexión SQL remota del agente. El JSON no identifica por sí solo el proyecto.",
+  "aporte": {
+    "archivo": "docs/evidencia/pa-int07-084-catalogo-aportado-2026-10-22.json",
+    "sha256": "28b12663d1f40e9b38f9842ac759309950ce8e92908d21c17ca29b3bf53a087e",
+    "contrato": "PA-INT07-084-CATALOGO/1",
+    "entorno": {
+      "postgresql": "17.6",
+      "aislamiento": "repeatable read",
+      "solo_lectura": "on",
+      "maintain_disponible": true
+    }
+  },
+  "baseline": {
+    "archivo": "docs/evidencia/pa-int07-084-catalogo-pg17-local.json",
+    "sha256": "889bbb5bcb5007c1cd5ff588d8fda1194493f3f6d74387101c966832d1bc8311",
+    "postgresql": "17.11 (Postgres.app)"
+  },
+  "fuentes_sha256": {
+    "migrations/084_pa_int07_motor_observaciones.sql": "6bbf9aab1a5b482b8812933ec863f418d9dab23829c3ed5b96cdc469afc01804",
+    "scripts/sql/pa-int07-cotejo-084.sql": "3b9945ed4653565f5dfaa21b8ecc7434fbbe8f06837aa7e91794762488e971ba",
+    "migrations/030_m3_registro_plantacion.sql": "9856cc0e357335a2afd61d8a0af29e97befc67cca28051bcdead4f375eb3253f"
+  },
+  "normalizaciones": [
+    "ACL comparadas por rol/privilegio y no por el orden textual dependiente de collation.",
+    "Versiones17.6 y17.11 conservadas como metadata informativa.",
+    "Columnas y grants del registro legado comparados por nombre, conservando como diferencia sus posiciones físicas."
+  ],
+  "coincidencias": {
+    "funciones": {
+      "cantidad": 5,
+      "cuerpos_md5": true,
+      "definiciones_md5": true,
+      "firmas_metadata_defaults_settings_owner": true,
+      "acl": 20,
+      "overloads_adicionales": 0
+    },
+    "checks_comando": {
+      "cantidad": 2,
+      "definiciones_y_validacion": true
+    },
+    "secuencia": {
+      "cantidad": 1,
+      "metadata_ownership_limites_texto": true,
+      "acl": 12
+    },
+    "tablas_completamente_coincidentes": [
+      "participacion_comando",
+      "registro_plantacion_correccion",
+      "registro_plantacion_efectivo"
+    ],
+    "sin_faltantes": true
+  },
+  "diferencias_antecedente_legacy": {
+    "tabla": "registro_plantacion",
+    "columnas": {
+      "fixture": 26,
+      "aportado": 27
+    },
+    "gps": [
+      "latitud",
+      "longitud",
+      "gps_dentro_poligono"
+    ],
+    "gps_nullable_fixture": true,
+    "gps_nullable_aportado": false,
+    "columna_adicional": {
+      "nombre": "saldo_vivo_grupo",
+      "tipo": "integer",
+      "generada": "STORED"
+    },
+    "posiciones_fisicas": "Difieren respecto al fixture; cotejo semántico por nombre.",
+    "permisos": "Todos los grants de tabla y de columnas comunes coinciden; saldo_vivo_grupo hereda los grants de tabla de service_role. PUBLIC/anon/authenticated sin acceso.",
+    "fuente": "030_m3_registro_plantacion.sql declara GPS NOT NULL y saldo_vivo_grupo generado. No son cambios084 ni requieren reparación SQL.",
+    "limite": "La consulta no exporta la expresión del generado: no se certifica su fórmula ni igualdad estructural universal del legado."
+  },
+  "diferencias_no_explicadas": [],
+  "backend": "Los archivos nuevos de controller/service siguen sin commit en el checkout inspeccionado; publicación y HTTP remoto no acreditados.",
+  "siguiente_paso": "Publicar el backend compatible y comprobar las APIs de observaciones y recuperación; no repetir migraciones para este cotejo.",
+  "limites": [
+    "Cotejo de catálogo aportado por humano; no prueba filas, saldos, HTTP, PostgREST, concurrencia o despliegue en ese destino.",
+    "La comprobación local del21 conserva su entorno y huellas; no se vuelve a acreditar toda la regresión del árbol del22.",
+    "INT07 conserva participantes, cantidades, reversiones y frontend pendientes."
+  ]
+}

@@ -43,6 +43,7 @@ const operations = [
   'CAMBIAR_ROL_GLOBAL',
   'INACTIVAR_CUENTA',
   'REGISTRAR_PLANTACION_INICIAL',
+  'CORREGIR_OBSERVACIONES_PLANTACION',
 ];
 const pagination = {
   cursor: { type: 'string', minLength: 1, maxLength: 1024 },
@@ -307,6 +308,7 @@ schemas.Confirmado = obj({
       'RolResultado',
       'InactivacionResultado',
       'PlantacionResultado',
+      'CorreccionPlantacionResultado',
     ].map(ref),
   },
   error: { type: 'object', nullable: true, enum: [null] },
@@ -1148,14 +1150,143 @@ impactRead(
   impactParams(['cursor', 'limite']),
   true,
 );
+// INT07 publica únicamente los casos ejecutables en la migración 084.
+schemas.CorreccionObservacionesEntrada = obj({
+  comando_id: uuid,
+  revision_esperada: revision,
+  motivo: {
+    ...text,
+    minLength: 3,
+    maxLength: 1000,
+    description: 'Texto NFC/trim obligatorio; nunca se incluye en el recibo.',
+  },
+  observaciones: {
+    ...nullableText,
+    maxLength: 2000,
+    description: 'Campo obligatorio; NFC/trim. Vacío equivale a null.',
+  },
+});
+schemas.CorreccionPlantacionResultado = obj({
+  tipo: { ...text, enum: ['CORRECCION_PLANTACION'] },
+  correccion_id: nullableId,
+  registro_plantacion_id: id,
+  subcampania_id: id,
+  caso: { ...text, enum: ['OBSERVACIONES'] },
+  revision_anterior: revision,
+  revision_nueva: revision,
+  revision_grupo_anterior: revision,
+  revision_grupo_nueva: revision,
+  cambio: change,
+  estado_logico: { ...text, enum: ['VIGENTE'] },
+  registro_vigente_id: { ...nullableId, enum: [null] },
+});
+schemas.ContextoCorreccion = obj({
+  registro_plantacion_id: id,
+  subcampania_id: id,
+  campania_id: id,
+  estado_subcampania: {
+    ...text,
+    enum: [
+      'BORRADOR',
+      'ACTIVA',
+      'PAUSADA',
+      'COMPLETADA',
+      'FINALIZADA_PARCIAL',
+      'CANCELADA',
+    ],
+  },
+  es_reposicion: bool,
+  estado_logico: { ...text, enum: ['VIGENTE', 'REVERTIDO'] },
+  revision_registro: revision,
+  revision_grupo: revision,
+  observaciones_visibles: bool,
+  original: obj({ observaciones: nullableText }),
+  efectivo: obj({ observaciones: nullableText }),
+  capacidades: obj({ corregir_observaciones: bool }),
+});
+schemas.HistoriaCorreccionObservaciones = obj({
+  correccion_id: id,
+  caso: { ...text, enum: ['OBSERVACIONES'] },
+  actor: obj({ usuario_id: id, nombre_snapshot: nullableText }),
+  fecha: instant,
+  revision_anterior: revision,
+  revision_nueva: revision,
+  revision_grupo_anterior: revision,
+  revision_grupo_nueva: revision,
+  motivo: nullableText,
+  observaciones_visibles: bool,
+  antes: obj({ observaciones: nullableText }),
+  despues: obj({ observaciones: nullableText }),
+  efectos_consumo: array(obj({}), 0, 0),
+});
+schemas.ContextoCorreccionLectura = obj({
+  data: ref('ContextoCorreccion'),
+  observado_en: instant,
+});
+schemas.HistorialCorreccionesLectura = obj({
+  data: array(ref('HistoriaCorreccionObservaciones'), 0, 50),
+  observado_en: instant,
+  siguiente_cursor: nullableText,
+});
+add(
+  '/api/v1/plantaciones/{id}/contexto-correccion',
+  'get',
+  'Contexto autorizado de corrección',
+  null,
+  'ContextoCorreccionLectura',
+  [param('id', 'path', id, true)],
+);
+add(
+  '/api/v1/plantaciones/{id}/historial-correcciones',
+  'get',
+  'Historial autorizado de correcciones',
+  null,
+  'HistorialCorreccionesLectura',
+  [
+    param('id', 'path', id, true),
+    param('cursor', 'query', { ...text, minLength: 1, maxLength: 1024 }),
+    param('limite', 'query', {
+      type: 'integer',
+      minimum: 1,
+      maximum: 50,
+      default: 20,
+    }),
+  ],
+);
+add(
+  '/api/v1/plantaciones/{id}/correcciones/observaciones',
+  'post',
+  'CORREGIR_OBSERVACIONES_PLANTACION',
+  'CorreccionObservacionesEntrada',
+  null,
+  [param('id', 'path', id, true)],
+  true,
+);
+paths['/api/v1/plantaciones/{id}/correcciones/observaciones'].post.responses = {
+  ...commandResponses,
+  422: response(
+    'ReciboOError',
+    'DTO inválido inconcluso o rechazo de negocio durable.',
+  ),
+  503: response(
+    'ErrorFueraDeRecibo',
+    'Infraestructura inconclusa; recuperar con la misma clave.',
+  ),
+};
+paths['/api/v1/plantaciones/{id}/correcciones/observaciones'].post.description =
+  'Solo ADMIN global y subcampaña ACTIVA. Original conservado; overlay, revisión, historial y recibo en una transacción. Replay terminal precede a nueva autorización. SIN_CAMBIOS no incrementa revisiones ni crea historial. No modifica stock. El recibo no contiene observaciones ni motivo.';
+paths['/api/v1/plantaciones/{id}/contexto-correccion'].get.description =
+  'ADMIN global o administrador vigente de la subcampaña exacta. El administrador contextual recibe observaciones null y capacidad false. Leer no reserva revisión, autoridad ni estado; no acepta query.';
+paths['/api/v1/plantaciones/{id}/historial-correcciones'].get.description =
+  'Auditoría privada autorizada, ID DESC. Cursor firmado y ligado a actor, sesión y registro. Revalida autoridad en cada página. El administrador contextual recibe motivo y observaciones null. Sin perfiles ni fotos privadas.';
 const document = {
   openapi: '3.0.3',
   info: {
     title:
-      'R3Foresta Participación aliada — INT02-C / INT03-A / INT02-D / INT05',
-    version: '1.3.0',
+      'R3Foresta Participación aliada — INT02-C / INT03-A / INT02-D / INT05 / INT07',
+    version: '1.4.0',
     description:
-      'Gestión C, registro inicial recuperable INT03-A y consulta INT05 pública global/campaña/subcampaña/registro, con Mis registros histórico privado. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada.',
+      'Gestión C, registro inicial recuperable INT03-A, consulta INT05 y corrección de observaciones INT07 con contexto/historial privados y recuperación durable. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada.',
   },
   servers: [{ url: 'http://localhost:3000' }],
   paths,

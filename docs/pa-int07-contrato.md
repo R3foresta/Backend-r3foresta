@@ -1,13 +1,19 @@
 # PA-T-INT07 · Cotejo y contrato de correcciones
 
+**Actualización del 21 de octubre:** motor/recuperación y observaciones implementados
+y verificados localmente con084; [contrato consumible, evidencia y límites](pa-int07-motor-observaciones.md).
+Las secciones de diseño conservan los demás casos como candidatos. El corte inicial
+descrito a continuación documenta la preparación previa, sin sustituir su evidencia.
+
 **Corte:** 19 de octubre de 2026, America/La_Paz. **Base cotejada:** backend
 `8dc8efcd2673142693e23e95a9b0f88723b074ba`, árbol inicialmente limpio, migraciones
 001–081 al iniciar. **Estado:** BE01 con P01–P03 confirmadas por Pablo y contratos
 técnicos T01/T02/T04 definidos; BE02 comienza por persistencia estructural parcial.
 Pablo confirma que el alta de mortandad todavía no está implementada; su frontera
-de ejecución/concurrencia permanece pendiente en BE06. No hay endpoints ni
-comandos de corrección implementados.
-Las rutas y estructuras siguientes son candidatas, no APIs disponibles.
+de ejecución/concurrencia permanece pendiente en BE06. En ese corte inicial no
+había endpoints ni comandos de corrección implementados. Las rutas siguientes
+son candidatas salvo el alcance de observaciones publicado por084, descrito en
+la actualización superior.
 
 Fuente de alcance: [encargo INT07](../../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/pa-t-int07.md),
 [PA-S04](../../r3foresta-docs/specs/plantacion/participacion-aliada/04-correccion-excepcional/spec.md)
@@ -594,3 +600,27 @@ pasó 159 comprobaciones en [PostgreSQL 17 aislado](evidencia/pa-int07-be02-pers
 Estos cortes registran un entorno concreto, sin cambiar las evidencias locales
 históricas ni acreditar Storage/CDN, ejecución de RPC, despliegue o correcciones
 operativas.
+
+## 10. Desarrollo · 21 de octubre de 2026
+
+El backend `fbf2529` se publicó en `main`, incluidos los commits previos de D e
+INT05. Pablo confirmó Render Live y la instancia local actualizada antes de
+ejecutar 083 definitiva, 081 y 082 con Success. Los dos catálogos aportados
+después permiten cotejar cinco funciones081, las siete tablas082 con sus cuatro
+helpers y las ACL enumeradas. La 083 no muestra bloqueos ni grants pendientes;
+la vista territorial conserva definición, SELECT y permisos de servicio.
+[Cotejo completo, huellas y límites](evidencia/pa-int07-cotejo-desarrollo-completo-2026-10-21.json).
+
+La estructura082 coincide en 63 columnas, 67 restricciones, 23 índices y triggers
+propios/RI (estos últimos normalizados por OID). El complemento READ ONLY cerró
+las dos salvedades del exportador: 28 comprobaciones MAINTAIN sin privilegios
+inesperados y tres secuencias BIGINT con máximo exacto `9223372036854775807`.
+Las siete tablas están presentes, sin faltantes. La
+[consulta complementaria](../scripts/sql/pa-int07-cotejo-082-complemento.sql),
+validada en [PG17 aislado](evidencia/pa-int07-082-complemento-pg17-local.json),
+exporta los límites como texto para conservar precisión. El
+[cotejo previo](evidencia/pa-int07-cotejo-desarrollo-2026-10-21.json) conserva su
+estado histórico antes de recibir este complemento. El cotejo de instalación
+queda completo dentro de su alcance; no requiere repetir migraciones.
+Aplicación reportada, cotejo de catálogo y ejecución de negocio siguen
+siendo hechos distintos: BE02 continúa parcial, sin comandos/API de corrección.

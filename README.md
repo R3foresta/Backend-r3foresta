@@ -75,6 +75,11 @@ INT05 añade proyecciones públicas sin sesión, snapshots y seguimiento por gru
 lista propia histórica paginada y migración de lectura 081. Los aliases de Impacto
 comparten elegibilidad y fotos sanitizadas; [contrato](docs/pa-int05-contrato.md).
 
+INT07 añade localmente motor/recuperación y corrección de observaciones con084,
+contexto/historial privados y lectura propia efectiva. [Entrega y pruebas](docs/pa-int07-motor-observaciones.md).
+Participantes, cantidades y reversiones siguen pendientes. Pablo reporta084 con
+Success y catálogo aportado cotejado el22; publicación/despliegue del backend y HTTP remoto pendientes.
+
 Las rutas privadas cubiertas usan **Bearer JWT verificado**, cuenta activa y
 políticas de servidor; `x-auth-id` no autentica. Impacto conserva su audiencia
 pública. Permanecen superficies legadas y deuda de despliegue/migraciones

@@ -19,6 +19,8 @@ import { ParticipacionLecturasService } from '../participacion-lecturas.service'
 import { participacionOpenApi } from '../participacion-openapi.generated';
 import { ParticipacionRegistroController } from '../participacion-registro.controller';
 import { ParticipacionRegistroService } from '../application/participacion-registro.service';
+import { ParticipacionCorreccionesController } from '../participacion-correcciones.controller';
+import { ParticipacionCorreccionesService } from '../application/participacion-correcciones.service';
 import {
   ParticipacionCargasController,
   ParticipacionFotosPublicasController,
@@ -29,13 +31,14 @@ import { resolve } from 'node:path';
 import { validarImpacto } from '../../impact/domain/policies/impacto-proyeccion.policy';
 
 describe('Contrato OpenAPI de participación v1', () => {
-  it('documenta las 30 rutas registradas por Nest y resuelve todos sus schemas', async () => {
+  it('documenta las 33 rutas registradas por Nest y resuelve todos sus schemas', async () => {
     const module = await Test.createTestingModule({
       imports: [JwtModule.register({})],
       controllers: [
         ParticipacionComandosController,
         ParticipacionLecturasController,
         ParticipacionRegistroController,
+        ParticipacionCorreccionesController,
         ParticipacionCargasController,
         ParticipacionFotosPublicasController,
         ImpactImagenController,
@@ -51,6 +54,7 @@ describe('Contrato OpenAPI de participación v1', () => {
         { provide: ParticipacionComandosService, useValue: {} },
         { provide: ParticipacionLecturasService, useValue: {} },
         { provide: ParticipacionRegistroService, useValue: {} },
+        { provide: ParticipacionCorreccionesService, useValue: {} },
         { provide: ParticipacionCargasService, useValue: {} },
       ],
     }).compile();
@@ -65,7 +69,7 @@ describe('Contrato OpenAPI de participación v1', () => {
       expect(Object.keys(actual.paths).sort()).toEqual(
         Object.keys(participacionOpenApi.paths).sort(),
       );
-      expect(Object.keys(actual.paths)).toHaveLength(30);
+      expect(Object.keys(actual.paths)).toHaveLength(33);
       for (const route of Object.keys(actual.paths))
         expect(Object.keys(actual.paths[route]).sort()).toEqual(
           Object.keys(participacionOpenApi.paths[route]).sort(),
@@ -87,6 +91,38 @@ describe('Contrato OpenAPI de participación v1', () => {
     } finally {
       await app.close();
     }
+  });
+
+  it('publica observaciones y recuperación sin abrir las correcciones todavía pendientes', () => {
+    const paths = participacionOpenApi.paths;
+    const post =
+      paths['/api/v1/plantaciones/{id}/correcciones/observaciones'].post!;
+    expect(post.security).toEqual([{ bearerAuth: [] }]);
+    expect(post.requestBody).toHaveProperty(
+      'content.application/json.schema.$ref',
+      '#/components/schemas/CorreccionObservacionesEntrada',
+    );
+    expect(post.responses!['422']).toHaveProperty(
+      'content.application/json.schema.$ref',
+      '#/components/schemas/ReciboOError',
+    );
+    const recovery = paths['/api/v1/participacion/comandos/{comando_id}'].get!;
+    const operation = recovery.parameters!.find(
+      (value) => 'name' in value && value.name === 'operacion',
+    );
+    expect(operation).toHaveProperty(
+      'schema.enum',
+      expect.arrayContaining(['CORREGIR_OBSERVACIONES_PLANTACION']),
+    );
+    expect(paths).not.toHaveProperty(
+      '/api/v1/plantaciones/{id}/correcciones/cantidad',
+    );
+    const schema =
+      participacionOpenApi.components!.schemas!.CorreccionPlantacionResultado;
+    expect(schema).not.toHaveProperty('properties.motivo');
+    expect(schema).not.toHaveProperty('properties.observaciones');
+    expect(schema).toHaveProperty('additionalProperties', false);
+    expect(schema).toHaveProperty('properties.caso.enum', ['OBSERVACIONES']);
   });
 
   it('mantiene audiencias, caché y filtros por nivel de INT05', () => {

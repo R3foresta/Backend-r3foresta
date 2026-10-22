@@ -5,16 +5,17 @@
 Base original de las pruebas: `a045d9d` más árbol INT02-D del 16 de octubre. Push, SQL remoto y despliegue de D pendientes.
 Gestión y registro participante implementados; D aporta corte/locks/superficie y entrega el entorno sintético para INT04. No acredita aplicación remota ni despliegue.
 
-INT07 inició BE01: [cotejo y contrato candidato](../../docs/pa-int07-contrato.md).
-P01–P03 están confirmadas y Pablo confirma que el alta de mortandad aún no existe.
-BE02 incorpora082 de persistencia parcial, sin DML ni ejecutores y solo ensayada
-en PostgreSQL aislado; [evidencia y límites](../../docs/evidencia/pa-int07-be02-persistencia-local.json).
-Las rutas del contrato no están disponibles
-ni forman parte del OpenAPI vigente. No enviar comandos de corrección todavía.
+INT07 incorpora el [motor y observaciones completas](../../docs/pa-int07-motor-observaciones.md)
+en el corte local del 21 de octubre: migración084, POST de observaciones,
+contexto/historial privados y recuperación común ampliada. El detalle propio del
+autor lee el texto efectivo; el original se conserva. Participantes, cantidades,
+reversiones y la frontera de alta de mortandad siguen pendientes. Pablo reporta
+084 con Success y catálogo aportado cotejado el22; [evidencia y límites](../../docs/evidencia/pa-int07-084-cotejo-2026-10-22.json).
+Backend publicado y HTTP remoto pendientes.
 
 ## Contrato que debe usar el cliente
 
-[OpenAPI generado](../../docs/pa-int02c-openapi.json): **30 rutas / 65 schemas**.
+[OpenAPI generado](../../docs/pa-int02c-openapi.json): **33 rutas / 71 schemas**.
 [Ejemplos HTTP](../../docs/pa-int02c-ejemplos.json): resultados de Nest con PostgreSQL
 sintético, sin tokens. Swagger completo en `/api/docs`; JSON en `/api/docs-json`.
 
@@ -74,6 +75,7 @@ Ese modo verifica HTTP y limpia el entorno al terminar. [Pruebas](../../test/REA
 | Persistencia B / comandos y lecturas C | `migrations/068`–`073` (archivos completos en migrations) |
 | Contrato consumible y Swagger generado | [Generador](../../scripts/qa/pa-int02c-openapi.cjs) |
 | Evidencia DB/HTTP y carreras | [Runner C](../../scripts/qa/pa-int02c-db-test.py) |
+| Corrección de observaciones | `src/participacion/application`, `dto/correcciones.dto.ts`, `domain/policies/correcciones-proyeccion.policy.ts`; migración084 y [runner INT07](../../scripts/qa/pa-int07-motor-test.py) |
 
 Después de cambiar el contrato: `npm run docs:participacion` y
 `node scripts/qa/pa-int02c-openapi.cjs --check`. Los ejemplos ejecutados los regenera

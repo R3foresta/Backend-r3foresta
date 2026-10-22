@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "R3Foresta Participación aliada — INT02-C / INT03-A / INT02-D / INT05",
-    "version": "1.3.0",
-    "description": "Gestión C, registro inicial recuperable INT03-A y consulta INT05 pública global/campaña/subcampaña/registro, con Mis registros histórico privado. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada."
+    "title": "R3Foresta Participación aliada — INT02-C / INT03-A / INT02-D / INT05 / INT07",
+    "version": "1.4.0",
+    "description": "Gestión C, registro inicial recuperable INT03-A, consulta INT05 y corrección de observaciones INT07 con contexto/historial privados y recuperación durable. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada."
   },
   "servers": [
     {
@@ -2597,7 +2597,8 @@
                 "REEMPLAZAR_ADMINISTRADOR",
                 "CAMBIAR_ROL_GLOBAL",
                 "INACTIVAR_CUENTA",
-                "REGISTRAR_PLANTACION_INICIAL"
+                "REGISTRAR_PLANTACION_INICIAL",
+                "CORREGIR_OBSERVACIONES_PLANTACION"
               ]
             }
           }
@@ -5699,6 +5700,613 @@
           }
         }
       }
+    },
+    "/api/v1/plantaciones/{id}/contexto-correccion": {
+      "get": {
+        "summary": "Contexto autorizado de corrección",
+        "operationId": "Contextoautorizadodecorreccin",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lectura privada.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextoCorreccionLectura"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        },
+        "description": "ADMIN global o administrador vigente de la subcampaña exacta. El administrador contextual recibe observaciones null y capacidad false. Leer no reserva revisión, autoridad ni estado; no acepta query."
+      }
+    },
+    "/api/v1/plantaciones/{id}/historial-correcciones": {
+      "get": {
+        "summary": "Historial autorizado de correcciones",
+        "operationId": "Historialautorizadodecorrecciones",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lectura privada.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistorialCorreccionesLectura"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        },
+        "description": "Auditoría privada autorizada, ID DESC. Cursor firmado y ligado a actor, sesión y registro. Revalida autoridad en cada página. El administrador contextual recibe motivo y observaciones null. Sin perfiles ni fotos privadas."
+      }
+    },
+    "/api/v1/plantaciones/{id}/correcciones/observaciones": {
+      "post": {
+        "summary": "CORREGIR_OBSERVACIONES_PLANTACION",
+        "operationId": "CORREGIROBSERVACIONESPLANTACION",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorreccionObservacionesEntrada"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Confirmado, incluyendo replay.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Confirmado"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Capacidad insuficiente durable o cuenta inactiva fuera de recibo.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboOError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible durable o fuera de recibo.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboOError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revisión/estado/continuidad rechazados durables o clave reutilizada fuera de recibo.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboOError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "DTO inválido inconcluso o rechazo de negocio durable.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboOError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Infraestructura inconclusa; recuperar con la misma clave.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        },
+        "description": "Solo ADMIN global y subcampaña ACTIVA. Original conservado; overlay, revisión, historial y recibo en una transacción. Replay terminal precede a nueva autorización. SIN_CAMBIOS no incrementa revisiones ni crea historial. No modifica stock. El recibo no contiene observaciones ni motivo."
+      }
     }
   },
   "components": {
@@ -6680,7 +7288,8 @@
               "REEMPLAZAR_ADMINISTRADOR",
               "CAMBIAR_ROL_GLOBAL",
               "INACTIVAR_CUENTA",
-              "REGISTRAR_PLANTACION_INICIAL"
+              "REGISTRAR_PLANTACION_INICIAL",
+              "CORREGIR_OBSERVACIONES_PLANTACION"
             ]
           },
           "finalizado_en": {
@@ -6707,6 +7316,9 @@
               },
               {
                 "$ref": "#/components/schemas/PlantacionResultado"
+              },
+              {
+                "$ref": "#/components/schemas/CorreccionPlantacionResultado"
               }
             ]
           },
@@ -6745,7 +7357,8 @@
               "REEMPLAZAR_ADMINISTRADOR",
               "CAMBIAR_ROL_GLOBAL",
               "INACTIVAR_CUENTA",
-              "REGISTRAR_PLANTACION_INICIAL"
+              "REGISTRAR_PLANTACION_INICIAL",
+              "CORREGIR_OBSERVACIONES_PLANTACION"
             ]
           },
           "finalizado_en": {
@@ -8465,6 +9078,365 @@
         },
         "required": [
           "data"
+        ]
+      },
+      "CorreccionObservacionesEntrada": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "comando_id": {
+            "$ref": "#/components/schemas/ComandoId"
+          },
+          "revision_esperada": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "motivo": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 1000,
+            "description": "Texto NFC/trim obligatorio; nunca se incluye en el recibo."
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2000,
+            "description": "Campo obligatorio; NFC/trim. Vacío equivale a null."
+          }
+        },
+        "required": [
+          "comando_id",
+          "revision_esperada",
+          "motivo",
+          "observaciones"
+        ]
+      },
+      "CorreccionPlantacionResultado": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "CORRECCION_PLANTACION"
+            ]
+          },
+          "correccion_id": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[1-9][0-9]*$",
+            "maxLength": 19
+          },
+          "registro_plantacion_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "subcampania_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "caso": {
+            "type": "string",
+            "enum": [
+              "OBSERVACIONES"
+            ]
+          },
+          "revision_anterior": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "revision_nueva": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "revision_grupo_anterior": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "revision_grupo_nueva": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "cambio": {
+            "type": "string",
+            "enum": [
+              "CAMBIO_APLICADO",
+              "SIN_CAMBIOS"
+            ]
+          },
+          "estado_logico": {
+            "type": "string",
+            "enum": [
+              "VIGENTE"
+            ]
+          },
+          "registro_vigente_id": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[1-9][0-9]*$",
+            "maxLength": 19,
+            "enum": [
+              null
+            ]
+          }
+        },
+        "required": [
+          "tipo",
+          "correccion_id",
+          "registro_plantacion_id",
+          "subcampania_id",
+          "caso",
+          "revision_anterior",
+          "revision_nueva",
+          "revision_grupo_anterior",
+          "revision_grupo_nueva",
+          "cambio",
+          "estado_logico",
+          "registro_vigente_id"
+        ]
+      },
+      "ContextoCorreccion": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registro_plantacion_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "subcampania_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "campania_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "estado_subcampania": {
+            "type": "string",
+            "enum": [
+              "BORRADOR",
+              "ACTIVA",
+              "PAUSADA",
+              "COMPLETADA",
+              "FINALIZADA_PARCIAL",
+              "CANCELADA"
+            ]
+          },
+          "es_reposicion": {
+            "type": "boolean"
+          },
+          "estado_logico": {
+            "type": "string",
+            "enum": [
+              "VIGENTE",
+              "REVERTIDO"
+            ]
+          },
+          "revision_registro": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "revision_grupo": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "observaciones_visibles": {
+            "type": "boolean"
+          },
+          "original": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "observaciones": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "observaciones"
+            ]
+          },
+          "efectivo": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "observaciones": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "observaciones"
+            ]
+          },
+          "capacidades": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "corregir_observaciones": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "corregir_observaciones"
+            ]
+          }
+        },
+        "required": [
+          "registro_plantacion_id",
+          "subcampania_id",
+          "campania_id",
+          "estado_subcampania",
+          "es_reposicion",
+          "estado_logico",
+          "revision_registro",
+          "revision_grupo",
+          "observaciones_visibles",
+          "original",
+          "efectivo",
+          "capacidades"
+        ]
+      },
+      "HistoriaCorreccionObservaciones": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "correccion_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "caso": {
+            "type": "string",
+            "enum": [
+              "OBSERVACIONES"
+            ]
+          },
+          "actor": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "usuario_id": {
+                "$ref": "#/components/schemas/Id"
+              },
+              "nombre_snapshot": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "usuario_id",
+              "nombre_snapshot"
+            ]
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "revision_anterior": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "revision_nueva": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "revision_grupo_anterior": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "revision_grupo_nueva": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones_visibles": {
+            "type": "boolean"
+          },
+          "antes": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "observaciones": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "observaciones"
+            ]
+          },
+          "despues": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "observaciones": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "observaciones"
+            ]
+          },
+          "efectos_consumo": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "minItems": 0,
+            "maxItems": 0
+          }
+        },
+        "required": [
+          "correccion_id",
+          "caso",
+          "actor",
+          "fecha",
+          "revision_anterior",
+          "revision_nueva",
+          "revision_grupo_anterior",
+          "revision_grupo_nueva",
+          "motivo",
+          "observaciones_visibles",
+          "antes",
+          "despues",
+          "efectos_consumo"
+        ]
+      },
+      "ContextoCorreccionLectura": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ContextoCorreccion"
+          },
+          "observado_en": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          }
+        },
+        "required": [
+          "data",
+          "observado_en"
+        ]
+      },
+      "HistorialCorreccionesLectura": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoriaCorreccionObservaciones"
+            },
+            "minItems": 0,
+            "maxItems": 50
+          },
+          "observado_en": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "siguiente_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "observado_en",
+          "siguiente_cursor"
         ]
       }
     },

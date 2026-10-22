@@ -1,0 +1,30 @@
+{
+  "tarea": "PA-T-INT07_084_VERIFICACION_PRECOMMIT",
+  "fecha_local": "2026-10-22",
+  "base_git": "8957bcc67b5edf033c47a10267b34b3746ea6bcc",
+  "naturaleza": "ARBOL_INT07_OBSERVACIONES_SOBRE_CAMBIOS_VERSIONADOS_AJENOS",
+  "build": "APROBADO",
+  "unitarios": {
+    "suites": 71,
+    "pruebas": 950,
+    "resultado": "APROBADO",
+    "http_sockets_locales": true
+  },
+  "openapi": {
+    "rutas": 33,
+    "schemas": 71,
+    "resultado": "CHECK_APROBADO"
+  },
+  "sql_http_original": "docs/evidencia/pa-int07-motor-local.json",
+  "catalogo_aportado": "docs/evidencia/pa-int07-084-cotejo-2026-10-22.json",
+  "sha256": {
+    "migrations/084_pa_int07_motor_observaciones.sql": "6bbf9aab1a5b482b8812933ec863f418d9dab23829c3ed5b96cdc469afc01804",
+    "scripts/qa/pa-int02c-openapi.cjs": "4227c0ef90f666712aa67f094def984236aa81037e12ae5919f83813df6364e4",
+    "docs/pa-int02c-openapi.json": "aecbd1d34c3fcef9342cb68da482b494d69fffeebcffa83c7b5e5862841ac12e",
+    "src/participacion/cargas/participacion-imagen.service.ts": "e2f0510c44c3468e1b94e1006267005d43ab28d25a1d273c7f7ae9fb225ac963"
+  },
+  "limites": [
+    "Los ensayos SQL del21 conservan su base original y no se reescriben.",
+    "Sin SQL remoto nuevo, push ni despliegue. Commit se realiza después de este corte."
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "estado": "APROBADO",
+  "postgresql_local": "17.11 (Postgres.app)",
+  "entorno": "CLUSTER_SINTETICO_PRIVADO_SIN_TCP_SIN_ENV",
+  "fuente": "scripts/sql/pa-int07-cotejo-082-complemento.sql",
+  "fuente_sha256": "bfe52c12b3e33e09b2e5dc8d77b2916f1d51941aa1403fd76950edd667253be6",
+  "resultado_esperado": {
+    "entorno": {
+      "postgresql": "17.11 (Postgres.app)",
+      "aislamiento": "repeatable read",
+      "solo_lectura": "on"
+    },
+    "contrato": "PA-INT07-082-COMPLEMENTO/1",
+    "faltantes": [],
+    "secuencias": [
+      {
+        "tipo": "bigint",
+        "cache": "1",
+        "maximo": "9223372036854775807",
+        "minimo": "1",
+        "nombre": "registro_plantacion_consumo_compensacion_id_seq",
+        "ciclica": false,
+        "esquema": "public",
+        "incremento": "1"
+      },
+      {
+        "tipo": "bigint",
+        "cache": "1",
+        "maximo": "9223372036854775807",
+        "minimo": "1",
+        "nombre": "registro_plantacion_consumo_credito_id_seq",
+        "ciclica": false,
+        "esquema": "public",
+        "incremento": "1"
+      },
+      {
+        "tipo": "bigint",
+        "cache": "1",
+        "maximo": "9223372036854775807",
+        "minimo": "1",
+        "nombre": "registro_plantacion_correccion_id_seq",
+        "ciclica": false,
+        "esquema": "public",
+        "incremento": "1"
+      }
+    ],
+    "tablas_encontradas": 7,
+    "maintain_inesperado": [],
+    "maintain_comprobaciones": 28
+  },
+  "control_positivo_maintain": [
+    {
+      "rol": "anon",
+      "tabla": "registro_plantacion_efectivo",
+      "concedido": true
+    }
+  ],
+  "limites": [
+    "Solo validación local del complemento. Resultado humano remoto aún pendiente.",
+    "No ejecuta RPC ni consulta datos de negocio remotos. El fixture contiene únicamente datos sintéticos."
+  ]
+}

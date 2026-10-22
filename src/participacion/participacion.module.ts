@@ -13,6 +13,8 @@ import {
 } from './cargas/participacion-cargas.controller';
 import { ParticipacionCargasService } from './cargas/participacion-cargas.service';
 import { ParticipacionImagenService } from './cargas/participacion-imagen.service';
+import { ParticipacionCorreccionesController } from './participacion-correcciones.controller';
+import { ParticipacionCorreccionesService } from './application/participacion-correcciones.service';
 
 @Module({
   imports: [ActorModule],
@@ -20,6 +22,7 @@ import { ParticipacionImagenService } from './cargas/participacion-imagen.servic
     ParticipacionComandosController,
     ParticipacionLecturasController,
     ParticipacionRegistroController,
+    ParticipacionCorreccionesController,
     ParticipacionCargasController,
     ParticipacionFotosPublicasController,
   ],
@@ -28,6 +31,7 @@ import { ParticipacionImagenService } from './cargas/participacion-imagen.servic
     ParticipacionComandosService,
     ParticipacionLecturasService,
     ParticipacionRegistroService,
+    ParticipacionCorreccionesService,
     ParticipacionCargasService,
     ParticipacionImagenService,
   ],

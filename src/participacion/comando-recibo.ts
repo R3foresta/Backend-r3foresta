@@ -165,6 +165,49 @@ function validateResult(value: unknown, operation: string): void {
       total += species.cantidad as number;
     });
     assert(total === result.cantidad_total_plantada);
+  } else if (operation === 'CORREGIR_OBSERVACIONES_PLANTACION') {
+    object(result, [
+      'tipo',
+      'correccion_id',
+      'registro_plantacion_id',
+      'subcampania_id',
+      'caso',
+      'revision_anterior',
+      'revision_nueva',
+      'revision_grupo_anterior',
+      'revision_grupo_nueva',
+      'cambio',
+      'estado_logico',
+      'registro_vigente_id',
+    ]);
+    assert(
+      result.tipo === 'CORRECCION_PLANTACION' &&
+        result.caso === 'OBSERVACIONES',
+    );
+    id(result.registro_plantacion_id);
+    id(result.subcampania_id);
+    revision(result.revision_anterior);
+    revision(result.revision_nueva);
+    revision(result.revision_grupo_anterior);
+    revision(result.revision_grupo_nueva);
+    assert(
+      result.revision_grupo_anterior === result.revision_grupo_nueva &&
+        result.estado_logico === 'VIGENTE' &&
+        result.registro_vigente_id === null,
+    );
+    if (result.cambio === 'SIN_CAMBIOS') {
+      assert(
+        result.correccion_id === null &&
+          result.revision_anterior === result.revision_nueva,
+      );
+    } else {
+      assert(result.cambio === 'CAMBIO_APLICADO');
+      id(result.correccion_id);
+      assert(
+        BigInt(result.revision_nueva as string) ===
+          BigInt(result.revision_anterior as string) + 1n,
+      );
+    }
   } else {
     object(result, ['tipo', 'cambios']);
     assert(

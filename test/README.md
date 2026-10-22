@@ -28,6 +28,7 @@ usan socket privado/DB sin TCP y destruyen exclusivamente su clúster al termina
 | `npm run test:db:registro -- --pg-bin /ruta/postgis/bin` | Registro INT03-A: PostgreSQL/PostGIS reales aislados, LIFO/snapshots/recibos, carreras y HTTP con objetos privados de prueba |
 | `npm run test:db:compartida -- --pg-bin /ruta/postgis/bin` | D + regresión A/C:077–080, permisos SQL reales, preflight adversario, plan/cierre/físicas/reposición, HTTP/Storage y30s/5s medidos |
 | `npm run test:db:impacto -- --pg-bin /ruta/postgis/bin` | INT05: SQL/PostGIS/HTTP/Storage aislados, alcance50, snapshots, seguimiento, fotos y unión histórica propia |
+| `npm run test:db:correcciones -- --pg-bin /ruta/postgis/bin` | INT07 motor/observaciones: 082/084 sobre antecedentes D/INT05, RPC/HTTP, replay, privacidad y carreras con locks observados. Clúster privado desechable, sin `.env` ni servicios externos; evidencia propia, sin sobrescribir cortes anteriores. |
 | `npm run preview:impacto -- --pg-bin /ruta/postgis/bin --check` | Preview INT05/INT04 sintético y limpieza, sin servicios externos |
 | `node scripts/qa/pa-int02c-openapi.cjs --check` | OpenAPI y proyección Swagger coinciden con el generador |
 | `python3 scripts/qa/pa-int07-catalogo-test.py --pg-bin /ruta/postgresql/bin` | Utilidad BE01 de catálogo, ACL heredadas/por columna/vacías, triggers y ausencia de efectos; clúster privado desechable sin TCP ni PostGIS. No prueba correcciones INT07. |

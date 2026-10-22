@@ -1,6 +1,6 @@
 # Arquitectura del backend
 
-**Corte documental: 19 de octubre de 2026. INT05 verificada localmente; INT07 incorpora082 de persistencia parcial, sin ejecutores.**
+**Corte documental: 21 de octubre de 2026. INT05 verificada localmente; INT07 añade084 de motor y observaciones con verificación aislada.**
 [Entrega y consolidación INT05](docs/pa-int05-entrega-local.md), [versiones de entrega](../r3foresta-docs/ESTADO.md): lectura pública y propia verificadas localmente; push, SQL remoto y despliegue pendientes. Los cortes de pruebas INT05 y D conservan sus bases y entornos originales.
 Describe implementación; el contrato de producto y el estado de cada entorno
 viven en [r3foresta-docs](https://github.com/R3foresta/r3foresta-docs).
@@ -103,7 +103,7 @@ Sus RPC/helpers siguen privados al servicio; no modifica transacciones de escrit
 
 082 añade persistencia privada de correcciones (estados efectivos, revisiones,
 historial y consumo compensable) sin backfill ni cambios a originales/recibos.
-El servicio solo tiene SELECT sobre las tablas nuevas; no habilita comandos o
+082 por sí sola da SELECT al servicio sobre las tablas nuevas; no habilita comandos o
 altas de mortandad. El ensayo estructural focal no ejecuta075–081 ni demuestra
 concurrencia/lecturas efectivas de INT07. [Contrato y límites](docs/pa-int07-contrato.md#8-be02--persistencia-parcial-local).
 
@@ -113,6 +113,13 @@ privilegios disponibles del servidor, incluido MAINTAIN en PG17. Su inventario
 explícito conserva SELECT de campañas/catálogos y permisos del servicio. En la
 recuperación manual sustituye el paso 080 antes de 081/082; requiere coordinar
 el backend consumidor. [Alcance y evidencia](docs/pa-superficie-083-recuperacion.md).
+
+084 amplía el motor y la recuperación exclusivamente para observaciones:
+overlay, revisión, auditoría y terminal atómicos; contexto/historial privados y
+detalle propio efectivo. Añade DML por columna/secuencia al servicio en el
+alcance necesario. Conserva originales, grupo y stock. Su instalación remota
+es independiente del cotejo083/081/082. BE02/03 siguen parciales;
+[entrega, pruebas y límites](docs/pa-int07-motor-observaciones.md).
 
 ## Pendientes materiales
 

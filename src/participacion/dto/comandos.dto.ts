@@ -13,6 +13,7 @@ export const COMMAND_OPERATIONS = [
   'CAMBIAR_ROL_GLOBAL',
   'INACTIVAR_CUENTA',
   'REGISTRAR_PLANTACION_INICIAL',
+  'CORREGIR_OBSERVACIONES_PLANTACION',
 ] as const;
 export type AccessOperation = (typeof ACCESS_OPERATIONS)[number];
 export type CommandOperation = (typeof COMMAND_OPERATIONS)[number];

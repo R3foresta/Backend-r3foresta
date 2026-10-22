@@ -1,0 +1,34 @@
+{
+  "tarea": "PA-T-INT07_084_APLICACION_REPORTADA",
+  "fecha_local": "2026-10-22",
+  "zona": "America/La_Paz",
+  "estado": "SUCCESS_REPORTADO_POR_PABLO_COTEJO_DESTINO_PENDIENTE",
+  "fuente": "Mensaje directo de Pablo en este chat: ejecutó la migración84 y terminó con Success.",
+  "destino": {
+    "proyecto_confirmado_en_este_mensaje": null,
+    "limite": "El mensaje no identifica el proyecto; no se deduce identidad de destino de una salida Success."
+  },
+  "fuentes_locales_sha256": {
+    "migrations/084_pa_int07_motor_observaciones.sql": "6bbf9aab1a5b482b8812933ec863f418d9dab23829c3ed5b96cdc469afc01804",
+    "scripts/sql/pa-int07-cotejo-084.sql": "3b9945ed4653565f5dfaa21b8ecc7434fbbe8f06837aa7e91794762488e971ba",
+    "docs/evidencia/pa-int07-084-catalogo-pg17-local.json": "889bbb5bcb5007c1cd5ff588d8fda1194493f3f6d74387101c966832d1bc8311"
+  },
+  "verificacion_local_del_22": {
+    "fuentes084_y_consulta_coinciden_con_ensayo_aprobado": true,
+    "cinco_cuerpos_coinciden_con_baseline": true,
+    "openapi_check": "APROBADO_33_RUTAS_71_SCHEMAS",
+    "ensayo_original": "docs/evidencia/pa-int07-motor-local.json",
+    "variacion_ajena_al_motor": "src/participacion/cargas/participacion-imagen.service.ts cambió en commit8957bcc; no se presenta el ensayo del21 como nueva regresión completa sobre ese cambio."
+  },
+  "backend": {
+    "head_actual": "8957bcc67b5edf033c47a10267b34b3746ea6bcc",
+    "controller_service_correcciones": "Archivos nuevos sin commit en el checkout inspeccionado; publicación y despliegue de este bloque no acreditados."
+  },
+  "siguiente_paso": "Ejecutar scripts/sql/pa-int07-cotejo-084.sql completo, solo lectura, en el mismo destino y aportar JSON para cotejo de firmas/cuerpos/CHECK/privilegios; confirmar identidad del entorno.",
+  "limites": [
+    "Success reportado no prueba igualdad del catálogo remoto ni los bytes ejecutados.",
+    "Sin conexión SQL remota del agente, lectura de filas, comandos nuevos o correcciones sobre datos reales.",
+    "No repetir082/083/084 como comprobación.",
+    "Publicación del backend compatible, prueba HTTP remota e INT07 restante pendientes."
+  ]
+}

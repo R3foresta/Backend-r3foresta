@@ -33,6 +33,7 @@
     "test:db:compartida": "python3 scripts/qa/pa-int02d-db-test.py",
     "preview:participacion-d": "python3 scripts/qa/pa-int02d-db-test.py --serve",
     "test:db:impacto": "python3 scripts/qa/pa-int05-db-test.py",
+    "test:db:correcciones": "python3 scripts/qa/pa-int07-motor-test.py",
     "preview:impacto": "python3 scripts/qa/pa-int05-db-test.py --serve"
   },
   "dependencies": {

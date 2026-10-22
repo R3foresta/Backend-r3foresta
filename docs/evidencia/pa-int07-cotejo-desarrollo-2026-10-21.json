@@ -1,0 +1,490 @@
+{
+  "tarea": "PA-T-INT07_COTEJO_DESARROLLO_083_081_082",
+  "fecha": "2026-10-21",
+  "estado": "ESTRUCTURA_FUNCIONES_Y_ACL_ENUMERADAS_COINCIDEN; COMPLEMENTO082_PENDIENTE",
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "procedencia": "Dos JSON aportados por Pablo tras confirmar ejecución completa con Success de083 definitiva,081 y082 en el mismo desarrollo previamente identificado. El agente no ejecutó SQL remoto.",
+  "adjuntos": [
+    {
+      "id": "23ff74d8-f4aa-4d96-bf10-23930be8add2",
+      "contrato": "PA-INT07-CATALOGO/1",
+      "sha256": "bea325bb433cb451ed215b6b195564406fbb4cf1eb48245bae73b8303b040871"
+    },
+    {
+      "id": "12c6bc22-d765-44e0-bbd8-1926846b1dd0",
+      "contrato": "PA-SUPERFICIE-083-DIAGNOSTICO/1",
+      "sha256": "41b7b0965e7b966564c0c30fcc666987528ffaaa14785bb6c4eae4935ae515c2"
+    }
+  ],
+  "entorno_aportado": {
+    "postgresql": "17.6",
+    "aislamiento": "repeatable read",
+    "lock_timeout": "0",
+    "solo_lectura": "on",
+    "zona_horaria": "UTC",
+    "postgresql_num": "170006",
+    "postgis_extension": "3.3.7",
+    "statement_timeout": "2min"
+  },
+  "version_backend": {
+    "commit": "fbf25290f871e0a27ed8b077204f3dacd1320e51",
+    "rama": "main",
+    "push": "Verificado por git push y git ls-remote en el turno anterior; incluye los tres commits previos deINT02-D/INT05.",
+    "consumidores": "Pablo confirmó Render Live parafbf2529 y backend local actualizado/reiniciado antes del COMMIT083. Confirmación humana, sin verificación HTTP del agente."
+  },
+  "fuentes_sha256": {
+    "migrations/081_pa_int05_consulta.sql": "108d3d9f7d17ef31f09dac79cc4e2fbc7cb0ebdc2b567aa031094b63a49d7233",
+    "migrations/082_pa_int07_persistencia.sql": "2ad494c65e64cf31fb71749ce72c0769f757b1cadfdedc8a81664b26d9526b5f",
+    "migrations/083_pa_superficie_privada_compat.sql": "e4b413bd08c5d8e08c526d7e3a58ea56a10dd782e27e7e59db26742013e10aea",
+    "scripts/qa/pa-int07-catalogo.sql": "58aca372a362c26a3bffb053c924c6e0407e454ca00872d3e58ffe35ead98e75",
+    "scripts/sql/pa-superficie-083-diagnostico.sql": "70cdb525b2ffbb1bb0ffe807fa3ebe606d311d5ef218f90eab3f711afdb97002",
+    "scripts/sql/pa-int07-cotejo-082-complemento.sql": "bfe52c12b3e33e09b2e5dc8d77b2916f1d51941aa1403fd76950edd667253be6"
+  },
+  "081": {
+    "metodo": "Compilación de los cinco CREATE FUNCTION exactos y DO ACL de081 con check_function_bodies=off. Sin preflight ni RPC de negocio; clúster privado sin TCP/.env. Cotejo de pg_get_functiondef y metadata/ACL.",
+    "postgresql_local": "PostgreSQL 17.11 (Postgres.app) on aarch64-apple-darwin23.6.0, compiled by Apple clang version 15.0.0 (clang-1500.3.9.4), 64-bit",
+    "postgresql_aportado": "17.6",
+    "funciones": [
+      {
+        "nombre": "pa_i_personas",
+        "argumentos": "p_registro_id bigint",
+        "md5_esperado": "b590eeb3fb2f7e5b2f24d2ddfa7833b1",
+        "md5_aportado": "b590eeb3fb2f7e5b2f24d2ddfa7833b1",
+        "coincide": true,
+        "diferencias": [],
+        "volatilidad": "s",
+        "security_definer": false,
+        "settings_acotados": []
+      },
+      {
+        "nombre": "pa_i_registro",
+        "argumentos": "p_registro_id bigint",
+        "md5_esperado": "ce57b0e4edcad3c608a22b2b50cda054",
+        "md5_aportado": "ce57b0e4edcad3c608a22b2b50cda054",
+        "coincide": true,
+        "diferencias": [],
+        "volatilidad": "s",
+        "security_definer": false,
+        "settings_acotados": []
+      },
+      {
+        "nombre": "pa_impacto_leer",
+        "argumentos": "p_campania_id bigint, p_subcampania_id bigint, p_registro_id bigint, p_organizacion_id bigint, p_planta_id bigint, p_desde date, p_hasta date, p_cursor bigint, p_limite integer",
+        "md5_esperado": "040a297fe88bd1d2c79e47131bd572b6",
+        "md5_aportado": "040a297fe88bd1d2c79e47131bd572b6",
+        "coincide": true,
+        "diferencias": [],
+        "volatilidad": "s",
+        "security_definer": false,
+        "settings_acotados": [
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ]
+      },
+      {
+        "nombre": "pa_mis_registros_leer",
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_cursor bigint, p_limite integer",
+        "md5_esperado": "4802a09efca86960d52608a2dfcfb6d6",
+        "md5_aportado": "4802a09efca86960d52608a2dfcfb6d6",
+        "coincide": true,
+        "diferencias": [],
+        "volatilidad": "s",
+        "security_definer": false,
+        "settings_acotados": [
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ]
+      },
+      {
+        "nombre": "pa_registro_detalle_propio_leer",
+        "argumentos": "p_actor_id bigint, p_auth_id text, p_registro_id bigint",
+        "md5_esperado": "487796988a24e6ba4202a74ac844b8ea",
+        "md5_aportado": "487796988a24e6ba4202a74ac844b8ea",
+        "coincide": true,
+        "diferencias": [],
+        "volatilidad": "v",
+        "security_definer": false,
+        "settings_acotados": []
+      }
+    ],
+    "acl_comprobaciones": 20,
+    "acl_coinciden": true,
+    "diferencias": [],
+    "limites": [
+      "No acredita ejecución de funciones, resultados de negocio, cachePostgREST ni HTTP.",
+      "Detalle propio conserva volatilidad v de la fuente081; las otras cuatro son STABLE.",
+      "Solo catálogo aportado por usuario; no consulta SQL remoto."
+    ]
+  },
+  "082": {
+    "metodo": "Catalogo local sintetico vs catalogo aportado; solo siete tablas082, cuatro helpers, secuencias y ACL enumeradas. Sin remoto/RPC/TCP/env/filas de negocio en evidencia.",
+    "entorno_local": {
+      "postgresql": "17.11 (Postgres.app)",
+      "aislamiento": "repeatable read",
+      "lock_timeout": "0",
+      "solo_lectura": "on",
+      "zona_horaria": "America/La_Paz",
+      "postgresql_num": "170011",
+      "postgis_extension": null,
+      "statement_timeout": "0"
+    },
+    "fuentes": {
+      "test/db/pa-int07-persistencia-fixture.sql": "535450188bbf0dbeee696873b464f1eae93f18a3d8c1f83ce7ae4db208713943",
+      "migrations/082_pa_int07_persistencia.sql": "2ad494c65e64cf31fb71749ce72c0769f757b1cadfdedc8a81664b26d9526b5f",
+      "scripts/qa/pa-int07-catalogo.sql": "58aca372a362c26a3bffb053c924c6e0407e454ca00872d3e58ffe35ead98e75"
+    },
+    "comparaciones": {
+      "relaciones": {
+        "coincide": true,
+        "esperados": 7,
+        "observados": 7,
+        "esperado_sha256": "dcee1e832f46947130edc82430ba168a497c6299d6c618fd5cece260cf0c2a38",
+        "observado_sha256": "dcee1e832f46947130edc82430ba168a497c6299d6c618fd5cece260cf0c2a38"
+      },
+      "columnas": {
+        "coincide": true,
+        "esperados": 63,
+        "observados": 63,
+        "esperado_sha256": "4b2d4775674d96ad31f7eb07de90beda3028fa5f98455311120e30e034eca7fa",
+        "observado_sha256": "4b2d4775674d96ad31f7eb07de90beda3028fa5f98455311120e30e034eca7fa"
+      },
+      "restricciones": {
+        "coincide": true,
+        "esperados": 67,
+        "observados": 67,
+        "esperado_sha256": "d3b474d2518587b1b3ccbe425a6b9b41fe569bb94dd5e24fd3a6264f3e4214fd",
+        "observado_sha256": "d3b474d2518587b1b3ccbe425a6b9b41fe569bb94dd5e24fd3a6264f3e4214fd"
+      },
+      "indices": {
+        "coincide": true,
+        "esperados": 23,
+        "observados": 23,
+        "esperado_sha256": "91128441e8da30681dddcb62231ca3b2fab5d54f90d95769bb9e7cb761631f9e",
+        "observado_sha256": "91128441e8da30681dddcb62231ca3b2fab5d54f90d95769bb9e7cb761631f9e"
+      },
+      "politicas_rls": {
+        "coincide": true,
+        "esperados": 0,
+        "observados": 0,
+        "esperado_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "observado_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "triggers_no_internos": {
+        "coincide": true,
+        "esperados": 15,
+        "observados": 15,
+        "esperado_sha256": "01359692e888839d4ed79e5a06a5413dbfe1d010d0cef12e46410076f62678d7",
+        "observado_sha256": "01359692e888839d4ed79e5a06a5413dbfe1d010d0cef12e46410076f62678d7"
+      },
+      "triggers_internos_semantica": {
+        "coincide": true,
+        "esperados": 70,
+        "observados": 70,
+        "esperado_sha256": "6d035efb8404d413c53e966c4990643fd063cc41af148e2bad1deee260e8884a",
+        "observado_sha256": "6d035efb8404d413c53e966c4990643fd063cc41af148e2bad1deee260e8884a"
+      },
+      "helpers_firmas_md5_metadata": {
+        "coincide": true,
+        "esperados": 4,
+        "observados": 4,
+        "esperado_sha256": "e97251f5089967b36257f5e6b6f04b65f1086106160323e85a73f94f8788fa77",
+        "observado_sha256": "e97251f5089967b36257f5e6b6f04b65f1086106160323e85a73f94f8788fa77"
+      },
+      "secuencias": {
+        "coincide": false,
+        "esperados": 3,
+        "observados": 3,
+        "esperado_sha256": "16ad8af0b9574559717dffd9c80b882304c78e488c31d4017793dccd631e03dd",
+        "observado_sha256": "3a6052c6d3d370ccfb4e4dd05b827367627f3a585943871fa6414b07250a3c69",
+        "faltantes": [
+          {
+            "cache": 1,
+            "ciclica": false,
+            "esquema": "public",
+            "incremento": 1,
+            "maximo": 9223372036854775807,
+            "minimo": 1,
+            "nombre": "registro_plantacion_consumo_compensacion_id_seq",
+            "tipo": "bigint"
+          },
+          {
+            "cache": 1,
+            "ciclica": false,
+            "esquema": "public",
+            "incremento": 1,
+            "maximo": 9223372036854775807,
+            "minimo": 1,
+            "nombre": "registro_plantacion_consumo_credito_id_seq",
+            "tipo": "bigint"
+          },
+          {
+            "cache": 1,
+            "ciclica": false,
+            "esquema": "public",
+            "incremento": 1,
+            "maximo": 9223372036854775807,
+            "minimo": 1,
+            "nombre": "registro_plantacion_correccion_id_seq",
+            "tipo": "bigint"
+          }
+        ],
+        "adicionales": [
+          {
+            "cache": 1,
+            "ciclica": false,
+            "esquema": "public",
+            "incremento": 1,
+            "maximo": 9223372036854776000,
+            "minimo": 1,
+            "nombre": "registro_plantacion_consumo_compensacion_id_seq",
+            "tipo": "bigint"
+          },
+          {
+            "cache": 1,
+            "ciclica": false,
+            "esquema": "public",
+            "incremento": 1,
+            "maximo": 9223372036854776000,
+            "minimo": 1,
+            "nombre": "registro_plantacion_consumo_credito_id_seq",
+            "tipo": "bigint"
+          },
+          {
+            "cache": 1,
+            "ciclica": false,
+            "esquema": "public",
+            "incremento": 1,
+            "maximo": 9223372036854776000,
+            "minimo": 1,
+            "nombre": "registro_plantacion_correccion_id_seq",
+            "tipo": "bigint"
+          }
+        ]
+      },
+      "ACL_tablas_vistas": {
+        "coincide": true,
+        "esperados": 196,
+        "observados": 196,
+        "esperado_sha256": "8b36294bfc5d6b7429a9995878a0b6077e76f40d17b03c8ae3a49f4fe13da943",
+        "observado_sha256": "8b36294bfc5d6b7429a9995878a0b6077e76f40d17b03c8ae3a49f4fe13da943"
+      },
+      "ACL_columnas": {
+        "coincide": true,
+        "esperados": 1008,
+        "observados": 1008,
+        "esperado_sha256": "57836d0185ae6cd13634aaa356638ac6d687eb6c458a187ba9b7150955b5f121",
+        "observado_sha256": "57836d0185ae6cd13634aaa356638ac6d687eb6c458a187ba9b7150955b5f121"
+      },
+      "ACL_secuencias": {
+        "coincide": true,
+        "esperados": 36,
+        "observados": 36,
+        "esperado_sha256": "d4d542632fd28eea79b2c0caab05e515a0c9de5986c2e25faec0234df64454ca",
+        "observado_sha256": "d4d542632fd28eea79b2c0caab05e515a0c9de5986c2e25faec0234df64454ca"
+      },
+      "ACL_funciones": {
+        "coincide": true,
+        "esperados": 16,
+        "observados": 16,
+        "esperado_sha256": "511efbcdb640301366d881cb8a124b01722470cb1661f92d0c1cbda2853330bc",
+        "observado_sha256": "511efbcdb640301366d881cb8a124b01722470cb1661f92d0c1cbda2853330bc"
+      }
+    },
+    "helpers_esperados": [
+      {
+        "nombre": "pa_int07_compensacion_validar",
+        "argumentos": "",
+        "definicion_md5": "5dab1039f1ac234c0fcaf7f6f224f85b",
+        "security_definer": false,
+        "volatilidad": "v"
+      },
+      {
+        "nombre": "pa_int07_persistencia_terminal",
+        "argumentos": "",
+        "definicion_md5": "71882b8578052a1975ed2ec93f9b6fe2",
+        "security_definer": false,
+        "volatilidad": "v"
+      },
+      {
+        "nombre": "pa_int07_persistencia_validar",
+        "argumentos": "",
+        "definicion_md5": "a627f6c2f00239b0e65b37ed3c8be2c3",
+        "security_definer": false,
+        "volatilidad": "v"
+      },
+      {
+        "nombre": "pa_int07_persistencia_conservar",
+        "argumentos": "",
+        "definicion_md5": "faa35e663780b7d59311c3a780390f4a",
+        "security_definer": false,
+        "volatilidad": "v"
+      }
+    ],
+    "normalizacion_triggers_RI": "Semantica/multiplicidad de triggers internos y restricciones FK completas deben coincidir; se excluyen solo nombre y MD5 dependientes del OID.",
+    "diferencias_fixture_FK": "Ninguna: todas las restricciones FK, columnas referidas, acciones y diferibilidad coinciden, incluidos sus MD5. Solo nombres/MD5 de triggers RI internos se normalizan por OID.",
+    "precision_secuencias": {
+      "campo": "secuencias.maximo",
+      "afectadas": [
+        "registro_plantacion_consumo_compensacion_id_seq",
+        "registro_plantacion_consumo_credito_id_seq",
+        "registro_plantacion_correccion_id_seq"
+      ],
+      "esperado_int8_texto": "9223372036854775807",
+      "aportado_json_texto": "9223372036854776000",
+      "evidencia": "El maximo aportado excede el limite int8; coincide con JSON.stringify(Number(9223372036854775807)). Compatible con redondeo de transporte/exportacion, no acredita alteracion real de PostgreSQL.",
+      "resto_metadata_secuencia_coincide": true,
+      "acl_secuencias_coincide": true,
+      "limite": "No afirmar coincidencia numerica exacta de seqmax a partir de esta exportacion."
+    },
+    "limites": [
+      "PG17.11 sintetico vs PG17.6 aportado; no replay001-081, PostGIS, RPC, filas ni despliegue.",
+      "El catalogo no enumera MAINTAIN, propietarios/otros roles de las tablas082 ni cuerpos/search_path explicitamente; MD5 de funcion incluye definicion completa.",
+      "Los nombres RI_ConstraintTrigger y su MD5 dependen de OID de instalacion; comparar semantica/multiplicidad y las FK que los originan."
+    ]
+  },
+  "083": {
+    "tarea": "COTEJO_083_Y_ACL082_DE_CATALOGOS_APORTADOS",
+    "comprobaciones": [
+      {
+        "descripcion": "Sin bloqueos del manifiesto diagnosticado",
+        "coincide": true
+      },
+      {
+        "descripcion": "Sin riesgos de herencia diagnosticados",
+        "coincide": true
+      },
+      {
+        "descripcion": "Sin grants pendientes de revocación en inventario083v1, incluyendo privilegios disponibles PG17",
+        "coincide": true
+      },
+      {
+        "descripcion": "Sin membresías relevantes reportadas",
+        "coincide": true
+      },
+      {
+        "descripcion": "Todos los requisitos del servicio de objetos existentes satisfechos",
+        "coincide": true
+      },
+      {
+        "descripcion": "Existencia, tipos y propietarios del inventario previo conservados",
+        "coincide": true
+      },
+      {
+        "descripcion": "Vista territorial conserva tipo",
+        "coincide": true
+      },
+      {
+        "descripcion": "Vista territorial conserva owner",
+        "coincide": true
+      },
+      {
+        "descripcion": "Vista territorial conserva reloptions",
+        "coincide": true
+      },
+      {
+        "descripcion": "Vista territorial conserva definicion_sql",
+        "coincide": true
+      },
+      {
+        "descripcion": "Vista territorial conserva columnas",
+        "coincide": true
+      },
+      {
+        "descripcion": "Vista territorial conserva dependencias_transitivas",
+        "coincide": true
+      },
+      {
+        "descripcion": "Vista territorial conserva updatable_sin_triggers",
+        "coincide": true
+      },
+      {
+        "descripcion": "Vista territorial conserva updatable_con_triggers",
+        "coincide": true
+      },
+      {
+        "descripcion": "Vista territorial conserva information_schema",
+        "coincide": true
+      },
+      {
+        "descripcion": "Vista territorial conserva reglas_no_return",
+        "coincide": true
+      },
+      {
+        "descripcion": "Vista territorial conserva triggers_no_internos",
+        "coincide": true
+      },
+      {
+        "descripcion": "Huella territorial coincide con revisión083",
+        "coincide": true
+      },
+      {
+        "descripcion": "ACL por columna territorial conservada (sin grants extras previos)",
+        "coincide": true
+      },
+      {
+        "descripcion": "anon conserva soloSELECT de tabla territorial",
+        "coincide": true,
+        "detalle": [
+          "SELECT"
+        ]
+      },
+      {
+        "descripcion": "authenticated conserva soloSELECT de tabla territorial",
+        "coincide": true,
+        "detalle": [
+          "SELECT"
+        ]
+      },
+      {
+        "descripcion": "Vista territorial conserva ACL de servicio y otros beneficiarios",
+        "coincide": true
+      },
+      {
+        "descripcion": "Vista territorial conserva exactamente SELECT existente",
+        "coincide": true
+      },
+      {
+        "descripcion": "Lectura efectiva territorial preservada sinDML para anon",
+        "coincide": true
+      },
+      {
+        "descripcion": "Lectura efectiva territorial preservada sinDML para authenticated",
+        "coincide": true
+      },
+      {
+        "descripcion": "ACL de siete tablas082 correctas para los siete privilegios consultados",
+        "coincide": true,
+        "detalle": {
+          "errores": [],
+          "comprobaciones": 196
+        }
+      }
+    ],
+    "aprobadas": 26,
+    "diferencias": [],
+    "limite": "Inventario diagnóstico v1 anterior a inclusión territorial; vista revisada por bloque específico. Catálogo INT07 no enumera MAINTAIN en siete tablas082. No filas, RPC, HTTP ni SQL remoto del agente."
+  },
+  "complemento_pendiente": {
+    "archivo": "scripts/sql/pa-int07-cotejo-082-complemento.sql",
+    "sha256": "bfe52c12b3e33e09b2e5dc8d77b2916f1d51941aa1403fd76950edd667253be6",
+    "evidencia_local": "docs/evidencia/pa-int07-082-complemento-pg17-local.json",
+    "motivo": "QA histórico enumera siete privilegios y no MAINTAIN para tablas082; el exportador recibido redondea seqmaxint8. La consulta adicional solo lee catálogo y exporta límites como texto.",
+    "esperado": {
+      "tablas_encontradas": 7,
+      "faltantes": [],
+      "maintain_comprobaciones": 28,
+      "maintain_inesperado": [],
+      "secuencias": 3,
+      "maximo_texto": "9223372036854775807"
+    },
+    "estado_destino": "PENDIENTE_DE_EJECUCION_Y_RESULTADO_HUMANO"
+  },
+  "estado_INT07": "BE02 parcial: persistencia instalada según reporte humano y estructura/helpers/ACL enumeradas cotejados. Sin comandos, endpoints o ejecutores de corrección; motor/recuperación/lecturas efectivas,BE03–BE08 y frontend pendientes.",
+  "limites": [
+    "Fotografías de catálogo aportadas por el usuario; el SQL no identifica proyecto, verificado por continuidad de la confirmación humana.",
+    "No se comprueban datos/saldos, preservación integral del dominio, RPC/HTTP, carreras, Storage/CDN ni cachéPostgREST con estos dos JSON.",
+    "Las compilaciones locales solo producen metadata esperada enPG17.11 con fixtures sintéticos; destinoPG17.6. Las huellasMD5 son cotejo, no firma de seguridad.",
+    "La función de detalle propio081 conserva VOLATILE de la fuente; las otras cuatro sonSTABLE. No se modifica081 aplicada.",
+    "No cerrarINT07 funcional por instalar su persistencia privada. El alta de mortandad todavía no está implementada según Pablo."
+  ]
+}

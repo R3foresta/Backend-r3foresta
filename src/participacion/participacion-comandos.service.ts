@@ -14,6 +14,7 @@ import type {
   CommandOperation,
   ReplacementPayload,
 } from './dto/comandos.dto';
+import type { CorrectionObservationsPayload } from './dto/correcciones.dto';
 
 @Injectable()
 export class ParticipacionComandosService {
@@ -43,6 +44,19 @@ export class ParticipacionComandosService {
       'pa_autoridad_ejecutar',
       actor,
       operation,
+      command,
+      payload,
+    );
+  }
+  corregirObservaciones(
+    actor: VerifiedActor,
+    command: string,
+    payload: CorrectionObservationsPayload,
+  ): Promise<RpcReply> {
+    return this.execute(
+      'pa_correccion_ejecutar',
+      actor,
+      'CORREGIR_OBSERVACIONES_PLANTACION',
       command,
       payload,
     );

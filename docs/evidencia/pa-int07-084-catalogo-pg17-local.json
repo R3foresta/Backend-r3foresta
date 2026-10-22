@@ -1,0 +1,1711 @@
+{
+  "tarea": "PA-T-INT07_084_CATALOGO_LOCAL",
+  "naturaleza": "SINTETICO_AISLADO_SIN_TCP_SIN_ENV",
+  "consulta": "scripts/sql/pa-int07-cotejo-084.sql",
+  "consulta_sha256": "3b9945ed4653565f5dfaa21b8ecc7434fbbe8f06837aa7e91794762488e971ba",
+  "resultado_esperado": {
+    "tablas": [
+      {
+        "rls": true,
+        "tipo": "r",
+        "nombre": "participacion_comando",
+        "alcance": "DOS_CHECK_AMPLIADOS; ACL_LEGADAS_TAMBIEN",
+        "columnas": [
+          {
+            "tipo": "bigint",
+            "nombre": "id",
+            "generada": "",
+            "identity": "d",
+            "nullable": false,
+            "posicion": 1
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "actor_id",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 2
+          },
+          {
+            "tipo": "text",
+            "nombre": "operacion",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 3
+          },
+          {
+            "tipo": "uuid",
+            "nombre": "comando_id",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 4
+          },
+          {
+            "tipo": "smallint",
+            "nombre": "version_contrato",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 5
+          },
+          {
+            "tipo": "smallint",
+            "nombre": "version_huella",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 6
+          },
+          {
+            "tipo": "bytea",
+            "nombre": "huella",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 7
+          },
+          {
+            "tipo": "text",
+            "nombre": "estado",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 8
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "subcampania_preparacion_id",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 9
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "registro_plantacion_id",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 10
+          },
+          {
+            "tipo": "jsonb",
+            "nombre": "resultado",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 11
+          },
+          {
+            "tipo": "jsonb",
+            "nombre": "error",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 12
+          },
+          {
+            "tipo": "smallint",
+            "nombre": "http_terminal",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 13
+          },
+          {
+            "tipo": "timestamp with time zone",
+            "nombre": "creado_en",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 14
+          },
+          {
+            "tipo": "timestamp with time zone",
+            "nombre": "finalizado_en",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 15
+          }
+        ],
+        "force_rls": false,
+        "politicas": [],
+        "propietario": "postgres",
+        "privilegios_por_rol": [
+          {
+            "rol": "PUBLIC",
+            "existe": true,
+            "tabla_concedidos": [],
+            "columna_concedidos": []
+          },
+          {
+            "rol": "anon",
+            "existe": true,
+            "tabla_concedidos": [],
+            "columna_concedidos": []
+          },
+          {
+            "rol": "authenticated",
+            "existe": true,
+            "tabla_concedidos": [],
+            "columna_concedidos": []
+          },
+          {
+            "rol": "service_role",
+            "existe": true,
+            "tabla_concedidos": [
+              "INSERT",
+              "SELECT",
+              "UPDATE"
+            ],
+            "columna_concedidos": [
+              {
+                "columna": "id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "actor_id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "operacion",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "comando_id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "version_contrato",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "version_huella",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "huella",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "estado",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "subcampania_preparacion_id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "registro_plantacion_id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "resultado",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "error",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "http_terminal",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "creado_en",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "finalizado_en",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "rls": false,
+        "tipo": "r",
+        "nombre": "registro_plantacion",
+        "alcance": "UPDATE_REVISION_REGISTRO; ACL_LEGADAS_TAMBIEN",
+        "columnas": [
+          {
+            "tipo": "bigint",
+            "nombre": "id",
+            "generada": "",
+            "identity": "d",
+            "nullable": false,
+            "posicion": 1
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "subcampania_id",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 2
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "responsable_id",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 3
+          },
+          {
+            "tipo": "date",
+            "nombre": "fecha_plantacion",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 4
+          },
+          {
+            "tipo": "integer",
+            "nombre": "cantidad_total_plantada",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 5
+          },
+          {
+            "tipo": "text",
+            "nombre": "nombre_responsable_snapshot",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 6
+          },
+          {
+            "tipo": "text",
+            "nombre": "observaciones",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 7
+          },
+          {
+            "tipo": "text",
+            "nombre": "codigo_trazabilidad",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 8
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "created_by",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 9
+          },
+          {
+            "tipo": "boolean",
+            "nombre": "es_reposicion",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 10
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "registro_plantacion_origen_id",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 11
+          },
+          {
+            "tipo": "numeric(9,6)",
+            "nombre": "latitud",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 12
+          },
+          {
+            "tipo": "numeric(9,6)",
+            "nombre": "longitud",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 13
+          },
+          {
+            "tipo": "boolean",
+            "nombre": "gps_dentro_poligono",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 14
+          },
+          {
+            "tipo": "numeric(10,2)",
+            "nombre": "gps_distancia_a_poligono_m",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 15
+          },
+          {
+            "tipo": "integer",
+            "nombre": "cantidad_muerta_acumulada",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 16
+          },
+          {
+            "tipo": "integer",
+            "nombre": "cantidad_repuesta_acumulada",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 17
+          },
+          {
+            "tipo": "text",
+            "nombre": "nombre_subcampania_snapshot",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 18
+          },
+          {
+            "tipo": "text",
+            "nombre": "nombre_zona_snapshot",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 19
+          },
+          {
+            "tipo": "timestamp with time zone",
+            "nombre": "created_at",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 20
+          },
+          {
+            "tipo": "jsonb",
+            "nombre": "metadata_blockchain",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 21
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "revision_registro",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 22
+          },
+          {
+            "tipo": "text",
+            "nombre": "afiliacion_responsable_snapshot",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 23
+          },
+          {
+            "tipo": "text",
+            "nombre": "afiliacion_responsable_estado",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 24
+          },
+          {
+            "tipo": "text",
+            "nombre": "afiliacion_responsable_tipo",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 25
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "organizacion_responsable_id_snapshot",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 26
+          }
+        ],
+        "force_rls": false,
+        "politicas": [],
+        "propietario": "postgres",
+        "privilegios_por_rol": [
+          {
+            "rol": "PUBLIC",
+            "existe": true,
+            "tabla_concedidos": [],
+            "columna_concedidos": []
+          },
+          {
+            "rol": "anon",
+            "existe": true,
+            "tabla_concedidos": [],
+            "columna_concedidos": []
+          },
+          {
+            "rol": "authenticated",
+            "existe": true,
+            "tabla_concedidos": [],
+            "columna_concedidos": []
+          },
+          {
+            "rol": "service_role",
+            "existe": true,
+            "tabla_concedidos": [
+              "DELETE",
+              "INSERT",
+              "MAINTAIN",
+              "REFERENCES",
+              "SELECT",
+              "TRIGGER",
+              "TRUNCATE",
+              "UPDATE"
+            ],
+            "columna_concedidos": [
+              {
+                "columna": "id",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "subcampania_id",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "responsable_id",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "fecha_plantacion",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "cantidad_total_plantada",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "nombre_responsable_snapshot",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "observaciones",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "codigo_trazabilidad",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "created_by",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "es_reposicion",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "registro_plantacion_origen_id",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "latitud",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "longitud",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "gps_dentro_poligono",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "gps_distancia_a_poligono_m",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "cantidad_muerta_acumulada",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "cantidad_repuesta_acumulada",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "nombre_subcampania_snapshot",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "nombre_zona_snapshot",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "created_at",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "metadata_blockchain",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "revision_registro",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "afiliacion_responsable_snapshot",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "afiliacion_responsable_estado",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "afiliacion_responsable_tipo",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "organizacion_responsable_id_snapshot",
+                "privilegios": [
+                  "INSERT",
+                  "REFERENCES",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "rls": true,
+        "tipo": "r",
+        "nombre": "registro_plantacion_correccion",
+        "alcance": "INSERT_HISTORIA_OBSERVACIONES",
+        "columnas": [
+          {
+            "tipo": "bigint",
+            "nombre": "id",
+            "generada": "",
+            "identity": "d",
+            "nullable": false,
+            "posicion": 1
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "comando_interno_id",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 2
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "actor_id",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 3
+          },
+          {
+            "tipo": "text",
+            "nombre": "actor_nombre_snapshot",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 4
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "subcampania_id",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 5
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "grupo_registro_id",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 6
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "registro_plantacion_id",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 7
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "evento_plantacion_id",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 8
+          },
+          {
+            "tipo": "text",
+            "nombre": "caso",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 9
+          },
+          {
+            "tipo": "text",
+            "nombre": "motivo",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 10
+          },
+          {
+            "tipo": "jsonb",
+            "nombre": "anterior",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 11
+          },
+          {
+            "tipo": "jsonb",
+            "nombre": "nuevo",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 12
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "revision_anterior",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 13
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "revision_nueva",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 14
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "revision_grupo_anterior",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 15
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "revision_grupo_nueva",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 16
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "referencia_registro_vigente_id",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 17
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "referencia_revision_registro",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 18
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "referencia_revision_grupo",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 19
+          },
+          {
+            "tipo": "timestamp with time zone",
+            "nombre": "creado_en",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 20
+          }
+        ],
+        "force_rls": false,
+        "politicas": [],
+        "propietario": "postgres",
+        "privilegios_por_rol": [
+          {
+            "rol": "PUBLIC",
+            "existe": true,
+            "tabla_concedidos": [],
+            "columna_concedidos": []
+          },
+          {
+            "rol": "anon",
+            "existe": true,
+            "tabla_concedidos": [],
+            "columna_concedidos": []
+          },
+          {
+            "rol": "authenticated",
+            "existe": true,
+            "tabla_concedidos": [],
+            "columna_concedidos": []
+          },
+          {
+            "rol": "service_role",
+            "existe": true,
+            "tabla_concedidos": [
+              "SELECT"
+            ],
+            "columna_concedidos": [
+              {
+                "columna": "id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "comando_interno_id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "actor_id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "actor_nombre_snapshot",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "subcampania_id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "grupo_registro_id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "registro_plantacion_id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "evento_plantacion_id",
+                "privilegios": [
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "caso",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "motivo",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "anterior",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "nuevo",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "revision_anterior",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "revision_nueva",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "revision_grupo_anterior",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "revision_grupo_nueva",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "referencia_registro_vigente_id",
+                "privilegios": [
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "referencia_revision_registro",
+                "privilegios": [
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "referencia_revision_grupo",
+                "privilegios": [
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "creado_en",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "rls": true,
+        "tipo": "r",
+        "nombre": "registro_plantacion_efectivo",
+        "alcance": "INSERT_OVERLAY_Y_UPDATE_OBSERVACIONES",
+        "columnas": [
+          {
+            "tipo": "bigint",
+            "nombre": "registro_plantacion_id",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 1
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "subcampania_id",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 2
+          },
+          {
+            "tipo": "text",
+            "nombre": "estado",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 3
+          },
+          {
+            "tipo": "integer",
+            "nombre": "cantidad_efectiva",
+            "generada": "",
+            "identity": "",
+            "nullable": false,
+            "posicion": 4
+          },
+          {
+            "tipo": "text",
+            "nombre": "observaciones_efectivas",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 5
+          },
+          {
+            "tipo": "bigint",
+            "nombre": "ultima_correccion_id",
+            "generada": "",
+            "identity": "",
+            "nullable": true,
+            "posicion": 6
+          }
+        ],
+        "force_rls": false,
+        "politicas": [],
+        "propietario": "postgres",
+        "privilegios_por_rol": [
+          {
+            "rol": "PUBLIC",
+            "existe": true,
+            "tabla_concedidos": [],
+            "columna_concedidos": []
+          },
+          {
+            "rol": "anon",
+            "existe": true,
+            "tabla_concedidos": [],
+            "columna_concedidos": []
+          },
+          {
+            "rol": "authenticated",
+            "existe": true,
+            "tabla_concedidos": [],
+            "columna_concedidos": []
+          },
+          {
+            "rol": "service_role",
+            "existe": true,
+            "tabla_concedidos": [
+              "SELECT"
+            ],
+            "columna_concedidos": [
+              {
+                "columna": "registro_plantacion_id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "subcampania_id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "estado",
+                "privilegios": [
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "cantidad_efectiva",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT"
+                ]
+              },
+              {
+                "columna": "observaciones_efectivas",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              },
+              {
+                "columna": "ultima_correccion_id",
+                "privilegios": [
+                  "INSERT",
+                  "SELECT",
+                  "UPDATE"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "entorno": {
+      "postgresql": "17.11 (Postgres.app)",
+      "aislamiento": "repeatable read",
+      "solo_lectura": "on",
+      "maintain_disponible": true
+    },
+    "limites": [
+      "Cotejo del catalogo acotado084; no consulta filas ni prueba HTTP, datos, saldos, concurrencia o despliegue.",
+      "PUBLIC se calcula por ACL del pseudorol0; los otros tres roles incluyen privilegios efectivos y herencia.",
+      "columna_concedidos incluye privilegios heredados de la tabla; array vacio significa ninguno si existe=true.",
+      "No enumera membresias ni cuentas; propietarios se muestran solo para los objetos enumerados.",
+      "MD5 sirve para cotejar fuentes/definiciones; no es firma de seguridad. Un overload adicional permanece visible.",
+      "Limites de secuencia son texto BIGINT exacto; no se consulta last_value ni is_called.",
+      "Defaults/settings desconocidos solo se identifican por huellas; este archivo no los ejecuta ni expone sus valores."
+    ],
+    "contrato": "PA-INT07-084-CATALOGO/1",
+    "faltantes": {
+      "roles": [],
+      "checks": [],
+      "tablas": [],
+      "funciones": [],
+      "secuencias": []
+    },
+    "funciones": [
+      {
+        "setof": false,
+        "nombre": "pa_comando_recuperar",
+        "execute": [
+          {
+            "rol": "PUBLIC",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "anon",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "authenticated",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "service_role",
+            "existe": true,
+            "concedido": true
+          }
+        ],
+        "retorno": "jsonb",
+        "estricta": false,
+        "lenguaje": "plpgsql",
+        "parallel": "u",
+        "settings": [
+          {
+            "md5": "b5d3b9630aead3d7373038ee1d5e143f",
+            "valor": "pg_catalog, public",
+            "nombre": "search_path"
+          }
+        ],
+        "leakproof": false,
+        "cuerpo_md5": "41923c052e2ad651f954e4770a7917b0",
+        "propietario": "postgres",
+        "volatilidad": "v",
+        "defaults_md5": null,
+        "definicion_md5": "5910b2dd9b5cbadae0b201c9196d5c40",
+        "firma_esperada": "public.pa_comando_recuperar(bigint,text,text,uuid)",
+        "cuerpo_coincide": true,
+        "argumentos_modos": null,
+        "firma_compatible": true,
+        "security_definer": false,
+        "defaults_cantidad": 0,
+        "argumentos_nombres": [
+          "p_actor_id",
+          "p_auth_id",
+          "p_operacion",
+          "p_comando_id"
+        ],
+        "defaults_conocidos": "SIN_DEFAULTS",
+        "cuerpo_md5_esperado": "41923c052e2ad651f954e4770a7917b0",
+        "argumentos_identidad": "p_actor_id bigint, p_auth_id text, p_operacion text, p_comando_id uuid"
+      },
+      {
+        "setof": false,
+        "nombre": "pa_correccion_contexto_leer",
+        "execute": [
+          {
+            "rol": "PUBLIC",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "anon",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "authenticated",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "service_role",
+            "existe": true,
+            "concedido": true
+          }
+        ],
+        "retorno": "jsonb",
+        "estricta": false,
+        "lenguaje": "plpgsql",
+        "parallel": "u",
+        "settings": [
+          {
+            "md5": "060b3c1cb33f2828e18be329b961f8e2",
+            "valor": "5s",
+            "nombre": "lock_timeout"
+          },
+          {
+            "md5": "b5d3b9630aead3d7373038ee1d5e143f",
+            "valor": "pg_catalog, public",
+            "nombre": "search_path"
+          },
+          {
+            "md5": "32d4bd8f93ffdedfd8d62d955e404f0f",
+            "valor": "30s",
+            "nombre": "statement_timeout"
+          }
+        ],
+        "leakproof": false,
+        "cuerpo_md5": "3e451420f51ecc0d1e0c3d1f52d7b7d8",
+        "propietario": "postgres",
+        "volatilidad": "v",
+        "defaults_md5": null,
+        "definicion_md5": "433c12f452015594f6e04032c1a3fb4c",
+        "firma_esperada": "public.pa_correccion_contexto_leer(bigint,text,bigint)",
+        "cuerpo_coincide": true,
+        "argumentos_modos": null,
+        "firma_compatible": true,
+        "security_definer": false,
+        "defaults_cantidad": 0,
+        "argumentos_nombres": [
+          "p_actor_id",
+          "p_auth_id",
+          "p_registro_plantacion_id"
+        ],
+        "defaults_conocidos": "SIN_DEFAULTS",
+        "cuerpo_md5_esperado": "3e451420f51ecc0d1e0c3d1f52d7b7d8",
+        "argumentos_identidad": "p_actor_id bigint, p_auth_id text, p_registro_plantacion_id bigint"
+      },
+      {
+        "setof": false,
+        "nombre": "pa_correccion_ejecutar",
+        "execute": [
+          {
+            "rol": "PUBLIC",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "anon",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "authenticated",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "service_role",
+            "existe": true,
+            "concedido": true
+          }
+        ],
+        "retorno": "jsonb",
+        "estricta": false,
+        "lenguaje": "plpgsql",
+        "parallel": "u",
+        "settings": [
+          {
+            "md5": "060b3c1cb33f2828e18be329b961f8e2",
+            "valor": "5s",
+            "nombre": "lock_timeout"
+          },
+          {
+            "md5": "b5d3b9630aead3d7373038ee1d5e143f",
+            "valor": "pg_catalog, public",
+            "nombre": "search_path"
+          },
+          {
+            "md5": "32d4bd8f93ffdedfd8d62d955e404f0f",
+            "valor": "30s",
+            "nombre": "statement_timeout"
+          }
+        ],
+        "leakproof": false,
+        "cuerpo_md5": "3719568bd548d9376dc5362aa20c2529",
+        "propietario": "postgres",
+        "volatilidad": "v",
+        "defaults_md5": null,
+        "definicion_md5": "5d38853ee96d172dc6986d86c0b2ac22",
+        "firma_esperada": "public.pa_correccion_ejecutar(bigint,text,text,uuid,jsonb,text)",
+        "cuerpo_coincide": true,
+        "argumentos_modos": null,
+        "firma_compatible": true,
+        "security_definer": false,
+        "defaults_cantidad": 0,
+        "argumentos_nombres": [
+          "p_actor_id",
+          "p_auth_id",
+          "p_operacion",
+          "p_comando_id",
+          "p_payload",
+          "p_contenido_canonico"
+        ],
+        "defaults_conocidos": "SIN_DEFAULTS",
+        "cuerpo_md5_esperado": "3719568bd548d9376dc5362aa20c2529",
+        "argumentos_identidad": "p_actor_id bigint, p_auth_id text, p_operacion text, p_comando_id uuid, p_payload jsonb, p_contenido_canonico text"
+      },
+      {
+        "setof": false,
+        "nombre": "pa_correccion_historial_leer",
+        "execute": [
+          {
+            "rol": "PUBLIC",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "anon",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "authenticated",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "service_role",
+            "existe": true,
+            "concedido": true
+          }
+        ],
+        "retorno": "jsonb",
+        "estricta": false,
+        "lenguaje": "plpgsql",
+        "parallel": "u",
+        "settings": [
+          {
+            "md5": "060b3c1cb33f2828e18be329b961f8e2",
+            "valor": "5s",
+            "nombre": "lock_timeout"
+          },
+          {
+            "md5": "b5d3b9630aead3d7373038ee1d5e143f",
+            "valor": "pg_catalog, public",
+            "nombre": "search_path"
+          },
+          {
+            "md5": "32d4bd8f93ffdedfd8d62d955e404f0f",
+            "valor": "30s",
+            "nombre": "statement_timeout"
+          }
+        ],
+        "leakproof": false,
+        "cuerpo_md5": "c6eeefaaf6f9231505c634efb481a53c",
+        "propietario": "postgres",
+        "volatilidad": "v",
+        "defaults_md5": "85e102064a9155a2ff6154cca8e7ed88",
+        "definicion_md5": "78266e56db83f45fb26fc29ff3d95a4e",
+        "firma_esperada": "public.pa_correccion_historial_leer(bigint,text,bigint,bigint,integer)",
+        "cuerpo_coincide": true,
+        "argumentos_modos": null,
+        "firma_compatible": true,
+        "security_definer": false,
+        "defaults_cantidad": 2,
+        "argumentos_nombres": [
+          "p_actor_id",
+          "p_auth_id",
+          "p_registro_plantacion_id",
+          "p_antes_id",
+          "p_limite"
+        ],
+        "defaults_conocidos": "p_antes_id=NULL;p_limite=20",
+        "cuerpo_md5_esperado": "c6eeefaaf6f9231505c634efb481a53c",
+        "argumentos_identidad": "p_actor_id bigint, p_auth_id text, p_registro_plantacion_id bigint, p_antes_id bigint, p_limite integer"
+      },
+      {
+        "setof": false,
+        "nombre": "pa_registro_detalle_propio_leer",
+        "execute": [
+          {
+            "rol": "PUBLIC",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "anon",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "authenticated",
+            "existe": true,
+            "concedido": false
+          },
+          {
+            "rol": "service_role",
+            "existe": true,
+            "concedido": true
+          }
+        ],
+        "retorno": "jsonb",
+        "estricta": false,
+        "lenguaje": "plpgsql",
+        "parallel": "u",
+        "settings": [
+          {
+            "md5": "b5d3b9630aead3d7373038ee1d5e143f",
+            "valor": "pg_catalog, public",
+            "nombre": "search_path"
+          }
+        ],
+        "leakproof": false,
+        "cuerpo_md5": "50b09f9f93cd7cbddd679395afcf937c",
+        "propietario": "postgres",
+        "volatilidad": "v",
+        "defaults_md5": null,
+        "definicion_md5": "0f6bd7c96d8685b0f5af0b78d4fd1146",
+        "firma_esperada": "public.pa_registro_detalle_propio_leer(bigint,text,bigint)",
+        "cuerpo_coincide": true,
+        "argumentos_modos": null,
+        "firma_compatible": true,
+        "security_definer": false,
+        "defaults_cantidad": 0,
+        "argumentos_nombres": [
+          "p_actor_id",
+          "p_auth_id",
+          "p_registro_id"
+        ],
+        "defaults_conocidos": "SIN_DEFAULTS",
+        "cuerpo_md5_esperado": "50b09f9f93cd7cbddd679395afcf937c",
+        "argumentos_identidad": "p_actor_id bigint, p_auth_id text, p_registro_id bigint"
+      }
+    ],
+    "secuencias": [
+      {
+        "tipo": "bigint",
+        "cache": "1",
+        "maximo": "9223372036854775807",
+        "minimo": "1",
+        "nombre": "registro_plantacion_correccion_id_seq",
+        "ciclica": false,
+        "ownership": [
+          {
+            "tabla": "registro_plantacion_correccion",
+            "columna": "id",
+            "esquema": "public",
+            "tipo_dependencia": "i"
+          }
+        ],
+        "incremento": "1",
+        "propietario": "postgres",
+        "privilegios_efectivos": [
+          {
+            "rol": "PUBLIC",
+            "existe": true,
+            "concedido": false,
+            "privilegio": "SELECT"
+          },
+          {
+            "rol": "PUBLIC",
+            "existe": true,
+            "concedido": false,
+            "privilegio": "UPDATE"
+          },
+          {
+            "rol": "PUBLIC",
+            "existe": true,
+            "concedido": false,
+            "privilegio": "USAGE"
+          },
+          {
+            "rol": "anon",
+            "existe": true,
+            "concedido": false,
+            "privilegio": "SELECT"
+          },
+          {
+            "rol": "anon",
+            "existe": true,
+            "concedido": false,
+            "privilegio": "UPDATE"
+          },
+          {
+            "rol": "anon",
+            "existe": true,
+            "concedido": false,
+            "privilegio": "USAGE"
+          },
+          {
+            "rol": "authenticated",
+            "existe": true,
+            "concedido": false,
+            "privilegio": "SELECT"
+          },
+          {
+            "rol": "authenticated",
+            "existe": true,
+            "concedido": false,
+            "privilegio": "UPDATE"
+          },
+          {
+            "rol": "authenticated",
+            "existe": true,
+            "concedido": false,
+            "privilegio": "USAGE"
+          },
+          {
+            "rol": "service_role",
+            "existe": true,
+            "concedido": false,
+            "privilegio": "SELECT"
+          },
+          {
+            "rol": "service_role",
+            "existe": true,
+            "concedido": false,
+            "privilegio": "UPDATE"
+          },
+          {
+            "rol": "service_role",
+            "existe": true,
+            "concedido": true,
+            "privilegio": "USAGE"
+          }
+        ]
+      }
+    ],
+    "checks_comando": [
+      {
+        "tipo": "c",
+        "nombre": "participacion_comando_operacion_ck",
+        "validado": true,
+        "diferible": false,
+        "sin_herencia": false,
+        "expresion_md5": "eb9f5755f3109bd5c0736cd6d2238e13",
+        "definicion_md5": "7c408a1695bf9c6688f58e2eac58f061",
+        "inicialmente_diferido": false
+      },
+      {
+        "tipo": "c",
+        "nombre": "participacion_comando_resultado_tipo_ck",
+        "validado": true,
+        "diferible": false,
+        "sin_herencia": false,
+        "expresion_md5": "410a83985abdf149986ee0afa59f0083",
+        "definicion_md5": "ebc9e4ca6ebdaabe9a6c55fc6c017e31",
+        "inicialmente_diferido": false
+      }
+    ]
+  },
+  "limite": "Baseline local de catálogo; no acredita aplicación remota o funcionamiento de otro destino."
+}

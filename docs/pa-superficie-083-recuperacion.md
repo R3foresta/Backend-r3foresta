@@ -112,3 +112,18 @@ versión en Render. Al autorizar la publicación, la rama local `main` tenía
 además tres commits anteriores pendientes (INT02-D e INT05); el push autorizado
 incluye esos cambios. No ejecutar 083 definitiva basándose solo en la
 confirmación de un push.
+
+## Cotejo posterior · 21 de octubre de 2026
+
+Pablo confirmó ambos consumidores actualizados en `fbf2529` y la ejecución con
+Success de 083 definitiva, 081 y 082. El diagnóstico aportado después muestra
+cero bloqueos, riesgos de herencia o revocaciones previstas en su inventario.
+La vista territorial conserva su definición y SELECT; anon/authenticated
+mantienen solo SELECT y la ACL de servicio permanece intacta frente al cotejo
+previo. Las cinco funciones081 y la estructura/helpers/ACL enumeradas de082
+coinciden con sus fuentes. El complemento082 confirmó 28 comprobaciones MAINTAIN
+sin permisos inesperados y los límites exactos de las tres secuencias.
+[Cotejo completo y límites](evidencia/pa-int07-cotejo-desarrollo-completo-2026-10-21.json).
+
+Esto registra aplicación reportada por el usuario y catálogo observado, sin
+ejecución SQL remota del agente ni prueba HTTP, de saldos o de correcciones.
