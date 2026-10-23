@@ -25,7 +25,7 @@ Entrada principal del repositorio: [README.md](../README.md). Arquitectura y lí
 - Consultas físicas: [desactivación masiva de Campaña](frontend/desactivacion-campania-cancelacion-masiva.md).
 - Pruebas manuales: [índice Postman](postman/README.md).
 - Contexto técnico: [flujo físico](arquitectura/flujo-end-to-end.md), [BD](arquitectura/base-de-datos.md), [ADR de saldo M1](arquitectura/adr/001-saldo-operativo-recoleccion.md) y [decisiones DB](arquitectura/adr/002-decisiones-db.md).
-- [Tareas históricas](tareas/README.md): conservan decisiones y criterios de integración; no son el siguiente backlog de Participación aliada.
+- [Decisiones y propuestas](tareas/README.md): propuesta de procedencia pendiente, verificaciones del plan y resumen de entregables M2–M3.
 
 ## Cómo interpretar las guías anteriores
 

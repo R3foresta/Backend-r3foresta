@@ -1,52 +1,38 @@
-# Tareas
+# Decisiones y propuestas técnicas
 
-Historia de tareas técnicas M2↔M3, con cortes originales de julio de 2026.
-No es la cola vigente ni una orden de reaplicar SQL. Para el trabajo actual usar
-[participación](../modulos/participacion.md), sus [informes](../../docs/README.md) y
-`r3foresta-docs/ESTADO.md`. Los pendientes externos siguientes corresponden a su fecha;
-la aplicación de migraciones debe comprobarse en el entorno destino.
+El trabajo vigente se sigue en [r3foresta-docs/ESTADO.md](../../../r3foresta-docs/ESTADO.md)
+y en la [guía de participación](../modulos/participacion.md).
 
-## Integracion M2 Vivero - M3 Plantacion
+## Propuesta pendiente
 
-Estas tareas parten de la revision backend de alineacion post aclaraciones de plantacion. El objetivo general es migrar el flujo actual de "reserva logica + despacho automatico al plantar" al contrato vigente de "asignacion fisica + consumo posterior de stock asignado".
+[Incorporación de plantas y trazabilidad de procedencia](plan-incorporacion-plantas-procedencia.md):
+compras, donaciones y saldo inicial. Conserva acuerdos del usuario y alternativas;
+todavía no está implementada.
 
-Orden sugerido:
+## Decisiones y verificaciones conservadas
 
-1. [M2-M3-01 - BD contrato de asignacion fisica](m2-m3-01-bd-contrato-asignacion-fisica.md)
-2. [M2-M3-02 - Backend asignacion fisica](m2-m3-02-backend-asignacion-fisica.md)
-3. [M2-M3-03 - Backend plantacion y reposicion](m2-m3-03-backend-plantacion-reposicion.md)
-4. [M2-M3-04 - Backend devolucion y cancelacion](m2-m3-04-backend-devolucion-cancelacion.md)
-5. [M2-M3-05 - Backend mermas, saldos y consultas](m2-m3-05-backend-mermas-saldos-consultas.md)
-6. [M2-M3-06 - Contrato API y frontend](m2-m3-06-api-frontend-contrato.md)
-7. [M2-M3-07 - Pruebas de regresion y concurrencia](m2-m3-07-pruebas-regresion-concurrencia.md)
+- [Especies fuera del plan](diagnostico-asignacion-especies-fuera-plan.md): diagnóstico del 8 de octubre, corrección060 y límites de los datos observados.
+- [Metas orientativas y cierre manual](plantacion-metas-orientativas.md): decisión de producto, implementación061 y alcance de la verificación.
+- [Revisión atómica del plan](subcampanias-revision-plan-atomica.md): ADR-PLA-05, contrato062–063 y pruebas.
+- [Cotejo del plan en Supabase](verificacion-supabase-plan-062-063.md): consultas de solo lectura y comprobación HTTP del entorno destino.
 
-Resumen ejecutivo y desglose por epicas:
+## M2–M3: trabajo implementado
 
-- [M2-M3-00 - Plan de epicas](m2-m3-00-plan-epicas.md)
+M2-M3-00 agrupó las siete tareas siguientes, implementadas en el repositorio al
+7 de julio de 2026. Sus planes de ejecución se retiraron; el detalle original
+permanece en Git. Esta tabla conserva los IDs y sus entregables, sin acreditar
+aplicación SQL ni despliegue en un entorno concreto.
 
-### Estado de implementacion (2026-07-07)
-
-Las 7 tareas estan **implementadas en el repo**:
-
-| Pieza | Artefactos |
+| ID | Entregable |
 |---|---|
-| M2-M3-01 | `migrations/051_m2_m3_asignacion_fisica_schema.sql` (enum `ASIGNACION_SUBCAMPANIA`, evento `DEVOLUCION_PLANTACION`, columna `evento_lote_vivero.asignacion_id`, FKs M3, CHECK NOT VALID que bloquea nuevas escrituras `AUTOMATICO_PLANTACION`, vista `v_lote_vivero_saldos` fisica) |
-| M2-M3-02 | `migrations/052_vivero_asignar_stock_subcampania_rpc.sql` (+ DROP de `fn_vivero_reservar_stock_lote`), DTO/servicio/controller/Swagger de `POST /lotes-vivero/:id/asignaciones`; alias `POST :id/reservas` eliminado |
-| M2-M3-03 | `migrations/053_m3_registrar_plantacion_sin_despacho.sql`, servicio de plantacion con `consumos` (sin `despachos`) |
-| M2-M3-04 | `migrations/054_m3_devolucion_fisica.sql` + fix incremental `056_fix_devolucion_saldo_constraint.sql` (`fn_m3_devolver_asignacion_vivero`, `fn_subcampania_cancelar` v2 fisica), `POST /:id/asignaciones/:asignacionId/devolucion`; `DELETE` eliminado |
-| M2-M3-05 | `migrations/055_vivero_merma_fisica.sql`, saldos/consultas/despacho manual con semantica fisica (`saldo_asignado_subcampanias`) |
-| M2-M3-06 | Swagger actualizado, docs frontend (`modulos/lotes-vivero-m3.md`, `modulos/plantaciones.md`, `modulos/subcampanias.md`, `api-reference.md`), [guia de migracion frontend](../frontend/guia-migracion-asignacion-fisica.md), receta [postman/asignacion-fisica.md](../postman/asignacion-fisica.md) |
-| M2-M3-07 | Unit specs actualizados (asignaciones, despacho, plantacion); e2e DB nuevos `test/e2e/db/asignacion_fisica.e2e-spec.ts` y `test/e2e/db/plantacion_fisica.e2e-spec.ts` (reemplazan `reserva_requiere_embolsado` y `merma_lifo`, que probaban el contrato viejo) |
+| M2-M3-01 | [051: esquema de asignación física](../../migrations/051_m2_m3_asignacion_fisica_schema.sql) |
+| M2-M3-02 | [052: entrega física desde Vivero](../../migrations/052_vivero_asignar_stock_subcampania_rpc.sql) |
+| M2-M3-03 | [053: plantación consume asignaciones sin descontar Vivero otra vez](../../migrations/053_m3_registrar_plantacion_sin_despacho.sql) |
+| M2-M3-04 | [054: devolución física](../../migrations/054_m3_devolucion_fisica.sql) y [056: restricción de saldo](../../migrations/056_fix_devolucion_saldo_constraint.sql) |
+| M2-M3-05 | [055: merma sobre saldo físico de Vivero](../../migrations/055_vivero_merma_fisica.sql) |
+| M2-M3-06 | [Contrato para frontend](../frontend/guia-migracion-asignacion-fisica.md) y [receta de asignación/devolución](../postman/asignacion-fisica.md) |
+| M2-M3-07 | [Pruebas de asignación](../../test/e2e/db/asignacion_fisica.e2e-spec.ts), [plantación](../../test/e2e/db/plantacion_fisica.e2e-spec.ts) y unitarios por módulo |
 
-**Pendiente fuera del repo:**
-
-1. Aplicar las migraciones `051` a `056` en Supabase, **en orden y cada una como
-   transaccion separada** (051 agrega valores de enum que 052+ usan; el SQL
-   Editor de Supabase corre cada script en su propia transaccion, suficiente).
-2. Correr `npm run test:e2e:db` contra el entorno con las migraciones aplicadas.
-   Verificado localmente el 2026-07-07: `npm test -- --runInBand` pasa
-   (`388/388`) y `tsc -p tsconfig.build.json --noEmit` pasa limpio.
-3. Desplegar backend + frontend coordinados (breaking changes de API descritos
-   en la guia de migracion).
-4. Tras confirmar en produccion, propagar cierre a `r3foresta-docs`
-   (`ESTADO.md` + contrato) segun el protocolo del proyecto.
+Las RPC tienen redefiniciones posteriores: consultar la [arquitectura](../../ARCHITECTURE.md)
+y la última migración antes de cambiar una operación. Elegir las comprobaciones
+según la [guía de pruebas](../../test/README.md).
