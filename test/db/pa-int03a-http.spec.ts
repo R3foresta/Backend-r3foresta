@@ -4,6 +4,9 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import request from 'supertest';
 import sharp from 'sharp';
+import { SupabaseService } from '../../src/supabase/supabase.service';
+import { ParticipacionCargasService } from '../../src/participacion/cargas/participacion-cargas.service';
+import { ParticipacionImagenService } from '../../src/participacion/cargas/participacion-imagen.service';
 import {
   startHarness,
   sql,
@@ -103,6 +106,7 @@ describe('PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reale
       uploadAfterWriteOnce: false,
       uploadBeforeWriteOnce: false,
       removeOnce: false,
+      removePathOnce: null,
       finalizeAfterCommitOnce: false,
       registroAfterCommitOnce: false,
       blockUpload: null,
@@ -343,6 +347,135 @@ describe('PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reale
     expect(overflow.status).toBe(422);
     expect(overflow.body.error.codigo).toBe('LIMITE_CARGAS');
   });
+  it('descarta todas las fotos subidas, reintenta borrado tras fallo y conserva recibo con la clave original', async () => {
+    type CargaRow = {
+      id: number;
+      estado: string;
+      bucket: string;
+      ruta_original: string;
+      ruta_derivada: string;
+      lease_token: string | null;
+    };
+    const key = await prepare();
+    const ids = [randomUUID(), randomUUID()];
+    const secondPhoto = await sharp(png).negate().png().toBuffer();
+    expect((await upload(key, ids[0])).status).toBe(201);
+    expect((await upload(key, ids[1], secondPhoto)).status).toBe(201);
+    const rows = await Promise.all(
+      ids.map(
+        async (id) =>
+          JSON.parse(
+            await sql(
+              'SELECT to_jsonb(c) FROM public.participacion_carga c WHERE carga_id=' +
+                literal(id),
+            ),
+          ) as CargaRow,
+      ),
+    );
+    for (const row of rows) {
+      expect(row.estado).toBe('DISPONIBLE');
+      expect(
+        (await harness.from(row.bucket).download(row.ruta_original)).data,
+      ).not.toBeNull();
+      expect(
+        (await harness.from(row.bucket).download(row.ruta_derivada)).data,
+      ).not.toBeNull();
+    }
+
+    const path = '/participacion/comandos/' + key + '/descarte-preparacion';
+    const discarded = await post(path, { operacion: operation });
+    expect(discarded.status).toBe(200);
+    expect(discarded.body).toMatchObject({
+      comando_id: key,
+      estado: 'RECHAZADO',
+      error: { codigo: 'PREPARACION_CANCELADA' },
+    });
+    expect((await post(path, { operacion: operation })).body).toEqual(
+      discarded.body,
+    );
+    expect((await get('/participacion/comandos/' + key + suffix)).body).toEqual(
+      discarded.body,
+    );
+    expect(
+      await sql(
+        'SELECT huella IS NULL FROM public.participacion_comando WHERE comando_id=' +
+          literal(key),
+      ),
+    ).toBe('t');
+    for (const row of rows) {
+      const state = JSON.parse(
+        await sql(
+          'SELECT to_jsonb(c) FROM public.participacion_carga c WHERE id=' +
+            row.id,
+        ),
+      ) as CargaRow;
+      expect(state.estado).toBe('DESCARTE_PENDIENTE');
+      expect(state.lease_token).toBeNull();
+      expect(
+        await sql(
+          "SELECT estado || '/' || limpieza_estado FROM public.participacion_carga_generacion WHERE carga_interna_id=" +
+            row.id,
+        ),
+      ).toBe('OBSOLETA/PENDIENTE');
+    }
+
+    faults.removePathOnce = rows[0].ruta_original;
+    await harness.cargas.limpiar();
+    expect(
+      await sql(
+        'SELECT count(*) FROM public.participacion_carga_generacion WHERE carga_interna_id IN (' +
+          rows.map((row) => row.id).join(',') +
+          ") AND limpieza_estado='PENDIENTE'",
+      ),
+    ).toBe('1');
+    await sql(
+      'UPDATE public.participacion_carga_generacion SET proximo_intento_en=clock_timestamp() WHERE carga_interna_id IN (' +
+        rows.map((row) => row.id).join(',') +
+        ')',
+    );
+    const restarted = new ParticipacionCargasService(
+      harness.app.get(SupabaseService),
+      harness.app.get(ParticipacionImagenService),
+    );
+    await restarted.limpiar();
+    for (const row of rows) {
+      expect(
+        await sql(
+          'SELECT estado FROM public.participacion_carga WHERE id=' + row.id,
+        ),
+      ).toBe('DESCARTADA');
+      expect(
+        await sql(
+          'SELECT limpieza_estado FROM public.participacion_carga_generacion WHERE carga_interna_id=' +
+            row.id,
+        ),
+      ).toBe('BORRADO_VERIFICADO');
+      expect(
+        (await harness.from(row.bucket).download(row.ruta_original)).data,
+      ).toBeNull();
+      expect(
+        (await harness.from(row.bucket).download(row.ruta_derivada)).data,
+      ).toBeNull();
+    }
+    expect((await post(path, { operacion: operation })).body).toEqual(
+      discarded.body,
+    );
+    await restarted.limpiar();
+    for (const row of rows) {
+      expect(
+        await sql(
+          'SELECT limpieza_estado FROM public.participacion_carga_generacion WHERE carga_interna_id=' +
+            row.id,
+        ),
+      ).toBe('BORRADO_VERIFICADO');
+      expect(
+        (await harness.from(row.bucket).download(row.ruta_original)).data,
+      ).toBeNull();
+      expect(
+        (await harness.from(row.bucket).download(row.ruta_derivada)).data,
+      ).toBeNull();
+    }
+  });
   it('reconcilia respuesta perdida Storage y finalización DB sin duplicar evidencia ni objetos', async () => {
     const key = await prepare();
     const carga = randomUUID();
@@ -559,6 +692,9 @@ describe('PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reale
     expect(row.estado).toBe('VINCULADA');
     expect(
       (await harness.from(row.bucket).download(row.ruta_original)).data,
+    ).not.toBeNull();
+    expect(
+      (await harness.from(row.bucket).download(row.ruta_derivada)).data,
     ).not.toBeNull();
     const consumed = await sql(
       'SELECT sum(cantidad_consumida) FROM public.asignacion_vivero_subcampania WHERE subcampania_id=821',

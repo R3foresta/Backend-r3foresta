@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js';
 import type { SupabaseService } from '../../supabase/supabase.service';
 import { ParticipacionCargasService } from './participacion-cargas.service';
 import {
@@ -38,6 +39,7 @@ describe('ParticipacionCargasService: reconciliación sin locks durante IO', () 
 
   function harness(
     options: {
+      missingError?: () => Promise<unknown>;
       lostUpload?: boolean;
       failFinalize?: boolean;
       failUpload?: boolean;
@@ -52,7 +54,12 @@ describe('ParticipacionCargasService: reconciliación sin locks durante IO', () 
         const stored = objects.get(path);
         return stored
           ? { data: new Blob([new Uint8Array(stored)]), error: null }
-          : { data: null, error: { statusCode: '404' } };
+          : {
+              data: null,
+              error: options.missingError
+                ? await options.missingError()
+                : { statusCode: '404' },
+            };
       }),
       upload: jest.fn(
         async (path: string, value: Buffer, args: { upsert: boolean }) => {
@@ -150,6 +157,145 @@ describe('ParticipacionCargasService: reconciliación sin locks durante IO', () 
       'FINALIZAR',
     ]);
   });
+
+  async function sdkError(
+    status = 400,
+    body = JSON.stringify({
+      statusCode: '404',
+      code: 'NoSuchKey',
+      message: 'Object not found',
+    }),
+  ) {
+    const response = new Response(body, { status });
+    const client = createClient('https://storage.invalid', 'clave-sintetica', {
+      global: { fetch: async () => response },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const result = await client.storage
+      .from(work.bucket)
+      .download(work.ruta_original);
+    expect(result.error).toMatchObject({
+      name: 'StorageUnknownError',
+      originalError: response,
+    });
+    return { error: result.error, response };
+  }
+
+  it('SDK real: HTTP400/NoSuchKey permite foto nueva DISPONIBLE con evidencia', async () => {
+    const { error, response } = await sdkError();
+    const h = harness({ missingError: async () => error });
+    await expect(
+      h.service.subir(actor, command, fileId, bytes),
+    ).resolves.toMatchObject({
+      http_status: 201,
+      body: {
+        data: { estado: 'DISPONIBLE', evidencia_id: '9007199254740994' },
+      },
+    });
+    expect(h.bucket.upload).toHaveBeenCalledTimes(2);
+    expect(response.bodyUsed).toBe(false);
+  });
+
+  it('recupera RESERVADA con misma clave y bytes tras fallo de Storage usando error SDK', async () => {
+    const options = {
+      failUpload: true,
+      missingError: async () => (await sdkError()).error,
+    };
+    const h = harness(options);
+    await expect(
+      h.service.subir(actor, command, fileId, bytes),
+    ).resolves.toMatchObject({
+      http_status: 202,
+      body: { data: { estado: 'RESERVADA', evidencia_id: null } },
+    });
+    options.failUpload = false;
+    await expect(
+      h.service.subir(actor, command, fileId, bytes),
+    ).resolves.toMatchObject({
+      http_status: 200,
+      body: {
+        data: {
+          carga_id: fileId,
+          estado: 'DISPONIBLE',
+          evidencia_id: '9007199254740994',
+        },
+      },
+    });
+    for (const [, args] of h.rpc.mock.calls) {
+      expect(args.p_comando_id).toBe(command);
+      expect(args.p_payload).toMatchObject({
+        carga_id: fileId,
+        hash_original: hashBytes(bytes),
+      });
+    }
+    expect(h.objects.get(work.ruta_original)).toEqual(bytes);
+  });
+
+  it.each([
+    [401, { statusCode: '404', code: 'NoSuchKey' }],
+    [403, { statusCode: '404', code: 'NoSuchKey' }],
+    [500, { statusCode: '404', code: 'NoSuchKey' }],
+    [503, { statusCode: '404', code: 'NoSuchKey' }],
+    [400, { statusCode: '403', code: 'AccessDenied' }],
+    [400, { statusCode: '404', code: 'AccessDenied' }],
+    [400, { statusCode: '503', code: 'NoSuchKey' }],
+    [400, { message: 'Object not found' }],
+    [404, { code: 'NoSuchBucket' }],
+  ])(
+    'SDK HTTP%s con %j no autoriza upload ni finalización',
+    async (status, body) => {
+      const h = harness({
+        missingError: async () =>
+          (await sdkError(status, JSON.stringify(body))).error,
+      });
+      expect(
+        (await h.service.subir(actor, command, fileId, bytes)).http_status,
+      ).toBe(202);
+      expect(h.bucket.upload).not.toHaveBeenCalled();
+      expect(h.rpc).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it.each(['no es JSON', 'null', '{}'])(
+    'cuerpo SDK ilegible/ambiguo %s conserva reserva',
+    async (body) => {
+      const h = harness({
+        missingError: async () => (await sdkError(400, body)).error,
+      });
+      expect(
+        (await h.service.subir(actor, command, fileId, bytes)).http_status,
+      ).toBe(202);
+      expect(h.bucket.upload).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([400, 403, 503])(
+    'limpieza espera la comprobación SDK HTTP%s antes de marcar borrado',
+    async (status) => {
+      const h = harness({
+        missingError: async () => (await sdkError(status)).error,
+      });
+      h.rpc.mockImplementation(async (_name, args) => {
+        if (args.p_accion === 'EXPIRAR')
+          return { data: false as never, error: null };
+        if (args.p_accion === 'LISTAR')
+          return {
+            data: [{ ...work, carga_interna_id: '123' }] as never,
+            error: null,
+          };
+        return { data: true as never, error: null };
+      });
+      await h.service.limpiar();
+      expect(h.rpc).toHaveBeenLastCalledWith('pa_cargas_mantenimiento', {
+        p_accion: 'RESULTADO',
+        p_payload: {
+          carga_interna_id: '123',
+          generacion: 1,
+          borrado: status === 400,
+        },
+      });
+    },
+  );
 
   it('reconcilia upload confirmado cuya respuesta se perdió', async () => {
     const h = harness({ lostUpload: true });

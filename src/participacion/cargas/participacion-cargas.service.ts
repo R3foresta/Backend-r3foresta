@@ -314,7 +314,7 @@ export class ParticipacionCargasService
             await Promise.all(
               paths.map(async (path) => {
                 const result = await bucket.download(path);
-                return !result.data && this.ausente(result.error);
+                return !result.data && (await this.ausente(result.error));
               }),
             )
           ).every(Boolean);
@@ -349,7 +349,7 @@ export class ParticipacionCargasService
         throw new Error('hash');
       return;
     }
-    if (!this.ausente(existing.error)) throw new Error('storage');
+    if (!(await this.ausente(existing.error))) throw new Error('storage');
     await bucket.upload(path, bytes, {
       upsert: false,
       contentType: mime,
@@ -363,17 +363,34 @@ export class ParticipacionCargasService
     )
       throw new Error('storage');
   }
-  private ausente(error: unknown): boolean {
+  private async ausente(error: unknown): Promise<boolean> {
+    if (!error || typeof error !== 'object') return false;
     const e = error as {
-      status?: number;
-      statusCode?: number | string;
-      code?: string;
-    } | null;
+      status?: unknown;
+      statusCode?: unknown;
+      code?: unknown;
+      name?: unknown;
+      originalError?: unknown;
+    };
+    // download usa noResolveJson: el SDK conserva el Response sin leerlo.
+    // Clonar evita consumir el cuerpo que podría necesitar otro diagnóstico.
+    if (e.name === 'StorageUnknownError' && e.originalError instanceof Response) {
+      const response = e.originalError;
+      if (![400, 404].includes(response.status)) return false;
+      try {
+        return await this.ausente(await response.clone().json());
+      } catch {
+        return false;
+      }
+    }
+    // Los errores de autorización/servicio prevalecen sobre señales contradictorias.
+    const statuses = [e.status, e.statusCode].filter((v) => v !== undefined);
+    if (statuses.some((v) => ![400, 404].includes(Number(v)))) return false;
+    if (e.code !== undefined && e.code !== 'NoSuchKey') return false;
     return (
-      !!e &&
-      (Number(e.status) === 404 ||
-        Number(e.statusCode) === 404 ||
-        e.code === 'NoSuchKey')
+      Number(e.status) === 404 ||
+      Number(e.statusCode) === 404 ||
+      e.code === 'NoSuchKey'
     );
   }
   private async firmar(bucket: string, path: string) {

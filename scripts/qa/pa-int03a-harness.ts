@@ -74,6 +74,7 @@ export const faults = {
   uploadAfterWriteOnce: false,
   uploadBeforeWriteOnce: false,
   removeOnce: false,
+  removePathOnce: null as string | null,
   finalizeAfterCommitOnce: false,
   registroAfterCommitOnce: false,
   blockUpload: null as null | { entered: () => void; wait: Promise<void> },
@@ -180,8 +181,13 @@ export async function startHarness(port = 0, sessionEndpoint = false) {
       return { data: { path }, error: null };
     },
     remove: async (paths: string[]) => {
-      if (faults.removeOnce) {
+      if (
+        faults.removeOnce ||
+        (faults.removePathOnce !== null &&
+          paths.includes(faults.removePathOnce))
+      ) {
         faults.removeOnce = false;
+        faults.removePathOnce = null;
         return { data: null, error: { status: 503 } };
       }
       for (const path of paths) {
