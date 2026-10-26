@@ -14,7 +14,10 @@ import type {
   CommandOperation,
   ReplacementPayload,
 } from './dto/comandos.dto';
-import type { CorrectionObservationsPayload } from './dto/correcciones.dto';
+import type {
+  CorrectionObservationsPayload,
+  CorrectionParticipantsPayload,
+} from './dto/correcciones.dto';
 
 @Injectable()
 export class ParticipacionComandosService {
@@ -57,6 +60,19 @@ export class ParticipacionComandosService {
       'pa_correccion_ejecutar',
       actor,
       'CORREGIR_OBSERVACIONES_PLANTACION',
+      command,
+      payload,
+    );
+  }
+  corregirParticipantes(
+    actor: VerifiedActor,
+    command: string,
+    payload: CorrectionParticipantsPayload,
+  ): Promise<RpcReply> {
+    return this.execute(
+      'pa_correccion_ejecutar',
+      actor,
+      'CORREGIR_PARTICIPANTES_PLANTACION',
       command,
       payload,
     );

@@ -44,6 +44,7 @@ const operations = [
   'INACTIVAR_CUENTA',
   'REGISTRAR_PLANTACION_INICIAL',
   'CORREGIR_OBSERVACIONES_PLANTACION',
+  'CORREGIR_PARTICIPANTES_PLANTACION',
 ];
 const pagination = {
   cursor: { type: 'string', minLength: 1, maxLength: 1024 },
@@ -603,6 +604,8 @@ schemas.ContextoRegistro = obj({
       porcentaje_objetivo: { type: 'number', minimum: 0, maximum: 100 },
       cantidad_objetivo: count,
       saldo_elegible: count,
+      plantado_inicial: count,
+      pendiente_meta: count,
     }),
     1,
     100,
@@ -1152,7 +1155,7 @@ impactRead(
   impactParams(['cursor', 'limite']),
   true,
 );
-// INT07 publica únicamente los casos ejecutables en la migración 084.
+// INT07: observaciones (084), participantes y lecturas por audiencia (085).
 schemas.CorreccionObservacionesEntrada = obj({
   comando_id: uuid,
   revision_esperada: revision,
@@ -1168,12 +1171,37 @@ schemas.CorreccionObservacionesEntrada = obj({
     description: 'Campo obligatorio; NFC/trim. Vacío equivale a null.',
   },
 });
+schemas.CorreccionParticipantesEntrada = obj({
+  comando_id: uuid,
+  revision_esperada: revision,
+  motivo: {
+    ...text,
+    minLength: 3,
+    maxLength: 1000,
+    description: 'NFC/trim obligatorio; nunca se incluye en el recibo.',
+  },
+  coresponsable_ids: {
+    ...array(id, 0, 100),
+    uniqueItems: true,
+    description:
+      'Conjunto completo de corresponsables efectivos; excluye al responsable. Se canonicaliza por ID numérico. Admite cuentas inactivas sin permiso operativo.',
+  },
+});
+schemas.ParticipanteSnapshotCorreccion = obj({
+  ...schemas.ParticipanteSnapshot.properties,
+  procedencia: {
+    ...text,
+    enum: ['ORIGINAL', 'ALTA_CORRECCION', 'RESTAURACION'],
+  },
+  capturado_en: { ...instant, nullable: true },
+  nombre_capturado_correccion: nullableText,
+});
 schemas.CorreccionPlantacionResultado = obj({
   tipo: { ...text, enum: ['CORRECCION_PLANTACION'] },
   correccion_id: nullableId,
   registro_plantacion_id: id,
   subcampania_id: id,
-  caso: { ...text, enum: ['OBSERVACIONES'] },
+  caso: { ...text, enum: ['OBSERVACIONES', 'PARTICIPANTES'] },
   revision_anterior: revision,
   revision_nueva: revision,
   revision_grupo_anterior: revision,
@@ -1202,9 +1230,18 @@ schemas.ContextoCorreccion = obj({
   revision_registro: revision,
   revision_grupo: revision,
   observaciones_visibles: bool,
-  original: obj({ observaciones: nullableText }),
-  efectivo: obj({ observaciones: nullableText }),
-  capacidades: obj({ corregir_observaciones: bool }),
+  original: obj({
+    observaciones: nullableText,
+    participantes: array(ref('ParticipanteSnapshotCorreccion'), 1, 101),
+  }),
+  efectivo: obj({
+    observaciones: nullableText,
+    participantes: array(ref('ParticipanteSnapshotCorreccion'), 1, 101),
+  }),
+  capacidades: obj({
+    corregir_observaciones: bool,
+    corregir_participantes: bool,
+  }),
 });
 schemas.HistoriaCorreccionObservaciones = obj({
   correccion_id: id,
@@ -1221,12 +1258,36 @@ schemas.HistoriaCorreccionObservaciones = obj({
   despues: obj({ observaciones: nullableText }),
   efectos_consumo: array(obj({}), 0, 0),
 });
+schemas.HistoriaCorreccionParticipantes = obj({
+  correccion_id: id,
+  caso: { ...text, enum: ['PARTICIPANTES'] },
+  actor: obj({ usuario_id: id, nombre_snapshot: nullableText }),
+  fecha: instant,
+  revision_anterior: revision,
+  revision_nueva: revision,
+  revision_grupo_anterior: revision,
+  revision_grupo_nueva: revision,
+  motivo: text,
+  antes: obj({
+    participantes: array(ref('ParticipanteSnapshotCorreccion'), 1, 101),
+  }),
+  despues: obj({
+    participantes: array(ref('ParticipanteSnapshotCorreccion'), 1, 101),
+  }),
+  efectos_consumo: array(obj({}), 0, 0),
+});
+schemas.HistoriaCorreccion = {
+  oneOf: [
+    ref('HistoriaCorreccionObservaciones'),
+    ref('HistoriaCorreccionParticipantes'),
+  ],
+};
 schemas.ContextoCorreccionLectura = obj({
   data: ref('ContextoCorreccion'),
   observado_en: instant,
 });
 schemas.HistorialCorreccionesLectura = obj({
-  data: array(ref('HistoriaCorreccionObservaciones'), 0, 50),
+  data: array(ref('HistoriaCorreccion'), 0, 50),
   observado_en: instant,
   siguiente_cursor: nullableText,
 });
@@ -1278,17 +1339,188 @@ paths['/api/v1/plantaciones/{id}/correcciones/observaciones'].post.responses = {
 paths['/api/v1/plantaciones/{id}/correcciones/observaciones'].post.description =
   'Solo ADMIN global y subcampaña ACTIVA. Original conservado; overlay, revisión, historial y recibo en una transacción. Replay terminal precede a nueva autorización. SIN_CAMBIOS no incrementa revisiones ni crea historial. No modifica stock. El recibo no contiene observaciones ni motivo.';
 paths['/api/v1/plantaciones/{id}/contexto-correccion'].get.description =
-  'ADMIN global o administrador vigente de la subcampaña exacta. El administrador contextual recibe observaciones null y capacidad false. Leer no reserva revisión, autoridad ni estado; no acepta query.';
+  'ADMIN global o administrador vigente de la subcampaña exacta. El administrador contextual recibe observaciones null y corregir_observaciones false; ambos pueden corregir participantes en ámbito ACTIVA y registro VIGENTE. Responsable inmutable. Leer no reserva revisión, autoridad ni estado; no acepta query.';
 paths['/api/v1/plantaciones/{id}/historial-correcciones'].get.description =
-  'Auditoría privada autorizada, ID DESC. Cursor firmado y ligado a actor, sesión y registro. Revalida autoridad en cada página. El administrador contextual recibe motivo y observaciones null. Sin perfiles ni fotos privadas.';
+  'Auditoría privada autorizada, ID DESC. Cursor firmado ligado a actor, sesión, registro y audiencia; revalida autoridad en cada página. El administrador contextual recibe motivo y textos null solamente en OBSERVACIONES. PARTICIPANTES expone motivo y snapshots antes/después a ambas autoridades. Sin perfiles ni fotos privadas.';
+add(
+  '/api/v1/plantaciones/{id}/correcciones/participantes',
+  'post',
+  'CORREGIR_PARTICIPANTES_PLANTACION',
+  'CorreccionParticipantesEntrada',
+  null,
+  [param('id', 'path', id, true)],
+  true,
+);
+paths['/api/v1/plantaciones/{id}/correcciones/participantes'].post.responses = {
+  ...paths['/api/v1/plantaciones/{id}/correcciones/observaciones'].post
+    .responses,
+};
+paths['/api/v1/plantaciones/{id}/correcciones/participantes'].post.description =
+  'ADMIN global o administrador vigente de la subcampaña exacta, ACTIVA y registro VIGENTE. Alta/retiro/restauración histórica sin exigir cuenta activa ni permiso operativo al participante. No admite responsable en coresponsable_ids (CASO_NO_SOPORTADO); usuario inexistente produce PARTICIPANTE_NO_REGISTRADO durable. Originales/snapshots conservados; overlay, revisión de registro, historial y recibo atómicos. No altera grupo, cantidad, stock ni permisos. SIN_CAMBIOS no materializa overlay ni incrementa revisión. Replay terminal precede a nueva autorización. El recibo no incluye participantes, nombres ni motivo.';
+const correctionPageParams = [
+  param('cursor', 'query', { ...text, minLength: 1, maxLength: 1024 }),
+  param('limite', 'query', {
+    type: 'integer',
+    minimum: 1,
+    maximum: 50,
+    default: 20,
+  }),
+];
+schemas.ParticipanteHistoricoSeleccionable = obj({
+  usuario_id: id,
+  nombre_actual: nullableText,
+  activo: bool,
+  relacion_historica: {
+    ...text,
+    enum: ['PRESENTE', 'RETIRADO', 'SIN_RELACION'],
+  },
+});
+schemas.ParticipantesHistoricosLectura = obj({
+  data: array(ref('ParticipanteHistoricoSeleccionable'), 0, 50),
+  observado_en: instant,
+  siguiente_cursor: nullableText,
+});
+add(
+  '/api/v1/plantaciones/{id}/participantes-historicos-seleccionables',
+  'get',
+  'Buscar participantes históricos',
+  null,
+  'ParticipantesHistoricosLectura',
+  [
+    param('id', 'path', id, true),
+    param(
+      'q',
+      'query',
+      {
+        ...text,
+        minLength: 1,
+        maxLength: 100,
+        description:
+          'Obligatorio. ID decimal canónico exacto desde un carácter o nombre NFC/trim de 3..100 caracteres, búsqueda literal sin comodines. No busca correo ni username.',
+      },
+      true,
+    ),
+    ...correctionPageParams,
+  ],
+);
+paths[
+  '/api/v1/plantaciones/{id}/participantes-historicos-seleccionables'
+].get.description =
+  'Autoridad global o contextual de corrección, revalidada por página. Incluye inactivos y excluye al responsable; no consulta permiso operativo. ID ASC, cursor firmado ligado a actor, sesión, registro, modo y consulta normalizada. Solo q/cursor/limite. La lectura puede continuar con ámbito cerrado sin habilitar escritura.';
+const logicalState = { ...text, enum: ['VIGENTE', 'REVERTIDO'] };
+schemas.EstadoRegistroPropio = obj({
+  registro_plantacion_id: id,
+  codigo_trazabilidad: text,
+  subcampania_id: id,
+  es_reposicion: bool,
+  registro_plantacion_origen_id: nullableId,
+  estado_logico: logicalState,
+  tiene_correcciones: bool,
+  revision_registro: revision,
+  revision_grupo: revision,
+  relaciones: {
+    ...array({ ...text, enum: ['AUTOR', 'PARTICIPANTE'] }, 1, 2),
+    uniqueItems: true,
+  },
+  cantidad_original: quantity,
+  cantidad_efectiva: { type: 'integer', minimum: 0 },
+  especies_originales: array(speciesQuantity, 1, 100),
+  especies_efectivas: array(
+    obj({ planta_id: id, cantidad: { type: 'integer', minimum: 0 } }),
+    1,
+    100,
+  ),
+  participantes: array(ref('ParticipanteSnapshotCorreccion'), 1, 101),
+  registro_vigente_id: nullableId,
+  url_detalle_efectivo: nullableText,
+});
+schemas.HistoriaCorreccionPropia = obj({
+  correccion_id: id,
+  caso: { ...text, enum: ['OBSERVACIONES', 'PARTICIPANTES'] },
+  actor: obj({ usuario_id: id, nombre_snapshot: nullableText }),
+  fecha: instant,
+  revision_anterior: revision,
+  revision_nueva: revision,
+});
+schemas.EstadoRegistroPublico = obj({
+  registro_plantacion_id: id,
+  estado_logico: logicalState,
+  tiene_correcciones: bool,
+  url_detalle_efectivo: nullableText,
+  registro_vigente: {
+    ...obj({ registro_plantacion_id: id, url_publica: text }),
+    nullable: true,
+  },
+});
+schemas.EstadoRegistroPropioLectura = obj({
+  data: ref('EstadoRegistroPropio'),
+  observado_en: instant,
+});
+schemas.HistorialPropioLectura = obj({
+  data: array(ref('HistoriaCorreccionPropia'), 0, 50),
+  observado_en: instant,
+  siguiente_cursor: nullableText,
+});
+schemas.MisRegistrosEstadoLectura = obj({
+  data: array(ref('EstadoRegistroPropio'), 0, 50),
+  observado_en: instant,
+  siguiente_cursor: nullableText,
+});
+schemas.EstadoRegistroPublicoLectura = obj({
+  data: ref('EstadoRegistroPublico'),
+  observado_en: instant,
+});
+for (const [route, summary, schema, paged] of [
+  [
+    '/api/v1/plantaciones/{id}/estado-propio',
+    'Estado efectivo propio',
+    'EstadoRegistroPropioLectura',
+    false,
+  ],
+  [
+    '/api/v1/plantaciones/{id}/historial-propio',
+    'Historia mínima propia',
+    'HistorialPropioLectura',
+    true,
+  ],
+  [
+    '/api/v1/plantaciones/mis-registros/estado',
+    'Estados de mis registros',
+    'MisRegistrosEstadoLectura',
+    true,
+  ],
+]) {
+  add(route, 'get', summary, null, schema, [
+    ...(route.includes('{id}') ? [param('id', 'path', id, true)] : []),
+    ...(paged ? correctionPageParams : []),
+  ]);
+  paths[route].get.description =
+    'JWT vigente y cuenta activa, autoría o participación efectiva revalidada en cada lectura, incluso para ADMIN. Retirar un participante extingue su acceso propio; restaurarlo lo recupera. Sin motivo, observaciones ni antes/después administrativos. Paginación ID DESC con cursor firmado ligado a actor, sesión, objeto y audiencia propia. No requiere permiso operativo.';
+}
+add(
+  '/api/v1/impact/registros/{id}/estado',
+  'get',
+  'Estado público del registro',
+  null,
+  'EstadoRegistroPublicoLectura',
+  [param('id', 'path', id, true)],
+);
+const publicState = paths['/api/v1/impact/registros/{id}/estado'].get;
+publicState.security = [];
+publicState.description =
+  'Sin JWT ni cuenta; misma respuesta con bearer ausente o vencido. Solo registros elegibles según INT05. Estado y enlace mínimos, sin participantes, actor, motivo ni observaciones. No acepta query.';
+for (const value of Object.values(publicState.responses))
+  value.headers = publicHeaders;
+delete publicState.responses[401];
+delete publicState.responses[403];
 const document = {
   openapi: '3.0.3',
   info: {
     title:
       'R3Foresta Participación aliada — INT02-C / INT03-A / INT02-D / INT05 / INT07',
-    version: '1.4.0',
+    version: '1.5.0',
     description:
-      'Gestión C, registro inicial recuperable INT03-A, consulta INT05 y corrección de observaciones INT07 con contexto/historial privados y recuperación durable. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada.',
+      'Gestión C, registro inicial INT03-A, consulta INT05 y correcciones INT07 de observaciones/participantes con recuperación durable, contexto/historial privados, búsqueda histórica y estado propio/público. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada.',
   },
   servers: [{ url: 'http://localhost:3000' }],
   paths,

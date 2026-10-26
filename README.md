@@ -77,8 +77,10 @@ comparten elegibilidad y fotos sanitizadas; [contrato](docs/pa-int05-contrato.md
 
 INT07 añade localmente motor/recuperación y corrección de observaciones con084,
 contexto/historial privados y lectura propia efectiva. [Entrega y pruebas](docs/pa-int07-motor-observaciones.md).
-Participantes, cantidades y reversiones siguen pendientes. Pablo reporta084 con
+El incremento085 incorpora [participantes históricos y lecturas por audiencia](docs/pa-int07-participantes.md);
+cantidades y reversiones siguen pendientes. Pablo reporta084 con
 Success y catálogo aportado cotejado el22; publicación/despliegue del backend y HTTP remoto pendientes.
+085 requiere su propia aplicación y cotejo en destino antes de publicar este backend.
 
 Las rutas privadas cubiertas usan **Bearer JWT verificado**, cuenta activa y
 políticas de servidor; `x-auth-id` no autentica. Impacto conserva su audiencia

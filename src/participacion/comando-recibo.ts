@@ -165,7 +165,10 @@ function validateResult(value: unknown, operation: string): void {
       total += species.cantidad as number;
     });
     assert(total === result.cantidad_total_plantada);
-  } else if (operation === 'CORREGIR_OBSERVACIONES_PLANTACION') {
+  } else if (
+    operation === 'CORREGIR_OBSERVACIONES_PLANTACION' ||
+    operation === 'CORREGIR_PARTICIPANTES_PLANTACION'
+  ) {
     object(result, [
       'tipo',
       'correccion_id',
@@ -182,7 +185,10 @@ function validateResult(value: unknown, operation: string): void {
     ]);
     assert(
       result.tipo === 'CORRECCION_PLANTACION' &&
-        result.caso === 'OBSERVACIONES',
+        result.caso ===
+          (operation === 'CORREGIR_OBSERVACIONES_PLANTACION'
+            ? 'OBSERVACIONES'
+            : 'PARTICIPANTES'),
     );
     id(result.registro_plantacion_id);
     id(result.subcampania_id);

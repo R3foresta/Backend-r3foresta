@@ -2,6 +2,7 @@ import { HttpException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { ParticipacionRegistroService } from '../application/participacion-registro.service';
+import { contextoRegistro } from '../domain/policies/registro-proyeccion.policy';
 
 const actor = {
   usuario_id: '9007199254740993',
@@ -39,6 +40,8 @@ const context = {
       porcentaje_objetivo: 100,
       cantidad_objetivo: 5,
       saldo_elegible: 0,
+      plantado_inicial: 0,
+      pendiente_meta: 5,
     },
   ],
   reglas: {
@@ -81,6 +84,57 @@ describe('Proyecciones privadas del registro', () => {
       p_subcampania_id: '11',
     });
     expect(publicClient).not.toHaveBeenCalled();
+  });
+  it('acepta avance efectivo que cubre o supera la meta aunque quede stock', async () => {
+    const expanded = {
+      ...context,
+      disponibilidad: 'DISPONIBLE',
+      especies: [
+        { ...context.especies[0], saldo_elegible: 3, plantado_inicial: 5, pendiente_meta: 0 },
+      ],
+    };
+    rpc.mockResolvedValue({ data: { data: expanded, observado_en: observed }, error: null });
+    expect((await service.contexto(actor, '11')).data.especies[0]).toMatchObject({
+      plantado_inicial: 5,
+      pendiente_meta: 0,
+      saldo_elegible: 3,
+    });
+  });
+  it('la fase de compatibilidad acepta el contrato previo y la fase final exige avance completo', () => {
+    const prior = {
+      ...context,
+      especies: [
+        Object.fromEntries(
+          Object.entries(context.especies[0]).filter(
+            ([key]) => key !== 'plantado_inicial' && key !== 'pendiente_meta',
+          ),
+        ),
+      ],
+    };
+    expect(contextoRegistro(prior, actor.usuario_id, '11')).toEqual(prior);
+    expect(() => contextoRegistro(prior, actor.usuario_id, '11', true)).toThrow();
+    expect(contextoRegistro(context, actor.usuario_id, '11', true)).toEqual(context);
+    expect(() => contextoRegistro({ ...context, especies: [{ ...context.especies[0], pendiente_meta: 4 }] }, actor.usuario_id, '11', true)).toThrow();
+  });
+  it('el flag final rechaza una RPC antigua antes de responder al cliente', async () => {
+    const prior = {
+      ...context,
+      especies: [
+        Object.fromEntries(
+          Object.entries(context.especies[0]).filter(
+            ([key]) => key !== 'plantado_inicial' && key !== 'pendiente_meta',
+          ),
+        ),
+      ],
+    };
+    rpc.mockResolvedValue({ data: { data: prior, observado_en: observed }, error: null });
+    const strictService = new ParticipacionRegistroService(
+      { getAdminClient: () => ({ rpc }) } as unknown as SupabaseService,
+      { get: (key: string) => key === 'PARTICIPACION_CONTEXTO_AVANCE_REQUERIDO' ? 'true' : 'clave-sintetica' } as unknown as ConfigService,
+    );
+    await expect(strictService.contexto(actor, '11')).rejects.toMatchObject({
+      status: 503,
+    });
   });
   it.each([
     {

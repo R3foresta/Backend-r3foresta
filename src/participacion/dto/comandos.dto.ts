@@ -14,6 +14,7 @@ export const COMMAND_OPERATIONS = [
   'INACTIVAR_CUENTA',
   'REGISTRAR_PLANTACION_INICIAL',
   'CORREGIR_OBSERVACIONES_PLANTACION',
+  'CORREGIR_PARTICIPANTES_PLANTACION',
 ] as const;
 export type AccessOperation = (typeof ACCESS_OPERATIONS)[number];
 export type CommandOperation = (typeof COMMAND_OPERATIONS)[number];

@@ -1,0 +1,615 @@
+{
+  "tarea": "PA-T-INT07_PARTICIPANTES_LECTURAS",
+  "estado": "FALLIDO",
+  "fecha_utc": "2026-10-22T18:35:57.469488+00:00",
+  "casos": [
+    {
+      "caso": "Administrador contextual cambia set con cuenta inactiva, original/responsable/stock intactos y replay mínimo",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "SIN_CAMBIOS conserva historia/revisión; obsoleta durable y clave reutilizada no cambian terminal",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Alta/restauración preserva captura y afiliación histórica desconocida sin reactivar cuentas ni conceder permisos",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Restauración original reutiliza nombres/afiliaciones históricas exactos y mantiene filas originales",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Objeto/autoridad/ACTIVA, responsable y cuentas inexistentes; SQL exige set canónico único ordenado",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "P01 retira todas las lecturas propias y restauración las recupera; autoría e historia reducida conservadas",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "OBS↔PART preserva overlay null/participantes, revisión compartida y redacción de auditoría contextual",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Fallo al commit revierte participantes/overlay/revisión/historia/terminal íntegramente",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Retiro del administrador conserva replay propio pero retira contexto y nueva escritura",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Participantes admite baja/reposición histórica y no toca consumo ni revisión del grupo",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Dos órdenes entre correcciones de participantes: un efecto y rechazo durable de la revisión competidora",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Ambos órdenes PART/OBS comparten revisión y excluyen correcciones sobre una propuesta obsoleta",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Ambos órdenes de retiro contextual revalidan autoridad sin perder terminal confirmado",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Ambos órdenes con cierre real preservan ACTIVA como precondición de nueva ejecución",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Ambos órdenes con inactivación del ejecutor bloquean cuenta antes del ámbito",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "P02 concurrente permite ambas operaciones al inactivar al participante, sin reactivarlo",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Ambos órdenes de perfil/captura conservan el nombre de la instantánea protegida por locks",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Orden de cuentas comprobado con barrera y NOWAIT; no se retiene actor alto antes de cuenta baja",
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "Proyección v1 no inventa snapshot histórico; estado público mínimo y tablas/RPC privadas",
+      "resultado": "CORRECTO"
+    }
+  ],
+  "carreras": [
+    {
+      "caso": "Participantes misma revisión A→B",
+      "espera_observada": "Lock",
+      "primero": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CORRECCION_PLANTACION",
+          "caso": "PARTICIPANTES",
+          "cambio": "CAMBIO_APLICADO",
+          "correccion_id": "16",
+          "registro_plantacion_id": "946000",
+          "subcampania_id": "946",
+          "estado_logico": "VIGENTE",
+          "revision_anterior": "0",
+          "revision_nueva": "1",
+          "revision_grupo_anterior": "0",
+          "revision_grupo_nueva": "0"
+        }
+      },
+      "segundo": {
+        "http_status": 409,
+        "estado": "RECHAZADO",
+        "error_codigo": "REVISION_OBSOLETA",
+        "resultado": {}
+      }
+    },
+    {
+      "caso": "Participantes misma revisión B→A",
+      "espera_observada": "Lock",
+      "primero": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CORRECCION_PLANTACION",
+          "caso": "PARTICIPANTES",
+          "cambio": "CAMBIO_APLICADO",
+          "correccion_id": "17",
+          "registro_plantacion_id": "947000",
+          "subcampania_id": "947",
+          "estado_logico": "VIGENTE",
+          "revision_anterior": "0",
+          "revision_nueva": "1",
+          "revision_grupo_anterior": "0",
+          "revision_grupo_nueva": "0"
+        }
+      },
+      "segundo": {
+        "http_status": 409,
+        "estado": "RECHAZADO",
+        "error_codigo": "REVISION_OBSOLETA",
+        "resultado": {}
+      }
+    },
+    {
+      "caso": "Participantes↔observaciones PART primero",
+      "espera_observada": "Lock",
+      "primero": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CORRECCION_PLANTACION",
+          "caso": "PARTICIPANTES",
+          "cambio": "CAMBIO_APLICADO",
+          "correccion_id": "18",
+          "registro_plantacion_id": "948000",
+          "subcampania_id": "948",
+          "estado_logico": "VIGENTE",
+          "revision_anterior": "0",
+          "revision_nueva": "1",
+          "revision_grupo_anterior": "0",
+          "revision_grupo_nueva": "0"
+        }
+      },
+      "segundo": {
+        "http_status": 409,
+        "estado": "RECHAZADO",
+        "error_codigo": "REVISION_OBSOLETA",
+        "resultado": {}
+      }
+    },
+    {
+      "caso": "Participantes↔observaciones OBS primero",
+      "espera_observada": "Lock",
+      "primero": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CORRECCION_PLANTACION",
+          "caso": "OBSERVACIONES",
+          "cambio": "CAMBIO_APLICADO",
+          "correccion_id": "19",
+          "registro_plantacion_id": "949000",
+          "subcampania_id": "949",
+          "estado_logico": "VIGENTE",
+          "revision_anterior": "0",
+          "revision_nueva": "1",
+          "revision_grupo_anterior": "0",
+          "revision_grupo_nueva": "0"
+        }
+      },
+      "segundo": {
+        "http_status": 409,
+        "estado": "RECHAZADO",
+        "error_codigo": "REVISION_OBSOLETA",
+        "resultado": {}
+      }
+    },
+    {
+      "caso": "Participantes↔retiro contextual PART primero",
+      "espera_observada": "Lock",
+      "primero": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CORRECCION_PLANTACION",
+          "caso": "PARTICIPANTES",
+          "cambio": "CAMBIO_APLICADO",
+          "correccion_id": "20",
+          "registro_plantacion_id": "950000",
+          "subcampania_id": "950",
+          "estado_logico": "VIGENTE",
+          "revision_anterior": "0",
+          "revision_nueva": "1",
+          "revision_grupo_anterior": "0",
+          "revision_grupo_nueva": "0"
+        }
+      },
+      "segundo": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "ACCESO"
+        }
+      }
+    },
+    {
+      "caso": "Participantes↔retiro contextual retiro primero",
+      "espera_observada": "Lock",
+      "primero": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "ACCESO"
+        }
+      },
+      "segundo": {
+        "http_status": 404,
+        "estado": "RECHAZADO",
+        "error_codigo": "RECURSO_NO_VISIBLE",
+        "resultado": {}
+      }
+    },
+    {
+      "caso": "Participantes↔cierre PART primero",
+      "espera_observada": "Lock",
+      "primero": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CORRECCION_PLANTACION",
+          "caso": "PARTICIPANTES",
+          "cambio": "CAMBIO_APLICADO",
+          "correccion_id": "21",
+          "registro_plantacion_id": "952000",
+          "subcampania_id": "952",
+          "estado_logico": "VIGENTE",
+          "revision_anterior": "0",
+          "revision_nueva": "1",
+          "revision_grupo_anterior": "0",
+          "revision_grupo_nueva": "0"
+        }
+      },
+      "segundo": {
+        "id": 952,
+        "estado": "COMPLETADA"
+      }
+    },
+    {
+      "caso": "Participantes↔cierre cierre primero",
+      "espera_observada": "Lock",
+      "primero": {
+        "id": 953,
+        "estado": "COMPLETADA"
+      },
+      "segundo": {
+        "http_status": 409,
+        "estado": "RECHAZADO",
+        "error_codigo": "SUBCAMPANIA_NO_OPERATIVA",
+        "resultado": {}
+      }
+    },
+    {
+      "caso": "Participantes↔inactivar ejecutor PART primero",
+      "espera_observada": "Lock",
+      "primero": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CORRECCION_PLANTACION",
+          "caso": "PARTICIPANTES",
+          "cambio": "CAMBIO_APLICADO",
+          "correccion_id": "22",
+          "registro_plantacion_id": "954000",
+          "subcampania_id": "954",
+          "estado_logico": "VIGENTE",
+          "revision_anterior": "0",
+          "revision_nueva": "1",
+          "revision_grupo_anterior": "0",
+          "revision_grupo_nueva": "0"
+        }
+      },
+      "segundo": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CUENTA_INACTIVADA",
+          "cambio": "CAMBIO_APLICADO",
+          "usuario_id": "9320",
+          "revision_anterior": "0",
+          "revision_nueva": "1"
+        }
+      }
+    },
+    {
+      "caso": "Participantes↔inactivar ejecutor inactivación primero",
+      "espera_observada": "Lock",
+      "primero": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CUENTA_INACTIVADA",
+          "cambio": "CAMBIO_APLICADO",
+          "usuario_id": "9321",
+          "revision_anterior": "0",
+          "revision_nueva": "1"
+        }
+      },
+      "segundo": {
+        "http_status": 403,
+        "estado": null,
+        "error_codigo": "CUENTA_INACTIVA",
+        "resultado": {}
+      }
+    },
+    {
+      "caso": "Alta histórica↔inactivar participante PART primero",
+      "espera_observada": "Lock",
+      "primero": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CORRECCION_PLANTACION",
+          "caso": "PARTICIPANTES",
+          "cambio": "CAMBIO_APLICADO",
+          "correccion_id": "23",
+          "registro_plantacion_id": "956000",
+          "subcampania_id": "956",
+          "estado_logico": "VIGENTE",
+          "revision_anterior": "0",
+          "revision_nueva": "1",
+          "revision_grupo_anterior": "0",
+          "revision_grupo_nueva": "0"
+        }
+      },
+      "segundo": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CUENTA_INACTIVADA",
+          "cambio": "CAMBIO_APLICADO",
+          "usuario_id": "9322",
+          "revision_anterior": "0",
+          "revision_nueva": "1"
+        }
+      }
+    },
+    {
+      "caso": "Alta histórica↔inactivar participante inactivación primero",
+      "espera_observada": "Lock",
+      "primero": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CUENTA_INACTIVADA",
+          "cambio": "CAMBIO_APLICADO",
+          "usuario_id": "9323",
+          "revision_anterior": "0",
+          "revision_nueva": "1"
+        }
+      },
+      "segundo": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CORRECCION_PLANTACION",
+          "caso": "PARTICIPANTES",
+          "cambio": "CAMBIO_APLICADO",
+          "correccion_id": "24",
+          "registro_plantacion_id": "957000",
+          "subcampania_id": "957",
+          "estado_logico": "VIGENTE",
+          "revision_anterior": "0",
+          "revision_nueva": "1",
+          "revision_grupo_anterior": "0",
+          "revision_grupo_nueva": "0"
+        }
+      }
+    },
+    {
+      "caso": "Alta histórica↔perfil PART primero",
+      "espera_observada": "Lock",
+      "primero": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CORRECCION_PLANTACION",
+          "caso": "PARTICIPANTES",
+          "cambio": "CAMBIO_APLICADO",
+          "correccion_id": "25",
+          "registro_plantacion_id": "958000",
+          "subcampania_id": "958",
+          "estado_logico": "VIGENTE",
+          "revision_anterior": "0",
+          "revision_nueva": "1",
+          "revision_grupo_anterior": "0",
+          "revision_grupo_nueva": "0"
+        }
+      },
+      "segundo": {}
+    },
+    {
+      "caso": "Alta histórica↔perfil perfil primero",
+      "espera_observada": "Lock",
+      "primero": {},
+      "segundo": {
+        "http_status": 200,
+        "estado": "CONFIRMADO",
+        "error_codigo": null,
+        "resultado": {
+          "tipo": "CORRECCION_PLANTACION",
+          "caso": "PARTICIPANTES",
+          "cambio": "CAMBIO_APLICADO",
+          "correccion_id": "26",
+          "registro_plantacion_id": "959000",
+          "subcampania_id": "959",
+          "estado_logico": "VIGENTE",
+          "revision_anterior": "0",
+          "revision_nueva": "1",
+          "revision_grupo_anterior": "0",
+          "revision_grupo_nueva": "0"
+        }
+      }
+    },
+    {
+      "caso": "Cuentas ASC con participante50 anterior a actor9300",
+      "espera_observada": "Lock",
+      "probe_actor_alto_nowait": "ADQUIRIDO"
+    }
+  ],
+  "entorno": {
+    "aislado": true,
+    "tcp_db": false,
+    "env_cargado": false,
+    "postgresql": "17.11 (Postgres.app)",
+    "postgis": "3.5.6",
+    "node": "v24.19.0",
+    "cluster_detenido": true,
+    "directorio_eliminado": true
+  },
+  "limites": [
+    "Antecedentes mínimos post067; no acredita replay001–067.",
+    "Participantes y lecturas; cantidades/reversiones/mortandad y frontend siguen pendientes.",
+    "Sin datos/Storage/Supabase externos, aplicación remota, push ni despliegue."
+  ],
+  "migraciones": [
+    "migrations/068_pa_participacion_comando.sql",
+    "migrations/069_pa_int02b_eventos_acceso.sql",
+    "migrations/070_pa_int02b_permisos_contextuales.sql",
+    "migrations/071_pa_int02b_bootstrap_controlado.sql",
+    "migrations/072_pa_int02c_comandos_acceso.sql",
+    "migrations/073_pa_int02c_lecturas.sql",
+    "migrations/074_pa_int03a_cargas.sql",
+    "migrations/075_pa_int03a_registro.sql",
+    "migrations/076_pa_int03a_fecha_entrega.sql",
+    "migrations/077_pa_int02d_operaciones_compartidas.sql",
+    "migrations/078_pa_int02d_lifecycle.sql",
+    "migrations/079_pa_int02d_evidencias.sql",
+    "migrations/080_pa_int02d_superficie_privada.sql",
+    "migrations/081_pa_int05_consulta.sql",
+    "migrations/082_pa_int07_persistencia.sql",
+    "migrations/083_pa_superficie_privada_compat.sql",
+    "migrations/084_pa_int07_motor_observaciones.sql",
+    "migrations/085_pa_int07_participantes.sql"
+  ],
+  "revision_git": "1585b4c7b629cf93dadbf4e4e9d5a9135789dfbc",
+  "sha256": {
+    "docs/pa-int02c-openapi.json": "88929879d3ed6235b290e2628bbf90f0e9b973c119ee40cd3caa1e4952d15e29",
+    "migrations/010_vivero_operational_rules.sql": "9e19e7f83c7b36f516fff9857f97efba312e6ace8aaafc5c0774d8a9e6d083e3",
+    "migrations/067_pa_int02a_postgrest_timeout.sql": "d1e269d108de8dfc7cc7206fc1fac54007bae24314edb9420060f6b52db0f9c2",
+    "migrations/068_pa_participacion_comando.sql": "838e1e658d178e59af5318e5b64514aef6b02317c1d4b19a3bd71af77e353a45",
+    "migrations/069_pa_int02b_eventos_acceso.sql": "cc360b8799d6a681d3ac98fe0114feae38223dfea7bea9dda0a4b739d0afca39",
+    "migrations/070_pa_int02b_permisos_contextuales.sql": "fe577206af76c8aa5f61ad453d0916b0e025b13b1660ba996fc8bbbd81dddd39",
+    "migrations/071_pa_int02b_bootstrap_controlado.sql": "ef8a2e3ff9a4e370c8ff176e0f85b46447f135dd3e5bd34ce21f74f909dbb560",
+    "migrations/072_pa_int02c_comandos_acceso.sql": "747b74f9a1d4c0eab006544119c4a5d505c757939a4eeedaec77e95f25233ee7",
+    "migrations/073_pa_int02c_lecturas.sql": "7bfcc6d60e5baaf603a514475e5403137d28a478dba715eed22a63797c34b157",
+    "migrations/074_pa_int03a_cargas.sql": "fa72c23c500cb743fa1afa0452ea088bcf0cff8d15b3e3956b763e7adb2cf045",
+    "migrations/075_pa_int03a_registro.sql": "be438c7b27f25f2e14f607bcfd307678cd401ac5f2d6746e29a37058ade24169",
+    "migrations/076_pa_int03a_fecha_entrega.sql": "c12ae6f68ad43799946a5a335d5eff64bd9b17446ad31dd0670447f6f32cf2ae",
+    "migrations/077_pa_int02d_operaciones_compartidas.sql": "c11660a287349ccadc45ff0026008f193834e55cf28f2ce89b99ba46a799088b",
+    "migrations/078_pa_int02d_lifecycle.sql": "bfe78a412ef71d795eff20167e1f73f02a7b6091779f2808e0f6e10ccde6aa0f",
+    "migrations/079_pa_int02d_evidencias.sql": "509b6b2a4a50de012d060f469d85a781b5b6947a03d47669f934e8f99d8f5f3d",
+    "migrations/080_pa_int02d_superficie_privada.sql": "d52b8e518c42d3e3e43b8c3262eab4165e28f2b7a23b32339637069336e323ea",
+    "migrations/081_pa_int05_consulta.sql": "108d3d9f7d17ef31f09dac79cc4e2fbc7cb0ebdc2b567aa031094b63a49d7233",
+    "migrations/082_pa_int07_persistencia.sql": "2ad494c65e64cf31fb71749ce72c0769f757b1cadfdedc8a81664b26d9526b5f",
+    "migrations/083_pa_superficie_privada_compat.sql": "e4b413bd08c5d8e08c526d7e3a58ea56a10dd782e27e7e59db26742013e10aea",
+    "migrations/084_pa_int07_motor_observaciones.sql": "6bbf9aab1a5b482b8812933ec863f418d9dab23829c3ed5b96cdc469afc01804",
+    "migrations/085_pa_int07_participantes.sql": "6ac112a5b45c9400f6d387413e8162afd586efe01761edd0f5901f19eb27e131",
+    "package-lock.json": "1eeb7119917a64cf23f39c44be1925a86022dfea5e9237ec8d13daaa00bf563e",
+    "package.json": "55ec04a30f94e3a2cec099721d9f2724c204f724f9e88315a07935dd012b04cf",
+    "scripts/qa/pa-int02c-openapi.cjs": "2bd7392f40d2df0e8a5186c8d9d8304f39a355a7234f3008f9c9b7d3bfac04e7",
+    "scripts/qa/pa-int02d-harness.ts": "b5572e50b4aa1fede2d8a355cfde7858bd0ba95e90365123f992ffaabd1be191",
+    "scripts/qa/pa-int07-participantes-test.py": "896ae8bea70b986e4c3ab4b8fb8203abe7c711dc65b2aa5b406364a0b015dcd2",
+    "src/app.routes.ts": "2efa92570782c36b3aa5b7195a8ffc80761f3d087a08e03c16263a67fa601bd6",
+    "src/auth/actor.module.spec.ts": "2ab0aca7fc6c89f64fb77c9ba34ec00336f7530cedef1ecc77b03958df016e58",
+    "src/auth/actor.module.ts": "6c007158026dde8f9c71c8a604aca89bf29985ec87d8a6735ecb13fce84f90bd",
+    "src/auth/auth.controller.ts": "5b5d5884f4ee1300993494d2b071f8b864e6d9518cce34f3da6497ca8744dc9a",
+    "src/auth/auth.module.ts": "b63e5328768937272c4a7c264d4c31dbe37bd750aebbb91a95e09907a774e741",
+    "src/auth/auth.service.ts": "b830e6d561c6c58355b5dcbfd43016d1a9c9fa142dc45392276b79f54da2856d",
+    "src/auth/internal-actor.guard.ts": "1d4c138d74f4da88509b1599ce7d1865c21fc78f5076ce7d3e7bdb5de7644bd9",
+    "src/auth/internal-actor.http.spec.ts": "ec6c760c86abca1827d64310687754ed015e1a008e11ccdcb1e18c20bb4536a7",
+    "src/auth/pa-int02d-superficie.http.spec.ts": "c9e95da9c5d82d169bb813372ea8f5328e88d79c24db28d7ae1226547ea5ab63",
+    "src/auth/private-response.interceptor.ts": "f1e322b4993a7987ab6ed403a4394066ebe7c31baf20e40764467e13984e7b90",
+    "src/auth/verified-actor.guard.ts": "040523958dff5d622db6f8849b32ff28a2396058d4c463d50371e673266bebb6",
+    "src/impact/application/impacto-consulta.service.ts": "20f929a1ce7d39b1f4e5fd2a767bdc76b53061ff11633c40ee6a174ae5bb5e88",
+    "src/impact/application/seed-bank.service.ts": "82b4cee599aaf1b0cab5967d2047d0ac568707a8cef56183d9d42722bbb049c6",
+    "src/impact/domain/policies/impacto-proyeccion.policy.ts": "79da28d5556319775462348be816949f6f2ddb852ecb1ae048b853e23c9961b1",
+    "src/impact/domain/policies/seed-bank.policy.ts": "7568e76a408955e033cf58e3ebdfe72131d322875f2cc15a9a6516200c34411b",
+    "src/impact/impact-consulta.controller.ts": "43ca9e686210f72c513367ddb1d2c2389e1c1559980cffe9324d1a91d68573ef",
+    "src/impact/impact-imagen.controller.ts": "0a0c3de5a380cc2970c6b639afd13c3cc4b40938e1d9cfcf94dcda8de60730a6",
+    "src/impact/impact-query.dto.ts": "d03414a4c8d6998c4909384535daae503af5d932e667ed294decb5e6f1d01f4c",
+    "src/impact/impact.controller.ts": "b0a89aa594b5a0292d93335a491125c9b39a283af038a0613d34bc3373ccdd63",
+    "src/impact/impact.module.ts": "b43608129bbffbfa20aea22e07b12eb5f9ca483930872f7e94d56834aea0f3af",
+    "src/impact/impact.service.spec.ts": "408415949ed1b6d8c77026becbee951c162b80eae400fb8189dc18dd290c0d30",
+    "src/impact/impact.service.ts": "20f978a093e24965593d62780d5f39438d75912d6cdb3ac6cee657953c2ec41c",
+    "src/impact/impact.types.ts": "c2b1d41a1c7b9d4cd6d91ae62f8dbd2b159aed915049e5bf4a4004613c440f71",
+    "src/impact/impacto-consulta.dto.ts": "9f70ce4825b6f593cdc2922fa88782e0b09d8a2b0280a3d1f14111b5c6b78f83",
+    "src/impact/impacto-consulta.spec.ts": "80c0f88f9b4e58c44c2073ed3695a30131a40df835c5f621cf181e4bed3fa768",
+    "src/impact/seed-bank/seed-bank.controller.ts": "e462fc69b5a15a759eae4e10a53d04f941f588c8b5c51844c753ed313df5da09",
+    "src/impact/seed-bank/seed-bank.dto.ts": "1555ce60e7bfe14ef48ee3f34b605ae4bf1e0081738a5fd27b69782ea92e702f",
+    "src/impact/seed-bank/seed-bank.module.ts": "c8c02902e52c028d3433e8938e23dc349c3a35627ffb0e8c0f7879990e00075e",
+    "src/impact/seed-bank/seed-bank.schemas.ts": "7bd4edec8fa1ba9c19be7a954302522ddfe06302bcae92fadd298c9ddbb39b34",
+    "src/impact/seed-bank/seed-bank.types.ts": "5bc448bd55b6faac695dee430104a7380a3c844ebcfc42967c6545f631a12f1b",
+    "src/impact/seed-bank/tests/seed-bank.http.spec.ts": "7365e1ab3667b3c206a9b5a3cd58555f93e7542fa0f0ca9f1bd5c18460f4067a",
+    "src/impact/seed-bank/tests/seed-bank.policy.spec.ts": "41e3864cb6850f0029979d727a4bb7131eb5147b05a5c6fb245e092ac8ad6374",
+    "src/participacion/application/participacion-correcciones.service.ts": "57f518a2b721f0856d163b34bbf62fd8de61700a8d0ea46587b2670fc91052df",
+    "src/participacion/application/participacion-registro.service.ts": "9e65ded0d033cb54450fa408dc64f0cc3159ee135c25be74d031b71acba70bd2",
+    "src/participacion/cargas/participacion-cargas.controller.ts": "fad5a2b7b4ec9d09ca31f24d94fd2ca097ef3a8e59d73e4c8a8e6d572a9a1657",
+    "src/participacion/cargas/participacion-cargas.service.spec.ts": "e0bba8dea52b33690ddb536cfc4fa737fd469e1d6af978223cdb7cf25a4bd513",
+    "src/participacion/cargas/participacion-cargas.service.ts": "174849035e5131f333c8ecbb899b7d1ea012f6b14f0bf9c293ca23e4e13e2d66",
+    "src/participacion/cargas/participacion-imagen-publica.service.spec.ts": "aa0eb9b51834883a1347ec1068aba09159aa2a6371dae43dcaf9b47626d3b12b",
+    "src/participacion/cargas/participacion-imagen.service.spec.ts": "97a90c4480619e289ed53f6cb402ac85337db00120c8895cb8936757e291f1e1",
+    "src/participacion/cargas/participacion-imagen.service.ts": "e2f0510c44c3468e1b94e1006267005d43ab28d25a1d273c7f7ae9fb225ac963",
+    "src/participacion/comando-canonical.ts": "e2539ce1d5108df8a34d5db36c87fe77b098918cf2fc73adddf97d6d16a8c4f0",
+    "src/participacion/comando-recibo.ts": "0c8005faa0f80bfe84c5176fab9f304fab3857b19be2ae0e4f9968b1becaa805",
+    "src/participacion/domain/policies/correcciones-proyeccion.policy.ts": "0092f34d701b86c675b95fad0c9d0ac0242e9459abe6944f1bae97a980e4f3ad",
+    "src/participacion/domain/policies/registro-proyeccion.policy.ts": "e6421fb4cb5eded475b0ee6264b8db05692e0e1968fa4a8ffd44278605b181b0",
+    "src/participacion/dto/comandos.dto.ts": "8a9135a48810f29d91be48b261280b4e75db4824c86b42b115f0c56a4579c39c",
+    "src/participacion/dto/correcciones.dto.ts": "240a48d775d5babe263eb41ed6777f2851957c822a32950bae09cba99abcb4c1",
+    "src/participacion/dto/lecturas.dto.ts": "bdd51a81f9190df06bf3338d664a73cc887be1e2810f58bdc3f66e0c2c297432",
+    "src/participacion/dto/registro.dto.ts": "b1260b3fb27569cc5f9fac4f304db229a22685c75ad69371a9ff76b73494ffe4",
+    "src/participacion/participacion-comandos.controller.ts": "773d56931ee103544395f8fda8fed438eb12c24ae6ec1816dc8ce7dde69b5f69",
+    "src/participacion/participacion-comandos.service.ts": "d3189f4fc2943fa53a9183f163d80b809eea3c6b3a38167751c3a3801f9b2574",
+    "src/participacion/participacion-correcciones.controller.ts": "f074716ab976e701801308f0e1292a685f092325b5c662888fd17053d5182ccf",
+    "src/participacion/participacion-exception.filter.ts": "7504691a4d5154b943fc0fb89c2e3d03f6155e173c6ceff39735d9a38ef4a04a",
+    "src/participacion/participacion-lecturas.controller.ts": "50ff2b37f627e501ba962005981f58f0b0db526b115dd112bbaf1e97e44d3d1e",
+    "src/participacion/participacion-lecturas.service.ts": "b8d2768490889eb48eff95d794df22c1a15e7271144126cd34cf1724d7021456",
+    "src/participacion/participacion-openapi.generated.ts": "62925003c1603f45347634069722e54c02b9a53784108e4f0972a7248072aa0b",
+    "src/participacion/participacion-registro.controller.ts": "ca238b71e4b6770d84c73e82bc368e0d06f153582290b0418975034974b2b7eb",
+    "src/participacion/participacion.module.ts": "c00a2a2ae57ae310ce8ab762b2487ccd9fc8fc0408f0db99e3794df2e0c4c7fb",
+    "src/participacion/tests/comando-canonical.spec.ts": "342c998b05c9c12dd0a5ef29dccf63d9e225b7bf53e12a663376bd359121a6e5",
+    "src/participacion/tests/correcciones-participantes.spec.ts": "10109016c7b1c12e6e774e072b24eebbcefbbf74b3918e9d111443d9c0e485f2",
+    "src/participacion/tests/correcciones.spec.ts": "0344461e5aae58393b453b00007cc6d2fa3a8e4c8e8ccbb8d0f370e84582cdfe",
+    "src/participacion/tests/participacion-comandos.service.spec.ts": "eba75248969aec3958c967c60276f399e374b0ba1786811ea08a32ad33a9afae",
+    "src/participacion/tests/participacion-lecturas.spec.ts": "8bdf6b2539200fbeac369c9082dedf999b2887f744a48d44a19dcbfea0def62c",
+    "src/participacion/tests/participacion-openapi.spec.ts": "d7d0b4b3bf4bd2b8fbe31ab179be4ea636fd246814129659c5fa6809e1c09ebe",
+    "src/participacion/tests/registro-dto.spec.ts": "0089c02d9c3f77534a9da0478759ac998473e41ba11425742fc35b2629304b1a",
+    "src/participacion/tests/registro-service.spec.ts": "53ec54076b4c7455d0b8f6738fd10fb94f9a0230df30e3835fba1aae365c5e66",
+    "test/db/pa-int02c-fixture.sql": "cfef8a65ee2550a50a0c5e07678fff90ea5ea5ca51cf53243ced71454f667f83",
+    "test/db/pa-int02d-fixture.sql": "e3353ef2e09adca91cd4f2827f70d97379a62de25abc3c4afabddb455a1b96a8",
+    "test/db/pa-int03a-fixture.sql": "1e18eda74ca9ce8ac8234d40c31d6de20d0c990a2c0b4c7d22d692a37bf4117f",
+    "test/db/pa-int05-fixture.sql": "44d21f30892ecaf6d9340c3bbe0b1149b78e0e59106255fa34a1b02fe1007505",
+    "test/db/pa-int07-participantes-assertions.py": "206e87dd4d66e33aca294bd10bfc49e275166736f641c4bb8e840b965f961518",
+    "test/db/pa-int07-participantes-fixture.sql": "fbfafef1c38323dfc4e3c8f794574b9174f173572a995cb79bc6e55c69aaaa21",
+    "test/db/pa-int07-participantes-http.spec.ts": "dea4599ec857b13843d8cfbc644cb4a6fdd95d90e5b844f1e120cb1dc36d4b47",
+    "test/db/pa-int07-participantes-migracion.py": "9145ac566842a5634bb283a528f584a3246d712cc33cc34ded7da3c7c37438be",
+    "test/jest-participacion-participantes-db.json": "e74fb18f03e6c7ae115e36f370daffbf77e392d4b227dbc8d525306f08a93f2e"
+  },
+  "http_casos": [
+    "INT07 participantes y lecturas con PostgreSQL real exige JWT y DTO cerrado; no acepta IDs numéricos, duplicados, responsable ni autoridad de headers",
+    "INT07 participantes y lecturas con PostgreSQL real ADMIN contextual cambia set incluyendo inactiva y devuelve recibo mínimo recuperable",
+    "INT07 participantes y lecturas con PostgreSQL real P01 retira todos los detalles/listas/historias propios y conserva lectura del autor",
+    "INT07 participantes y lecturas con PostgreSQL real restauración reutiliza snapshots; SIN_CAMBIOS y obsoleta conservan revisión/terminal",
+    "INT07 participantes y lecturas con PostgreSQL real historial administrativo pagina con cursor firmado por actor/objeto y conserva audiencias",
+    "INT07 participantes y lecturas con PostgreSQL real selector histórico exige filtro, incluye inactivos y firma cursor por consulta/registro/actor",
+    "INT07 participantes y lecturas con PostgreSQL real respuesta perdida después del commit conserva una corrección y misma clave recupera resultado",
+    "INT07 participantes y lecturas con PostgreSQL real 503 antes de escribir y404 de recuperación son inconclusos; reenvío conserva intención",
+    "INT07 participantes y lecturas con PostgreSQL real replay propio precede al retiro contextual sin dar nuevas lecturas/escrituras ni recibos ajenos",
+    "INT07 participantes y lecturas con PostgreSQL real público actualiza personas sin multiplicar hechos; métricas/mapa/aliases conservan cantidades y fotos",
+    "INT07 participantes y lecturas con PostgreSQL real estado público es mínimo y no exige JWT; ámbitos ocultos/inexistentes responden404 uniforme",
+    "INT07 participantes y lecturas con PostgreSQL real P01 vuelve a comprobar relación entre páginas aunque el cursor propio tenga firma válida",
+    "INT07 participantes y lecturas con PostgreSQL real fuera de ACTIVA el contexto conserva lectura pero niega corrección y no fabrica cambios",
+    "INT07 participantes y lecturas con PostgreSQL real la entrega de participantes conserva la pausa del registro inicial y su404 inconcluso"
+  ],
+  "fallo": "Falló HTTP INT07 participantes/lecturas."
+}

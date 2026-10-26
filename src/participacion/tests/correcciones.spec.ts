@@ -49,6 +49,20 @@ const receipt = {
     finalizado_en: '2026-10-21T12:00:00Z',
   },
 };
+const participants = [
+  {
+    usuario_id: '801',
+    nombre_snapshot: 'Responsable sintético',
+    afiliacion_snapshot: null,
+    afiliacion_estado: 'HISTORICA_NO_DISPONIBLE',
+    afiliacion_tipo: null,
+    organizacion_id_snapshot: null,
+    es_responsable: true,
+    procedencia: 'ORIGINAL',
+    capturado_en: null,
+    nombre_capturado_correccion: null,
+  },
+];
 const context = {
   registro_plantacion_id: '43',
   subcampania_id: '11',
@@ -58,10 +72,10 @@ const context = {
   estado_logico: 'VIGENTE',
   revision_registro: '3',
   revision_grupo: '7',
-  original: { observaciones: 'Original' },
-  efectivo: { observaciones: 'Texto correcto' },
+  original: { observaciones: 'Original', participantes: participants },
+  efectivo: { observaciones: 'Texto correcto', participantes: participants },
   observaciones_visibles: true,
-  capacidades: { corregir_observaciones: true },
+  capacidades: { corregir_observaciones: true, corregir_participantes: true },
 };
 const observed = '2026-10-21T12:00:00Z';
 const history = (correccion_id = '5') => ({
@@ -163,7 +177,6 @@ describe('INT07 DTO e intención de observaciones', () => {
       operation,
     );
     for (const operacion of [
-      'CORREGIR_PARTICIPANTES_PLANTACION',
       'CORREGIR_CANTIDAD_PLANTACION',
       'REVERTIR_REGISTRO_PLANTACION',
       'REVERTIR_BAJA_PLANTACION',
@@ -374,10 +387,13 @@ describe('INT07 adaptador privado de observaciones y recuperación', () => {
     });
     const redacted = {
       ...context,
-      original: { observaciones: null },
-      efectivo: { observaciones: null },
+      original: { ...context.original, observaciones: null },
+      efectivo: { ...context.efectivo, observaciones: null },
       observaciones_visibles: false,
-      capacidades: { corregir_observaciones: false },
+      capacidades: {
+        corregir_observaciones: false,
+        corregir_participantes: true,
+      },
     };
     rpc.mockResolvedValue({
       data: { data: redacted, observado_en: observed },

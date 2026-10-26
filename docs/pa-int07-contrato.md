@@ -5,6 +5,12 @@ y verificados localmente con084; [contrato consumible, evidencia y límites](pa-
 Las secciones de diseño conservan los demás casos como candidatos. El corte inicial
 descrito a continuación documenta la preparación previa, sin sustituir su evidencia.
 
+**Incremento del22:**085 implementa participantes históricos y sus lecturas
+efectivas por audiencia. [Contrato consumible y verificación](pa-int07-participantes.md).
+Observaciones y participantes tienen ejecución; cantidades, reversiones y los
+demás casos de este documento conservan su estado candidato. La aplicación/cotejo085
+en destino no se infiere del Success reportado para084.
+
 **Corte:** 19 de octubre de 2026, America/La_Paz. **Base cotejada:** backend
 `8dc8efcd2673142693e23e95a9b0f88723b074ba`, árbol inicialmente limpio, migraciones
 001–081 al iniciar. **Estado:** BE01 con P01–P03 confirmadas por Pablo y contratos
@@ -12,7 +18,7 @@ técnicos T01/T02/T04 definidos; BE02 comienza por persistencia estructural parc
 Pablo confirma que el alta de mortandad todavía no está implementada; su frontera
 de ejecución/concurrencia permanece pendiente en BE06. En ese corte inicial no
 había endpoints ni comandos de corrección implementados. Las rutas siguientes
-son candidatas salvo el alcance de observaciones publicado por084, descrito en
+son candidatas salvo los alcances de observaciones084 y participantes085, descritos en
 la actualización superior.
 
 Fuente de alcance: [encargo INT07](../../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/pa-t-int07.md),

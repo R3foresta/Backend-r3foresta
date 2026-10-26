@@ -1,7 +1,7 @@
 {
   "tarea": "PA-T-INT02-C",
   "estado": "CORRECTO",
-  "fecha_utc": "2026-10-15T15:31:21.168573+00:00",
+  "fecha_utc": "2026-10-26T20:52:59.802036+00:00",
   "comando": "python3 scripts/qa/pa-int02c-db-test.py",
   "entorno": {
     "aislado": true,
@@ -21,11 +21,12 @@
     "migrations/070_pa_int02b_permisos_contextuales.sql",
     "migrations/071_pa_int02b_bootstrap_controlado.sql",
     "migrations/072_pa_int02c_comandos_acceso.sql",
-    "migrations/073_pa_int02c_lecturas.sql"
+    "migrations/073_pa_int02c_lecturas.sql",
+    "migrations/087_pa_miembros_plantador_lectura.sql"
   ],
   "casos": [
     "reinstalar072 después073 conserva EXECUTE de todas las lecturas privadas y su ejecución real",
-    "migraciones 068–073, repetición C aditiva y bootstrap sintético acotado",
+    "migraciones 068–073 y 087, repetición C aditiva y bootstrap sintético acotado",
     "capacidades privadas/paginadas, sin contexto vacío, PAUSADA, saldo cero, miembros deduplicados/logística mínima",
     "búsqueda correo exacto sin índice único/colisiones, nombre NFC y comodín literal; revisión completa privada",
     "C04/C05, canonicalización multiámbito, replay/GET tras retiro, no-op y revisión obsoleta",
@@ -114,7 +115,7 @@
   ],
   "timeouts": {
     "lock_timeout_segundos": 5,
-    "medido_segundos": 5.025,
+    "medido_segundos": 5.018,
     "statement_timeout_previo": "30s",
     "rechazo_durable_fabricado": false,
     "misma_clave_converge": true
@@ -138,13 +139,14 @@
     "migrations/071_pa_int02b_bootstrap_controlado.sql": "ef8a2e3ff9a4e370c8ff176e0f85b46447f135dd3e5bd34ce21f74f909dbb560",
     "migrations/072_pa_int02c_comandos_acceso.sql": "747b74f9a1d4c0eab006544119c4a5d505c757939a4eeedaec77e95f25233ee7",
     "migrations/073_pa_int02c_lecturas.sql": "7bfcc6d60e5baaf603a514475e5403137d28a478dba715eed22a63797c34b157",
-    "test/db/pa-int02c-assertions.py": "8cb082ae97be43b1e4ae8d58d2d98aa7a4e64ad078432ba2453ec023c88916c8",
-    "scripts/qa/pa-int02c-db-test.py": "7f9bce2232ed78b0f8dfbb3846d55aba06f234fc1e9003b1e7e212561b997732",
+    "migrations/087_pa_miembros_plantador_lectura.sql": "23b858877b1d7655ce7a9643c024d3f6c36846495af79379d27a558ec331a5b3",
+    "test/db/pa-int02c-assertions.py": "d162d3dc7666b01656810fd194bb9fbb66a66e576540536ca7dad5e53481a59a",
+    "scripts/qa/pa-int02c-db-test.py": "95a629fc65ebf290edfe10c5df3d0fe82bf789e507b22a87f655ce14b5076cec",
     "test/db/pa-int02b-fixture.sql": "c534f735cd9987d90f0efbcfc8c9debbb7b1fc3892261287bddabe91c1aea031",
     "test/db/pa-int02c-fixture.sql": "cfef8a65ee2550a50a0c5e07678fff90ea5ea5ca51cf53243ced71454f667f83",
     "migrations/064_pa_int02a_identidad_perfil.sql": "4c4d5de014312db461922862b7b1b6313674084f7c0eaca3d91a5cbbcef94344",
     "scripts/sql/pa-int02c-estado.sql": "9061da321b311309ecc343515dc04cb3d6d426b1bec9aa38d700ef40d8887f59",
-    "scripts/qa/pa-int02c-estado-verificar.py": "a92fab4bf75b53e518293fc4bed4d50b679d36fa7ee21760c211066beab02ad3"
+    "scripts/qa/pa-int02c-estado-verificar.py": "c1181af1434415ffcb1066d0571e759232ee4641cf2b3f8be42ec854d4d58b15"
   },
   "cotejo_estado": {
     "entorno": "SINTETICO_LOCAL",

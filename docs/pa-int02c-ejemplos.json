@@ -26,8 +26,8 @@
             }
           ]
         },
-        "comando_id": "f2b3290e-af28-42e1-93b2-7fca3fc7e848",
-        "finalizado_en": "2026-10-15T15:31:43.770023Z"
+        "comando_id": "982fe14b-1144-45cb-baf1-bdbdccfc6fc8",
+        "finalizado_en": "2026-10-26T20:53:28.395696Z"
       }
     },
     "plantador_confirmado": {
@@ -55,8 +55,8 @@
             }
           ]
         },
-        "comando_id": "61b1ae57-886b-452e-b170-e45a37497bc4",
-        "finalizado_en": "2026-10-15T15:31:43.815403Z"
+        "comando_id": "658041f7-fcf9-444f-86f9-7f9ac0c6b4d3",
+        "finalizado_en": "2026-10-26T20:53:28.435700Z"
       }
     },
     "capacidades_voluntario": {
@@ -74,7 +74,7 @@
           },
           "subcampanias": []
         },
-        "observado_en": "2026-10-15T15:31:43.869Z",
+        "observado_en": "2026-10-26T20:53:28.489Z",
         "siguiente_cursor": null
       }
     },
@@ -114,7 +114,7 @@
             }
           ]
         },
-        "observado_en": "2026-10-15T15:31:43.898Z",
+        "observado_en": "2026-10-26T20:53:28.521Z",
         "siguiente_cursor": null
       }
     },
@@ -154,7 +154,7 @@
             }
           ]
         },
-        "observado_en": "2026-10-15T15:31:43.936Z",
+        "observado_en": "2026-10-26T20:53:28.552Z",
         "siguiente_cursor": null
       }
     },
@@ -574,7 +574,7 @@
             }
           ]
         },
-        "observado_en": "2026-10-15T15:31:43.966Z",
+        "observado_en": "2026-10-26T20:53:28.583Z",
         "siguiente_cursor": "WzEsIjQ0NGJhY2IzMTk4YTE4MjRkNmE4YTk2MWJhZjJjYmNjOTYyYTRlYWQyNTdmYjJlNmFjNWU4MGZmOGQxYjFlNzAiLCI2MDAiXQ.RwMK6_UbzEWmGy1orGXvtRXM9IwJRJAsfr3mD35ui0I"
       }
     },
@@ -633,7 +633,7 @@
             "responsabilidad_logistica": null
           }
         ],
-        "observado_en": "2026-10-15T15:31:44.086Z",
+        "observado_en": "2026-10-26T20:53:28.730Z",
         "siguiente_cursor": null
       }
     },
@@ -647,7 +647,7 @@
             "organizacion": null
           }
         ],
-        "observado_en": "2026-10-15T15:31:44.119Z",
+        "observado_en": "2026-10-26T20:53:28.762Z",
         "siguiente_cursor": null
       }
     },
@@ -669,7 +669,7 @@
             }
           ]
         },
-        "observado_en": "2026-10-15T15:31:44.153Z"
+        "observado_en": "2026-10-26T20:53:28.792Z"
       }
     },
     "sin_cambios": {
@@ -697,8 +697,8 @@
             }
           ]
         },
-        "comando_id": "45f1373a-cdbc-4d46-9a6d-660bd9e46cad",
-        "finalizado_en": "2026-10-15T15:31:44.226816Z"
+        "comando_id": "5c5baaa4-69c3-4657-89a6-6608fd88ea1b",
+        "finalizado_en": "2026-10-26T20:53:28.851910Z"
       }
     },
     "revision_obsoleta_rechazado": {
@@ -714,8 +714,8 @@
         "estado": "RECHAZADO",
         "operacion": "OTORGAR_PLANTADOR",
         "resultado": null,
-        "comando_id": "bbc1a652-b6ca-45c4-89ac-028704cba90c",
-        "finalizado_en": "2026-10-15T15:31:44.272895Z"
+        "comando_id": "f0cedb05-99af-48c3-bcf3-f731378cb511",
+        "finalizado_en": "2026-10-26T20:53:28.883715Z"
       }
     },
     "reemplazo_confirmado": {
@@ -752,8 +752,8 @@
             }
           ]
         },
-        "comando_id": "ba2924c2-6123-4df9-b54e-7cd333ccf580",
-        "finalizado_en": "2026-10-15T15:31:44.305153Z"
+        "comando_id": "f8d7e66d-3193-4a2a-bff1-2cb507ce87d9",
+        "finalizado_en": "2026-10-26T20:53:28.916666Z"
       }
     },
     "recuperacion_propia": {
@@ -781,8 +781,8 @@
             }
           ]
         },
-        "comando_id": "45f1373a-cdbc-4d46-9a6d-660bd9e46cad",
-        "finalizado_en": "2026-10-15T15:31:44.226816Z"
+        "comando_id": "5c5baaa4-69c3-4657-89a6-6608fd88ea1b",
+        "finalizado_en": "2026-10-26T20:53:28.851910Z"
       }
     },
     "clave_reutilizada_inconcluso": {
@@ -795,7 +795,7 @@
           "mensaje": "La clave ya corresponde a otro contenido.",
           "reintento": "MISMA_CLAVE"
         },
-        "comando_id": "45f1373a-cdbc-4d46-9a6d-660bd9e46cad",
+        "comando_id": "5c5baaa4-69c3-4657-89a6-6608fd88ea1b",
         "resultado_concluyente": false
       }
     },
@@ -809,7 +809,7 @@
           "mensaje": "No hay un resultado confirmado para esta clave.",
           "reintento": "MISMA_CLAVE"
         },
-        "comando_id": "45f1373a-cdbc-4d46-9a6d-660bd9e46cad",
+        "comando_id": "5c5baaa4-69c3-4657-89a6-6608fd88ea1b",
         "resultado_concluyente": false
       }
     },
@@ -823,7 +823,7 @@
           "usuario_id": "603",
           "revision_autoridad": "0"
         },
-        "observado_en": "2026-10-15T15:31:44.521172Z"
+        "observado_en": "2026-10-26T20:53:29.086727Z"
       }
     },
     "rol_confirmado": {
@@ -841,8 +841,8 @@
           "revision_nueva": "1",
           "revision_anterior": "0"
         },
-        "comando_id": "c940741a-3fb3-47e3-89c4-66856769180b",
-        "finalizado_en": "2026-10-15T15:31:44.555555Z"
+        "comando_id": "d8a13549-c85c-44bc-9361-ca74f8978f19",
+        "finalizado_en": "2026-10-26T20:53:29.115688Z"
       }
     },
     "capacidad_rechazado": {
@@ -858,8 +858,8 @@
         "estado": "RECHAZADO",
         "operacion": "CAMBIAR_ROL_GLOBAL",
         "resultado": null,
-        "comando_id": "5884b180-e5b3-4a3e-abdb-1cffe4ab7668",
-        "finalizado_en": "2026-10-15T15:31:44.586620Z"
+        "comando_id": "4562e420-1235-4aca-8eb6-f6112b011904",
+        "finalizado_en": "2026-10-26T20:53:29.148421Z"
       }
     },
     "inactivacion_confirmada": {
@@ -876,8 +876,8 @@
           "revision_nueva": "2",
           "revision_anterior": "1"
         },
-        "comando_id": "681999fa-49dd-462a-8dfa-07d4787c1183",
-        "finalizado_en": "2026-10-15T15:31:44.621326Z"
+        "comando_id": "9234e9d1-8198-4011-bbb8-623b06b84ca9",
+        "finalizado_en": "2026-10-26T20:53:29.178159Z"
       }
     },
     "preparado_sin_resultado": {
@@ -887,7 +887,7 @@
         "estado": "SIN_RESULTADO",
         "operacion": "REGISTRAR_PLANTACION_INICIAL",
         "resultado": null,
-        "comando_id": "e0a06a51-7b72-4c01-b5be-6421ed975877",
+        "comando_id": "a9bd7b64-c53d-48d6-a2cf-bfd499d268b3",
         "finalizado_en": null
       }
     }

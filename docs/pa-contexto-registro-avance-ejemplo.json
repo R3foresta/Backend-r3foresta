@@ -1,0 +1,16 @@
+{
+  "data": {
+    "especies": [
+      {
+        "planta_id": "8",
+        "nombre": "Tara",
+        "porcentaje_objetivo": 40,
+        "cantidad_objetivo": 80,
+        "saldo_elegible": 70,
+        "plantado_inicial": 30,
+        "pendiente_meta": 50
+      }
+    ]
+  },
+  "observado_en": "2026-10-26T12:00:00Z"
+}

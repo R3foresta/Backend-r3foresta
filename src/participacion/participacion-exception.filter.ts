@@ -8,6 +8,11 @@ import type { Request, Response } from 'express';
 
 @Catch()
 export class ParticipacionExceptionFilter implements ExceptionFilter {
+  protected responseCache(response: Response): void {
+    response.setHeader('Cache-Control', 'private, no-store');
+    response.setHeader('Vary', 'Authorization');
+  }
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const context = host.switchToHttp();
     const request = context.getRequest<Request>();
@@ -26,8 +31,7 @@ export class ParticipacionExceptionFilter implements ExceptionFilter {
       )
         ? command
         : null;
-    response.setHeader('Cache-Control', 'private, no-store');
-    response.setHeader('Vary', 'Authorization');
+    this.responseCache(response);
     if (
       content &&
       typeof content === 'object' &&
@@ -49,7 +53,7 @@ export class ParticipacionExceptionFilter implements ExceptionFilter {
           ? 'CAPACIDAD_INSUFICIENTE'
           : status === 404
             ? 'RECURSO_NO_VISIBLE'
-              : status === 400 || status === 413 || status === 422
+            : status === 400 || status === 413 || status === 422
               ? 'ENTRADA_INVALIDA'
               : 'RESULTADO_NO_DETERMINADO';
     if (
@@ -87,5 +91,12 @@ export class ParticipacionExceptionFilter implements ExceptionFilter {
       comando_id,
       resultado_concluyente: false,
     });
+  }
+}
+
+@Catch()
+export class ParticipacionPublicExceptionFilter extends ParticipacionExceptionFilter {
+  protected override responseCache(response: Response): void {
+    response.setHeader('Cache-Control', 'no-store');
   }
 }

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Param,
   Post,
   Query,
@@ -23,8 +24,13 @@ import { id, strictObject } from './dto/comandos.dto';
 import {
   parseCorrectionHistoryQuery,
   parseCorrectionObservations,
+  parseCorrectionParticipants,
+  parseHistoricalParticipantsQuery,
 } from './dto/correcciones.dto';
-import { ParticipacionExceptionFilter } from './participacion-exception.filter';
+import {
+  ParticipacionExceptionFilter,
+  ParticipacionPublicExceptionFilter,
+} from './participacion-exception.filter';
 
 @ApiTags('Participación: correcciones v1')
 @ApiBearerAuth()
@@ -52,7 +58,7 @@ export class ParticipacionCorreccionesController {
   @Get('plantaciones/:id/historial-correcciones')
   @ApiOperation({
     summary:
-      'Historial privado de observaciones, con textos restringidos por autoridad',
+      'Historial privado de correcciones, con textos restringidos por autoridad',
   })
   historial(
     @Req() req: ActorRequest,
@@ -84,5 +90,102 @@ export class ParticipacionCorreccionesController {
       parsed.payload,
     );
     return response.status(reply.http_status).json(reply.body);
+  }
+
+  @Post('plantaciones/:id/correcciones/participantes')
+  @ApiOperation({
+    summary:
+      'Corregir participación histórica sin cambiar responsable ni permisos',
+  })
+  async participantes(
+    @Req() req: ActorRequest,
+    @Param('id') registro: string,
+    @Body() body: unknown,
+    @Res() response: Response,
+  ) {
+    const parsed = parseCorrectionParticipants(body, registro);
+    const reply = await this.service.corregirParticipantes(
+      req.actor,
+      parsed.comando_id,
+      parsed.payload,
+    );
+    return response.status(reply.http_status).json(reply.body);
+  }
+
+  @Get('plantaciones/:id/participantes-historicos-seleccionables')
+  @ApiOperation({
+    summary:
+      'Buscar personas históricas por ID exacto o nombre, incluidas cuentas inactivas',
+  })
+  participantesHistoricos(
+    @Req() req: ActorRequest,
+    @Param('id') registro: string,
+    @Query() query: unknown,
+  ) {
+    return this.service.participantesHistoricos(
+      req.actor,
+      id(registro),
+      parseHistoricalParticipantsQuery(query),
+    );
+  }
+
+  @Get('plantaciones/mis-registros/estado')
+  @ApiOperation({
+    summary:
+      'Estados propios por autoría o participación efectiva de la cuenta activa',
+  })
+  estadosPropios(@Req() req: ActorRequest, @Query() query: unknown) {
+    return this.service.estadosPropios(
+      req.actor,
+      parseCorrectionHistoryQuery(query),
+    );
+  }
+
+  @Get('plantaciones/:id/estado-propio')
+  @ApiOperation({
+    summary:
+      'Estado y procedencia de snapshots para una relación propia efectiva',
+  })
+  estadoPropio(
+    @Req() req: ActorRequest,
+    @Param('id') registro: string,
+    @Query() query: unknown,
+  ) {
+    strictObject(query, [], 'query');
+    return this.service.estadoPropio(req.actor, id(registro));
+  }
+
+  @Get('plantaciones/:id/historial-propio')
+  @ApiOperation({
+    summary:
+      'Historia propia reducida sin motivos ni valores privados de auditoría',
+  })
+  historialPropio(
+    @Req() req: ActorRequest,
+    @Param('id') registro: string,
+    @Query() query: unknown,
+  ) {
+    return this.service.historialPropio(
+      req.actor,
+      id(registro),
+      parseCorrectionHistoryQuery(query),
+    );
+  }
+}
+
+@ApiTags('impact-publico')
+@Controller('v1/impact')
+@UseFilters(ParticipacionPublicExceptionFilter)
+export class ParticipacionEstadoPublicoController {
+  constructor(private readonly service: ParticipacionCorreccionesService) {}
+
+  @Get('registros/:id/estado')
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({
+    summary: 'Señal pública mínima de estado y correcciones sin sesión',
+  })
+  estado(@Param('id') registro: string, @Query() query: unknown) {
+    strictObject(query, [], 'query');
+    return this.service.estadoPublico(id(registro));
   }
 }

@@ -53,6 +53,7 @@ export function contextoRegistro(
   value: unknown,
   actorId: string,
   scope: string,
+  avanceRequerido = false,
 ) {
   const row = exact(value, [
     'subcampania',
@@ -104,20 +105,35 @@ export function contextoRegistro(
   );
   check(['DISPONIBLE', 'SIN_STOCK'].includes(row.disponibilidad as string));
   const speciesIds = new Set<string>();
+  let avancePresente: boolean | null = null;
   list(row.especies, 1, 100).forEach((value) => {
-    const entry = exact(value, [
+    const hasAdvance = Boolean(value && typeof value === 'object' && 'plantado_inicial' in value);
+    check(avancePresente === null || avancePresente === hasAdvance);
+    avancePresente = hasAdvance;
+    const keys = [
       'planta_id',
       'nombre',
       'porcentaje_objetivo',
       'cantidad_objetivo',
       'saldo_elegible',
-    ]);
+      ...(hasAdvance ? ['plantado_inicial', 'pendiente_meta'] : []),
+    ];
+    check(!avanceRequerido || hasAdvance);
+    const entry = exact(value, keys);
     const plant = id(entry.planta_id);
     check(!speciesIds.has(plant));
     speciesIds.add(plant);
     text(entry.nombre);
     integer(entry.cantidad_objetivo);
     integer(entry.saldo_elegible);
+    if (hasAdvance) {
+      integer(entry.plantado_inicial);
+      integer(entry.pendiente_meta);
+      check(
+        entry.pendiente_meta ===
+          Math.max(0, (entry.cantidad_objetivo as number) - (entry.plantado_inicial as number)),
+      );
+    }
     check(
       typeof entry.porcentaje_objetivo === 'number' &&
         Number.isFinite(entry.porcentaje_objetivo) &&

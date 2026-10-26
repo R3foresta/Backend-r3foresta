@@ -19,7 +19,10 @@ import { ParticipacionLecturasService } from '../participacion-lecturas.service'
 import { participacionOpenApi } from '../participacion-openapi.generated';
 import { ParticipacionRegistroController } from '../participacion-registro.controller';
 import { ParticipacionRegistroService } from '../application/participacion-registro.service';
-import { ParticipacionCorreccionesController } from '../participacion-correcciones.controller';
+import {
+  ParticipacionCorreccionesController,
+  ParticipacionEstadoPublicoController,
+} from '../participacion-correcciones.controller';
 import { ParticipacionCorreccionesService } from '../application/participacion-correcciones.service';
 import {
   ParticipacionCargasController,
@@ -31,7 +34,7 @@ import { resolve } from 'node:path';
 import { validarImpacto } from '../../impact/domain/policies/impacto-proyeccion.policy';
 
 describe('Contrato OpenAPI de participación v1', () => {
-  it('documenta las 33 rutas registradas por Nest y resuelve todos sus schemas', async () => {
+  it('documenta las 39 rutas registradas por Nest y resuelve todos sus schemas', async () => {
     const module = await Test.createTestingModule({
       imports: [JwtModule.register({})],
       controllers: [
@@ -39,6 +42,7 @@ describe('Contrato OpenAPI de participación v1', () => {
         ParticipacionLecturasController,
         ParticipacionRegistroController,
         ParticipacionCorreccionesController,
+        ParticipacionEstadoPublicoController,
         ParticipacionCargasController,
         ParticipacionFotosPublicasController,
         ImpactImagenController,
@@ -69,7 +73,7 @@ describe('Contrato OpenAPI de participación v1', () => {
       expect(Object.keys(actual.paths).sort()).toEqual(
         Object.keys(participacionOpenApi.paths).sort(),
       );
-      expect(Object.keys(actual.paths)).toHaveLength(33);
+      expect(Object.keys(actual.paths)).toHaveLength(39);
       for (const route of Object.keys(actual.paths))
         expect(Object.keys(actual.paths[route]).sort()).toEqual(
           Object.keys(participacionOpenApi.paths[route]).sort(),
@@ -93,7 +97,7 @@ describe('Contrato OpenAPI de participación v1', () => {
     }
   });
 
-  it('publica observaciones y recuperación sin abrir las correcciones todavía pendientes', () => {
+  it('publica observaciones, participantes y recuperación sin abrir cantidades ni reversiones', () => {
     const paths = participacionOpenApi.paths;
     const post =
       paths['/api/v1/plantaciones/{id}/correcciones/observaciones'].post!;
@@ -112,7 +116,10 @@ describe('Contrato OpenAPI de participación v1', () => {
     );
     expect(operation).toHaveProperty(
       'schema.enum',
-      expect.arrayContaining(['CORREGIR_OBSERVACIONES_PLANTACION']),
+      expect.arrayContaining([
+        'CORREGIR_OBSERVACIONES_PLANTACION',
+        'CORREGIR_PARTICIPANTES_PLANTACION',
+      ]),
     );
     expect(paths).not.toHaveProperty(
       '/api/v1/plantaciones/{id}/correcciones/cantidad',
@@ -122,7 +129,73 @@ describe('Contrato OpenAPI de participación v1', () => {
     expect(schema).not.toHaveProperty('properties.motivo');
     expect(schema).not.toHaveProperty('properties.observaciones');
     expect(schema).toHaveProperty('additionalProperties', false);
-    expect(schema).toHaveProperty('properties.caso.enum', ['OBSERVACIONES']);
+    expect(schema).toHaveProperty('properties.caso.enum', [
+      'OBSERVACIONES',
+      'PARTICIPANTES',
+    ]);
+    const participants =
+      paths['/api/v1/plantaciones/{id}/correcciones/participantes'].post!;
+    expect(participants.security).toEqual([{ bearerAuth: [] }]);
+    expect(participants.requestBody).toHaveProperty(
+      'content.application/json.schema.$ref',
+      '#/components/schemas/CorreccionParticipantesEntrada',
+    );
+    expect(paths).not.toHaveProperty('/api/v1/plantaciones/{id}/reversiones');
+  });
+
+  it('separa estado público mínimo, lecturas propias y selector histórico firmado', () => {
+    const paths = participacionOpenApi.paths;
+    const publicState = paths['/api/v1/impact/registros/{id}/estado'].get!;
+    expect(publicState.security).toEqual([]);
+    expect(publicState.responses).not.toHaveProperty('401');
+    for (const response of Object.values(publicState.responses!)) {
+      expect(response).toHaveProperty(
+        'headers.Cache-Control.description',
+        'no-store',
+      );
+      expect(response).not.toHaveProperty('headers.Vary');
+    }
+    for (const route of [
+      '/api/v1/plantaciones/{id}/estado-propio',
+      '/api/v1/plantaciones/{id}/historial-propio',
+      '/api/v1/plantaciones/mis-registros/estado',
+      '/api/v1/plantaciones/{id}/participantes-historicos-seleccionables',
+    ]) {
+      const operation = paths[route].get!;
+      expect(operation.security).toEqual([{ bearerAuth: [] }]);
+      expect(operation.responses!['200']).toHaveProperty(
+        'headers.Vary.description',
+        'Authorization',
+      );
+      for (const parameter of operation.parameters!) {
+        if ('name' in parameter && parameter.name === 'cursor')
+          expect(parameter).toHaveProperty('schema.maxLength', 1024);
+      }
+    }
+    const schemas = participacionOpenApi.components!.schemas!;
+    for (const field of ['participantes', 'actor', 'motivo', 'observaciones'])
+      expect(schemas.EstadoRegistroPublico).not.toHaveProperty(
+        `properties.${field}`,
+      );
+    for (const field of ['motivo', 'antes', 'despues', 'observaciones'])
+      expect(schemas.HistoriaCorreccionPropia).not.toHaveProperty(
+        `properties.${field}`,
+      );
+    expect(schemas.ParticipanteSnapshot).not.toHaveProperty(
+      'properties.procedencia',
+    );
+    expect(schemas.ParticipanteSnapshotCorreccion).toHaveProperty(
+      'properties.procedencia.enum',
+      ['ORIGINAL', 'ALTA_CORRECCION', 'RESTAURACION'],
+    );
+    expect(schemas.CorreccionParticipantesEntrada).toHaveProperty(
+      'properties.coresponsable_ids.uniqueItems',
+      true,
+    );
+    expect(schemas.HistoriaCorreccion).toHaveProperty('oneOf', [
+      { $ref: '#/components/schemas/HistoriaCorreccionObservaciones' },
+      { $ref: '#/components/schemas/HistoriaCorreccionParticipantes' },
+    ]);
   });
 
   it('mantiene audiencias, caché y filtros por nivel de INT05', () => {

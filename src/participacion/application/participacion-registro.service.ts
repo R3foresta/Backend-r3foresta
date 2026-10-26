@@ -105,7 +105,12 @@ export class ParticipacionRegistroService {
     try {
       return {
         ...envelope,
-        data: contextoRegistro(envelope.data, actor.usuario_id, scope),
+        data: contextoRegistro(
+          envelope.data,
+          actor.usuario_id,
+          scope,
+          this.config.get<string>('PARTICIPACION_CONTEXTO_AVANCE_REQUERIDO') === 'true',
+        ),
       };
     } catch {
       return this.inconcluso(null);

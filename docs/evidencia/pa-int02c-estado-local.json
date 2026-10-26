@@ -3,7 +3,8 @@
   "entorno": "SINTETICO_LOCAL",
   "migraciones": [
     "072",
-    "073"
+    "073",
+    "087"
   ],
   "estado": {
     "base": "pa_int02c_ensayo",
@@ -980,13 +981,13 @@
       {
         "acl": "{postgres=X/postgres,service_role=X/postgres}",
         "firma": "pa_miembros_participacion_leer(bigint,text,bigint,bigint,integer)",
-        "md5_cuerpo": "c6572e84cdf23c19a532f0e0d0bc6541",
+        "md5_cuerpo": "9c1976786201d34ecb7e8f6bc1341372",
         "volatilidad": "v",
         "anon_ejecuta": false,
         "configuracion": [
           "search_path=pg_catalog, public"
         ],
-        "md5_definicion": "ed4b9b1fd32f6eb6246a6c30d49e205f",
+        "md5_definicion": "114206507de993bf217a103205d1a8d7",
         "security_definer": false,
         "service_role_ejecuta": true,
         "authenticated_ejecuta": false
@@ -1309,7 +1310,7 @@
         "references": false
       }
     ],
-    "observado_en": "2026-10-15T15:31:42.112020Z",
+    "observado_en": "2026-10-26T20:53:26.199411Z",
     "rol_consulta": "postgres",
     "solo_lectura": "on",
     "restricciones": [

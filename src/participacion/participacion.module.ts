@@ -13,7 +13,10 @@ import {
 } from './cargas/participacion-cargas.controller';
 import { ParticipacionCargasService } from './cargas/participacion-cargas.service';
 import { ParticipacionImagenService } from './cargas/participacion-imagen.service';
-import { ParticipacionCorreccionesController } from './participacion-correcciones.controller';
+import {
+  ParticipacionCorreccionesController,
+  ParticipacionEstadoPublicoController,
+} from './participacion-correcciones.controller';
 import { ParticipacionCorreccionesService } from './application/participacion-correcciones.service';
 
 @Module({
@@ -23,6 +26,7 @@ import { ParticipacionCorreccionesService } from './application/participacion-co
     ParticipacionLecturasController,
     ParticipacionRegistroController,
     ParticipacionCorreccionesController,
+    ParticipacionEstadoPublicoController,
     ParticipacionCargasController,
     ParticipacionFotosPublicasController,
   ],

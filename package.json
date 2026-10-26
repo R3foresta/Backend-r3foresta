@@ -34,6 +34,7 @@
     "preview:participacion-d": "python3 scripts/qa/pa-int02d-db-test.py --serve",
     "test:db:impacto": "python3 scripts/qa/pa-int05-db-test.py",
     "test:db:correcciones": "python3 scripts/qa/pa-int07-motor-test.py",
+    "test:db:participantes": "python3 scripts/qa/pa-int07-participantes-test.py",
     "preview:impacto": "python3 scripts/qa/pa-int05-db-test.py --serve"
   },
   "dependencies": {

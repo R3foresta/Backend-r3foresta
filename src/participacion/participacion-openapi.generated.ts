@@ -75,13 +75,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -99,13 +93,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -123,13 +111,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -147,13 +129,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -171,13 +147,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -195,13 +165,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -287,13 +251,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -311,13 +269,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -335,13 +287,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -359,13 +305,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -383,13 +323,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -407,13 +341,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -480,13 +408,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -504,13 +426,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -528,13 +444,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -552,13 +462,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -576,13 +480,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -600,13 +498,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -672,13 +564,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -696,13 +582,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -720,13 +600,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -744,13 +618,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -768,13 +636,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -792,13 +654,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -864,13 +720,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -984,13 +834,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -1056,13 +900,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -1176,13 +1014,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -1248,13 +1080,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -1368,13 +1194,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -1440,13 +1260,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -1560,13 +1374,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -1632,13 +1440,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -1752,13 +1554,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -1824,13 +1620,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -1944,13 +1734,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2025,13 +1809,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2145,13 +1923,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2226,13 +1998,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2346,13 +2112,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2417,13 +2177,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2441,13 +2195,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2465,13 +2213,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2489,13 +2231,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2513,13 +2249,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2537,13 +2267,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2591,7 +2315,8 @@ export const participacionOpenApi = {
                 "CAMBIAR_ROL_GLOBAL",
                 "INACTIVAR_CUENTA",
                 "REGISTRAR_PLANTACION_INICIAL",
-                "CORREGIR_OBSERVACIONES_PLANTACION"
+                "CORREGIR_OBSERVACIONES_PLANTACION",
+                "CORREGIR_PARTICIPANTES_PLANTACION"
               ]
             }
           }
@@ -2660,13 +2385,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2684,13 +2403,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2708,13 +2421,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2732,13 +2439,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2756,13 +2457,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2780,13 +2475,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2851,13 +2540,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2875,13 +2558,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2899,13 +2576,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2923,13 +2594,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2947,13 +2612,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -2971,13 +2630,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3073,13 +2726,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3097,13 +2744,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3121,13 +2762,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3145,13 +2780,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3169,13 +2798,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3193,13 +2816,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3265,13 +2882,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3456,13 +3067,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3480,13 +3085,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3504,13 +3103,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3528,13 +3121,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3552,13 +3139,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3576,13 +3157,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3648,13 +3223,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3672,13 +3241,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3696,13 +3259,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3720,13 +3277,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3744,13 +3295,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3768,13 +3313,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3914,13 +3453,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3938,13 +3471,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3962,13 +3489,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -3986,13 +3507,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4010,13 +3525,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4034,13 +3543,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4137,13 +3640,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4161,13 +3658,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4185,13 +3676,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4209,13 +3694,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4233,13 +3712,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4257,13 +3730,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4338,13 +3805,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4362,13 +3823,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4386,13 +3841,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4410,13 +3859,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4434,13 +3877,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4458,13 +3895,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4529,13 +3960,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4553,13 +3978,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4577,13 +3996,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4601,13 +4014,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4625,13 +4032,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4649,13 +4050,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4710,13 +4105,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4734,13 +4123,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4758,13 +4141,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4782,13 +4159,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4806,13 +4177,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -4830,13 +4195,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -5745,13 +5104,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -5769,13 +5122,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -5793,13 +5140,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -5817,13 +5158,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -5841,13 +5176,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -5865,13 +5194,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -5883,7 +5206,7 @@ export const participacionOpenApi = {
             }
           }
         },
-        "description": "ADMIN global o administrador vigente de la subcampaña exacta. El administrador contextual recibe observaciones null y capacidad false. Leer no reserva revisión, autoridad ni estado; no acepta query."
+        "description": "ADMIN global o administrador vigente de la subcampaña exacta. El administrador contextual recibe observaciones null y corregir_observaciones false; ambos pueden corregir participantes en ámbito ACTIVA y registro VIGENTE. Responsable inmutable. Leer no reserva revisión, autoridad ni estado; no acepta query."
       }
     },
     "/api/v1/plantaciones/{id}/historial-correcciones": {
@@ -5958,13 +5281,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -5982,13 +5299,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -6006,13 +5317,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -6030,13 +5335,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -6054,13 +5353,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -6078,13 +5371,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -6096,7 +5383,7 @@ export const participacionOpenApi = {
             }
           }
         },
-        "description": "Auditoría privada autorizada, ID DESC. Cursor firmado y ligado a actor, sesión y registro. Revalida autoridad en cada página. El administrador contextual recibe motivo y observaciones null. Sin perfiles ni fotos privadas."
+        "description": "Auditoría privada autorizada, ID DESC. Cursor firmado ligado a actor, sesión, registro y audiencia; revalida autoridad en cada página. El administrador contextual recibe motivo y textos null solamente en OBSERVACIONES. PARTICIPANTES expone motivo y snapshots antes/después a ambas autoridades. Sin perfiles ni fotos privadas."
       }
     },
     "/api/v1/plantaciones/{id}/correcciones/observaciones": {
@@ -6160,13 +5447,7 @@ export const participacionOpenApi = {
                 "schema": {
                   "type": "string"
                 },
-                "description": "private, no-store"
-              },
-              "Vary": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "Authorization"
+                "description": "no-store"
               }
             },
             "content": {
@@ -6299,6 +5580,1002 @@ export const participacionOpenApi = {
           }
         },
         "description": "Solo ADMIN global y subcampaña ACTIVA. Original conservado; overlay, revisión, historial y recibo en una transacción. Replay terminal precede a nueva autorización. SIN_CAMBIOS no incrementa revisiones ni crea historial. No modifica stock. El recibo no contiene observaciones ni motivo."
+      }
+    },
+    "/api/v1/plantaciones/{id}/correcciones/participantes": {
+      "post": {
+        "summary": "CORREGIR_PARTICIPANTES_PLANTACION",
+        "operationId": "CORREGIRPARTICIPANTESPLANTACION",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorreccionParticipantesEntrada"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Confirmado, incluyendo replay.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Confirmado"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Capacidad insuficiente durable o cuenta inactiva fuera de recibo.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboOError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible durable o fuera de recibo.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboOError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revisión/estado/continuidad rechazados durables o clave reutilizada fuera de recibo.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboOError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "DTO inválido inconcluso o rechazo de negocio durable.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboOError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Infraestructura inconclusa; recuperar con la misma clave.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        },
+        "description": "ADMIN global o administrador vigente de la subcampaña exacta, ACTIVA y registro VIGENTE. Alta/retiro/restauración histórica sin exigir cuenta activa ni permiso operativo al participante. No admite responsable en coresponsable_ids (CASO_NO_SOPORTADO); usuario inexistente produce PARTICIPANTE_NO_REGISTRADO durable. Originales/snapshots conservados; overlay, revisión de registro, historial y recibo atómicos. No altera grupo, cantidad, stock ni permisos. SIN_CAMBIOS no materializa overlay ni incrementa revisión. Replay terminal precede a nueva autorización. El recibo no incluye participantes, nombres ni motivo."
+      }
+    },
+    "/api/v1/plantaciones/{id}/participantes-historicos-seleccionables": {
+      "get": {
+        "summary": "Buscar participantes históricos",
+        "operationId": "Buscarparticipanteshistricos",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "description": "Obligatorio. ID decimal canónico exacto desde un carácter o nombre NFC/trim de 3..100 caracteres, búsqueda literal sin comodines. No busca correo ni username."
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lectura privada.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParticipantesHistoricosLectura"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        },
+        "description": "Autoridad global o contextual de corrección, revalidada por página. Incluye inactivos y excluye al responsable; no consulta permiso operativo. ID ASC, cursor firmado ligado a actor, sesión, registro, modo y consulta normalizada. Solo q/cursor/limite. La lectura puede continuar con ámbito cerrado sin habilitar escritura."
+      }
+    },
+    "/api/v1/plantaciones/{id}/estado-propio": {
+      "get": {
+        "summary": "Estado efectivo propio",
+        "operationId": "Estadoefectivopropio",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lectura privada.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoRegistroPropioLectura"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        },
+        "description": "JWT vigente y cuenta activa, autoría o participación efectiva revalidada en cada lectura, incluso para ADMIN. Retirar un participante extingue su acceso propio; restaurarlo lo recupera. Sin motivo, observaciones ni antes/después administrativos. Paginación ID DESC con cursor firmado ligado a actor, sesión, objeto y audiencia propia. No requiere permiso operativo."
+      }
+    },
+    "/api/v1/plantaciones/{id}/historial-propio": {
+      "get": {
+        "summary": "Historia mínima propia",
+        "operationId": "Historiamnimapropia",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lectura privada.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistorialPropioLectura"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        },
+        "description": "JWT vigente y cuenta activa, autoría o participación efectiva revalidada en cada lectura, incluso para ADMIN. Retirar un participante extingue su acceso propio; restaurarlo lo recupera. Sin motivo, observaciones ni antes/después administrativos. Paginación ID DESC con cursor firmado ligado a actor, sesión, objeto y audiencia propia. No requiere permiso operativo."
+      }
+    },
+    "/api/v1/plantaciones/mis-registros/estado": {
+      "get": {
+        "summary": "Estados de mis registros",
+        "operationId": "Estadosdemisregistros",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lectura privada.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MisRegistrosEstadoLectura"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        },
+        "description": "JWT vigente y cuenta activa, autoría o participación efectiva revalidada en cada lectura, incluso para ADMIN. Retirar un participante extingue su acceso propio; restaurarlo lo recupera. Sin motivo, observaciones ni antes/después administrativos. Paginación ID DESC con cursor firmado ligado a actor, sesión, objeto y audiencia propia. No requiere permiso operativo."
+      }
+    },
+    "/api/v1/impact/registros/{id}/estado": {
+      "get": {
+        "summary": "Estado público del registro",
+        "operationId": "Estadopblicodelregistro",
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lectura privada.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoRegistroPublicoLectura"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        },
+        "description": "Sin JWT ni cuenta; misma respuesta con bearer ausente o vencido. Solo registros elegibles según INT05. Estado y enlace mínimos, sin participantes, actor, motivo ni observaciones. No acepta query."
       }
     }
   },
@@ -7282,7 +7559,8 @@ export const participacionOpenApi = {
               "CAMBIAR_ROL_GLOBAL",
               "INACTIVAR_CUENTA",
               "REGISTRAR_PLANTACION_INICIAL",
-              "CORREGIR_OBSERVACIONES_PLANTACION"
+              "CORREGIR_OBSERVACIONES_PLANTACION",
+              "CORREGIR_PARTICIPANTES_PLANTACION"
             ]
           },
           "finalizado_en": {
@@ -7351,7 +7629,8 @@ export const participacionOpenApi = {
               "CAMBIAR_ROL_GLOBAL",
               "INACTIVAR_CUENTA",
               "REGISTRAR_PLANTACION_INICIAL",
-              "CORREGIR_OBSERVACIONES_PLANTACION"
+              "CORREGIR_OBSERVACIONES_PLANTACION",
+              "CORREGIR_PARTICIPANTES_PLANTACION"
             ]
           },
           "finalizado_en": {
@@ -7856,6 +8135,16 @@ export const participacionOpenApi = {
                   "type": "integer",
                   "minimum": 0,
                   "maximum": 2147483647
+                },
+                "plantado_inicial": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                },
+                "pendiente_meta": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
                 }
               },
               "required": [
@@ -7863,7 +8152,9 @@ export const participacionOpenApi = {
                 "nombre",
                 "porcentaje_objetivo",
                 "cantidad_objetivo",
-                "saldo_elegible"
+                "saldo_elegible",
+                "plantado_inicial",
+                "pendiente_meta"
               ]
             },
             "minItems": 1,
@@ -9103,6 +9394,113 @@ export const participacionOpenApi = {
           "observaciones"
         ]
       },
+      "CorreccionParticipantesEntrada": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "comando_id": {
+            "$ref": "#/components/schemas/ComandoId"
+          },
+          "revision_esperada": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "motivo": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 1000,
+            "description": "NFC/trim obligatorio; nunca se incluye en el recibo."
+          },
+          "coresponsable_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Id"
+            },
+            "minItems": 0,
+            "maxItems": 100,
+            "uniqueItems": true,
+            "description": "Conjunto completo de corresponsables efectivos; excluye al responsable. Se canonicaliza por ID numérico. Admite cuentas inactivas sin permiso operativo."
+          }
+        },
+        "required": [
+          "comando_id",
+          "revision_esperada",
+          "motivo",
+          "coresponsable_ids"
+        ]
+      },
+      "ParticipanteSnapshotCorreccion": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "usuario_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "nombre_snapshot": {
+            "type": "string",
+            "nullable": true
+          },
+          "afiliacion_snapshot": {
+            "type": "string",
+            "nullable": true
+          },
+          "afiliacion_estado": {
+            "type": "string",
+            "enum": [
+              "DECLARADA",
+              "NO_DECLARADA",
+              "HISTORICA_NO_DISPONIBLE"
+            ]
+          },
+          "afiliacion_tipo": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "ORGANIZACION_REGISTRADA",
+              "OTRA",
+              null
+            ]
+          },
+          "organizacion_id_snapshot": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[1-9][0-9]*$",
+            "maxLength": 19
+          },
+          "es_responsable": {
+            "type": "boolean"
+          },
+          "procedencia": {
+            "type": "string",
+            "enum": [
+              "ORIGINAL",
+              "ALTA_CORRECCION",
+              "RESTAURACION"
+            ]
+          },
+          "capturado_en": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$",
+            "nullable": true
+          },
+          "nombre_capturado_correccion": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "usuario_id",
+          "nombre_snapshot",
+          "afiliacion_snapshot",
+          "afiliacion_estado",
+          "afiliacion_tipo",
+          "organizacion_id_snapshot",
+          "es_responsable",
+          "procedencia",
+          "capturado_en",
+          "nombre_capturado_correccion"
+        ]
+      },
       "CorreccionPlantacionResultado": {
         "type": "object",
         "additionalProperties": false,
@@ -9128,7 +9526,8 @@ export const participacionOpenApi = {
           "caso": {
             "type": "string",
             "enum": [
-              "OBSERVACIONES"
+              "OBSERVACIONES",
+              "PARTICIPANTES"
             ]
           },
           "revision_anterior": {
@@ -9231,10 +9630,19 @@ export const participacionOpenApi = {
               "observaciones": {
                 "type": "string",
                 "nullable": true
+              },
+              "participantes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ParticipanteSnapshotCorreccion"
+                },
+                "minItems": 1,
+                "maxItems": 101
               }
             },
             "required": [
-              "observaciones"
+              "observaciones",
+              "participantes"
             ]
           },
           "efectivo": {
@@ -9244,10 +9652,19 @@ export const participacionOpenApi = {
               "observaciones": {
                 "type": "string",
                 "nullable": true
+              },
+              "participantes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ParticipanteSnapshotCorreccion"
+                },
+                "minItems": 1,
+                "maxItems": 101
               }
             },
             "required": [
-              "observaciones"
+              "observaciones",
+              "participantes"
             ]
           },
           "capacidades": {
@@ -9256,10 +9673,14 @@ export const participacionOpenApi = {
             "properties": {
               "corregir_observaciones": {
                 "type": "boolean"
+              },
+              "corregir_participantes": {
+                "type": "boolean"
               }
             },
             "required": [
-              "corregir_observaciones"
+              "corregir_observaciones",
+              "corregir_participantes"
             ]
           }
         },
@@ -9386,6 +9807,127 @@ export const participacionOpenApi = {
           "efectos_consumo"
         ]
       },
+      "HistoriaCorreccionParticipantes": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "correccion_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "caso": {
+            "type": "string",
+            "enum": [
+              "PARTICIPANTES"
+            ]
+          },
+          "actor": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "usuario_id": {
+                "$ref": "#/components/schemas/Id"
+              },
+              "nombre_snapshot": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "usuario_id",
+              "nombre_snapshot"
+            ]
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "revision_anterior": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "revision_nueva": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "revision_grupo_anterior": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "revision_grupo_nueva": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "antes": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "participantes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ParticipanteSnapshotCorreccion"
+                },
+                "minItems": 1,
+                "maxItems": 101
+              }
+            },
+            "required": [
+              "participantes"
+            ]
+          },
+          "despues": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "participantes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ParticipanteSnapshotCorreccion"
+                },
+                "minItems": 1,
+                "maxItems": 101
+              }
+            },
+            "required": [
+              "participantes"
+            ]
+          },
+          "efectos_consumo": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "minItems": 0,
+            "maxItems": 0
+          }
+        },
+        "required": [
+          "correccion_id",
+          "caso",
+          "actor",
+          "fecha",
+          "revision_anterior",
+          "revision_nueva",
+          "revision_grupo_anterior",
+          "revision_grupo_nueva",
+          "motivo",
+          "antes",
+          "despues",
+          "efectos_consumo"
+        ]
+      },
+      "HistoriaCorreccion": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/HistoriaCorreccionObservaciones"
+          },
+          {
+            "$ref": "#/components/schemas/HistoriaCorreccionParticipantes"
+          }
+        ]
+      },
       "ContextoCorreccionLectura": {
         "type": "object",
         "additionalProperties": false,
@@ -9411,7 +9953,7 @@ export const participacionOpenApi = {
           "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/HistoriaCorreccionObservaciones"
+              "$ref": "#/components/schemas/HistoriaCorreccion"
             },
             "minItems": 0,
             "maxItems": 50
@@ -9430,6 +9972,399 @@ export const participacionOpenApi = {
           "data",
           "observado_en",
           "siguiente_cursor"
+        ]
+      },
+      "ParticipanteHistoricoSeleccionable": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "usuario_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "nombre_actual": {
+            "type": "string",
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "relacion_historica": {
+            "type": "string",
+            "enum": [
+              "PRESENTE",
+              "RETIRADO",
+              "SIN_RELACION"
+            ]
+          }
+        },
+        "required": [
+          "usuario_id",
+          "nombre_actual",
+          "activo",
+          "relacion_historica"
+        ]
+      },
+      "ParticipantesHistoricosLectura": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParticipanteHistoricoSeleccionable"
+            },
+            "minItems": 0,
+            "maxItems": 50
+          },
+          "observado_en": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "siguiente_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "observado_en",
+          "siguiente_cursor"
+        ]
+      },
+      "EstadoRegistroPropio": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registro_plantacion_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "codigo_trazabilidad": {
+            "type": "string"
+          },
+          "subcampania_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "es_reposicion": {
+            "type": "boolean"
+          },
+          "registro_plantacion_origen_id": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[1-9][0-9]*$",
+            "maxLength": 19
+          },
+          "estado_logico": {
+            "type": "string",
+            "enum": [
+              "VIGENTE",
+              "REVERTIDO"
+            ]
+          },
+          "tiene_correcciones": {
+            "type": "boolean"
+          },
+          "revision_registro": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "revision_grupo": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "relaciones": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "AUTOR",
+                "PARTICIPANTE"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 2,
+            "uniqueItems": true
+          },
+          "cantidad_original": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "cantidad_efectiva": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "especies_originales": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "planta_id": {
+                  "$ref": "#/components/schemas/Id"
+                },
+                "cantidad": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 2147483647
+                }
+              },
+              "required": [
+                "planta_id",
+                "cantidad"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "especies_efectivas": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "planta_id": {
+                  "$ref": "#/components/schemas/Id"
+                },
+                "cantidad": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "planta_id",
+                "cantidad"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "participantes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParticipanteSnapshotCorreccion"
+            },
+            "minItems": 1,
+            "maxItems": 101
+          },
+          "registro_vigente_id": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[1-9][0-9]*$",
+            "maxLength": 19
+          },
+          "url_detalle_efectivo": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "registro_plantacion_id",
+          "codigo_trazabilidad",
+          "subcampania_id",
+          "es_reposicion",
+          "registro_plantacion_origen_id",
+          "estado_logico",
+          "tiene_correcciones",
+          "revision_registro",
+          "revision_grupo",
+          "relaciones",
+          "cantidad_original",
+          "cantidad_efectiva",
+          "especies_originales",
+          "especies_efectivas",
+          "participantes",
+          "registro_vigente_id",
+          "url_detalle_efectivo"
+        ]
+      },
+      "HistoriaCorreccionPropia": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "correccion_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "caso": {
+            "type": "string",
+            "enum": [
+              "OBSERVACIONES",
+              "PARTICIPANTES"
+            ]
+          },
+          "actor": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "usuario_id": {
+                "$ref": "#/components/schemas/Id"
+              },
+              "nombre_snapshot": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "usuario_id",
+              "nombre_snapshot"
+            ]
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "revision_anterior": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "revision_nueva": {
+            "$ref": "#/components/schemas/Revision"
+          }
+        },
+        "required": [
+          "correccion_id",
+          "caso",
+          "actor",
+          "fecha",
+          "revision_anterior",
+          "revision_nueva"
+        ]
+      },
+      "EstadoRegistroPublico": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registro_plantacion_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "estado_logico": {
+            "type": "string",
+            "enum": [
+              "VIGENTE",
+              "REVERTIDO"
+            ]
+          },
+          "tiene_correcciones": {
+            "type": "boolean"
+          },
+          "url_detalle_efectivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "registro_vigente": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "registro_plantacion_id": {
+                "$ref": "#/components/schemas/Id"
+              },
+              "url_publica": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "registro_plantacion_id",
+              "url_publica"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "registro_plantacion_id",
+          "estado_logico",
+          "tiene_correcciones",
+          "url_detalle_efectivo",
+          "registro_vigente"
+        ]
+      },
+      "EstadoRegistroPropioLectura": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/EstadoRegistroPropio"
+          },
+          "observado_en": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          }
+        },
+        "required": [
+          "data",
+          "observado_en"
+        ]
+      },
+      "HistorialPropioLectura": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoriaCorreccionPropia"
+            },
+            "minItems": 0,
+            "maxItems": 50
+          },
+          "observado_en": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "siguiente_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "observado_en",
+          "siguiente_cursor"
+        ]
+      },
+      "MisRegistrosEstadoLectura": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EstadoRegistroPropio"
+            },
+            "minItems": 0,
+            "maxItems": 50
+          },
+          "observado_en": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "siguiente_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "observado_en",
+          "siguiente_cursor"
+        ]
+      },
+      "EstadoRegistroPublicoLectura": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/EstadoRegistroPublico"
+          },
+          "observado_en": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          }
+        },
+        "required": [
+          "data",
+          "observado_en"
         ]
       }
     },

@@ -121,6 +121,13 @@ alcance necesario. Conserva originales, grupo y stock. Su instalación remota
 es independiente del cotejo083/081/082. BE02/03 siguen parciales;
 [entrega, pruebas y límites](docs/pa-int07-motor-observaciones.md).
 
+085 amplía el mismo ejecutor con participantes históricos y sus lectores en una
+transacción de instalación: estado efectivo común para Impacto, Mis registros y
+detalle propio; selector y estado/historia por audiencia. Altas/retiros/restauración
+preservan originales y snapshots, sin permiso operativo para el participante ni
+cambios de grupo, cantidades o stock. El backend de este incremento requiere085;
+su aplicación/cotejo en destino se acredita aparte. [Contrato](docs/pa-int07-participantes.md).
+
 ## Pendientes materiales
 
 1. Pinata upload, blockchain mint/wallet/diagnósticos y `/api/test-db` conservan

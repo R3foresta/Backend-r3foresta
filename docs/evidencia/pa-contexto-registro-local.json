@@ -1,0 +1,21 @@
+{
+  "fecha_utc": "2026-10-26T19:03:15.611352+00:00",
+  "base_git": "e76ff8318262c31538d510c4a06b36dc256c147b",
+  "sha256_086": "b64fa90bdf933e3973188aacc432fce6cb0bf7e8cd033c8376c5b39d85b1a38f",
+  "postgresql": "14.24 (Postgres.app)",
+  "postgis": "3.2.10",
+  "casos": [
+    "sin registros y stock positivo",
+    "dos especies sin registros ni stock devuelven cero y meta vigente",
+    "confirmaciones sucesivas, meta cubierta y excedida",
+    "rechazo y preparación sin confirmar no incrementan avance",
+    "reposición excluida del acumulado inicial",
+    "corrección efectiva con compensación sin duplicar original",
+    "original revertido con compensación total se cuenta como cero",
+    "stock cero conserva avance",
+    "lectura bloqueada hasta commit observa plan, saldo y avance coherentes",
+    "privacidad y autorización conservadas"
+  ],
+  "entorno": "PostgreSQL/PostGIS aislado sin TCP ni .env",
+  "limites": "Sin despliegue ni prueba del futuro ejecutor INT07 de cantidades"
+}

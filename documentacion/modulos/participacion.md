@@ -8,14 +8,17 @@ Gestión y registro participante implementados; D aporta corte/locks/superficie 
 INT07 incorpora el [motor y observaciones completas](../../docs/pa-int07-motor-observaciones.md)
 en el corte local del 21 de octubre: migración084, POST de observaciones,
 contexto/historial privados y recuperación común ampliada. El detalle propio del
-autor lee el texto efectivo; el original se conserva. Participantes, cantidades,
-reversiones y la frontera de alta de mortandad siguen pendientes. Pablo reporta
+autor lee el texto efectivo; el original se conserva. El incremento085 añade
+[participantes históricos y lecturas por audiencia](../../docs/pa-int07-participantes.md).
+Cantidades, reversiones y la frontera de alta de mortandad siguen pendientes. Pablo reporta
 084 con Success y catálogo aportado cotejado el22; [evidencia y límites](../../docs/evidencia/pa-int07-084-cotejo-2026-10-22.json).
 Backend publicado y HTTP remoto pendientes.
+El backend de participantes requiere085 aplicada y cotejada antes de publicarlo;
+el Success de084 no acredita085.
 
 ## Contrato que debe usar el cliente
 
-[OpenAPI generado](../../docs/pa-int02c-openapi.json): **33 rutas / 71 schemas**.
+[OpenAPI generado](../../docs/pa-int02c-openapi.json): **39 rutas / 84 schemas**.
 [Ejemplos HTTP](../../docs/pa-int02c-ejemplos.json): resultados de Nest con PostgreSQL
 sintético, sin tokens. Swagger completo en `/api/docs`; JSON en `/api/docs-json`.
 
@@ -26,6 +29,14 @@ sintético, sin tokens. Swagger completo en `/api/docs`; JSON en `/api/docs-json
 | C04–C09 | `POST /participacion/accesos/{otorgar-plantador,retirar-plantador,designar-administrador,administrador-a-plantador,retirar-administrador,reemplazar-administrador}` |
 | Autoridad global | `GET /usuarios/:id/autoridad`, `POST /usuarios/:id/roles`, `POST /usuarios/:id/inactivaciones` |
 | Recuperación propia | `GET /participacion/comandos/:comando_id?operacion=...` |
+| Correcciones INT07 | `POST /plantaciones/:id/correcciones/{observaciones,participantes}`, `GET /plantaciones/:id/{contexto-correccion,historial-correcciones,participantes-historicos-seleccionables}` |
+| Estado e historia INT07 | `GET /plantaciones/:id/{estado-propio,historial-propio}`, `GET /plantaciones/mis-registros/estado`, `GET /impact/registros/:id/estado` público |
+
+El contexto privado `GET /subcampanias/:id/contexto-registro` añade en cada
+`especies[]` `plantado_inicial` (hechos iniciales efectivos acumulados, sin
+reposiciones) y `pendiente_meta = max(0, cantidad_objetivo - plantado_inicial)`.
+El saldo elegible es disponibilidad, no avance; la meta orienta y no limita el
+registro. [Contrato y orden de publicación](../../docs/pa-contexto-registro-avance.md).
 
 Las rutas privadas requieren Bearer de WebAuthn; Impacto público no lo exige. BIGINT y revisiones son cadenas; actor/rol vienen
 del servidor. Afiliación y logística no conceden permisos. ADMIN global tiene
@@ -76,6 +87,7 @@ Ese modo verifica HTTP y limpia el entorno al terminar. [Pruebas](../../test/REA
 | Contrato consumible y Swagger generado | [Generador](../../scripts/qa/pa-int02c-openapi.cjs) |
 | Evidencia DB/HTTP y carreras | [Runner C](../../scripts/qa/pa-int02c-db-test.py) |
 | Corrección de observaciones | `src/participacion/application`, `dto/correcciones.dto.ts`, `domain/policies/correcciones-proyeccion.policy.ts`; migración084 y [runner INT07](../../scripts/qa/pa-int07-motor-test.py) |
+| Participantes y lecturas efectivas | Mismos casos de uso y políticas; migración085 y [runner participantes](../../scripts/qa/pa-int07-participantes-test.py). Responsable conservado; P01 retira/restaura lectura propia sin cambiar permisos operativos. |
 
 Después de cambiar el contrato: `npm run docs:participacion` y
 `node scripts/qa/pa-int02c-openapi.cjs --check`. Los ejemplos ejecutados los regenera
@@ -89,6 +101,12 @@ INT03-A añadió diez rutas a C (24 en ese corte); D incorpora imagen binaria p�
 multipart, bucket privado, lease/generación y derivados sanitizados; el GET
 común recupera PREPARADO/terminal tras retiro. Registrar no vuelve a descontar
 Vivero. [Conciliación del día de entregas](../../docs/pa-int03a-conciliacion-entregas.md).
+
+Si el PUT devuelve `202 RESERVADA`, conservar `comando_id`, `carga_id` y los
+bytes originales para reintentar; `201` (nueva) o `200` (recuperada) con
+`DISPONIBLE` y `evidencia_id` confirma la carga. No reemplazar la clave para
+resolver un fallo de Storage. [Corrección del detector de ausencia y evidencia](../../docs/pa-cargas-ausencia-sdk.md).
+
 
 B: 068–071 confirmadas aplicadas en desarrollo; estado SQL compacto y REST cotejados.
 C: 072/073 confirmadas aplicadas; REST comprobó superficie y validación temprana.

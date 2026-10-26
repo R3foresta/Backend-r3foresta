@@ -5,7 +5,8 @@
   "origen_remoto_acreditado": false,
   "migraciones_cotejadas": [
     "072",
-    "073"
+    "073",
+    "087"
   ],
   "cotejos": {
     "relaciones": 5,
