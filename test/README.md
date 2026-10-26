@@ -52,7 +52,7 @@ las políticas del bucket Supabase remoto conservan su comprobación separada.
 [Guía de participación](../documentacion/modulos/participacion.md#integración-local-sin-servicios-externos):
 `npm run preview:participacion` mantiene una API/DB sintética disponible; reiniciar
 resetea datos. `npm run preview:participacion -- --check --evidence /tmp/pa-preview.json`
-verifica 30 casos HTTP y detiene/limpia el entorno. No prueba WebAuthn real.
+verifica 37 casos HTTP, incluida la lectura de equipo para PLANTADOR tras la migración 087, y detiene/limpia el entorno. No prueba WebAuthn real.
 
 ## Entornos externos: ejecución separada
 

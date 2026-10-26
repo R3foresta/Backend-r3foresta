@@ -80,7 +80,7 @@ def main():
             state_path = ROOT / 'docs/evidencia/pa-int02c-estado-local.json'
             state_path.write_text(json.dumps({
                 'proyecto': 'SINTETICO_AISLADO_INT02C', 'entorno': 'SINTETICO_LOCAL',
-                'migraciones': ['072', '073'], 'estado': state,
+                'migraciones': ['072', '073', '087'], 'estado': state,
             }, ensure_ascii=False, indent=2) + '\n')
             verification = subprocess.run([
                 sys.executable, str(ROOT / 'scripts/qa/pa-int02c-estado-verificar.py'),

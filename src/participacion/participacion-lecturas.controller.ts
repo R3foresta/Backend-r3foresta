@@ -49,7 +49,7 @@ export class ParticipacionLecturasController {
   }
 
   @Get('subcampanias/:id/miembros-participacion')
-  @ApiOperation({ summary: 'Miembros mínimos del ámbito, solo para gestores' })
+  @ApiOperation({ summary: 'Miembros mínimos del ámbito para plantadores y administradores autorizados' })
   miembros(
     @Req() request: ActorRequest,
     @Param('id') id: string,

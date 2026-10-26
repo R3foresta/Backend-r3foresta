@@ -29,6 +29,7 @@ MIGRATIONS = [
     '068_pa_participacion_comando.sql', '069_pa_int02b_eventos_acceso.sql',
     '070_pa_int02b_permisos_contextuales.sql', '071_pa_int02b_bootstrap_controlado.sql',
     '072_pa_int02c_comandos_acceso.sql', '073_pa_int02c_lecturas.sql',
+    '087_pa_miembros_plantador_lectura.sql',
 ]
 
 
@@ -65,7 +66,10 @@ def verify_http(base, run_id, origin):
     status, health, _ = request('/__fixture/health')
     expect('servidor de esta ejecución', status == 200 and health['run_id'] == run_id)
     status, openapi, _ = request('/__fixture/openapi.json')
-    expect('OpenAPI contiene las 14 rutas reales', status == 200 and len(openapi['paths']) == 14)
+    member_path = '/api/v1/subcampanias/{id}/miembros-participacion'
+    expect('OpenAPI describe lectura propia del plantador', status == 200
+           and member_path in openapi['paths']
+           and 'PLANTADOR' in openapi['paths'][member_path]['get']['description'])
     path = '/api/v1/participacion'
     status, body, _ = request(path + '/capacidades')
     expect('visitante rechazado con envelope', status == 401 and body['error']['codigo'] == 'SESION_INVALIDA'
@@ -95,8 +99,23 @@ def verify_http(base, run_id, origin):
            and len({m['usuario_id'] for m in members}) == len(members)
            and all('correo' not in m and 'auth_id' not in m and 'contacto' not in m for m in members)
            and next(m for m in members if m['usuario_id'] == '607')['responsabilidad_logistica'] == 'COORDINADOR')
+    status, body, _ = request('/api/v1/subcampanias/600/miembros-participacion', 'plantador')
+    expect('plantador lee equipo del ámbito propio', status == 200
+           and any(m['usuario_id'] == '603' for m in body['data'])
+           and all('correo' not in m and 'auth_id' not in m for m in body['data']))
+    status, body, _ = request('/api/v1/subcampanias/601/miembros-participacion', 'plantador')
+    expect('plantador no lee equipo ajeno', status == 403 and body['error']['ambitos'] == [])
+    status, body, _ = request('/api/v1/subcampanias/600/miembros-participacion', 'voluntario')
+    expect('voluntario sin permiso no lee equipo', status == 403 and body['error']['ambitos'] == [])
     status, body, _ = request('/api/v1/subcampanias/601/miembros-participacion', 'gestora')
     expect('miembros ajenos denegados', status == 403 and body['error']['ambitos'] == [])
+    status, body, _ = request(path + '/personas/buscar', 'plantador', {
+        'modo': 'NOMBRE', 'consulta': 'José', 'accion': 'OTORGAR_PLANTADOR', 'subcampania_ids': ['600']})
+    expect('plantador no obtiene búsqueda de gestión', status == 403 and body['error']['ambitos'] == [])
+    status, body, _ = request(path + '/accesos/retirar-plantador', 'plantador', {
+        'comando_id': str(uuid.uuid4()), 'usuario_destino_id': '603',
+        'ambitos': [{'subcampania_id': '600', 'revision_esperada': '1'}]})
+    expect('plantador no modifica permisos', status == 403 and body['estado'] == 'RECHAZADO')
     status, body, _ = request(path + '/personas/buscar', 'gestora', {
         'modo': 'NOMBRE', 'consulta': 'JOSE\u0301', 'accion': 'OTORGAR_PLANTADOR', 'subcampania_ids': ['600']})
     expect('búsqueda Unicode privada sin contactos', status == 200 and [p['usuario_id'] for p in body['data']] == ['603']
@@ -113,6 +132,9 @@ def verify_http(base, run_id, origin):
     status, receipt, _ = request(path + '/accesos/otorgar-plantador', 'gestora', grant)
     expect('comando aplica permiso mediante PostgreSQL', status == 200 and receipt['estado'] == 'CONFIRMADO'
            and receipt['resultado']['cambios'][0]['usuarios'][0]['revision_nueva'] == '1')
+    status, body, _ = request('/api/v1/subcampanias/600/miembros-participacion', 'voluntario')
+    expect('voluntario recién habilitado lee el equipo', status == 200
+           and any(m['usuario_id'] == '604' for m in body['data']))
     status, body, _ = request(path + '/accesos/otorgar-plantador', 'gestora', grant)
     expect('replay conserva el recibo exacto', status == 200 and body == receipt)
     status, body, _ = request(path + '/comandos/' + key + '?operacion=OTORGAR_PLANTADOR', 'gestora')
@@ -144,6 +166,9 @@ def verify_http(base, run_id, origin):
         **grant, 'comando_id': str(uuid.uuid4()), 'ambitos': [{'subcampania_id': '600', 'revision_esperada': '1'}]})
     expect('retiro incrementa revisión y conserva historia', status == 200
            and body['resultado']['cambios'][0]['usuarios'][0]['revision_nueva'] == '2')
+    status, body, _ = request('/api/v1/subcampanias/600/miembros-participacion', 'voluntario')
+    expect('plantador retirado pierde lectura de equipo', status == 403
+           and body['error']['ambitos'] == [])
     status, body, _ = request(path + '/comandos/' + key + '?operacion=OTORGAR_PLANTADOR', 'gestora')
     expect('retiro no destruye el recibo anterior', status == 200 and body == receipt)
     status, body, _ = request('/api/v1/usuarios/603/roles', 'admin', {

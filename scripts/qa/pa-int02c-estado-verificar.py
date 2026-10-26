@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MIGRATIONS = [
     'migrations/072_pa_int02c_comandos_acceso.sql',
     'migrations/073_pa_int02c_lecturas.sql',
+    'migrations/087_pa_miembros_plantador_lectura.sql',
 ]
 DEVELOPMENT_REF = 'vyrjlehkhabydkhjxagx'
 LOCAL_REF = 'SINTETICO_AISLADO_INT02C'
@@ -57,7 +58,8 @@ def expected_functions(root=ROOT):
                 declaration = re.split(r'\s+DEFAULT\s+', argument.strip(), flags=re.I)[0]
                 types.append(normalize_type(declaration.split(None, 1)[1]))
             signature = name + '(' + ','.join(types) + ')'
-            if signature in functions:
+            if signature in functions and not (migration.endswith('087_pa_miembros_plantador_lectura.sql')
+                                               and name == 'pa_miembros_participacion_leer'):
                 raise ValueError('firma local duplicada')
             functions[signature] = {
                 'md5_cuerpo': hashlib.md5(body.encode('utf-8')).hexdigest(),
@@ -102,7 +104,7 @@ def verify(evidence, *, entorno, project_ref=None, root=ROOT):
     if wrapper:
         state = evidence.get('estado')
         supplied_ref = evidence.get('proyecto')
-        check(evidence.get('migraciones') == ['072', '073'], 'MIGRACIONES_NO_CORRESPONDEN', 'migraciones')
+        check(evidence.get('migraciones') == ['072', '073', '087'], 'MIGRACIONES_NO_CORRESPONDEN', 'migraciones')
         check(project_ref is None or project_ref == supplied_ref, 'REF_NO_COINCIDE', 'proyecto')
         stated_environment = evidence.get('entorno')
         if stated_environment is not None:
@@ -323,7 +325,7 @@ def verify(evidence, *, entorno, project_ref=None, root=ROOT):
     return {
         'resultado': 'ESTADO_COMPACTO_COTEJADO' if not deviations else 'DESVIACIONES_DETECTADAS',
         'entorno_declarado': entorno, 'proyecto_contexto': supplied_ref if supplied_ref == expected_ref else None,
-        'origen_remoto_acreditado': False, 'migraciones_cotejadas': ['072', '073'],
+        'origen_remoto_acreditado': False, 'migraciones_cotejadas': ['072', '073', '087'],
         'cotejos': counts, 'desviaciones': deviations, 'limites': LIMITS,
     }
 

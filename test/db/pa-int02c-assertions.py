@@ -36,6 +36,7 @@ migrations = [
     'migrations/071_pa_int02b_bootstrap_controlado.sql',
     'migrations/072_pa_int02c_comandos_acceso.sql',
     'migrations/073_pa_int02c_lecturas.sql',
+    'migrations/087_pa_miembros_plantador_lectura.sql',
 ]
 evidence = {
     'tarea': 'PA-T-INT02-C', 'estado': 'EN_EJECUCION',
@@ -243,7 +244,13 @@ def readings():
         assert set(row) == {'usuario_id', 'nombre', 'organizacion', 'permiso_contextual',
                             'revision_permiso', 'acceso_global', 'etiqueta_acceso_global',
                             'responsabilidad_logistica'}, row
-    query("SET ROLE service_role; SELECT public.pa_miembros_participacion_leer(3,'fixture-voluntario',11,NULL,101)",
+    own_team = read('pa_miembros_participacion_leer', "3,'fixture-voluntario',11,NULL,101")
+    assert {row['usuario_id'] for row in own_team} == {row['usuario_id'] for row in members}
+    query("SET ROLE service_role; SELECT public.pa_miembros_participacion_leer(3,'fixture-voluntario',19,NULL,101)",
+          'CAPACIDAD_INSUFICIENTE')
+    query("SET ROLE service_role; SELECT public.pa_miembros_participacion_leer(37,'fixture-c-37',11,NULL,101)",
+          'CAPACIDAD_INSUFICIENTE')
+    query("SET ROLE service_role; SELECT public.pa_personas_buscar(3,'fixture-voluntario','NOMBRE','José','OTORGAR_PLANTADOR',ARRAY[11]::bigint[],NULL,21)",
           'CAPACIDAD_INSUFICIENTE')
     query("SET ROLE service_role; SELECT public.pa_miembros_participacion_leer(2,'fixture-general',19,NULL,101)",
           'CAPACIDAD_INSUFICIENTE')
@@ -404,11 +411,12 @@ def seed_and_install():
     assert domain_state() == before
     passed('reinstalar072 después073 conserva EXECUTE de todas las lecturas privadas y su ejecución real')
     script(migrations[5])
+    script(migrations[6])
     assert domain_state() == before
     seed = json.loads((root / 'test/db/fixtures/pa-int02b-manifest-sintetico.json').read_text())
     query('SET ROLE service_role; SELECT public.pa_inicializar_participacion_legada(1,'
           + literal(uuid.uuid4()) + ',' + literal(json.dumps(seed, ensure_ascii=False)) + '::jsonb)')
-    passed('migraciones 068–073, repetición C aditiva y bootstrap sintético acotado')
+    passed('migraciones 068–073 y 087, repetición C aditiva y bootstrap sintético acotado')
 
 
 def main():
@@ -709,6 +717,7 @@ def main():
     before = domain_state()
     script(migrations[4])
     script(migrations[5])
+    script(migrations[6])
     assert domain_state() == before
     assert query('SELECT count(*) FROM public.subcampania_equipo') == '2'
     assert query('SELECT count(*) FROM public.registro_plantacion') == '1'

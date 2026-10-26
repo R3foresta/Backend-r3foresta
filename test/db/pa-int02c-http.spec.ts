@@ -268,12 +268,17 @@ describe('PA INT02-C HTTP → guard → servicio → PostgreSQL aislado', () => 
       capture('capacidades_' + actor, response);
     },
   );
-  it('miembros requieren gestor propio y no exponen contactos, ADMIN global deduplicado', async () => {
+  it('miembros propios son legibles por plantador sin conceder gestión ni datos ajenos', async () => {
+    const plantador = await request(app.getHttpServer())
+      .get('/api/v1/subcampanias/600/miembros-participacion')
+      .set('Authorization', token('plantador'));
+    expect(plantador.status).toBe(200);
+    expect(plantador.body.data.some((member: { usuario_id: string }) => member.usuario_id === '603')).toBe(true);
     for (const actor of ['voluntario', 'plantador'])
       expect(
         (
           await request(app.getHttpServer())
-            .get('/api/v1/subcampanias/600/miembros-participacion')
+            .get('/api/v1/subcampanias/' + (actor === 'plantador' ? '601' : '600') + '/miembros-participacion')
             .set('Authorization', token(actor))
         ).status,
       ).toBe(403);

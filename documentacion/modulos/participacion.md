@@ -21,7 +21,7 @@ sintético, sin tokens. Swagger completo en `/api/docs`; JSON en `/api/docs-json
 
 | Grupo | Rutas bajo `/api/v1` |
 |---|---|
-| Capacidades / miembros | `GET /participacion/capacidades`, `GET /subcampanias/:id/miembros-participacion` |
+| Capacidades / miembros | `GET /participacion/capacidades`, `GET /subcampanias/:id/miembros-participacion` (ADMIN global o permiso contextual vigente PLANTADOR/ADMINISTRADOR_SUBCAMPANIA de ese ámbito; solo lectura) |
 | Selección de personas / revisión | `POST /participacion/personas/buscar`, `POST /participacion/accesos/revisar` |
 | C04–C09 | `POST /participacion/accesos/{otorgar-plantador,retirar-plantador,designar-administrador,administrador-a-plantador,retirar-administrador,reemplazar-administrador}` |
 | Autoridad global | `GET /usuarios/:id/autoridad`, `POST /usuarios/:id/roles`, `POST /usuarios/:id/inactivaciones` |

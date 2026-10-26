@@ -424,7 +424,8 @@ export const participacionOpenApi = {
               }
             }
           }
-        }
+        },
+        "description": "ADMIN global o permiso contextual vigente PLANTADOR/ADMINISTRADOR_SUBCAMPANIA del ámbito. Solo lectura; no habilita gestión ni ámbitos ajenos."
       }
     },
     "/api/v1/participacion/personas/buscar": {

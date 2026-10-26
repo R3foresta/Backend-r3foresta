@@ -435,6 +435,8 @@ add(
   'MiembrosLectura',
   [param('id', 'path', id, true), ...pageParams],
 );
+paths['/api/v1/subcampanias/{id}/miembros-participacion'].get.description =
+  'ADMIN global o permiso contextual vigente PLANTADOR/ADMINISTRADOR_SUBCAMPANIA del ámbito. Solo lectura; no habilita gestión ni ámbitos ajenos.';
 add(
   '/api/v1/participacion/personas/buscar',
   'post',
