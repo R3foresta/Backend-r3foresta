@@ -5,11 +5,18 @@ import {
   Param,
   Query,
   Req,
+  Res,
   UseFilters,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import type { Response } from 'express';
 import {
   VerifiedActorGuard,
   type ActorRequest,
@@ -18,6 +25,7 @@ import { PrivateResponseInterceptor } from '../auth/private-response.interceptor
 import { id } from '../participacion/dto/comandos.dto';
 import { ParticipacionExceptionFilter } from '../participacion/participacion-exception.filter';
 import { ImpactoConsultaService } from './application/impacto-consulta.service';
+import { ImpactoImagenPropiaService } from './application/impacto-imagen-propia.service';
 import { parseImpactoQuery } from './impacto-consulta.dto';
 
 @ApiTags('impact-publico')
@@ -78,7 +86,10 @@ export class ImpactoConsultaController {
 @UseInterceptors(PrivateResponseInterceptor)
 @UseFilters(ParticipacionExceptionFilter)
 export class MisRegistrosController {
-  constructor(private readonly service: ImpactoConsultaService) {}
+  constructor(
+    private readonly service: ImpactoConsultaService,
+    private readonly imagenes: ImpactoImagenPropiaService,
+  ) {}
 
   @Get('mis-registros')
   @ApiOperation({
@@ -87,5 +98,27 @@ export class MisRegistrosController {
   })
   propios(@Req() req: ActorRequest, @Query() query: unknown) {
     return this.service.propios(req.actor, parseImpactoQuery(query, 'propio'));
+  }
+
+  @Get(':registroId/imagenes/:evidenciaId')
+  @ApiOperation({
+    summary: 'JPEG sanitizado de una foto del registro propio histórico',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'image/jpeg; requiere relación histórica y Bearer.',
+  })
+  async imagenPropia(
+    @Req() req: ActorRequest,
+    @Param('registroId') registroId: string,
+    @Param('evidenciaId') evidenciaId: string,
+    @Res() res: Response,
+  ) {
+    const bytes = await this.imagenes.imagen(
+      req.actor,
+      id(registroId),
+      id(evidenciaId),
+    );
+    return res.type('image/jpeg').send(bytes);
   }
 }

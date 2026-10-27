@@ -1022,26 +1022,44 @@ schemas.ImpactoConsulta = obj({
 });
 schemas.MisRegistros = obj({
   registros: array(
-    obj({
-      id,
-      subcampania_id: id,
-      fecha_plantacion: date,
-      codigo_trazabilidad: text,
-      cantidad_total_plantada: quantity,
-      es_reposicion: bool,
-      relaciones: {
-        ...array({ type: 'string', enum: ['AUTOR', 'PARTICIPANTE'] }, 1, 2),
-        uniqueItems: true,
+    obj(
+      {
+        id,
+        subcampania_id: id,
+        subcampania_nombre: text,
+        fecha_plantacion: date,
+        codigo_trazabilidad: text,
+        cantidad_total_plantada: quantity,
+        es_reposicion: bool,
+        especies: array(
+          obj({ planta_id: id, nombre: nullableText, cantidad: quantity }),
+        ),
+        foto_portada: {
+          ...obj({
+            id,
+            url: {
+              ...text,
+              pattern:
+                '^/api/v1/plantaciones/[1-9][0-9]*/imagenes/[1-9][0-9]*$',
+            },
+          }),
+          nullable: true,
+        },
+        relaciones: {
+          ...array({ type: 'string', enum: ['AUTOR', 'PARTICIPANTE'] }, 1, 2),
+          uniqueItems: true,
+        },
+        url_publica: {
+          ...nullableText,
+          pattern: '^/api/v1/impact/registros/[1-9][0-9]*$',
+        },
+        url_detalle_propio: {
+          ...text,
+          pattern: '^/api/v1/plantaciones/[1-9][0-9]*/detalle-propio$',
+        },
       },
-      url_publica: {
-        ...nullableText,
-        pattern: '^/api/v1/impact/registros/[1-9][0-9]*$',
-      },
-      url_detalle_propio: {
-        ...text,
-        pattern: '^/api/v1/plantaciones/[1-9][0-9]*/detalle-propio$',
-      },
-    }),
+      ['subcampania_nombre', 'especies', 'foto_portada'],
+    ),
     0,
     100,
   ),
@@ -1156,6 +1174,34 @@ impactRead(
   impactParams(['cursor', 'limite']),
   true,
 );
+paths['/api/v1/plantaciones/{registroId}/imagenes/{evidenciaId}'] = {
+  get: {
+    summary: 'JPEG privado sanitizado de un registro propio histórico',
+    operationId: 'ImagenPropiaSanitizada',
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      param('registroId', 'path', id, true),
+      param('evidenciaId', 'path', id, true),
+    ],
+    responses: {
+      200: {
+        description:
+          'JPEG sin EXIF. Autor o participante histórico vigente en el registro.',
+        headers: {
+          'Cache-Control': { schema: text, description: 'private, no-store' },
+          Vary: { schema: text, description: 'Authorization' },
+        },
+        content: {
+          'image/jpeg': { schema: { type: 'string', format: 'binary' } },
+        },
+      },
+      401: { description: 'Sesión inválida.' },
+      403: { description: 'Cuenta inactiva.' },
+      404: { description: 'Registro o foto no visible para esta cuenta.' },
+      503: { description: 'Imagen no disponible temporalmente.' },
+    },
+  },
+};
 // INT07: observaciones (084), participantes y lecturas por audiencia (085).
 schemas.CorreccionObservacionesEntrada = obj({
   comando_id: uuid,
@@ -1519,7 +1565,7 @@ const document = {
   info: {
     title:
       'R3Foresta Participación aliada — INT02-C / INT03-A / INT02-D / INT05 / INT07',
-    version: '1.5.0',
+    version: '1.6.0',
     description:
       'Gestión C, registro inicial INT03-A, consulta INT05 y correcciones INT07 de observaciones/participantes con recuperación durable, contexto/historial privados, búsqueda histórica y estado propio/público. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada.',
   },

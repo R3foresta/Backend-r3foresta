@@ -11,6 +11,7 @@ import {
   MisRegistrosController,
 } from './impact-consulta.controller';
 import { ImpactoConsultaService } from './application/impacto-consulta.service';
+import { ImpactoImagenPropiaService } from './application/impacto-imagen-propia.service';
 import { SeedBankModule } from './seed-bank/seed-bank.module';
 
 @Module({
@@ -25,6 +26,7 @@ import { SeedBankModule } from './seed-bank/seed-bank.module';
     ImpactService,
     ParticipacionImagenService,
     ImpactoConsultaService,
+    ImpactoImagenPropiaService,
     VerifiedActorGuard,
   ],
 })

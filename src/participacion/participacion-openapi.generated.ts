@@ -5053,6 +5053,74 @@ export const participacionOpenApi = {
         }
       }
     },
+    "/api/v1/plantaciones/{registroId}/imagenes/{evidenciaId}": {
+      "get": {
+        "summary": "JPEG privado sanitizado de un registro propio histórico",
+        "operationId": "ImagenPropiaSanitizada",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "registroId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "evidenciaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JPEG sin EXIF. Autor o participante histórico vigente en el registro.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión inválida."
+          },
+          "403": {
+            "description": "Cuenta inactiva."
+          },
+          "404": {
+            "description": "Registro o foto no visible para esta cuenta."
+          },
+          "503": {
+            "description": "Imagen no disponible temporalmente."
+          }
+        }
+      }
+    },
     "/api/v1/plantaciones/{id}/contexto-correccion": {
       "get": {
         "summary": "Contexto autorizado de corrección",
@@ -9269,6 +9337,9 @@ export const participacionOpenApi = {
                 "subcampania_id": {
                   "$ref": "#/components/schemas/Id"
                 },
+                "subcampania_nombre": {
+                  "type": "string"
+                },
                 "fecha_plantacion": {
                   "type": "string",
                   "format": "date",
@@ -9284,6 +9355,50 @@ export const participacionOpenApi = {
                 },
                 "es_reposicion": {
                   "type": "boolean"
+                },
+                "especies": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "planta_id": {
+                        "$ref": "#/components/schemas/Id"
+                      },
+                      "nombre": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "cantidad": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 2147483647
+                      }
+                    },
+                    "required": [
+                      "planta_id",
+                      "nombre",
+                      "cantidad"
+                    ]
+                  }
+                },
+                "foto_portada": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "$ref": "#/components/schemas/Id"
+                    },
+                    "url": {
+                      "type": "string",
+                      "pattern": "^/api/v1/plantaciones/[1-9][0-9]*/imagenes/[1-9][0-9]*$"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url"
+                  ],
+                  "nullable": true
                 },
                 "relaciones": {
                   "type": "array",

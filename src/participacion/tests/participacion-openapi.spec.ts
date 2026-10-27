@@ -5,6 +5,7 @@ import {
   MisRegistrosController,
 } from '../../impact/impact-consulta.controller';
 import { ImpactoConsultaService } from '../../impact/application/impacto-consulta.service';
+import { ImpactoImagenPropiaService } from '../../impact/application/impacto-imagen-propia.service';
 import { Test } from '@nestjs/testing';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -34,7 +35,7 @@ import { resolve } from 'node:path';
 import { validarImpacto } from '../../impact/domain/policies/impacto-proyeccion.policy';
 
 describe('Contrato OpenAPI de participación v1', () => {
-  it('documenta las 39 rutas registradas por Nest y resuelve todos sus schemas', async () => {
+  it('documenta las 40 rutas registradas por Nest y resuelve todos sus schemas', async () => {
     const module = await Test.createTestingModule({
       imports: [JwtModule.register({})],
       controllers: [
@@ -53,6 +54,7 @@ describe('Contrato OpenAPI de participación v1', () => {
         VerifiedActorGuard,
         { provide: ImpactService, useValue: {} },
         { provide: ImpactoConsultaService, useValue: {} },
+        { provide: ImpactoImagenPropiaService, useValue: {} },
         { provide: ConfigService, useValue: { get: () => 'synthetic' } },
         { provide: SupabaseService, useValue: {} },
         { provide: ParticipacionComandosService, useValue: {} },
@@ -73,7 +75,7 @@ describe('Contrato OpenAPI de participación v1', () => {
       expect(Object.keys(actual.paths).sort()).toEqual(
         Object.keys(participacionOpenApi.paths).sort(),
       );
-      expect(Object.keys(actual.paths)).toHaveLength(39);
+      expect(Object.keys(actual.paths)).toHaveLength(40);
       for (const route of Object.keys(actual.paths))
         expect(Object.keys(actual.paths[route]).sort()).toEqual(
           Object.keys(participacionOpenApi.paths[route]).sort(),
@@ -106,7 +108,7 @@ describe('Contrato OpenAPI de participación v1', () => {
       'content.application/json.schema.$ref',
       '#/components/schemas/CorreccionObservacionesEntrada',
     );
-    expect(post.responses!['422']).toHaveProperty(
+    expect(post.responses['422']).toHaveProperty(
       'content.application/json.schema.$ref',
       '#/components/schemas/ReciboOError',
     );
@@ -148,7 +150,7 @@ describe('Contrato OpenAPI de participación v1', () => {
     const publicState = paths['/api/v1/impact/registros/{id}/estado'].get!;
     expect(publicState.security).toEqual([]);
     expect(publicState.responses).not.toHaveProperty('401');
-    for (const response of Object.values(publicState.responses!)) {
+    for (const response of Object.values(publicState.responses)) {
       expect(response).toHaveProperty(
         'headers.Cache-Control.description',
         'no-store',
@@ -163,7 +165,7 @@ describe('Contrato OpenAPI de participación v1', () => {
     ]) {
       const operation = paths[route].get!;
       expect(operation.security).toEqual([{ bearerAuth: [] }]);
-      expect(operation.responses!['200']).toHaveProperty(
+      expect(operation.responses['200']).toHaveProperty(
         'headers.Vary.description',
         'Authorization',
       );
@@ -242,7 +244,7 @@ describe('Contrato OpenAPI de participación v1', () => {
       expect(params.filter((p) => p.in === 'query').map((p) => p.name)).toEqual(
         filters,
       );
-      for (const [status, response] of Object.entries(operation.responses!)) {
+      for (const [status, response] of Object.entries(operation.responses)) {
         expect(response).toHaveProperty(
           'headers.Cache-Control.description',
           status === '200' ? 'no-store' : 'private, no-store',
@@ -264,11 +266,11 @@ describe('Contrato OpenAPI de participación v1', () => {
     expect(own.security).toEqual([{ bearerAuth: [] }]);
     expect(own.responses).toHaveProperty('401');
     expect(own.responses).toHaveProperty('403');
-    expect(own.responses!['200']).toHaveProperty(
+    expect(own.responses['200']).toHaveProperty(
       'headers.Cache-Control.description',
       'private, no-store',
     );
-    expect(own.responses!['200']).toHaveProperty(
+    expect(own.responses['200']).toHaveProperty(
       'headers.Vary.description',
       'Authorization',
     );

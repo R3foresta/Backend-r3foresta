@@ -1,4 +1,5 @@
 import { HttpException } from '@nestjs/common';
+import type { SupabaseService } from '../supabase/supabase.service';
 import { ImpactoConsultaService } from './application/impacto-consulta.service';
 import { parseImpactoQuery } from './impacto-consulta.dto';
 import { validarImpacto } from './domain/policies/impacto-proyeccion.policy';
@@ -106,6 +107,17 @@ describe('Consulta INT05: entradas y frontera de proyección', () => {
     expect(() => validarImpacto(body, 'MisRegistrosRespuesta')).toThrow();
     body.data.registros[0].relaciones = ['AUTOR', 'PARTICIPANTE'];
     expect(() => validarImpacto(body, 'MisRegistrosRespuesta')).not.toThrow();
+    Object.assign(body.data.registros[0], {
+      subcampania_nombre: 'Zona norte',
+      especies: [{ planta_id: '10', nombre: 'Kiswara', cantidad: 30 }],
+      foto_portada: {
+        id: '900',
+        url: '/api/v1/plantaciones/1/imagenes/900',
+      },
+    });
+    expect(() => validarImpacto(body, 'MisRegistrosRespuesta')).not.toThrow();
+    (body.data.registros[0] as Record<string, unknown>).bucket = 'privado';
+    expect(() => validarImpacto(body, 'MisRegistrosRespuesta')).toThrow();
   });
 });
 
@@ -124,12 +136,13 @@ describe('ImpactoConsultaService', () => {
       getClient: () => {
         throw new Error('público');
       },
-    } as any);
+    } as unknown as SupabaseService);
   });
   it('consulta pública no transmite actor ni JWT', async () => {
     await expect(service.publico({ limite: 20 })).resolves.toEqual(vacio());
-    expect(rpc.mock.calls[0][0]).toBe('pa_impacto_leer');
-    expect(rpc.mock.calls[0][1]).not.toHaveProperty('p_actor_id');
+    const firstCall = rpc.mock.calls[0] as unknown[];
+    expect(firstCall[0]).toBe('pa_impacto_leer');
+    expect(firstCall[1]).not.toHaveProperty('p_actor_id');
   });
   it('lista propia obtiene identidad solo del actor verificado', async () => {
     rpc.mockResolvedValue({
