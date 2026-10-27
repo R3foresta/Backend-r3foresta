@@ -600,7 +600,7 @@ schemas.ContextoRegistro = obj({
   especies: array(
     obj({
       planta_id: id,
-      nombre: text,
+      nombre: { ...text, description: 'Nombre operativo vivo: nombre_comun_principal y, si falta o está vacío, nombre_cientifico. No usa especie ni reemplaza snapshots históricos.' },
       porcentaje_objetivo: { type: 'number', minimum: 0, maximum: 100 },
       cantidad_objetivo: count,
       saldo_elegible: count,

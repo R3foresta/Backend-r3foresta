@@ -32,6 +32,8 @@ sintético, sin tokens. Swagger completo en `/api/docs`; JSON en `/api/docs-json
 | Correcciones INT07 | `POST /plantaciones/:id/correcciones/{observaciones,participantes}`, `GET /plantaciones/:id/{contexto-correccion,historial-correcciones,participantes-historicos-seleccionables}` |
 | Estado e historia INT07 | `GET /plantaciones/:id/{estado-propio,historial-propio}`, `GET /plantaciones/mis-registros/estado`, `GET /impact/registros/:id/estado` público |
 
+El `nombre` de cada especie del contexto es presentación viva del catálogo: primero `nombre_comun_principal` y, si falta o está vacío/espacios, `nombre_cientifico`. El backend consulta únicamente los IDs entregados por el contexto autorizado, sin ampliar permisos ni modificar saldos/revisión. El DTO mantiene su forma; stock, contadores y resumen de captura comparten ese nombre. El historial conserva snapshots. La lectura del plan interno entrega además el común y la foto opcional; no requiere migración SQL para esta corrección de presentación.
+
 El contexto privado `GET /subcampanias/:id/contexto-registro` añade en cada
 `especies[]` `plantado_inicial` (hechos iniciales efectivos acumulados, sin
 reposiciones) y `pendiente_meta = max(0, cantidad_objetivo - plantado_inicial)`.

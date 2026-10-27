@@ -10,6 +10,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { leerPresentacionPlantas } from '../../plantas/planta-presentacion';
 import { GuardarPlanDto } from '../api/dto/guardar-plan.dto';
 import { EstadoSubcampania } from '../domain/enums/estado-subcampania.enum';
 import { SubcampaniasAuthService } from './subcampanias-auth.service';
@@ -38,7 +39,32 @@ export class SubcampaniasPlanService {
 
   async obtener(id: number, authId: string) {
     await this.authService.getAuthenticatedUser(authId);
-    return { success: true, data: await this.leerSnapshot(id) };
+    const snapshot = await this.leerSnapshot(id);
+    const plantas = await leerPresentacionPlantas(
+      this.supabaseService,
+      snapshot.metas.map((meta) => meta.planta_id),
+    );
+    // La RPC conserva meta/revisión/cantidades coherentes. Sólo los nombres y
+    // fotos del catálogo son vivos; ninguna escritura depende de esta consulta.
+    return {
+      success: true,
+      data: {
+        ...snapshot,
+        metas: snapshot.metas.map((meta) => {
+          const planta = plantas.get(String(meta.planta_id))!;
+          return {
+            ...meta,
+            planta: {
+              id: meta.planta_id,
+              especie: planta.especie,
+              nombre_cientifico: planta.nombre_cientifico,
+              nombre_comun_principal: planta.nombre_comun_principal,
+              imagen_url: planta.imagen_url,
+            },
+          };
+        }),
+      },
+    };
   }
 
   private async leerSnapshot(id: number): Promise<PlanSnapshot> {

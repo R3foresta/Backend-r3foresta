@@ -40,7 +40,24 @@ function setup(
     .mockResolvedValue({ data: error ? null : snapshot, error });
   const from = jest.fn();
   const supabase = {
-    getAdminClient: jest.fn().mockReturnValue({ rpc }),
+    getAdminClient: jest.fn().mockReturnValue({
+      rpc,
+      from: () => ({
+        select: () => ({
+          in: () =>
+            Promise.resolve({
+              data: [1, 2].map((id) => ({
+                id,
+                especie: 'Familia',
+                nombre_comun_principal: id === 1 ? 'Lechuga de agua' : null,
+                nombre_cientifico: 'Pistia stratiotes',
+                imagen_url: null,
+              })),
+              error: null,
+            }),
+        }),
+      }),
+    }),
     getClient: jest.fn().mockReturnValue({ from }),
   } as unknown as SupabaseService;
   const auth = {
@@ -50,9 +67,12 @@ function setup(
     assertAdmin: jest.fn().mockImplementation((r: string) => {
       if (r !== 'ADMIN') throw new ForbiddenException();
     }),
-  } as unknown as SubcampaniasAuthService;
+  };
   return {
-    service: new SubcampaniasPlanService(supabase, auth),
+    service: new SubcampaniasPlanService(
+      supabase,
+      auth as unknown as SubcampaniasAuthService,
+    ),
     rpc,
     from,
     auth,
@@ -95,7 +115,20 @@ describe('SubcampaniasPlanService', () => {
     const { service, rpc, from } = setup();
     await expect(service.obtener(1, 'auth-1')).resolves.toEqual({
       success: true,
-      data: snapshot,
+      data: {
+        ...snapshot,
+        metas: snapshot.metas.map((meta) => ({
+          ...meta,
+          planta: {
+            id: meta.planta_id,
+            especie: 'Familia',
+            nombre_comun_principal:
+              meta.planta_id === 1 ? 'Lechuga de agua' : null,
+            nombre_cientifico: 'Pistia stratiotes',
+            imagen_url: null,
+          },
+        })),
+      },
     });
     expect(rpc).toHaveBeenCalledWith('fn_subcampania_obtener_plan', {
       p_subcampania_id: 1,
@@ -115,12 +148,13 @@ describe('SubcampaniasPlanService', () => {
     'permite leer el plan a un usuario existente con rol %s',
     async (rol) => {
       const { service, auth } = setup(null, rol);
-      await expect(service.obtener(1, 'auth-1')).resolves.toHaveProperty(
-        'data',
-        snapshot,
+      await expect(service.obtener(1, 'auth-1')).resolves.toMatchObject({
+        data: snapshot,
+      });
+      expect(jest.mocked(auth).getAuthenticatedUser).toHaveBeenCalledWith(
+        'auth-1',
       );
-      expect(auth.getAuthenticatedUser).toHaveBeenCalledWith('auth-1');
-      expect(auth.assertAdmin).not.toHaveBeenCalled();
+      expect(jest.mocked(auth).assertAdmin).not.toHaveBeenCalled();
     },
   );
 
@@ -129,7 +163,7 @@ describe('SubcampaniasPlanService', () => {
     async (operacion) => {
       const { service, rpc, auth } = setup();
       jest
-        .mocked(auth.getAuthenticatedUser)
+        .mocked(jest.mocked(auth).getAuthenticatedUser)
         .mockRejectedValue(new UnauthorizedException());
       await expect(
         operacion === 'lectura'

@@ -72,7 +72,24 @@ describe('GET/PUT plan — contrato HTTP y sesión', () => {
   const eq = jest.fn((_column: string, authId: string) => ({
     single: () => single(authId),
   }));
-  const from = jest.fn(() => ({ select: () => ({ eq }) }));
+  const from = jest.fn(() => ({
+    select: () => ({
+      eq,
+      in: () =>
+        Promise.resolve({
+          data: [
+            {
+              id: 1,
+              especie: 'Araceae',
+              nombre_comun_principal: 'Lechuga de agua',
+              nombre_cientifico: 'Pistia stratiotes',
+              imagen_url: 'https://example.com/planta.jpg',
+            },
+          ],
+          error: null,
+        }),
+    }),
+  }));
   const token = (sub: string) => jwt.sign({ sub }, { expiresIn: 60 });
   const call = (method: 'GET' | 'PUT') =>
     method === 'GET'
@@ -167,7 +184,15 @@ describe('GET/PUT plan — contrato HTTP y sesión', () => {
       const response = await call('GET')
         .set('Authorization', `Bearer ${token(authId)}`)
         .expect(200);
-      expect(response.body).toEqual({ success: true, data: snapshot });
+      expect(response.body).toMatchObject({ success: true, data: snapshot });
+      expect(
+        (response.body as { data: { metas: { planta: unknown }[] } }).data
+          .metas[0].planta,
+      ).toMatchObject({
+        nombre_comun_principal: 'Lechuga de agua',
+        nombre_cientifico: 'Pistia stratiotes',
+        imagen_url: 'https://example.com/planta.jpg',
+      });
       expect(response.headers['cache-control']).toBe('private, no-store');
       expect(response.headers.vary).toContain('Authorization');
       expect(eq).toHaveBeenCalledWith('auth_id', authId);

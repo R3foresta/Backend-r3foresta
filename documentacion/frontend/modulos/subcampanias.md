@@ -627,7 +627,7 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
 
 **Rol mínimo**: cualquier usuario autenticado.
 **Autenticación**: `Authorization: Bearer <token>` con el JWT del login WebAuthn. `x-auth-id` es opcional; si se envía, debe coincidir con el `sub` del JWT. Un header de identidad por sí solo no permite consultar el plan.
-**Descripción**: Devuelve en el mismo snapshot meta total, `plan_revision` y especies con datos de catálogo. Metas vacío si aún no se cargó. Usar `plan_revision` como `revision_esperada` al guardar.
+**Descripción**: Devuelve en el mismo snapshot meta total, `plan_revision` y objetivos por especie. Adjunta nombres/foto vivos del catálogo en una consulta posterior limitada a los IDs del plan: `nombre_comun_principal`, `nombre_cientifico` e `imagen_url` (nullable). Mostrar común primero y científico sólo si falta el común, ignorando vacíos/espacios; `especie` no es el nombre operativo. Los metadatos no intervienen en revisiones, saldos ni snapshots históricos. Si falla su lectura se devuelve error recuperable, nunca un plan vacío. Metas vacío si aún no se cargó. Usar `plan_revision` como `revision_esperada` al guardar.
 
 **Respuesta exitosa** `200`
 
@@ -644,13 +644,13 @@ curl -X POST http://localhost:3000/api/subcampanias/1/cerrar \
         "planta_id": 5,
         "porcentaje_objetivo": 60,
         "cantidad_objetivo": 300,
-        "planta": { "id": 5, "especie": "Aliso", "nombre_cientifico": "Alnus acuminata" }
+        "planta": { "id": 5, "especie": "Aliso", "nombre_comun_principal": "Aliso", "nombre_cientifico": "Alnus acuminata", "imagen_url": null }
       },
       {
         "planta_id": 8,
         "porcentaje_objetivo": 40,
         "cantidad_objetivo": 200,
-        "planta": { "id": 8, "especie": "Nogal", "nombre_cientifico": "Juglans regia" }
+        "planta": { "id": 8, "especie": "Nogal", "nombre_comun_principal": "Nogal", "nombre_cientifico": "Juglans regia", "imagen_url": null }
       }
     ]
   }

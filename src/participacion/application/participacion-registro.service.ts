@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import type { VerifiedActor } from '../../auth/verified-actor.guard';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { leerPresentacionPlantas } from '../../plantas/planta-presentacion';
 import { canonicalCommand } from '../comando-canonical';
 import { validateRpcReply, validateStableError } from '../comando-recibo';
 import { id, invalidInput } from '../dto/comandos.dto';
@@ -18,6 +19,11 @@ import {
   instant,
   personaMinima,
 } from '../domain/policies/registro-proyeccion.policy';
+
+type RegistroRpcResponse = {
+  data: unknown;
+  error: { code: string; details: string } | null;
+};
 
 @Injectable()
 export class ParticipacionRegistroService {
@@ -50,13 +56,11 @@ export class ParticipacionRegistroService {
     command: string | null = null,
   ): Promise<unknown> {
     try {
-      const { data, error } = await this.supabase
-        .getAdminClient()
-        .rpc(name, {
-          p_actor_id: actor.usuario_id,
-          p_auth_id: actor.auth_id,
-          ...args,
-        });
+      const { data, error } = (await this.supabase.getAdminClient().rpc(name, {
+        p_actor_id: actor.usuario_id,
+        p_auth_id: actor.auth_id,
+        ...args,
+      })) as RegistroRpcResponse;
       if (error) {
         // Solo errores de lectura emitidos por las RPC privadas. Nunca publicar
         // detalles SQL ni convertir un fallo inesperado en terminal de negocio.
@@ -103,14 +107,30 @@ export class ParticipacionRegistroService {
       p_subcampania_id: scope,
     });
     try {
+      const context = contextoRegistro(
+        envelope.data,
+        actor.usuario_id,
+        scope,
+        this.config.get<string>('PARTICIPACION_CONTEXTO_AVANCE_REQUERIDO') ===
+          'true',
+      );
+      const especies = context.especies as {
+        planta_id: string;
+        nombre: string;
+      }[];
+      const plantas = await leerPresentacionPlantas(
+        this.supabase,
+        especies.map((especie) => especie.planta_id),
+      );
       return {
         ...envelope,
-        data: contextoRegistro(
-          envelope.data,
-          actor.usuario_id,
-          scope,
-          this.config.get<string>('PARTICIPACION_CONTEXTO_AVANCE_REQUERIDO') === 'true',
-        ),
+        data: {
+          ...context,
+          especies: especies.map((especie) => ({
+            ...especie,
+            nombre: plantas.get(especie.planta_id)!.nombre,
+          })),
+        },
       };
     } catch {
       return this.inconcluso(null);
@@ -234,24 +254,46 @@ export class ParticipacionRegistroService {
         .digest('hex');
       let replay: unknown;
       try {
-        const { data, error } = await this.supabase.getAdminClient().rpc(
-          'pa_c_replay',
-          { p_actor_id: actor.usuario_id, p_auth_id: actor.auth_id,
-            p_operacion: 'REGISTRAR_PLANTACION_INICIAL', p_comando_id: command,
-            p_huella: '\\x' + huella },
-        );
+        const { data, error } = (await this.supabase
+          .getAdminClient()
+          .rpc('pa_c_replay', {
+            p_actor_id: actor.usuario_id,
+            p_auth_id: actor.auth_id,
+            p_operacion: 'REGISTRAR_PLANTACION_INICIAL',
+            p_comando_id: command,
+            p_huella: '\\x' + huella,
+          })) as RegistroRpcResponse;
         if (error) return this.inconcluso(command);
         replay = data;
-      } catch { return this.inconcluso(command); }
-      if (replay !== null && replay !== undefined) {
-        try { return validateRpcReply(replay, command, 'REGISTRAR_PLANTACION_INICIAL'); }
-        catch { return this.inconcluso(command); }
+      } catch {
+        return this.inconcluso(command);
       }
-      return { http_status: 503, body: {
-        error: { codigo: 'RESULTADO_NO_DETERMINADO', mensaje: 'El registro está pausado temporalmente. Conserve la misma clave.',
-          campos: [], ambitos: [], reintento: 'MISMA_CLAVE' },
-        comando_id: command, resultado_concluyente: false,
-      }};
+      if (replay !== null && replay !== undefined) {
+        try {
+          return validateRpcReply(
+            replay,
+            command,
+            'REGISTRAR_PLANTACION_INICIAL',
+          );
+        } catch {
+          return this.inconcluso(command);
+        }
+      }
+      return {
+        http_status: 503,
+        body: {
+          error: {
+            codigo: 'RESULTADO_NO_DETERMINADO',
+            mensaje:
+              'El registro está pausado temporalmente. Conserve la misma clave.',
+            campos: [],
+            ambitos: [],
+            reintento: 'MISMA_CLAVE',
+          },
+          comando_id: command,
+          resultado_concluyente: false,
+        },
+      };
     }
     const data = await this.rpc(
       actor,

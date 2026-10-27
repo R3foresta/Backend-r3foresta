@@ -58,9 +58,11 @@ const context = {
 describe('Proyecciones privadas del registro', () => {
   const rpc = jest.fn();
   const publicClient = jest.fn();
+  const catalogo = jest.fn();
+  const catalogFrom = jest.fn(() => ({ select: () => ({ in: catalogo }) }));
   const service = new ParticipacionRegistroService(
     {
-      getAdminClient: () => ({ rpc }),
+      getAdminClient: () => ({ rpc, from: catalogFrom }),
       getClient: publicClient,
     } as unknown as SupabaseService,
     { get: () => 'clave-sintetica' } as unknown as ConfigService,
@@ -68,6 +70,19 @@ describe('Proyecciones privadas del registro', () => {
   beforeEach(() => {
     rpc.mockReset();
     publicClient.mockReset();
+    catalogFrom.mockClear();
+    catalogo.mockReset().mockResolvedValue({
+      data: [
+        {
+          id: 8,
+          especie: 'Familia',
+          nombre_comun_principal: 'Sintética',
+          nombre_cientifico: 'Sintetica scientifica',
+          imagen_url: null,
+        },
+      ],
+      error: null,
+    });
   });
   it('saldo cero es contexto válido y conserva BIGINT/actor verificado sin fallback público', async () => {
     rpc.mockResolvedValue({
@@ -85,16 +100,71 @@ describe('Proyecciones privadas del registro', () => {
     });
     expect(publicClient).not.toHaveBeenCalled();
   });
+  it.each(['ADMIN', 'VOLUNTARIO'])(
+    'usa nombre común para %s sin cambiar stock, revisión ni DTO',
+    async (rol) => {
+      rpc.mockResolvedValue({
+        data: { data: context, observado_en: observed },
+        error: null,
+      });
+      catalogo.mockResolvedValue({
+        data: [
+          {
+            id: 8,
+            especie: 'Araceae',
+            nombre_comun_principal: ' Lechuga de agua ',
+            nombre_cientifico: 'Pistia stratiotes',
+            imagen_url: 'https://example.com/planta.jpg',
+          },
+        ],
+        error: null,
+      });
+      const result = await service.contexto({ ...actor, rol }, '11');
+      expect(result).toEqual({
+        observado_en: observed,
+        data: {
+          ...context,
+          especies: [{ ...context.especies[0], nombre: 'Lechuga de agua' }],
+        },
+      });
+      expect(catalogo).toHaveBeenCalledWith('id', ['8']);
+      expect(publicClient).not.toHaveBeenCalled();
+    },
+  );
+  it('fallo del catálogo conserva error recuperable sin presentar stock cero ni nombres anteriores', async () => {
+    rpc.mockResolvedValue({
+      data: { data: context, observado_en: observed },
+      error: null,
+    });
+    catalogo.mockResolvedValue({
+      data: null,
+      error: { message: 'sensitive SQL' },
+    });
+    await expect(service.contexto(actor, '11')).rejects.toMatchObject({
+      status: 503,
+      response: { error: { codigo: 'RESULTADO_NO_DETERMINADO' } },
+    });
+  });
   it('acepta avance efectivo que cubre o supera la meta aunque quede stock', async () => {
     const expanded = {
       ...context,
       disponibilidad: 'DISPONIBLE',
       especies: [
-        { ...context.especies[0], saldo_elegible: 3, plantado_inicial: 5, pendiente_meta: 0 },
+        {
+          ...context.especies[0],
+          saldo_elegible: 3,
+          plantado_inicial: 5,
+          pendiente_meta: 0,
+        },
       ],
     };
-    rpc.mockResolvedValue({ data: { data: expanded, observado_en: observed }, error: null });
-    expect((await service.contexto(actor, '11')).data.especies[0]).toMatchObject({
+    rpc.mockResolvedValue({
+      data: { data: expanded, observado_en: observed },
+      error: null,
+    });
+    expect(
+      (await service.contexto(actor, '11')).data.especies[0],
+    ).toMatchObject({
       plantado_inicial: 5,
       pendiente_meta: 0,
       saldo_elegible: 3,
@@ -112,9 +182,23 @@ describe('Proyecciones privadas del registro', () => {
       ],
     };
     expect(contextoRegistro(prior, actor.usuario_id, '11')).toEqual(prior);
-    expect(() => contextoRegistro(prior, actor.usuario_id, '11', true)).toThrow();
-    expect(contextoRegistro(context, actor.usuario_id, '11', true)).toEqual(context);
-    expect(() => contextoRegistro({ ...context, especies: [{ ...context.especies[0], pendiente_meta: 4 }] }, actor.usuario_id, '11', true)).toThrow();
+    expect(() =>
+      contextoRegistro(prior, actor.usuario_id, '11', true),
+    ).toThrow();
+    expect(contextoRegistro(context, actor.usuario_id, '11', true)).toEqual(
+      context,
+    );
+    expect(() =>
+      contextoRegistro(
+        {
+          ...context,
+          especies: [{ ...context.especies[0], pendiente_meta: 4 }],
+        },
+        actor.usuario_id,
+        '11',
+        true,
+      ),
+    ).toThrow();
   });
   it('el flag final rechaza una RPC antigua antes de responder al cliente', async () => {
     const prior = {
@@ -127,10 +211,18 @@ describe('Proyecciones privadas del registro', () => {
         ),
       ],
     };
-    rpc.mockResolvedValue({ data: { data: prior, observado_en: observed }, error: null });
+    rpc.mockResolvedValue({
+      data: { data: prior, observado_en: observed },
+      error: null,
+    });
     const strictService = new ParticipacionRegistroService(
       { getAdminClient: () => ({ rpc }) } as unknown as SupabaseService,
-      { get: (key: string) => key === 'PARTICIPACION_CONTEXTO_AVANCE_REQUERIDO' ? 'true' : 'clave-sintetica' } as unknown as ConfigService,
+      {
+        get: (key: string) =>
+          key === 'PARTICIPACION_CONTEXTO_AVANCE_REQUERIDO'
+            ? 'true'
+            : 'clave-sintetica',
+      } as unknown as ConfigService,
     );
     await expect(strictService.contexto(actor, '11')).rejects.toMatchObject({
       status: 503,

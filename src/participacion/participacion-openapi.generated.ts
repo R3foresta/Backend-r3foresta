@@ -8119,7 +8119,8 @@ export const participacionOpenApi = {
                   "$ref": "#/components/schemas/Id"
                 },
                 "nombre": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Nombre operativo vivo: nombre_comun_principal y, si falta o está vacío, nombre_cientifico. No usa especie ni reemplaza snapshots históricos."
                 },
                 "porcentaje_objetivo": {
                   "type": "number",
