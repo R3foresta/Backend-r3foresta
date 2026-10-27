@@ -8122,6 +8122,12 @@ export const participacionOpenApi = {
                   "type": "string",
                   "description": "Nombre operativo vivo: nombre_comun_principal y, si falta o está vacío, nombre_cientifico. No usa especie ni reemplaza snapshots históricos."
                 },
+                "imagen_url": {
+                  "type": "string",
+                  "nullable": true,
+                  "format": "uri",
+                  "description": "Foto opcional del catálogo vivo para la tarjeta compartida de especies. No es evidencia de plantación ni modifica snapshots."
+                },
                 "porcentaje_objetivo": {
                   "type": "number",
                   "minimum": 0,

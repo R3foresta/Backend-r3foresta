@@ -126,10 +126,14 @@ export class ParticipacionRegistroService {
         ...envelope,
         data: {
           ...context,
-          especies: especies.map((especie) => ({
-            ...especie,
-            nombre: plantas.get(especie.planta_id)!.nombre,
-          })),
+          especies: especies.map((especie) => {
+            const planta = plantas.get(especie.planta_id)!;
+            return {
+              ...especie,
+              nombre: planta.nombre,
+              ...(planta.imagen_url ? { imagen_url: planta.imagen_url } : {}),
+            };
+          }),
         },
       };
     } catch {

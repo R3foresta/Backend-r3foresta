@@ -101,7 +101,7 @@ describe('Proyecciones privadas del registro', () => {
     expect(publicClient).not.toHaveBeenCalled();
   });
   it.each(['ADMIN', 'VOLUNTARIO'])(
-    'usa nombre común para %s sin cambiar stock, revisión ni DTO',
+    'comparte nombre y foto del catálogo con %s sin cambiar stock ni revisión',
     async (rol) => {
       rpc.mockResolvedValue({
         data: { data: context, observado_en: observed },
@@ -124,10 +124,17 @@ describe('Proyecciones privadas del registro', () => {
         observado_en: observed,
         data: {
           ...context,
-          especies: [{ ...context.especies[0], nombre: 'Lechuga de agua' }],
+          especies: [
+            {
+              ...context.especies[0],
+              nombre: 'Lechuga de agua',
+              imagen_url: 'https://example.com/planta.jpg',
+            },
+          ],
         },
       });
       expect(catalogo).toHaveBeenCalledWith('id', ['8']);
+      expect(catalogo).toHaveBeenCalledTimes(1);
       expect(publicClient).not.toHaveBeenCalled();
     },
   );
