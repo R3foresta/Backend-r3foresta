@@ -213,7 +213,17 @@ Body de `reject`:
 
 `motivo_rechazo`: string 10–500 caracteres.
 
-`approve` ejecuta de forma transaccional: actualización de estado → subida a IPFS via Pinata → mint NFT en blockchain. Si la cadena de blockchain falla, la transición se revierte. Ver [pinata-integracion.md](../modulos/pinata-integracion.md).
+`reject` permite rechazar cualquier ficha en `PENDIENTE_VALIDACION`, aunque su
+fecha ya supere 45 días o sea futura; estado, motivo e historial se guardan juntos
+en la RPC privada de 090. La autorización y el motivo siguen siendo obligatorios.
+Un segundo rechazo devuelve 400 por estado; un conflicto temporal de locks devuelve
+409 y permite reintentar. No requiere modificar la fecha para rechazar.
+
+`approve` conserva la ventana de fecha original: hasta 45 días atrás, sin fechas
+futuras. Corregir y reenviar una ficha rechazada también conserva las restricciones
+temporales previas. La aprobación persiste la validación antes de Pinata/mint;
+los efectos externos no comparten la transacción de PostgreSQL. Ver
+[arquitectura](../../ARCHITECTURE.md#invariantes-y-transacciones).
 
 ## GET /api/recolecciones (lista propia)
 

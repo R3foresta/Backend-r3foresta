@@ -317,7 +317,7 @@ export function ApiApproveRecoleccionValidation() {
     ApiOperation({
       summary: 'Aprobar validación de recolección',
       description:
-        'Cambia PENDIENTE_VALIDACION -> VALIDADO. Solo VALIDADOR o ADMIN. Ejecuta Pinata + Blockchain.',
+        'Cambia PENDIENTE_VALIDACION -> VALIDADO. Solo VALIDADOR o ADMIN. Conserva la ventana de fecha de recolección de hasta 45 días, sin fechas futuras. Ejecuta Pinata + Blockchain.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader({
@@ -341,7 +341,7 @@ export function ApiRejectRecoleccionValidation() {
     ApiOperation({
       summary: 'Rechazar validación de recolección',
       description:
-        'Cambia PENDIENTE_VALIDACION -> RECHAZADO. Solo VALIDADOR o ADMIN. Requiere motivo.',
+        'Cambia PENDIENTE_VALIDACION -> RECHAZADO sin límite por fecha de recolección. Solo VALIDADOR o ADMIN. Requiere motivo de 10 a 500 caracteres; estado, motivo e historial se guardan juntos.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader({
@@ -355,6 +355,10 @@ export function ApiRejectRecoleccionValidation() {
     ApiResponse({ status: 400, description: 'Estado no permite rechazo' }),
     ApiResponse({ status: 403, description: 'Sin permisos de validador' }),
     ApiResponse({ status: 404, description: 'Recolección no encontrada' }),
+    ApiResponse({
+      status: 409,
+      description: 'Recolección en modificación concurrente; reintentar',
+    }),
   );
 }
 

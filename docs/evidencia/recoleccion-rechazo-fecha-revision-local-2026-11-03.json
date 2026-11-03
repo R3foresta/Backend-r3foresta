@@ -1,0 +1,25 @@
+{
+  "entorno": "PostgreSQL privado desechable, socket local sin TCP/.env",
+  "version": "14.17 (Homebrew)",
+  "revision_base": "274588500368652836442d1fc2a32302b0d2f555",
+  "migracion_sha256": "91fe466ea358c48e259d13efe86ffaab57c7e749b8066f4b744883f662d7ea19",
+  "checks": [
+    "Instalación y repetición preservan todas las filas históricas",
+    "NOT VALID omite el barrido inicial del legado",
+    "RPC de rechazo exclusiva del servicio, SECURITY INVOKER",
+    "Rechazo conserva fecha/ficha/saldo/snapshots y motivo exacto: caso 1",
+    "Rechazo conserva fecha/ficha/saldo/snapshots y motivo exacto: caso 2",
+    "Rechazo conserva fecha/ficha/saldo/snapshots y motivo exacto: caso 3",
+    "Rechazo conserva fecha/ficha/saldo/snapshots y motivo exacto: caso 7",
+    "Historial append-only conserva actor, transición, día de negocio, código y motivo",
+    "Denegaciones por rol, cuenta inactiva, estado, eliminado, inexistente o motivo no escriben historial",
+    "NOT VALID sigue bloqueando escrituras: aprobación antigua, altas, NULL de estado, edición/reenvío y cambios de ficha; corregir fecha y límite 45 días siguen permitidos",
+    "Fallo real de INSERT historial revierte estado y motivo antiguos en la misma transacción",
+    "Dos rechazos concurrentes: lock observado, un ganador y un solo evento/motivo",
+    "Preflight falla cerrado ante otra ventana sin sustituir el CHECK",
+    "Preflight rechaza agrupación distinta: a AND (b OR c) y conserva CHECK/triggers/RPC sin objetos TEMP residuales",
+    "Preflight rechaza literal distinto: rechazado en minúsculas y conserva CHECK/triggers/RPC sin objetos TEMP residuales"
+  ],
+  "sql_remoto_aplicado": false,
+  "limites": "Antecedente mínimo M1 + 014/015/058; no replay completo, HTTP remoto, Storage, despliegue ni carreras de aprobación legada."
+}

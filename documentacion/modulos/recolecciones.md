@@ -74,11 +74,19 @@ verificada; los marcados con `*` consumen además el rol derivado del servidor.
 | DELETE | `/api/recolecciones/:id` | — | dueño / ADMIN | Solo `BORRADOR`; soft delete + `BORRADOR_ELIMINADO` en RPC atómica 089; repetir devuelve 404 |
 | PATCH | `/api/recolecciones/:id/submit` * | — | dueño | `BORRADOR` → `PENDIENTE_VALIDACION` |
 | PATCH | `/api/recolecciones/:id/approve` * | — | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `VALIDADO`. Ejecuta Pinata + mint |
-| PATCH | `/api/recolecciones/:id/reject` * | `RejectValidationDto` | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `RECHAZADO`. `motivo_rechazo` 10–500 chars |
+| PATCH | `/api/recolecciones/:id/reject` * | `RejectValidationDto` | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `RECHAZADO` sin límite por fecha; estado/motivo/historial atómicos (090). `motivo_rechazo` 10–500 chars |
 | GET | `/api/recolecciones/pending-validation` * | `FiltersRecoleccionDto` (query) | cuenta interna | VALIDADOR / ADMIN ven pendientes globales; las demás cuentas internas, propios |
 | GET | `/api/recolecciones` | `FiltersRecoleccionDto` (query) | cuenta interna | Lista propia de la identidad verificada, incluso para ADMIN |
 | GET | `/api/recolecciones/vivero/:viveroId` | `FiltersRecoleccionDto` (query) | cuenta interna | Requiere Bearer |
 | GET | `/api/recolecciones/:id` | `RecoleccionElegibilidadViveroQueryDto` | cuenta interna | Devuelve detalle + flag de elegibilidad para vivero si se pasa `cantidad_solicitada_vivero` |
+
+El rechazo usa `fn_recoleccion_rechazar_validacion(bigint,bigint,text)` vía
+`getAdminClient()`, con actor resuelto desde la identidad verificada. Revalida
+cuenta activa y rol `VALIDADOR`/`ADMIN`, toma locks cuenta → recolección y confirma
+estado, motivo e historial juntos. Acepta cualquier fecha de una ficha pendiente;
+la aprobación conserva la ventana de 45 días y la prohibición de fechas futuras.
+Captura, edición, corrección y reenvío conservan sus restricciones temporales.
+Instalar/cotejar 090 antes de publicar este backend; [alcance y evidencia local](../../docs/recoleccion-rechazo-fecha.md).
 
 RN-REC-09A usa `fn_recoleccion_eliminar_borrador(bigint,bigint)` vía cliente
 administrativo privado y el actor de `InternalActorGuard`. La RPC toma locks en
