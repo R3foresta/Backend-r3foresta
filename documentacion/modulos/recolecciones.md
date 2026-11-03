@@ -78,14 +78,39 @@ verificada; los marcados con `*` consumen además el rol derivado del servidor.
 | GET | `/api/recolecciones/vivero/:viveroId` | `FiltersRecoleccionDto` (query) | cuenta interna | Requiere Bearer |
 | GET | `/api/recolecciones/:id` | `RecoleccionElegibilidadViveroQueryDto` | cuenta interna | Devuelve detalle + flag de elegibilidad para vivero si se pasa `cantidad_solicitada_vivero` |
 
-La lectura de fotos desde `evidencias_trazabilidad` usa `getAdminClient()`:
-es una tabla privada tras el cierre de superficie 080/083. El rol ADMIN de la
-cuenta no convierte al cliente público de Supabase en cliente privado.
+La lectura, inserción, conteo y limpieza de `evidencias_trazabilidad` usan
+`getAdminClient()`, igual que las subidas y eliminaciones en Storage. La tabla
+es privada tras el cierre de superficie 080/083; se requiere configuración privada
+sin fallback público. El rol ADMIN de la cuenta no convierte al cliente público
+de Supabase en cliente privado. El catálogo `tipos_entidad_evidencia` conserva
+su consulta pública. La identidad verificada y los permisos por objeto siguen
+siendo obligatorios.
 La [regresión HTTP](../../src/recolecciones/tests/recolecciones-lectura.http.spec.ts)
 simula SELECT público denegado y comprueba listado con fotos, filtro propio,
 401 sin Bearer y 403 fuera de la audiencia interna.
 [Versión, entorno y límites de la verificación local del 21 de octubre de 2026](../../docs/evidencia/recolecciones-lectura-privada-local-2026-10-21.json);
 no acredita SQL o despliegue remoto.
+
+En creación y edición, una subida parcial intenta limpiar las rutas ya subidas
+antes de propagar el error original. En el INSERT de fotos del borrador, solo se
+compensan rechazos SQL inequívocos (familias SQLSTATE 22/23/42 con HTTP 4xx).
+Si se pierde la respuesta o falla el transporte, timeout o parseo, se conservan
+los archivos y se registra la incertidumbre sin rutas ni datos personales: las
+filas podrían haberse confirmado. Un SELECT vacío inmediato no demuestra rollback;
+el error requiere conciliación antes de reintentar, pues no hay recuperación durable.
+Las compensaciones entre DB y Storage siguen siendo de mejor esfuerzo, sin
+transacción distribuida ni recuperación durable; los errores devueltos al eliminar
+evidencias o archivos se registran sin incluir rutas ni datos personales.
+Las [regresiones de evidencias](../../src/recolecciones/tests/recoleccion-evidencias.service.spec.ts)
+y [flujos con fotos privadas](../../src/recolecciones/tests/recoleccion-fotos-privadas.spec.ts)
+distinguen clientes público/privado y simulan permisos públicos denegados. La
+regresión con SDK instalado y transporte sintético confirma que una respuesta
+perdida después del commit conserva los archivos referenciados.
+Verificación local del **3 de noviembre de 2026**, sobre `9eef958` más estos cambios,
+Node 24.19.0/npm 12.0.2: build y unitarios aprobados (**76 suites/1047 pruebas**),
+con sockets locales autorizados para Supertest y dependencias externas sustituidas.
+Pendiente comprobar creación, edición, validación y limpieza con DB/Storage reales
+en el destino; esta corrección no aplica SQL ni acredita push o despliegue.
 
 ## DTO de creación (resumen)
 

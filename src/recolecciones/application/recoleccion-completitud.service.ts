@@ -20,7 +20,7 @@ export class RecoleccionCompletitudService {
   async assertRecoleccionCompletaParaValidacion(
     recoleccion: Record<string, any>,
   ): Promise<void> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const recoleccionId = Number(recoleccion.id);
     const ubicacionId = Number(recoleccion.ubicacion_id);
 

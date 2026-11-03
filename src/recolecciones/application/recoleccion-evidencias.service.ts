@@ -88,42 +88,49 @@ export class RecoleccionEvidenciasService {
   }
 
   async uploadFotosCreacion(files: RecoleccionFotoInput[]) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const preparedFiles =
       this.evidenceFileService.prepareOriginalEvidenceFiles(files);
     const fotosSubidas: FotoSubidaRecoleccion[] = [];
 
-    for (const [index, file] of files.entries()) {
-      const prepared = preparedFiles[index];
-      const nombreArchivo = `${Date.now()}_${file.originalname}`;
-      const rutaStorage = nombreArchivo;
+    try {
+      for (const [index, file] of files.entries()) {
+        const prepared = preparedFiles[index];
+        const nombreArchivo = `${Date.now()}_${file.originalname}`;
+        const rutaStorage = nombreArchivo;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from(this.bucketFotos)
-        .upload(rutaStorage, prepared.originalBuffer, {
-          contentType: prepared.storageContentType,
-          upsert: false,
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from(this.bucketFotos)
+          .upload(rutaStorage, prepared.originalBuffer, {
+            contentType: prepared.storageContentType,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          this.logger.error('❌ Error al subir foto:', uploadError);
+          throw new InternalServerErrorException('Error al subir foto');
+        }
+
+        const storageObjectId =
+          typeof uploadData?.id === 'string' ? uploadData.id : null;
+
+        fotosSubidas.push({
+          ruta_archivo: rutaStorage,
+          storage_object_id: storageObjectId,
+          mime_type: prepared.storageContentType,
+          tamano_bytes: prepared.tamanoBytes,
+          hash_sha256: prepared.hashSha256,
+          metadata: prepared.metadata,
         });
-
-      if (uploadError) {
-        this.logger.error('❌ Error al subir foto:', uploadError);
-        throw new InternalServerErrorException('Error al subir foto');
       }
 
-      const storageObjectId =
-        typeof uploadData?.id === 'string' ? uploadData.id : null;
-
-      fotosSubidas.push({
-        ruta_archivo: rutaStorage,
-        storage_object_id: storageObjectId,
-        mime_type: prepared.storageContentType,
-        tamano_bytes: prepared.tamanoBytes,
-        hash_sha256: prepared.hashSha256,
-        metadata: prepared.metadata,
-      });
+      return fotosSubidas;
+    } catch (error) {
+      await this.compensarSubidas(
+        fotosSubidas.map((foto) => foto.ruta_archivo),
+      );
+      throw error;
     }
-
-    return fotosSubidas;
   }
 
   async insertEvidenciasCreacion(params: {
@@ -132,7 +139,7 @@ export class RecoleccionEvidenciasService {
     userId: number;
     fotosSubidas: FotoSubidaRecoleccion[];
   }): Promise<void> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const tipoEntidadId = await this.resolveTipoEntidadEvidenciaId();
     const evidenciasInsert = params.fotosSubidas.map((foto, index) => ({
       tipo_entidad_id: tipoEntidadId,
@@ -176,7 +183,7 @@ export class RecoleccionEvidenciasService {
     creadoPorUsuarioId: number,
     files: RecoleccionFotoInput[],
   ): Promise<{ insertedEvidenceIds: number[]; uploadedPaths: string[] }> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const tipoEntidadId = await this.resolveTipoEntidadEvidenciaId();
 
     const { count, error: countError } = await supabase
@@ -202,76 +209,104 @@ export class RecoleccionEvidenciasService {
     const ordenInicial = Number(count || 0);
     const preparedFiles =
       this.evidenceFileService.prepareOriginalEvidenceFiles(files);
+    let puedeCompensarSubidas = true;
 
-    for (const [index, prepared] of preparedFiles.entries()) {
-      const file = files[index];
-      const safeOriginalName = String(file.originalname || `foto_${index + 1}`)
-        .trim()
-        .replace(/[^a-zA-Z0-9._-]/g, '_');
-      const rutaStorage = `draft_${recoleccionId}_${timestampBase}_${index}_${safeOriginalName}`;
+    try {
+      for (const [index, prepared] of preparedFiles.entries()) {
+        const file = files[index];
+        const safeOriginalName = String(
+          file.originalname || `foto_${index + 1}`,
+        )
+          .trim()
+          .replace(/[^a-zA-Z0-9._-]/g, '_');
+        const rutaStorage = `draft_${recoleccionId}_${timestampBase}_${index}_${safeOriginalName}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from(this.bucketFotos)
-        .upload(rutaStorage, prepared.originalBuffer, {
-          contentType: prepared.storageContentType,
-          upsert: false,
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from(this.bucketFotos)
+          .upload(rutaStorage, prepared.originalBuffer, {
+            contentType: prepared.storageContentType,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          this.logger.error('❌ Error al subir foto de borrador:', uploadError);
+          throw new InternalServerErrorException(
+            'Error al subir fotos del borrador',
+          );
+        }
+
+        uploadedPaths.push(rutaStorage);
+
+        const storageObjectId =
+          typeof uploadData?.id === 'string' ? uploadData.id : null;
+        const orden = ordenInicial + index;
+
+        evidenciasInsert.push({
+          tipo_entidad_id: tipoEntidadId,
+          entidad_id: recoleccionId,
+          codigo_trazabilidad: codigoTrazabilidad,
+          bucket: this.bucketFotos,
+          ruta_archivo: rutaStorage,
+          storage_object_id: storageObjectId,
+          tipo_archivo: 'FOTO',
+          mime_type: prepared.storageContentType,
+          tamano_bytes: prepared.tamanoBytes,
+          hash_sha256: prepared.hashSha256,
+          titulo: `Foto ${orden + 1}`,
+          metadata: {
+            origen: 'UPDATE_DRAFT',
+            ...prepared.metadata,
+          },
+          es_principal: orden === 0,
+          orden,
+          creado_por_usuario_id: creadoPorUsuarioId,
         });
+      }
 
-      if (uploadError) {
-        this.logger.error('❌ Error al subir foto de borrador:', uploadError);
+      // Desde el envío no sabemos si DB confirmó hasta recibir una respuesta útil.
+      puedeCompensarSubidas = false;
+      const {
+        data: insertedData,
+        error: insertError,
+        status,
+      } = await supabase
+        .from('evidencias_trazabilidad')
+        .insert(evidenciasInsert)
+        .select('id');
+
+      if (insertError) {
+        // Compensar solo rechazos SQL inequívocos de datos, restricciones o acceso.
+        // Status 0, errores sin SQLSTATE, transporte y timeout conservan archivos.
+        puedeCompensarSubidas =
+          status >= 400 &&
+          status < 500 &&
+          /^(22|23|42)[0-9A-Z]{3}$/.test(insertError.code);
+        if (puedeCompensarSubidas) {
+          this.logger.error(
+            'Error al registrar evidencias del borrador: rechazo SQL confirmado',
+          );
+        }
         throw new InternalServerErrorException(
-          'Error al subir fotos del borrador',
+          'Error al guardar fotos del borrador',
         );
       }
 
-      uploadedPaths.push(rutaStorage);
+      const insertedEvidenceIds = (insertedData || [])
+        .map((item: any) => Number(item.id))
+        .filter((evidenceId) => Number.isInteger(evidenceId) && evidenceId > 0);
 
-      const storageObjectId =
-        typeof uploadData?.id === 'string' ? uploadData.id : null;
-      const orden = ordenInicial + index;
-
-      evidenciasInsert.push({
-        tipo_entidad_id: tipoEntidadId,
-        entidad_id: recoleccionId,
-        codigo_trazabilidad: codigoTrazabilidad,
-        bucket: this.bucketFotos,
-        ruta_archivo: rutaStorage,
-        storage_object_id: storageObjectId,
-        tipo_archivo: 'FOTO',
-        mime_type: prepared.storageContentType,
-        tamano_bytes: prepared.tamanoBytes,
-        hash_sha256: prepared.hashSha256,
-        titulo: `Foto ${orden + 1}`,
-        metadata: {
-          origen: 'UPDATE_DRAFT',
-          ...prepared.metadata,
-        },
-        es_principal: orden === 0,
-        orden,
-        creado_por_usuario_id: creadoPorUsuarioId,
-      });
+      return { insertedEvidenceIds, uploadedPaths };
+    } catch (error) {
+      // El llamador solo recibe las rutas cuando el método termina con éxito.
+      if (puedeCompensarSubidas) {
+        await this.compensarSubidas(uploadedPaths);
+      } else {
+        this.logger.error(
+          'Resultado incierto del INSERT de evidencias del borrador; se conservan las fotos subidas',
+        );
+      }
+      throw error;
     }
-
-    const { data: insertedData, error: insertError } = await supabase
-      .from('evidencias_trazabilidad')
-      .insert(evidenciasInsert)
-      .select('id');
-
-    if (insertError) {
-      this.logger.error(
-        '❌ Error al registrar evidencias del borrador:',
-        insertError,
-      );
-      throw new InternalServerErrorException(
-        'Error al guardar fotos del borrador',
-      );
-    }
-
-    const insertedEvidenceIds = (insertedData || [])
-      .map((item: any) => Number(item.id))
-      .filter((evidenceId) => Number.isInteger(evidenceId) && evidenceId > 0);
-
-    return { insertedEvidenceIds, uploadedPaths };
   }
 
   async deleteEvidenceIds(insertedEvidenceIds: number[]): Promise<void> {
@@ -279,22 +314,32 @@ export class RecoleccionEvidenciasService {
       return;
     }
 
-    await this.supabaseService
-      .getClient()
+    const { error } = await this.supabaseService
+      .getAdminClient()
       .from('evidencias_trazabilidad')
       .delete()
       .in('id', insertedEvidenceIds);
+
+    if (error) {
+      this.logger.error('No se pudieron eliminar las evidencias por ID');
+    }
   }
 
   async deleteByRecoleccionId(recoleccionId: number): Promise<void> {
     const tipoEntidadId = await this.resolveTipoEntidadEvidenciaId();
 
-    await this.supabaseService
-      .getClient()
+    const { error } = await this.supabaseService
+      .getAdminClient()
       .from('evidencias_trazabilidad')
       .delete()
       .eq('tipo_entidad_id', tipoEntidadId)
       .eq('entidad_id', recoleccionId);
+
+    if (error) {
+      this.logger.error(
+        'No se pudieron eliminar las evidencias de la recolección',
+      );
+    }
   }
 
   async removeStoragePaths(uploadedPaths: string[]): Promise<void> {
@@ -302,10 +347,23 @@ export class RecoleccionEvidenciasService {
       return;
     }
 
-    await this.supabaseService
-      .getClient()
+    const { error } = await this.supabaseService
+      .getAdminClient()
       .storage.from(this.bucketFotos)
       .remove(uploadedPaths);
+
+    if (error) {
+      this.logger.error('No se pudieron eliminar las fotos de Storage');
+    }
+  }
+
+  private async compensarSubidas(uploadedPaths: string[]): Promise<void> {
+    try {
+      await this.removeStoragePaths(uploadedPaths);
+    } catch {
+      // No ocultar el fallo original si Storage tampoco permite compensar.
+      this.logger.error('No se pudieron compensar las fotos subidas');
+    }
   }
 
   async getEvidenciasByRecoleccionId(recoleccionId: number) {
