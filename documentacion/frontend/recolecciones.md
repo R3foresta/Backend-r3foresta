@@ -108,9 +108,25 @@ Ejemplo del campo `ubicacion` (serializado como string en el FormData):
 
 ## PATCH /api/recolecciones/:id/draft
 
-Mismos campos que la creación, **todos opcionales**. Solo se aceptan si la recolección sigue en `BORRADOR`. Acepta nuevas `fotos` para reemplazar/añadir.
+Mismos campos de datos que la creación, **todos opcionales**, para una recolección
+en `BORRADOR` o `RECHAZADO` y con permiso de edición. Editar un `RECHAZADO` lo
+devuelve a `BORRADOR`; después se llama a `PATCH /:id/submit` para reenviarlo.
+El rol se resuelve desde la cuenta verificada en el servidor.
 
-Header adicional opcional: `x-user-role` (default `GENERAL`).
+`ubicacion` es opcional. Si se omite, se conserva la actual; si se envía, requiere
+`latitud` y `longitud` y valida los demás campos como en creación. Se acepta objeto
+en JSON, texto JSON en el campo multipart `ubicacion` o campos multipart
+`ubicacion[latitud]`, `ubicacion[longitud]`, etc. Enviar solo una representación.
+No se admite `ubicacion: null`, escalares, arrays ni campos extra.
+
+Cambiar solo la fecha funciona aunque la PWA vuelva a enviar la misma ubicación:
+se conserva su ID sin modificarla. Una ubicación distinta crea una nueva referencia
+para esta recolección y refresca el snapshot de comunidad; la ubicación anterior se
+conserva porque puede estar compartida o ser histórica.
+
+Las nuevas `fotos` se **añaden** a las existentes. Omitirlas conserva las fotos
+guardadas; corregir la fecha no requiere volver a subirlas. Esperar el éxito del
+PATCH antes de llamar a `submit`; un error de edición debe impedir el reenvío.
 
 ## PATCH /api/recolecciones/:id/submit
 

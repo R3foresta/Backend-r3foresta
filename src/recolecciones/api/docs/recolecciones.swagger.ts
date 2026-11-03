@@ -2,15 +2,20 @@ import { applyDecorators } from '@nestjs/common';
 import {
   ApiBody,
   ApiConsumes,
+  ApiExtraModels,
   ApiHeader,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiResponse,
   ApiSecurity,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import { TIPOS_MATERIAL_RECOLECCION_INPUT } from '../dto/create-recoleccion.dto';
-import { FUENTES_UBICACION } from '../dto/create-ubicacion.dto';
+import {
+  CreateUbicacionDto,
+  FUENTES_UBICACION,
+} from '../dto/create-ubicacion.dto';
 import { RejectValidationDto } from '../dto/reject-validation.dto';
 
 const AUTH_ID_HEADER = {
@@ -144,10 +149,11 @@ export function ApiCreateRecoleccion() {
 
 export function ApiUpdateDraftRecoleccion() {
   return applyDecorators(
+    ApiExtraModels(CreateUbicacionDto),
     ApiOperation({
       summary: 'Editar borrador de recolección',
       description:
-        'Permite editar una recolección en BORRADOR o RECHAZADO. Si estaba RECHAZADO, vuelve a BORRADOR.',
+        'Permite editar una recolección en BORRADOR o RECHAZADO. Si estaba RECHAZADO, vuelve a BORRADOR. La ubicación es opcional: omitirla conserva la actual; si se envía debe incluir latitud y longitud. Una ubicación distinta se guarda sin modificar la anterior.',
     }),
     ApiSecurity('x-auth-id'),
     ApiHeader({
@@ -177,6 +183,29 @@ export function ApiUpdateDraftRecoleccion() {
           vivero_id: { type: 'number', example: 3 },
           metodo_id: { type: 'number', example: 1 },
           planta_id: { type: 'number', example: 10 },
+          ubicacion: {
+            description:
+              'Ubicación opcional como objeto JSON o texto JSON en multipart. También se admite notación ubicacion[campo]; utilizar una sola representación.',
+            oneOf: [
+              { $ref: getSchemaPath(CreateUbicacionDto) },
+              {
+                type: 'string',
+                example: '{"latitud":-16.5833,"longitud":-68.15}',
+              },
+            ],
+          },
+          'ubicacion[pais_id]': { type: 'number', example: 1 },
+          'ubicacion[division_id]': { type: 'number', example: 999 },
+          'ubicacion[nombre]': { type: 'string', example: 'Parcela Don Lucho' },
+          'ubicacion[referencia]': { type: 'string', example: 'Zona Sur' },
+          'ubicacion[latitud]': { type: 'number', example: -16.5833 },
+          'ubicacion[longitud]': { type: 'number', example: -68.15 },
+          'ubicacion[precision_m]': { type: 'number', example: 10 },
+          'ubicacion[fuente]': {
+            type: 'string',
+            enum: [...FUENTES_UBICACION],
+            example: 'GPS_MOVIL',
+          },
           fotos: {
             type: 'array',
             items: { type: 'string', format: 'binary' },
@@ -188,7 +217,10 @@ export function ApiUpdateDraftRecoleccion() {
       status: 200,
       description: 'Borrador actualizado exitosamente',
     }),
-    ApiResponse({ status: 400, description: 'Estado no permite edición' }),
+    ApiResponse({
+      status: 400,
+      description: 'Estado no permite edición o datos de corrección inválidos',
+    }),
     ApiResponse({ status: 403, description: 'Sin permisos para editar' }),
     ApiResponse({ status: 404, description: 'Recolección no encontrada' }),
   );

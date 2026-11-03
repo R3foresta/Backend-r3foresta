@@ -1,0 +1,40 @@
+{
+  "fecha_local": "2026-11-03",
+  "zona_horaria": "America/La_Paz",
+  "base_git": "ec13d06",
+  "version": "base más cambios locales de corrección de ubicación en PATCH draft",
+  "entorno": {
+    "node": "24.19.0",
+    "npm": "12.0.2",
+    "dependencias_externas": "sustituidas; sin cargar .env ni escribir en DB/Storage reales",
+    "http": "Supertest con sockets locales autorizados"
+  },
+  "causa": "La PWA enviaba ubicacion al editar, pero UpdateDraftDto no la admitía y el servicio no la procesaba.",
+  "alcance": [
+    "DTO anidado opcional y validación estricta en JSON y multipart",
+    "normalización de números anidados sin convertir coordenadas vacías, null o booleanas a 0/1",
+    "fecha con ubicación equivalente conserva el ID y las fotos",
+    "ubicación distinta crea una nueva referencia y refresca snapshots, conservando la fila anterior",
+    "autorización por objeto y estados editables antes de consultar ubicación",
+    "ante un vínculo de resultado incierto se conserva la ubicación candidata"
+  ],
+  "verificacion": {
+    "manual_reportada": "El usuario confirmó en este chat que ya funciona la corrección de fecha y reenvío de una recolección rechazada en su entorno local.",
+    "build": "npm run build: aprobado",
+    "unitarios": {
+      "comando": "npm run test:unit -- --runInBand --cacheDirectory=/private/tmp/r3-jest-draft-ubicacion",
+      "suites_aprobadas": 78,
+      "pruebas_aprobadas": 1086,
+      "nuevas_http": 30,
+      "nuevas_servicio": 9
+    },
+    "openapi": "node scripts/qa/pa-int02c-openapi.cjs --check: aprobado; 40 rutas, 84 schemas",
+    "diff": "git diff --check: aprobado"
+  },
+  "limites": [
+    "Persistencia y respuesta HTTP de aplicación se verifican con fixtures externos sustituidos; no acreditan el catálogo ni los permisos remotos.",
+    "Las compensaciones legadas siguen siendo de mejor esfuerzo; una ubicación candidata puede requerir conciliación tras un resultado incierto.",
+    "La confirmación manual del usuario cubre el recorrido reportado de fecha corregida y reenvío; no acredita por sí sola todos los casos de cambio de ubicación o fallos de infraestructura.",
+    "Sin migraciones SQL ni despliegue. Este archivo registra la verificación previa al commit/push; la publicación Git se acredita por separado."
+  ]
+}

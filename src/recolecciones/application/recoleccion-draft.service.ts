@@ -16,6 +16,7 @@ import { RecoleccionAuthService } from './recoleccion-auth.service';
 import { RecoleccionConsultasService } from './recoleccion-consultas.service';
 import { RecoleccionEvidenciasService } from './recoleccion-evidencias.service';
 import { RecoleccionSnapshotsService } from './recoleccion-snapshots.service';
+import { RecoleccionUbicacionService } from './recoleccion-ubicacion.service';
 import type { RecoleccionFotoInput } from '../domain/policies/evidencia-completitud.policy';
 
 @Injectable()
@@ -28,6 +29,7 @@ export class RecoleccionDraftService {
     private readonly consultasService: RecoleccionConsultasService,
     private readonly evidenciasService: RecoleccionEvidenciasService,
     private readonly snapshotsService: RecoleccionSnapshotsService,
+    private readonly ubicacionService: RecoleccionUbicacionService,
   ) {}
 
   async updateDraft(
@@ -116,37 +118,68 @@ export class RecoleccionDraftService {
       );
     }
 
-    const shouldRefreshSnapshots =
-      dto.planta_id !== undefined || estadoActual === EstadoRegistro.RECHAZADO;
+    const nuevaUbicacionPayload = dto.ubicacion
+      ? await this.resolveCambioUbicacion(
+          dto.ubicacion,
+          recoleccion.ubicacion_id,
+        )
+      : null;
 
-    if (shouldRefreshSnapshots) {
-      const snapshotPayload = await this.snapshotsService.resolve({
-        plantaId: dto.planta_id ?? recoleccion.planta_id,
-        usuarioId: recoleccion.usuario_id,
-        ubicacionId: recoleccion.ubicacion_id,
-      });
-
-      Object.assign(updatePayload, snapshotPayload);
-    }
-
-    if (Object.keys(updatePayload).length === 0 && files.length === 0) {
+    if (
+      Object.keys(updatePayload).length === 0 &&
+      files.length === 0 &&
+      !nuevaUbicacionPayload
+    ) {
       throw new BadRequestException('No se enviaron campos para actualizar.');
     }
 
-    const rollbackPayload = Object.keys(updatePayload).reduce(
-      (accumulator, key) => {
-        accumulator[key] = (recoleccion as Record<string, unknown>)[key];
-        return accumulator;
-      },
-      {} as Record<string, unknown>,
-    );
-
+    const rollbackPayload: Record<string, unknown> = {};
     let recoleccionActualizada = false;
     let insertedEvidenceIds: number[] = [];
     let uploadedPaths: string[] = [];
+    let nuevaUbicacionId: number | null = null;
+    let vinculoUbicacionIntentado = false;
 
     try {
+      if (nuevaUbicacionPayload) {
+        const { data, error } = await this.supabaseService
+          .getAdminClient()
+          .from('ubicacion')
+          .insert(nuevaUbicacionPayload)
+          .select('id')
+          .single();
+
+        if (error || !data) {
+          throw new InternalServerErrorException(
+            'Error al guardar la ubicación de la recolección',
+          );
+        }
+
+        nuevaUbicacionId = Number(data.id);
+        updatePayload.ubicacion_id = nuevaUbicacionId;
+      }
+
+      const shouldRefreshSnapshots =
+        dto.planta_id !== undefined ||
+        estadoActual === EstadoRegistro.RECHAZADO ||
+        nuevaUbicacionId !== null;
+
+      if (shouldRefreshSnapshots) {
+        const snapshotPayload = await this.snapshotsService.resolve({
+          plantaId: dto.planta_id ?? recoleccion.planta_id,
+          usuarioId: recoleccion.usuario_id,
+          ubicacionId: nuevaUbicacionId ?? recoleccion.ubicacion_id,
+        });
+
+        Object.assign(updatePayload, snapshotPayload);
+      }
+
+      for (const key of Object.keys(updatePayload)) {
+        rollbackPayload[key] = (recoleccion as Record<string, unknown>)[key];
+      }
+
       if (Object.keys(updatePayload).length > 0) {
+        vinculoUbicacionIntentado = nuevaUbicacionId !== null;
         const { error: updateError } = await supabase
           .from('recoleccion')
           .update(updatePayload)
@@ -175,6 +208,11 @@ export class RecoleccionDraftService {
         uploadedPaths = appendResult.uploadedPaths;
       }
     } catch (error) {
+      // Antes de intentar el vínculo sabemos que esta llamada no la referenció.
+      // Después, incluso un fallo de transporte puede ocultar un UPDATE confirmado.
+      if (nuevaUbicacionId !== null && !vinculoUbicacionIntentado) {
+        await this.removeUbicacionSinVinculo(nuevaUbicacionId);
+      }
       await this.evidenciasService.deleteEvidenceIds(insertedEvidenceIds);
       await this.evidenciasService.removeStoragePaths(uploadedPaths);
 
@@ -189,5 +227,64 @@ export class RecoleccionDraftService {
       `✅ Recolección ${id} actualizada como borrador${files.length > 0 ? ` y ${files.length} foto(s) agregada(s)` : ''}`,
     );
     return this.consultasService.findOne(id);
+  }
+
+  private async resolveCambioUbicacion(
+    ubicacion: NonNullable<UpdateDraftDto['ubicacion']>,
+    ubicacionId: number,
+  ) {
+    const payload =
+      await this.ubicacionService.validateAndNormalizeUbicacionPayload(
+        ubicacion,
+      );
+    const { data, error } = await this.supabaseService
+      .getAdminClient()
+      .from('ubicacion')
+      .select(
+        'pais_id, division_id, nombre, referencia, latitud, longitud, precision_m, fuente',
+      )
+      .eq('id', ubicacionId)
+      .maybeSingle();
+
+    if (error) {
+      throw new InternalServerErrorException(
+        'Error al consultar la ubicación de la recolección',
+      );
+    }
+
+    const numericFields = new Set([
+      'pais_id',
+      'division_id',
+      'latitud',
+      'longitud',
+      'precision_m',
+    ]);
+    const normalize = (key: string, value: unknown) => {
+      if (value === null || value === undefined || value === '') return null;
+      return numericFields.has(key)
+        ? Number(value)
+        : String(value).trim() || null;
+    };
+    const coincide =
+      data &&
+      Object.entries(payload).every(
+        ([key, value]) => normalize(key, value) === normalize(key, data[key]),
+      );
+
+    return coincide ? null : payload;
+  }
+
+  private async removeUbicacionSinVinculo(ubicacionId: number): Promise<void> {
+    try {
+      const { error } = await this.supabaseService
+        .getAdminClient()
+        .from('ubicacion')
+        .delete()
+        .eq('id', ubicacionId);
+      if (error)
+        this.logger.error('No se pudo limpiar la ubicación sin vínculo');
+    } catch {
+      this.logger.error('No se pudo limpiar la ubicación sin vínculo');
+    }
   }
 }

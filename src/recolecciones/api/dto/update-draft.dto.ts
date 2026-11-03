@@ -2,13 +2,17 @@ import {
   IsDateString,
   IsIn,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   MaxLength,
   Min,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { CreateUbicacionDto } from './create-ubicacion.dto';
 import {
   TIPOS_MATERIAL_RECOLECCION_INPUT,
   UNIDADES_INPUT_RECOLECCION,
@@ -99,4 +103,15 @@ export class UpdateDraftDto {
   @IsOptional()
   @IsNumber({}, { message: 'planta_id debe ser numérico' })
   planta_id?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Ubicación completa opcional. Si se envía, requiere latitud y longitud; si se omite, se conserva la actual.',
+    type: CreateUbicacionDto,
+  })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsObject({ message: 'ubicacion debe ser un objeto' })
+  @ValidateNested()
+  @Type(() => CreateUbicacionDto)
+  ubicacion?: CreateUbicacionDto;
 }

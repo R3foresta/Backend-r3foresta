@@ -69,7 +69,7 @@ verificada; los marcados con `*` consumen además el rol derivado del servidor.
 | HTTP | Ruta | DTO | Rol | Notas |
 |---|---|---|---|---|
 | POST | `/api/recolecciones` | `CreateRecoleccionDto` (multipart) | GENERAL+ | Crea en `BORRADOR`. Acepta `fotos` (2-10 archivos JPG/JPEG/PNG/WEBP/HEIC/HEIF) |
-| PATCH | `/api/recolecciones/:id/draft` * | `UpdateDraftDto` (multipart) | dueño / ADMIN | Solo si `estado_registro = BORRADOR` |
+| PATCH | `/api/recolecciones/:id/draft` * | `UpdateDraftDto` (JSON/multipart) | dueño / ADMIN | `BORRADOR` o `RECHAZADO`; al corregir rechazado vuelve a `BORRADOR` |
 | PATCH | `/api/recolecciones/:id/submit` * | — | dueño | `BORRADOR` → `PENDIENTE_VALIDACION` |
 | PATCH | `/api/recolecciones/:id/approve` * | — | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `VALIDADO`. Ejecuta Pinata + mint |
 | PATCH | `/api/recolecciones/:id/reject` * | `RejectValidationDto` | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `RECHAZADO`. `motivo_rechazo` 10–500 chars |
@@ -130,6 +130,24 @@ en el destino; esta corrección no aplica SQL ni acredita push o despliegue.
 | `fotos` | File[] 2–10 | sí (multipart) | JPG/JPEG/PNG/WEBP/HEIC/HEIF |
 
 `CreateUbicacionDto` requiere `latitud` (-90..90) y `longitud` (-180..180). Opcionales: `pais_id`, `division_id`, `nombre`, `referencia`, `precision_m`, `fuente`.
+
+`UpdateDraftDto` admite estos datos de forma opcional, incluida `ubicacion` anidada.
+En JSON se envía como objeto; en multipart se acepta texto JSON o notación de
+corchetes `ubicacion[campo]`. Cuando se incluye, requiere latitud y longitud y se
+validan también los catálogos país/división. Omitir ubicación o enviar la misma
+conserva el ID actual. Una ubicación distinta crea otra fila y cambia únicamente
+la referencia de esta recolección, conservando la anterior y refrescando snapshots
+desde la ubicación efectiva. Ante un resultado incierto del cambio de referencia,
+se conserva la nueva ubicación para evitar referencias rotas; puede requerir
+conciliación. Las compensaciones de este flujo siguen siendo de mejor esfuerzo.
+Omitir `fotos` conserva las evidencias existentes. La secuencia de corrección es
+`RECHAZADO` → edición `BORRADOR` → submit `PENDIENTE_VALIDACION`.
+
+Regresiones de [contrato HTTP](../../src/recolecciones/tests/recoleccion-draft-contrato.http.spec.ts)
+y [persistencia de ubicación](../../src/recolecciones/tests/recoleccion-draft-ubicacion.service.spec.ts):
+build y 78 suites/1086 pruebas aprobados en local el 3 de noviembre de 2026.
+[Versión, entorno y límites](../../docs/evidencia/recoleccion-draft-ubicacion-local-2026-11-03.json).
+El recorrido con navegador y DB/Storage reales conserva su comprobación separada.
 
 ## Filtros (`FiltersRecoleccionDto`)
 

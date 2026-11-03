@@ -15,14 +15,19 @@ export class RecoleccionFormDataParser {
       this.assertNoLegacyUbicacionFields(parsedBody.ubicacion);
     }
 
-    this.normalizeCreateNumericFields(parsedBody);
+    this.normalizeNumericFields(parsedBody);
     return this.validateDto(CreateRecoleccionDto, parsedBody);
   }
 
   async parseUpdateDraftBody(bodyRaw: any): Promise<UpdateDraftDto> {
     const parsedBody = this.parseBodyRaw(bodyRaw);
     this.applyLegacyFieldAliases(parsedBody);
-    this.normalizeUpdateDraftNumericFields(parsedBody);
+
+    if (parsedBody.ubicacion) {
+      this.assertNoLegacyUbicacionFields(parsedBody.ubicacion);
+    }
+
+    this.normalizeNumericFields(parsedBody);
     return this.validateDto(UpdateDraftDto, parsedBody);
   }
 
@@ -164,28 +169,32 @@ export class RecoleccionFormDataParser {
     }
   }
 
-  private normalizeCreateNumericFields(parsedBody: any): void {
+  private normalizeNumericFields(parsedBody: any): void {
     this.normalizeUpdateDraftNumericFields(parsedBody);
 
-    if (parsedBody.ubicacion) {
-      if (parsedBody.ubicacion.latitud !== undefined) {
-        parsedBody.ubicacion.latitud = Number(parsedBody.ubicacion.latitud);
+    const ubicacion = parsedBody.ubicacion;
+    if (
+      !ubicacion ||
+      typeof ubicacion !== 'object' ||
+      Array.isArray(ubicacion)
+    ) {
+      return;
+    }
+
+    for (const field of [
+      'latitud',
+      'longitud',
+      'pais_id',
+      'division_id',
+      'precision_m',
+    ]) {
+      const value = ubicacion[field];
+      // No convertir valores vacíos, null o booleanos en coordenadas válidas (0/1).
+      if (typeof value === 'number') {
+        continue;
       }
-      if (parsedBody.ubicacion.longitud !== undefined) {
-        parsedBody.ubicacion.longitud = Number(parsedBody.ubicacion.longitud);
-      }
-      if (parsedBody.ubicacion.pais_id !== undefined) {
-        parsedBody.ubicacion.pais_id = Number(parsedBody.ubicacion.pais_id);
-      }
-      if (parsedBody.ubicacion.division_id !== undefined) {
-        parsedBody.ubicacion.division_id = Number(
-          parsedBody.ubicacion.division_id,
-        );
-      }
-      if (parsedBody.ubicacion.precision_m !== undefined) {
-        parsedBody.ubicacion.precision_m = Number(
-          parsedBody.ubicacion.precision_m,
-        );
+      if (typeof value === 'string' && value.trim() !== '') {
+        ubicacion[field] = Number(value);
       }
     }
   }
