@@ -61,6 +61,7 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
   let remove: jest.Mock;
   let findOne: jest.Mock;
   let historial: jest.Mock;
+  let rpc: jest.Mock;
 
   beforeEach(async () => {
     jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
@@ -107,6 +108,7 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
       fotos: [{ id: 501 }, { id: 502 }],
     }));
     historial = jest.fn(async () => undefined);
+    rpc = jest.fn(async () => ({ data: { compensado: true }, error: null }));
     const module = await Test.createTestingModule({
       providers: [
         RecoleccionCreationService,
@@ -132,8 +134,12 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
                 if (table === 'usuario') return query(usuario);
                 if (table === 'evidencias_trazabilidad') return evidencias;
                 if (table === 'ubicacion') return ubicacion;
+                if (table === 'recoleccion') return recoleccion;
+                if (['planta', 'metodo_recoleccion', 'vivero'].includes(table))
+                  return query({ id: 1 });
                 throw new Error(`Tabla privada inesperada: ${table}`);
               },
+              rpc,
               storage: { from: () => ({ upload, remove }) },
             }),
           },
@@ -232,10 +238,12 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
       await expect(crear()).rejects.toThrow(
         fallo === 'insert' ? 'Error al guardar evidencias' : 'Lectura fallida',
       );
-      expect(evidencias.delete).toHaveBeenCalled();
-      expect(evidencias.eq).toHaveBeenCalledWith('tipo_entidad_id', 42);
-      expect(evidencias.eq).toHaveBeenCalledWith('entidad_id', 99);
-      expect(recoleccion.delete).toHaveBeenCalled();
+      expect(rpc).toHaveBeenCalledWith('fn_recoleccion_compensar_creacion', {
+        p_recoleccion_id: 99,
+        p_actor_id: 7,
+      });
+      expect(evidencias.delete).not.toHaveBeenCalled();
+      expect(recoleccion.delete).not.toHaveBeenCalled();
       expect(ubicacion.delete).toHaveBeenCalled();
       expect(remove).toHaveBeenCalledWith(
         upload.mock.calls.map(([path]) => path),

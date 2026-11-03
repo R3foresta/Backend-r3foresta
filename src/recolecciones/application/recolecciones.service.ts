@@ -16,6 +16,7 @@ import { RecoleccionConsultasService } from './recoleccion-consultas.service';
 import { RecoleccionCreationService } from './recoleccion-creation.service';
 import { RecoleccionDraftService } from './recoleccion-draft.service';
 import { RecoleccionDesechoService } from './recoleccion-desecho.service';
+import { RecoleccionEliminacionService } from './recoleccion-eliminacion.service';
 import { RecoleccionValidacionService } from './recoleccion-validacion.service';
 
 @Injectable()
@@ -26,6 +27,7 @@ export class RecoleccionesService {
     private readonly desechoService: RecoleccionDesechoService,
     private readonly validacionService: RecoleccionValidacionService,
     private readonly consultasService: RecoleccionConsultasService,
+    private readonly eliminacionService: RecoleccionEliminacionService,
   ) {}
 
   create(
@@ -54,6 +56,10 @@ export class RecoleccionesService {
 
   registrarDesecho(id: number, dto: RegistrarDesechoDto, authId: string) {
     return this.desechoService.registrar(id, dto, authId);
+  }
+
+  eliminarBorrador(id: number, actorUsuarioId: string) {
+    return this.eliminacionService.eliminarBorrador(id, actorUsuarioId);
   }
 
   submitForValidation(id: number, authId: string, userRole: string) {

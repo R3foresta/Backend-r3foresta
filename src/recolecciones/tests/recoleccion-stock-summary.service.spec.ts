@@ -11,6 +11,7 @@ function createQueryBuilder(result: {
   const builder: any = {
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
+    is: jest.fn().mockReturnThis(),
     gt: jest.fn().mockReturnThis(),
     in: jest.fn().mockReturnThis(),
     not: jest.fn().mockReturnThis(),

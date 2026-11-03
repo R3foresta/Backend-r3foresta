@@ -306,6 +306,7 @@ export class PlantasService {
         .select(
           'id, codigo_trazabilidad, estado_registro, estado_operativo, saldo_actual',
         )
+        .is('eliminado_en', null)
         .eq('planta_id', plantaId),
       supabase
         .from('lote_vivero')

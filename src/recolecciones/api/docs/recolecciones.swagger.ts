@@ -39,6 +39,61 @@ const VALIDATOR_ROLE_HEADER = {
 const ELEGIBILIDAD_QUERY_DESCRIPTION =
   'Cantidad a evaluar contra el saldo materializado para determinar elegibilidad hacia vivero.';
 
+export function ApiDeleteDraftRecoleccion() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Eliminar borrador de recolección (soft delete)',
+      description:
+        'RN-REC-09A: solo el creador o un ADMIN con cuenta interna activa puede eliminar una recolección en BORRADOR. Sin body. Conserva la ficha, fotos, ubicación, snapshots e historial; marca usuario/fecha y registra BORRADOR_ELIMINADO en una transacción. Los eliminados dejan de aparecer en las consultas. Repetir la eliminación devuelve 404.',
+    }),
+    ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
+    ApiResponse({
+      status: 200,
+      description: 'Borrador eliminado lógicamente.',
+      schema: {
+        type: 'object',
+        required: ['success', 'data'],
+        properties: {
+          success: { type: 'boolean', example: true },
+          data: {
+            type: 'object',
+            required: [
+              'recoleccion_id',
+              'eliminado_en',
+              'eliminado_por_usuario_id',
+            ],
+            properties: {
+              recoleccion_id: { type: 'number', example: 292 },
+              eliminado_en: {
+                type: 'string',
+                format: 'date',
+                example: '2026-11-03',
+              },
+              eliminado_por_usuario_id: { type: 'number', example: 7 },
+            },
+          },
+        },
+      },
+    }),
+    ApiResponse({ status: 400, description: 'ID inválido.' }),
+    ApiResponse({ status: 401, description: 'Bearer ausente o inválido.' }),
+    ApiResponse({ status: 403, description: 'Cuenta o permiso insuficiente.' }),
+    ApiResponse({
+      status: 404,
+      description: 'Registro inexistente o eliminado.',
+    }),
+    ApiResponse({
+      status: 409,
+      description:
+        'Estado distinto de BORRADOR o conflicto concurrente; releer antes de reintentar.',
+    }),
+    ApiResponse({
+      status: 500,
+      description: 'No se pudo confirmar la eliminación.',
+    }),
+  );
+}
+
 const commonListQueries = [
   ApiQuery({ name: 'page', required: false, type: Number }),
   ApiQuery({ name: 'limit', required: false, type: Number }),

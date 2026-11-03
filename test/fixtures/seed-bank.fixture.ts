@@ -12,6 +12,7 @@ export function seedFixture() {
     unidad_canonica: 'G',
     saldo_actual: 0,
     estado_registro: 'VALIDADO',
+    eliminado_en: null,
     planta_id: 11,
     ubicacion_id: 1,
     planta: {

@@ -13,6 +13,7 @@ recolecciones.module.ts
     ├── RecoleccionAuthService         resuelve x-auth-id + permisos
     ├── RecoleccionCreationService     creación de borrador
     ├── RecoleccionDraftService        edición de borrador
+    ├── RecoleccionEliminacionService  soft delete + historial atómico (089)
     ├── RecoleccionValidacionService   submit / approve / reject
     ├── RecoleccionConsultasService    findAll / findOne / findByVivero / pending
     ├── RecoleccionEvidenciasService   subida de fotos a Supabase Storage
@@ -70,6 +71,7 @@ verificada; los marcados con `*` consumen además el rol derivado del servidor.
 |---|---|---|---|---|
 | POST | `/api/recolecciones` | `CreateRecoleccionDto` (multipart) | GENERAL+ | Crea en `BORRADOR`. Acepta `fotos` (2-10 archivos JPG/JPEG/PNG/WEBP/HEIC/HEIF) |
 | PATCH | `/api/recolecciones/:id/draft` * | `UpdateDraftDto` (JSON/multipart) | dueño / ADMIN | `BORRADOR` o `RECHAZADO`; al corregir rechazado vuelve a `BORRADOR` |
+| DELETE | `/api/recolecciones/:id` | — | dueño / ADMIN | Solo `BORRADOR`; soft delete + `BORRADOR_ELIMINADO` en RPC atómica 089; repetir devuelve 404 |
 | PATCH | `/api/recolecciones/:id/submit` * | — | dueño | `BORRADOR` → `PENDIENTE_VALIDACION` |
 | PATCH | `/api/recolecciones/:id/approve` * | — | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `VALIDADO`. Ejecuta Pinata + mint |
 | PATCH | `/api/recolecciones/:id/reject` * | `RejectValidationDto` | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `RECHAZADO`. `motivo_rechazo` 10–500 chars |
@@ -77,6 +79,27 @@ verificada; los marcados con `*` consumen además el rol derivado del servidor.
 | GET | `/api/recolecciones` | `FiltersRecoleccionDto` (query) | cuenta interna | Lista propia de la identidad verificada, incluso para ADMIN |
 | GET | `/api/recolecciones/vivero/:viveroId` | `FiltersRecoleccionDto` (query) | cuenta interna | Requiere Bearer |
 | GET | `/api/recolecciones/:id` | `RecoleccionElegibilidadViveroQueryDto` | cuenta interna | Devuelve detalle + flag de elegibilidad para vivero si se pasa `cantidad_solicitada_vivero` |
+
+RN-REC-09A usa `fn_recoleccion_eliminar_borrador(bigint,bigint)` vía cliente
+administrativo privado y el actor de `InternalActorGuard`. La RPC toma locks en
+orden cuenta → recolección y revalida cuenta activa, rol interno, propiedad y
+estado. Conserva la fila, snapshots, fotos, ubicación, códigos y saldo; marca
+usuario/fecha y agrega el historial append-only en una sola transacción.
+El trigger de 089 impide modificar una ficha ya eliminada, incluso con un
+UPDATE legado iniciado antes del DELETE. Las lecturas operativas y el banco
+público excluyen `eliminado_en IS NOT NULL`; la comprobación de procesos de una
+planta también excluye esos borradores, conservando sus referencias históricas.
+`eliminado_en` devuelve DATE (015), calculada en `America/La_Paz` y obtenida del
+valor persistido con RETURNING. El trigger del INSERT de evidencias toma FOR SHARE
+del padre y rechaza vínculos posteriores al DELETE. La creación fallida usa
+`fn_recoleccion_compensar_creacion`: solo compensa con cuenta creadora activa,
+ficha BORRADOR viva y sin historial, bajo el mismo orden cuenta → ficha → evidencias.
+Ficha y evidencias se eliminan juntas en esa compensación; el backend solo limpia
+ubicación y archivos propios tras confirmar `compensado: true`. Ante resultado
+incierto o historia confirmada conserva los recursos.
+
+[Contrato frontend](../frontend/recolecciones.md#delete-apirecoleccionesid--rn-rec-09a)
+y [verificación/orden de publicación](../../docs/recoleccion-soft-delete.md).
 
 La lectura, inserción, conteo y limpieza de `evidencias_trazabilidad` usan
 `getAdminClient()`, igual que las subidas y eliminaciones en Storage. La tabla
@@ -93,7 +116,7 @@ no acredita SQL o despliegue remoto.
 
 En creación y edición, una subida parcial intenta limpiar las rutas ya subidas
 antes de propagar el error original. En el INSERT de fotos del borrador, solo se
-compensan rechazos SQL inequívocos (familias SQLSTATE 22/23/42 con HTTP 4xx).
+compensan rechazos SQL inequívocos (familias SQLSTATE 22/23/42 y P0002 con HTTP 4xx).
 Si se pierde la respuesta o falla el transporte, timeout o parseo, se conservan
 los archivos y se registra la incertidumbre sin rutas ni datos personales: las
 filas podrían haberse confirmado. Un SELECT vacío inmediato no demuestra rollback;

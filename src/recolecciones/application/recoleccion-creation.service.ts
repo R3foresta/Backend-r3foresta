@@ -45,7 +45,7 @@ export class RecoleccionCreationService {
     userRole?: string,
     files: RecoleccionFotoInput[] = [],
   ) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertCanCreate(usuario.rol);
 
@@ -106,6 +106,7 @@ export class RecoleccionCreationService {
     let recoleccionId: number | null = null;
     let ubicacionId: number | null = null;
     let fotosSubidas: FotoSubidaRecoleccion[] = [];
+    let insertRecoleccionIntentado = false;
 
     try {
       const { data: ubicacionCreada, error: ubicacionError } = await supabase
@@ -137,6 +138,8 @@ export class RecoleccionCreationService {
             fechaRecoleccion,
           );
 
+        // Desde el envío, una respuesta perdida puede ocultar una fila confirmada.
+        insertRecoleccionIntentado = true;
         const result = await supabase
           .from('recoleccion')
           .insert({
@@ -213,18 +216,41 @@ export class RecoleccionCreationService {
     } catch (error) {
       this.logger.error('❌ Error en create de recolección:', error);
 
-      if (recoleccionId) {
-        await this.evidenciasService.deleteByRecoleccionId(recoleccionId);
-        await supabase.from('recoleccion').delete().eq('id', recoleccionId);
+      let puedeLimpiarRecursos = !insertRecoleccionIntentado;
+      if (recoleccionId !== null) {
+        try {
+          const { data, error: compensacionError } = await supabase.rpc(
+            'fn_recoleccion_compensar_creacion',
+            { p_recoleccion_id: recoleccionId, p_actor_id: usuario.id },
+          );
+          // La RPC bloquea la ficha y comprueba estado, borrado e historial en
+          // la misma transacción que la compensación. Una lectura previa no
+          // basta: DELETE podría confirmar entre el check y la limpieza.
+          puedeLimpiarRecursos =
+            !compensacionError && data?.compensado === true;
+        } catch {
+          // Un fallo de transporte también puede ocultar una RPC confirmada.
+          // Conservar los archivos es seguro en ambos resultados posibles.
+          puedeLimpiarRecursos = false;
+        }
       }
 
-      if (ubicacionId) {
-        await supabase.from('ubicacion').delete().eq('id', ubicacionId);
+      if (puedeLimpiarRecursos) {
+        try {
+          if (ubicacionId !== null) {
+            await supabase.from('ubicacion').delete().eq('id', ubicacionId);
+          }
+          await this.evidenciasService.removeStoragePaths(
+            fotosSubidas.map((foto) => foto.ruta_archivo),
+          );
+        } catch {
+          this.logger.error('No se pudieron limpiar los recursos sin vínculo.');
+        }
+      } else {
+        this.logger.warn(
+          'Se conservan ficha, ubicación y fotos: la compensación no quedó confirmada o el registro conserva historia.',
+        );
       }
-
-      await this.evidenciasService.removeStoragePaths(
-        fotosSubidas.map((foto) => foto.ruta_archivo),
-      );
 
       throw error;
     }

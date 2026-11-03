@@ -1,8 +1,10 @@
 import { InternalActorGuard } from '../../auth/internal-actor.guard';
+import type { ActorRequest } from '../../auth/verified-actor.guard';
 import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   Param,
@@ -10,6 +12,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UnauthorizedException,
   UploadedFiles,
   UseInterceptors,
@@ -21,6 +24,7 @@ import { RecoleccionesService } from '../application/recolecciones.service';
 import {
   ApiApproveRecoleccionValidation,
   ApiCreateRecoleccion,
+  ApiDeleteDraftRecoleccion,
   ApiFindAllRecolecciones,
   ApiFindByViveroRecolecciones,
   ApiFindOneRecoleccion,
@@ -91,6 +95,18 @@ export class RecoleccionesController {
       authId,
       userRole || 'GENERAL',
       files?.fotos,
+    );
+  }
+
+  @Delete(':id')
+  @ApiDeleteDraftRecoleccion()
+  async eliminarBorrador(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: ActorRequest,
+  ) {
+    return this.recoleccionesService.eliminarBorrador(
+      id,
+      request.actor.usuario_id,
     );
   }
 

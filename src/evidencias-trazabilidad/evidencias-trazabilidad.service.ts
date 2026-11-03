@@ -143,6 +143,7 @@ export class EvidenciasTrazabilidadService {
     const { data: recoleccionData, error: recoleccionError } = await supabase
       .from('recoleccion')
       .select('id, codigo_trazabilidad')
+      .is('eliminado_en', null)
       .eq('id', recoleccionId)
       .single();
 
@@ -210,6 +211,7 @@ export class EvidenciasTrazabilidadService {
       hash_sha256: string;
       metadata: Record<string, unknown>;
     }> = [];
+    let puedeCompensarSubidas = true;
 
     try {
       for (const [index, prepared] of preparedFiles.entries()) {
@@ -293,7 +295,12 @@ export class EvidenciasTrazabilidadService {
         };
       });
 
-      const { data: inserted, error: insertError } = await supabase
+      puedeCompensarSubidas = false;
+      const {
+        data: inserted,
+        error: insertError,
+        status,
+      } = await supabase
         .from('evidencias_trazabilidad')
         .insert(evidenciasInsert)
         .select(
@@ -329,6 +336,14 @@ export class EvidenciasTrazabilidadService {
         );
 
       if (insertError) {
+        puedeCompensarSubidas =
+          status >= 400 &&
+          status < 500 &&
+          (/^(22|23|42)[0-9A-Z]{3}$/.test(insertError.code) ||
+            insertError.code === 'P0002');
+        if (puedeCompensarSubidas && insertError.code === 'P0002') {
+          throw new NotFoundException('Recolección no encontrada.');
+        }
         this.logger.error(
           '❌ Error al insertar evidencias_trazabilidad:',
           insertError,
@@ -345,7 +360,7 @@ export class EvidenciasTrazabilidadService {
         ),
       };
     } catch (error) {
-      if (fotosSubidas.length > 0) {
+      if (puedeCompensarSubidas && fotosSubidas.length > 0) {
         await supabase.storage
           .from(bucketFotos)
           .remove(fotosSubidas.map((foto) => foto.ruta_archivo));

@@ -15,6 +15,7 @@ import { RecoleccionAuthService } from '../application/recoleccion-auth.service'
 import { RecoleccionConsultasService } from '../application/recoleccion-consultas.service';
 import { RecoleccionCreationService } from '../application/recoleccion-creation.service';
 import { RecoleccionDesechoService } from '../application/recoleccion-desecho.service';
+import { RecoleccionEliminacionService } from '../application/recoleccion-eliminacion.service';
 import { RecoleccionDraftService } from '../application/recoleccion-draft.service';
 import { RecoleccionElegibilidadService } from '../application/recoleccion-elegibilidad.service';
 import { RecoleccionEvidenciasService } from '../application/recoleccion-evidencias.service';
@@ -120,6 +121,7 @@ describe('GET recolecciones con evidencias privadas', () => {
           RecoleccionCreationService,
           RecoleccionDraftService,
           RecoleccionDesechoService,
+          RecoleccionEliminacionService,
           RecoleccionValidacionService,
           RecoleccionFormDataParser,
         ].map((provide) => ({ provide, useValue: {} })),
@@ -152,6 +154,7 @@ describe('GET recolecciones con evidencias privadas', () => {
     });
     expect(response.headers['cache-control']).toBe('private, no-store');
     expect(recolecciones.eq).toHaveBeenCalledWith('usuario_id', 7);
+    expect(recolecciones.is).toHaveBeenCalledWith('eliminado_en', null);
     expect(recolecciones.range).toHaveBeenCalledWith(0, 29);
     expect(adminFrom).toHaveBeenCalledWith('evidencias_trazabilidad');
     expect(publicFrom).not.toHaveBeenCalledWith('evidencias_trazabilidad');

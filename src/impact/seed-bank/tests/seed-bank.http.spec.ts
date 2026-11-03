@@ -69,6 +69,28 @@ describe('Banco público de semillas: HTTP y servicios reales con Supabase susti
   });
   afterEach(() => expect(publicClient).not.toHaveBeenCalled());
 
+  it('excluye borradores eliminados del resumen, lista, detalle y descarga', async () => {
+    const deleted = fixture.tables.recoleccion.find(
+      (row) => row.estado_registro === 'BORRADOR',
+    )!;
+    deleted.eliminado_en = '2026-11-03T18:30:00Z';
+    const overview = await request(app.getHttpServer()).get(path).expect(200);
+    expect(overview.body.data.summary.collectionsCount).toBe(6);
+    const list = await request(app.getHttpServer())
+      .get(`${path}/collections`)
+      .expect(200);
+    expect(JSON.stringify(list.body)).not.toContain(
+      `REC-FIXTURE-${deleted.id}`,
+    );
+    await request(app.getHttpServer())
+      .get(`${path}/collections/${deleted.id}`)
+      .expect(404);
+    await request(app.getHttpServer())
+      .get(`${path}/collections/${deleted.id}/photos/11`)
+      .expect(404);
+    expect(fixture.state.downloads).toEqual([]);
+  });
+
   it('consulta resumen sin credenciales sobre todos los recolectores, viveros, estados y páginas', async () => {
     const response = await request(app.getHttpServer())
       .get(path)

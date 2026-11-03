@@ -22,6 +22,7 @@ usan socket privado/DB sin TCP y destruyen exclusivamente su clúster al termina
 | Comando | Qué comprueba |
 |---|---|
 | `npm run test:db:plan` | Revisión atómica del plan y concurrencia/ACL 062–063 |
+| `npm run test:db:recoleccion:soft-delete` | RN-REC-09A/089 sobre antecedente mínimo M1 + 014/015: permisos, fechas DATE, rollback, conservación de fotos/compensación, instalación repetida y siete carreras con locks observados. PostgreSQL privado desechable sin TCP/.env. |
 | `npm run test:db:participacion` | Base B, restricciones/vigencias/revisión/bootstrap, conservación sintética y denegaciones SQL |
 | `npm run test:db:acceso` | Gestión C: 22 grupos SQL, ocho carreras y 13 pruebas HTTP con RPC reales |
 | `npm run test:db:acceso:estado` | 26 casos del cotejador sobre estado sintético guardado; sin conectar DB |

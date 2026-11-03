@@ -6,8 +6,13 @@ import { EvidenciasTrazabilidadService } from './evidencias-trazabilidad.service
 
 function createQueryBuilder(
   resultOrFactory:
-    | { data: any; error: any; count?: number | null }
-    | ((builder: any) => { data: any; error: any; count?: number | null }),
+    | { data: any; error: any; count?: number | null; status?: number }
+    | ((builder: any) => {
+        data: any;
+        error: any;
+        count?: number | null;
+        status?: number;
+      }),
 ) {
   const builder: any = {
     select: jest.fn().mockReturnThis(),
@@ -254,4 +259,62 @@ describe('EvidenciasTrazabilidadService', () => {
       ]),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
+
+  it.each(['eliminado durante upload', 'INSERT incierto'])(
+    'el alta general respeta el resultado de la vinculación: %s',
+    async (scenario) => {
+      from.mockImplementation((table: string) => {
+        if (table === 'usuario')
+          return createQueryBuilder({ data: { id: 7 }, error: null });
+        if (table === 'recoleccion')
+          return createQueryBuilder({
+            data: { id: 33, codigo_trazabilidad: 'REC-FIXTURE' },
+            error: null,
+          });
+        if (table === 'tipos_entidad_evidencia')
+          return createQueryBuilder({
+            data: { id: 42, activo: true },
+            error: null,
+          });
+        return createQueryBuilder({ data: [], error: null });
+      });
+      const normalFrom = from.getMockImplementation()!;
+      let evidenceCalls = 0;
+      from.mockImplementation((table: string) => {
+        if (table === 'evidencias_trazabilidad' && ++evidenceCalls === 2) {
+          if (scenario === 'INSERT incierto')
+            return {
+              insert: () => ({
+                select: () =>
+                  Promise.reject(
+                    new TypeError('Respuesta perdida después del commit'),
+                  ),
+              }),
+            };
+          return createQueryBuilder({
+            data: null,
+            error: { code: 'P0002' },
+            status: 404,
+          });
+        }
+        return normalFrom(table);
+      });
+      const operation = service.createForRecoleccion(33, {}, 'auth-fixture', [
+        {
+          mimetype: 'image/jpeg',
+          originalname: 'foto.jpg',
+          buffer: Buffer.from('foto sintética'),
+        },
+      ]);
+      if (scenario === 'eliminado durante upload') {
+        await expect(operation).rejects.toBeInstanceOf(NotFoundException);
+        expect(remove).toHaveBeenCalledTimes(1);
+      } else {
+        await expect(operation).rejects.toThrow(
+          'Respuesta perdida después del commit',
+        );
+        expect(remove).not.toHaveBeenCalled();
+      }
+    },
+  );
 });

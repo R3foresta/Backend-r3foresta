@@ -11,6 +11,7 @@ type QueryResult = {
 type QueryMock = {
   select: jest.Mock;
   eq: jest.Mock;
+  is: jest.Mock;
   update: jest.Mock;
   maybeSingle: jest.Mock;
   single: jest.Mock;
@@ -26,6 +27,7 @@ function createQuery(result: QueryResult = {}): QueryMock {
   const query = {
     select: jest.fn(),
     eq: jest.fn(),
+    is: jest.fn(),
     update: jest.fn(),
     maybeSingle: jest.fn(),
     single: jest.fn(),
@@ -34,6 +36,7 @@ function createQuery(result: QueryResult = {}): QueryMock {
 
   query.select.mockReturnValue(query);
   query.eq.mockReturnValue(query);
+  query.is.mockReturnValue(query);
   query.update.mockReturnValue(query);
   query.maybeSingle.mockResolvedValue({
     data: result.data ?? null,

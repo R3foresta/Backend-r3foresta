@@ -47,6 +47,7 @@ export class RecoleccionConsultasService {
     const { data, error } = await supabase
       .from('recoleccion')
       .select('*')
+      .is('eliminado_en', null)
       .eq('id', id)
       .single();
 
@@ -72,6 +73,7 @@ export class RecoleccionConsultasService {
     let query = supabase
       .from('recoleccion')
       .select(this.getCanonicalRecoleccionSelect(), { count: 'exact' })
+      .is('eliminado_en', null)
       .eq('estado_registro', EstadoRegistro.PENDIENTE_VALIDACION);
 
     if (!esRolGlobal) {
@@ -116,6 +118,7 @@ export class RecoleccionConsultasService {
     let query = supabase
       .from('recoleccion')
       .select(this.getCanonicalRecoleccionSelect(), { count: 'exact' })
+      .is('eliminado_en', null)
       .eq('usuario_id', usuario.id)
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false })
@@ -279,6 +282,7 @@ export class RecoleccionConsultasService {
       const response = await supabase
         .from('recoleccion')
         .select('planta_id, unidad_canonica, saldo_actual, estado_registro')
+        .is('eliminado_en', null)
         .eq('tipo_material', 'SEMILLA')
         .in('estado_registro', [
           EstadoRegistro.VALIDADO,
@@ -324,6 +328,7 @@ export class RecoleccionConsultasService {
     let query = supabase
       .from('recoleccion')
       .select(this.getCanonicalRecoleccionSelect(), { count: 'exact' })
+      .is('eliminado_en', null)
       .eq('vivero_id', viveroId);
 
     query = this.applyCommonListFilters(query, filters);
@@ -364,6 +369,7 @@ export class RecoleccionConsultasService {
       `,
       )
       .eq('id', id)
+      .is('eliminado_en', null)
       .single();
 
     if (error || !data) {

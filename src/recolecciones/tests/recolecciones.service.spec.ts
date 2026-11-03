@@ -14,6 +14,7 @@ import { RecoleccionConsultasService } from '../application/recoleccion-consulta
 import { RecoleccionCreationService } from '../application/recoleccion-creation.service';
 import { RecoleccionDraftService } from '../application/recoleccion-draft.service';
 import { RecoleccionDesechoService } from '../application/recoleccion-desecho.service';
+import { RecoleccionEliminacionService } from '../application/recoleccion-eliminacion.service';
 import { RecoleccionElegibilidadService } from '../application/recoleccion-elegibilidad.service';
 import { RecoleccionEvidenciasService } from '../application/recoleccion-evidencias.service';
 import { RecoleccionHistorialService } from '../application/recoleccion-historial.service';
@@ -136,6 +137,7 @@ describe('RecoleccionesService', () => {
         RecoleccionConsultasService,
         RecoleccionCreationService,
         RecoleccionDraftService,
+        RecoleccionEliminacionService,
         {
           provide: RecoleccionDesechoService,
           useValue: {},

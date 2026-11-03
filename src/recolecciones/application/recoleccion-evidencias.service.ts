@@ -280,11 +280,15 @@ export class RecoleccionEvidenciasService {
         puedeCompensarSubidas =
           status >= 400 &&
           status < 500 &&
-          /^(22|23|42)[0-9A-Z]{3}$/.test(insertError.code);
+          (/^(22|23|42)[0-9A-Z]{3}$/.test(insertError.code) ||
+            insertError.code === 'P0002');
         if (puedeCompensarSubidas) {
           this.logger.error(
             'Error al registrar evidencias del borrador: rechazo SQL confirmado',
           );
+        }
+        if (puedeCompensarSubidas && insertError.code === 'P0002') {
+          throw new NotFoundException('Recolección no encontrada.');
         }
         throw new InternalServerErrorException(
           'Error al guardar fotos del borrador',

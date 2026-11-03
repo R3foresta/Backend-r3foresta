@@ -140,6 +140,7 @@ export class SeedBankService {
       let query = client
         .from('recoleccion')
         .select(SEED_SELECT, { count: 'exact' })
+        .is('eliminado_en', null)
         .eq('tipo_material', 'SEMILLA');
       if (id !== undefined) query = query.eq('id', id);
       return query.order('id', { ascending: true }).range(offset, end);

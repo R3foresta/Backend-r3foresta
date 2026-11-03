@@ -35,6 +35,7 @@ corresponde a una lectura posterior a la autenticación en el backend.
 |---|---|---|
 | POST | `/api/recolecciones` | Crear borrador (paso 1) |
 | PATCH | `/api/recolecciones/:id/draft` | Editar borrador antes de enviar a validación |
+| DELETE | `/api/recolecciones/:id` | Eliminar lógicamente un `BORRADOR` propio (o cualquiera si es ADMIN) |
 | PATCH | `/api/recolecciones/:id/submit` | Enviar borrador a la bandeja del validador |
 | PATCH | `/api/recolecciones/:id/approve` | Validar (solo VALIDADOR / ADMIN). Dispara IPFS + NFT |
 | PATCH | `/api/recolecciones/:id/reject` | Rechazar con motivo (solo VALIDADOR / ADMIN) |
@@ -65,6 +66,74 @@ Bandeja del validador
 ```
 
 Una vez `VALIDADO`, la recolección **no** se puede editar y queda disponible como origen de lotes de vivero.
+
+## DELETE /api/recolecciones/:id — RN-REC-09A
+
+Disponible en el código local del 3 de noviembre de 2026. Antes de consumirla en
+un entorno desplegado, aplicar/cotejar la [migración 089](../../migrations/089_recoleccion_eliminar_borrador.sql)
+y publicar este backend. Requiere los antecedentes de historial 014, fechas DATE
+de 015 y cuenta
+activa (`usuario.activo`), además de los permisos privados del servicio.
+
+```ts
+const response = await fetch(`${API_URL}/recolecciones/${id}`, {
+  method: 'DELETE',
+  headers: { Authorization: `Bearer ${token}` },
+});
+const result = await response.json();
+if (!response.ok) throw new Error(result.message);
+// Quitar el registro de la lista y volver a consultar su paginación/resumen.
+```
+
+`API_URL` incluye `/api`. No se envía body, motivo, usuario, fecha ni rol.
+El actor proviene del JWT verificado y el servidor vuelve a comprobar su cuenta,
+rol y propiedad dentro de la transacción. Audiencia: cuenta interna activa
+(`GENERAL`, `VALIDADOR`, `ADMIN`); permiso por objeto: creador o `ADMIN`.
+
+Respuesta `200`:
+
+```json
+{
+  "success": true,
+  "data": {
+    "recoleccion_id": 292,
+    "eliminado_en": "2026-11-03",
+    "eliminado_por_usuario_id": 7
+  }
+}
+```
+
+| HTTP | Comportamiento |
+|---|---|
+| 400 | ID inválido: debe ser entero positivo seguro |
+| 401 | Bearer ausente/inválido o `x-auth-id` no coincide con la sesión |
+| 403 | Cuenta inactiva, rol fuera de la audiencia o registro ajeno sin ADMIN |
+| 404 | Registro inexistente o ya eliminado; incluye repetir el DELETE |
+| 409 | Ya no está en `BORRADOR`, o hay conflicto concurrente; refrescar antes de reintentar |
+| 500 | Fallo interno; si el resultado es incierto, releer antes de repetir |
+
+Mostrar la acción solo en `BORRADOR` cuando la cuenta sea creadora o `ADMIN`.
+El backend valida siempre estas condiciones. `RECHAZADO` no puede eliminarse
+directamente mediante esta ruta.
+
+El soft delete conserva el estado `BORRADOR`, código, ficha, snapshots, ubicación
+y fotos. Solo marca `eliminado_en`/`eliminado_por_usuario_id` y agrega el evento
+append-only `BORRADOR_ELIMINADO` con el mismo actor/fecha en una transacción.
+`eliminado_en` es el día de negocio en `America/La_Paz` (`YYYY-MM-DD`), coherente
+con lo persistido en 015. No representa una hora exacta.
+No hay consumo ni cambio de saldo. No existe restauración en este contrato.
+Listas, detalle privado, resumen y banco público de semillas excluyen los eliminados;
+editar/enviar a validación un eliminado devuelve no encontrado al releerlo.
+No se reutilizan códigos de trazabilidad.
+
+Una carga de fotos iniciada antes del DELETE puede terminar después: si la
+vinculación aún no confirmó, SQL la rechaza con 404 y el backend intenta retirar
+solo esos archivos nuevos. Si las fotos confirmaron antes, se conservan junto
+con el registro eliminado. Un fallo de transporte conserva archivos hasta
+conciliar el resultado. La limpieza de una creación fallida tampoco borra una
+ficha eliminada ni con historia confirmada.
+
+[Verificación local, concurrencia y límites](../../docs/recoleccion-soft-delete.md).
 
 ## POST /api/recolecciones
 
