@@ -1,0 +1,13 @@
+{
+  "migracion": "migrations/091_usuarios_administracion_lectura.sql",
+  "sha256_fuente_local": "cd162dd707545a11ab8993e0cd4c49ff2cb01f69a63a33c2bb43957253d60796",
+  "procedencia": "Confirmación directa del usuario en este chat",
+  "confirmacion": "ya esta la migracion 91",
+  "aplicacion_reportada": true,
+  "entorno": "No especificado en la confirmación",
+  "catalogo_remoto_cotejado": false,
+  "igualdad_con_fuente_local_acreditada": false,
+  "http_remoto_verificado": false,
+  "despliegue_acreditado": false,
+  "nota": "Registra aplicación reportada; no se ejecutó ni repitió SQL remoto desde este chat."
+}

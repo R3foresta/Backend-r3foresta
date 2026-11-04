@@ -18,7 +18,7 @@ el Success de084 no acredita085.
 
 ## Contrato que debe usar el cliente
 
-[OpenAPI generado](../../docs/pa-int02c-openapi.json): **39 rutas / 84 schemas**.
+[OpenAPI generado](../../docs/pa-int02c-openapi.json): **41 rutas / 86 schemas**.
 [Ejemplos HTTP](../../docs/pa-int02c-ejemplos.json): resultados de Nest con PostgreSQL
 sintético, sin tokens. Swagger completo en `/api/docs`; JSON en `/api/docs-json`.
 
@@ -27,7 +27,7 @@ sintético, sin tokens. Swagger completo en `/api/docs`; JSON en `/api/docs-json
 | Capacidades / miembros | `GET /participacion/capacidades`, `GET /subcampanias/:id/miembros-participacion` (ADMIN global o permiso contextual vigente PLANTADOR/ADMINISTRADOR_SUBCAMPANIA de ese ámbito; solo lectura) |
 | Selección de personas / revisión | `POST /participacion/personas/buscar`, `POST /participacion/accesos/revisar` |
 | C04–C09 | `POST /participacion/accesos/{otorgar-plantador,retirar-plantador,designar-administrador,administrador-a-plantador,retirar-administrador,reemplazar-administrador}` |
-| Autoridad global | `GET /usuarios/:id/autoridad`, `POST /usuarios/:id/roles`, `POST /usuarios/:id/inactivaciones` |
+| Autoridad global | `GET /usuarios` (listado administrativo), `GET /usuarios/:id/autoridad`, `POST /usuarios/:id/roles`, `POST /usuarios/:id/inactivaciones` |
 | Recuperación propia | `GET /participacion/comandos/:comando_id?operacion=...` |
 | Correcciones INT07 | `POST /plantaciones/:id/correcciones/{observaciones,participantes}`, `GET /plantaciones/:id/{contexto-correccion,historial-correcciones,participantes-historicos-seleccionables}` |
 | Estado e historia INT07 | `GET /plantaciones/:id/{estado-propio,historial-propio}`, `GET /plantaciones/mis-registros/estado`, `GET /impact/registros/:id/estado` público |
@@ -52,6 +52,17 @@ no representa autoridad actual. Otra intención con la misma clave da conflicto.
 `SIN_CAMBIOS` también valida autoridad/revisión. GET terminal da 200; PREPARADO da
 202/SIN_RESULTADO con Retry-After; ausencia propia da 404 inconcluso. Timeout o error
 de infraestructura no habilita clave nueva. Reconsultar capacidades después del terminal.
+
+El [flujo de administración de roles](../frontend/modulos/usuarios.md#administración-de-roles-globales)
+permite a un `ADMIN` global activo listar/buscar cuentas activas con `GET /usuarios`,
+escoger una y asignar uno de `ADMIN`, `GENERAL`, `VALIDADOR` o `VOLUNTARIO` mediante
+el comando existente. `VALIDADOR` sigue en uso en Recolección y Vivero. El listado
+admite `consulta?` literal por nombre/username (NFC/trim, 2..100), `rol_global?`,
+`cursor?` firmado y `limite?` de 1..20; devuelve ID/nombre/username/rol/actividad/revisión,
+en orden `usuario_id` ASC, con `observado_en` y `siguiente_cursor`. Requiere091,
+aditiva de lectura; el motor de cambio de rol072 conserva auditoría, recibo,
+revisión y protección del último ADMIN global. La aplicación SQL y el despliegue
+se comprueban por entorno; esta ampliación no acredita frontend integrado.
 
 ## Integración local sin servicios externos
 

@@ -18,6 +18,7 @@ import sys
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 
@@ -30,6 +31,7 @@ MIGRATIONS = [
     '070_pa_int02b_permisos_contextuales.sql', '071_pa_int02b_bootstrap_controlado.sql',
     '072_pa_int02c_comandos_acceso.sql', '073_pa_int02c_lecturas.sql',
     '087_pa_miembros_plantador_lectura.sql',
+    '091_usuarios_administracion_lectura.sql',
 ]
 
 
@@ -70,7 +72,44 @@ def verify_http(base, run_id, origin):
     expect('OpenAPI describe lectura propia del plantador', status == 200
            and member_path in openapi['paths']
            and 'PLANTADOR' in openapi['paths'][member_path]['get']['description'])
+    expect('OpenAPI ofrece selector administrativo de usuarios', '/api/v1/usuarios' in openapi['paths']
+           and 'ADMIN' in openapi['paths']['/api/v1/usuarios']['get']['description'])
     path = '/api/v1/participacion'
+    users_path = '/api/v1/usuarios'
+    status, body, _ = request(users_path)
+    expect('directorio administrativo exige sesión', status == 401 and body['error']['codigo'] == 'SESION_INVALIDA')
+    for profile in ('gestora', 'voluntario', 'logistica'):
+        status, body, _ = request(users_path, profile, headers={'x-user-role': 'ADMIN'})
+        expect('directorio administrativo rechaza ' + profile + ' aunque declare ADMIN', status == 403
+               and body['error']['codigo'] == 'CAPACIDAD_INSUFICIENTE')
+    status, users, headers = request(users_path, 'admin')
+    expect('ADMIN lista sólo usuarios activos con proyección mínima', status == 200 and len(users['data']) == 7
+           and all(set(row) == {'usuario_id', 'nombre', 'username', 'rol_global', 'activo', 'revision_autoridad'}
+                   and row['activo'] is True and isinstance(row['usuario_id'], str)
+                   and isinstance(row['revision_autoridad'], str) for row in users['data'])
+           and '605' not in {row['usuario_id'] for row in users['data']}
+           and headers.get('Cache-Control') == 'private, no-store'
+           and headers.get('Vary') == 'Authorization')
+    status, first_page, _ = request(users_path + '?limite=2', 'admin')
+    expect('directorio administrativo entrega cursor firmado', status == 200
+           and [row['usuario_id'] for row in first_page['data']] == ['600', '601']
+           and isinstance(first_page['siguiente_cursor'], str))
+    status, next_page, _ = request(users_path + '?' + urllib.parse.urlencode({
+        'limite': 2, 'cursor': first_page['siguiente_cursor']}), 'admin')
+    expect('directorio administrativo pagina sin repetir usuarios', status == 200
+           and [row['usuario_id'] for row in next_page['data']] == ['602', '603'])
+    status, selected, _ = request(users_path + '?' + urllib.parse.urlencode({
+        'consulta': '  JOSE\u0301  ', 'rol_global': 'VOLUNTARIO'}), 'admin')
+    expect('selector administrativo busca Unicode y filtra rol', status == 200
+           and [row['usuario_id'] for row in selected['data']] == ['603']
+           and selected['data'][0]['username'] == 'preview-plantador')
+    selected_user = selected['data'][0]
+    status, filtered, _ = request(users_path + '?consulta=preview-logistica&rol_global=GENERAL', 'admin')
+    expect('selector administrativo busca username', status == 200
+           and [row['usuario_id'] for row in filtered['data']] == ['607'])
+    status, empty, _ = request(users_path + '?consulta=preview-logistica&rol_global=VALIDADOR', 'admin')
+    expect('selector administrativo distingue filtro sin coincidencias', status == 200
+           and empty['data'] == [] and empty['siguiente_cursor'] is None)
     status, body, _ = request(path + '/capacidades')
     expect('visitante rechazado con envelope', status == 401 and body['error']['codigo'] == 'SESION_INVALIDA'
            and body['resultado_concluyente'] is False)
@@ -171,10 +210,24 @@ def verify_http(base, run_id, origin):
            and body['error']['ambitos'] == [])
     status, body, _ = request(path + '/comandos/' + key + '?operacion=OTORGAR_PLANTADOR', 'gestora')
     expect('retiro no destruye el recibo anterior', status == 200 and body == receipt)
-    status, body, _ = request('/api/v1/usuarios/603/roles', 'admin', {
-        'comando_id': str(uuid.uuid4()), 'rol_global': 'GENERAL', 'revision_esperada': '0', 'motivo': 'Cambio sintético local'})
+    selected_path = users_path + '/' + selected_user['usuario_id']
+    status, authority, _ = request(selected_path + '/autoridad', 'admin')
+    expect('usuario seleccionado conserva enlace a autoridad', status == 200
+           and authority['data']['usuario_id'] == selected_user['usuario_id']
+           and authority['data']['revision_autoridad'] == selected_user['revision_autoridad'])
+    authority_key = str(uuid.uuid4())
+    status, authority_receipt, _ = request(selected_path + '/roles', 'admin', {
+        'comando_id': authority_key, 'rol_global': 'GENERAL',
+        'revision_esperada': authority['data']['revision_autoridad'], 'motivo': 'Cambio sintético local'})
+    body = authority_receipt
     expect('autoridad usa su comando separado', status == 200 and body['resultado']['tipo'] == 'ROL_GLOBAL'
            and body['resultado']['revision_nueva'] == '1')
+    status, body, _ = request(path + '/comandos/' + authority_key + '?operacion=CAMBIAR_ROL_GLOBAL', 'admin')
+    expect('cambio de rol seleccionado conserva recibo recuperable', status == 200 and body == authority_receipt)
+    status, body, _ = request(users_path + '?consulta=preview-plantador&rol_global=GENERAL', 'admin')
+    expect('selector administrativo refleja rol y revisión confirmados', status == 200
+           and [row['usuario_id'] for row in body['data']] == [selected_user['usuario_id']]
+           and body['data'][0]['revision_autoridad'] == authority_receipt['resultado']['revision_nueva'])
     status, body, headers = request(path + '/comandos/11111111-1111-4111-8111-111111111111?operacion=REGISTRAR_PLANTACION_INICIAL', 'admin')
     exposed = [header.strip().lower() for header in headers.get('Access-Control-Expose-Headers', '').split(',')]
     expect('202 inconcluso expone Retry-After con CORS', status == 202 and body['estado'] == 'SIN_RESULTADO'

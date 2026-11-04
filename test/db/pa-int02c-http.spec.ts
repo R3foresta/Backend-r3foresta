@@ -15,6 +15,8 @@ import { ParticipacionComandosService } from '../../src/participacion/participac
 import { ParticipacionLecturasController } from '../../src/participacion/participacion-lecturas.controller';
 import { ParticipacionLecturasService } from '../../src/participacion/participacion-lecturas.service';
 import { configureGlobalRoutes } from '../../src/app.routes';
+import { UsuariosAdministracionController } from '../../src/users/usuarios-administracion.controller';
+import { UsuariosAdministracionService } from '../../src/users/application/usuarios-administracion.service';
 
 // Solo el harness aislado suministra este socket. No carga .env ni destino remoto.
 const run = promisify(execFile);
@@ -168,11 +170,13 @@ describe('PA INT02-C HTTP → guard → servicio → PostgreSQL aislado', () => 
       controllers: [
         ParticipacionComandosController,
         ParticipacionLecturasController,
+        UsuariosAdministracionController,
       ],
       providers: [
         VerifiedActorGuard,
         ParticipacionComandosService,
         ParticipacionLecturasService,
+        UsuariosAdministracionService,
         {
           provide: ConfigService,
           useValue: { get: () => 'pa-c-http-fixture' },
@@ -273,12 +277,20 @@ describe('PA INT02-C HTTP → guard → servicio → PostgreSQL aislado', () => 
       .get('/api/v1/subcampanias/600/miembros-participacion')
       .set('Authorization', token('plantador'));
     expect(plantador.status).toBe(200);
-    expect(plantador.body.data.some((member: { usuario_id: string }) => member.usuario_id === '603')).toBe(true);
+    expect(
+      plantador.body.data.some(
+        (member: { usuario_id: string }) => member.usuario_id === '603',
+      ),
+    ).toBe(true);
     for (const actor of ['voluntario', 'plantador'])
       expect(
         (
           await request(app.getHttpServer())
-            .get('/api/v1/subcampanias/' + (actor === 'plantador' ? '601' : '600') + '/miembros-participacion')
+            .get(
+              '/api/v1/subcampanias/' +
+                (actor === 'plantador' ? '601' : '600') +
+                '/miembros-participacion',
+            )
             .set('Authorization', token(actor))
         ).status,
       ).toBe(403);
@@ -427,6 +439,111 @@ describe('PA INT02-C HTTP → guard → servicio → PostgreSQL aislado', () => 
         ambitos: [{ subcampania_id: '600', revision_esperada: '1' }],
       });
     expect(bad.status).toBe(422);
+  });
+  it('selecciona usuarios activos por búsqueda/rol y pagina sin ámbito (solo ADMIN)', async () => {
+    await request(app.getHttpServer()).get('/api/v1/usuarios').expect(401);
+    for (const actor of ['contextual', 'voluntario', 'inactivo']) {
+      await request(app.getHttpServer())
+        .get('/api/v1/usuarios')
+        .set('Authorization', token(actor))
+        .set('x-user-role', 'ADMIN')
+        .expect(403);
+    }
+    const first = await request(app.getHttpServer())
+      .get('/api/v1/usuarios')
+      .query({ consulta: 'HTTP', limite: '2' })
+      .set('Authorization', token('admin'))
+      .expect(200);
+    expect(first.headers['cache-control']).toBe('private, no-store');
+    expect(
+      first.body.data.map((row: { usuario_id: string }) => row.usuario_id),
+    ).toEqual(['600', '601']);
+    expect(Object.keys(first.body.data[0]).sort()).toEqual([
+      'activo',
+      'nombre',
+      'revision_autoridad',
+      'rol_global',
+      'username',
+      'usuario_id',
+    ]);
+    expect(first.body.siguiente_cursor).toEqual(expect.any(String));
+    const second = await request(app.getHttpServer())
+      .get('/api/v1/usuarios')
+      .query({
+        consulta: 'HTTP',
+        limite: '2',
+        cursor: first.body.siguiente_cursor,
+      })
+      .set('Authorization', token('admin'))
+      .expect(200);
+    expect(
+      second.body.data.map((row: { usuario_id: string }) => row.usuario_id),
+    ).toEqual(['602', '603']);
+    const filtered = await request(app.getHttpServer())
+      .get('/api/v1/usuarios')
+      .query({ consulta: 'HTTP', rol_global: 'ADMIN' })
+      .set('Authorization', token('admin'))
+      .expect(200);
+    expect(
+      filtered.body.data.map((row: { usuario_id: string }) => row.usuario_id),
+    ).toEqual(['600', '601']);
+    await request(app.getHttpServer())
+      .get('/api/v1/usuarios')
+      .query({
+        consulta: 'HTTP',
+        rol_global: 'ADMIN',
+        cursor: first.body.siguiente_cursor,
+      })
+      .set('Authorization', token('admin'))
+      .expect(422);
+    capture('usuarios_administracion', first);
+  });
+  it('selecciona, revisa y cambia rol de una cuenta legada sin nombre ni username', async () => {
+    await sql(
+      "INSERT INTO public.usuario(id,auth_id,nombre,username,rol,activo) VALUES(608,'http-sin-nombre',NULL,NULL,'VOLUNTARIO',true)",
+    );
+    let listing = await request(app.getHttpServer())
+      .get('/api/v1/usuarios')
+      .query({ rol_global: 'VOLUNTARIO' })
+      .set('Authorization', token('admin'))
+      .expect(200);
+    let selected = listing.body.data.find(
+      (row: { usuario_id: string }) => row.usuario_id === '608',
+    );
+    while (!selected && listing.body.siguiente_cursor) {
+      listing = await request(app.getHttpServer())
+        .get('/api/v1/usuarios')
+        .query({
+          rol_global: 'VOLUNTARIO',
+          cursor: listing.body.siguiente_cursor,
+        })
+        .set('Authorization', token('admin'))
+        .expect(200);
+      selected = listing.body.data.find(
+        (row: { usuario_id: string }) => row.usuario_id === '608',
+      );
+    }
+    expect(selected).toMatchObject({ nombre: 'Usuario', username: null });
+    const authority = await request(app.getHttpServer())
+      .get('/api/v1/usuarios/608/autoridad')
+      .set('Authorization', token('admin'))
+      .expect(200);
+    expect(authority.body.data.nombre).toBe('Usuario');
+    await request(app.getHttpServer())
+      .post('/api/v1/usuarios/608/roles')
+      .set('Authorization', token('admin'))
+      .send({
+        comando_id: randomUUID(),
+        rol_global: 'GENERAL',
+        revision_esperada: authority.body.data.revision_autoridad,
+        motivo: 'Asignación sintética sin nombre',
+      })
+      .expect(200);
+    expect(
+      await sql(
+        "SELECT rol::text||':'||revision_autoridad FROM public.usuario WHERE id=608",
+      ),
+    ).toBe('GENERAL:1');
   });
   it('autoridad administrativa separada, motivo/revisión/recuperación', async () => {
     const read = await request(app.getHttpServer())

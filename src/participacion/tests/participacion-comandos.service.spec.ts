@@ -48,6 +48,51 @@ describe('Adaptador de comando durable', () => {
     rpc.mockReset();
     publicClient.mockReset();
   });
+  it.each([null, '', '   '])(
+    'permite revisar una cuenta legada sin nombre (%j)',
+    async (nombre) => {
+      rpc.mockResolvedValue({
+        data: {
+          http_status: 200,
+          body: {
+            data: {
+              usuario_id: '42',
+              nombre,
+              rol_global: 'VOLUNTARIO',
+              activo: true,
+              revision_autoridad: '0',
+            },
+            observado_en: '2026-11-03T12:00:00Z',
+          },
+        },
+        error: null,
+      });
+      expect((await service.leerAutoridad(actor, '42')).body).toMatchObject({
+        data: { nombre: 'Usuario', usuario_id: '42' },
+      });
+    },
+  );
+  it('no convierte un nombre de tipo incompatible en una cuenta válida', async () => {
+    rpc.mockResolvedValue({
+      data: {
+        http_status: 200,
+        body: {
+          data: {
+            usuario_id: '42',
+            nombre: 42,
+            rol_global: 'VOLUNTARIO',
+            activo: true,
+            revision_autoridad: '0',
+          },
+          observado_en: '2026-11-03T12:00:00Z',
+        },
+      },
+      error: null,
+    });
+    await expect(service.leerAutoridad(actor, '42')).rejects.toMatchObject({
+      status: 503,
+    });
+  });
   it('usa actor privado sin Number y devuelve recibo completo', async () => {
     rpc.mockResolvedValue({
       data: { http_status: 200, body: receipt },

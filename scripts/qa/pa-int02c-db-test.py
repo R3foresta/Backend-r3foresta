@@ -81,6 +81,8 @@ def main():
             state_path.write_text(json.dumps({
                 'proyecto': 'SINTETICO_AISLADO_INT02C', 'entorno': 'SINTETICO_LOCAL',
                 'migraciones': ['072', '073', '087'], 'estado': state,
+                'migraciones_instaladas': ['072', '073', '087', '091'],
+                'alcance_cotejo': 'Funciones y ACL de C (072/073/087); 091 se comprueba en assertions SQL/HTTP del runner.',
             }, ensure_ascii=False, indent=2) + '\n')
             verification = subprocess.run([
                 sys.executable, str(ROOT / 'scripts/qa/pa-int02c-estado-verificar.py'),
@@ -93,6 +95,8 @@ def main():
                 'entorno': 'SINTETICO_LOCAL', 'resultado': json.loads(verification.stdout)['resultado'],
                 'evidencia': str(state_path.relative_to(ROOT)),
                 'salida': str(verification_path.relative_to(ROOT)), 'origen_remoto_acreditado': False,
+                'migraciones_instaladas': ['072', '073', '087', '091'],
+                'alcance_cotejo': '072/073/087; la comprobación de 091 corresponde a las pruebas SQL/HTTP.',
             }
             evidence['sha256'].update({path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
                                        for path in ['scripts/sql/pa-int02c-estado.sql',

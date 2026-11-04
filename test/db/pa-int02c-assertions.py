@@ -37,6 +37,7 @@ migrations = [
     'migrations/072_pa_int02c_comandos_acceso.sql',
     'migrations/073_pa_int02c_lecturas.sql',
     'migrations/087_pa_miembros_plantador_lectura.sql',
+    'migrations/091_usuarios_administracion_lectura.sql',
 ]
 evidence = {
     'tarea': 'PA-T-INT02-C', 'estado': 'EN_EJECUCION',
@@ -64,9 +65,12 @@ def query(sql, error=None):
     return result.stdout.strip()
 
 
-def script(path):
+def script(path, error=None):
     result = subprocess.run(base + ['-f', str(root / path)], text=True,
                             capture_output=True, timeout=35)
+    if error:
+        assert result.returncode != 0 and error in result.stderr, result.stderr
+        return
     assert result.returncode == 0, result.stderr
 
 
@@ -290,6 +294,144 @@ def readings():
     passed('búsqueda correo exacto sin índice único/colisiones, nombre NFC y comodín literal; revisión completa privada')
 
 
+def administration_readings():
+    """091 añade solo un selector privado; fixtures nuevas siempre hacen rollback."""
+    name = 'pa_usuarios_administracion_leer'
+    signature = 'public.' + name + '(bigint,text,text,text,bigint,integer)'
+
+    def denial(parameters, sqlstate, code):
+        query("SET ROLE service_role; DO $$ DECLARE v_detalle TEXT; BEGIN BEGIN "
+              'PERFORM public.' + name + '(' + parameters + "); "
+              "RAISE EXCEPTION 'La llamada debía rechazar'; "
+              "EXCEPTION WHEN SQLSTATE '" + sqlstate + "' THEN "
+              'GET STACKED DIAGNOSTICS v_detalle=PG_EXCEPTION_DETAIL; '
+              "IF v_detalle::JSONB->>'codigo' IS DISTINCT FROM " + literal(code) + " THEN "
+              "RAISE EXCEPTION 'Código de rechazo incorrecto'; END IF; END; END $$;")
+
+    for actor, auth in ((2, 'fixture-general'), (3, 'fixture-voluntario'),
+                        (4, 'fixture-validador'), (6, 'fixture-coordinador')):
+        denial(str(actor) + ',' + literal(auth) + ',NULL,NULL,NULL,21',
+               'PT403', 'CAPACIDAD_INSUFICIENTE')
+    for actor, auth in ((5, 'fixture-inactivo'), (7, 'fixture-admin-inactivo')):
+        denial(str(actor) + ',' + literal(auth) + ',NULL,NULL,NULL,21',
+               'PT403', 'CUENTA_INACTIVA')
+    for parameters in ("NULL,'fixture-admin'", "0,'fixture-admin'", "-1,'fixture-admin'",
+                       '1,NULL', "1,'   '", "1,'fixture-general'", "999999,'inexistente'"):
+        denial(parameters + ',NULL,NULL,NULL,21', 'PT401', 'SESION_INVALIDA')
+    for invalid in ('NULL,NULL,NULL,NULL', 'NULL,NULL,NULL,0', 'NULL,NULL,NULL,22',
+                    'NULL,NULL,0,21', 'NULL,NULL,-1,21', "NULL,'admin',NULL,21",
+                    "NULL,'OTRO',NULL,21", "'',NULL,NULL,21", "' ',NULL,NULL,21",
+                    "'a',NULL,NULL,21", literal('a' * 101) + ',NULL,NULL,21'):
+        denial("1,'fixture-admin'," + invalid, 'PT422', 'ENTRADA_INVALIDA')
+    for role in ('anon', 'authenticated', 'pa_int02b_public_probe'):
+        query('SET ROLE ' + role + '; SELECT public.' + name
+              + "(1,'fixture-admin',NULL,NULL,NULL,21)", 'permission denied')
+    # La cuenta puede haber cambiado desde el guard: SQL usa el rol vigente.
+    before = domain_state()
+    query("BEGIN; UPDATE public.usuario SET rol='GENERAL' WHERE id=1; SET LOCAL ROLE service_role; "
+          "DO $$ BEGIN BEGIN PERFORM public." + name + "(1,'fixture-admin',NULL,NULL,NULL,21); "
+          "RAISE EXCEPTION 'La cuenta degradada no debe consultar'; "
+          "EXCEPTION WHEN SQLSTATE 'PT403' THEN NULL; END; END $$; ROLLBACK;")
+    assert domain_state() == before
+    passed('091: SQL solo ADMIN activo, identidad vinculada, roles públicos denegados y parámetros PT401/403/422')
+
+    # Datos de lectura en una única transacción descartada: no añaden otro
+    # ADMIN a las pruebas concurrentes del último administrador que siguen.
+    fixtures = [
+        (93001, '  Jose\u0301 Gestión  ', 'alias_jose%', 'VOLUNTARIO', True, 9007199254740993),
+        (93002, 'Otro nombre', 'Alias_Visible', 'GENERAL', True, 0),
+        (93003, 'Literal _%\\ruta', 'Comodin_%', 'VALIDADOR', True, 0),
+        (93004, '   ', '  Fallback visible  ', 'VOLUNTARIO', True, 0),
+        (93005, 'Repetido', None, 'VOLUNTARIO', True, 0),
+        (93006, 'REPETIDO', '   ', 'VOLUNTARIO', True, 0),
+        (93007, 'Solo inactivo 091', 'inactivo091', 'ADMIN', False, 0),
+        (9007199254740995, None, None, 'VOLUNTARIO', True, 9223372036854775807),
+    ]
+    values = ','.join('(' + ','.join((str(user), literal('fixture-091-' + str(user)),
+                     'NULL' if nombre is None else literal(nombre),
+                     'NULL' if username is None else literal(username), literal(role),
+                     'true' if active else 'false', str(revision))) + ')'
+                     for user, nombre, username, role, active, revision in fixtures)
+    searches = [
+        'NULL,NULL,NULL,2', 'NULL,NULL,2,2', 'NULL,NULL,NULL,21',
+        literal('  JOSE\u0301  ') + ',NULL,NULL,21',
+        "'VISIBLE',NULL,NULL,21", "'_%',NULL,NULL,21",
+        literal('\\r') + ',NULL,NULL,21', "'%persona',NULL,NULL,21",
+        "'fallback',NULL,NULL,21", "'repetido',NULL,NULL,21",
+        "'Solo inactivo 091',NULL,NULL,21", 'NULL,NULL,9007199254740993,21',
+        'NULL,NULL,9223372036854775807,21',
+    ] + ['NULL,' + literal(role) + ',NULL,21' for role in ('ADMIN', 'GENERAL', 'VALIDADOR', 'VOLUNTARIO')]
+    before = domain_state()
+    output = query('BEGIN; INSERT INTO public.usuario(id,auth_id,nombre,username,rol,activo,revision_autoridad) VALUES '
+                   + values + '; SET LOCAL ROLE service_role; '
+                   + '\n'.join('SELECT public.' + name + "(1,'fixture-admin'," + parameters + ');'
+                               for parameters in searches) + ' ROLLBACK;')
+    assert domain_state() == before, '091: las fixtures transaccionales dejaron cambios'
+    replies = [json.loads(line) for line in output.splitlines()]
+    assert len(replies) == len(searches)
+    for reply in replies:
+        assert set(reply) == {'data', 'observado_en'} and reply['observado_en'].endswith('Z'), reply
+        rows = reply['data']
+        assert [int(row['usuario_id']) for row in rows] == sorted(int(row['usuario_id']) for row in rows)
+        for row in rows:
+            assert set(row) == {'usuario_id', 'nombre', 'username', 'rol_global', 'activo', 'revision_autoridad'}, row
+            assert row['activo'] is True and isinstance(row['usuario_id'], str)
+            assert isinstance(row['revision_autoridad'], str) and isinstance(row['nombre'], str)
+            assert row['username'] is None or isinstance(row['username'], str), row
+    pages = [reply['data'] for reply in replies]
+    assert [row['usuario_id'] for row in pages[0]] == ['1', '2']
+    assert [row['usuario_id'] for row in pages[1]] == ['3', '4']
+    assert len(pages[2]) == 21
+    assert [row['usuario_id'] for row in pages[3]] == ['31', '32', '93001'], pages[3]
+    assert pages[3][-1]['revision_autoridad'] == '9007199254740993'
+    assert [row['usuario_id'] for row in pages[4]] == ['93002', '93004']
+    assert [row['usuario_id'] for row in pages[5]] == ['93003']
+    assert [row['usuario_id'] for row in pages[6]] == ['93003']
+    assert [row['usuario_id'] for row in pages[7]] == ['34']
+    assert pages[8][0]['nombre'] == 'Fallback visible' and pages[8][0]['username'] == 'Fallback visible'
+    assert [row['usuario_id'] for row in pages[9]] == ['93005', '93006']
+    assert all(row['username'] is None for row in pages[9])
+    assert pages[10] == []
+    assert pages[11] == [{'usuario_id': '9007199254740995', 'nombre': 'Usuario', 'username': None,
+                         'rol_global': 'VOLUNTARIO', 'activo': True, 'revision_autoridad': '9223372036854775807'}]
+    assert pages[12] == []
+    for role, page in zip(('ADMIN', 'GENERAL', 'VALIDADOR', 'VOLUNTARIO'), pages[13:]):
+        assert page and all(row['rol_global'] == role and row['activo'] is True for row in page)
+    passed('091: búsqueda NFC/case por nombre y username, comodines literales, colisiones, fallback y proyección mínima')
+    passed('091: keyset ID ASC, límite21, cuatro roles, solo activos, BIGINT/revisiones string y username nullable')
+
+    # La reinstalación cierra grants residuales de la firma y no cambia ACL
+    # de ninguna relación/columna ni datos, historial o comandos existentes.
+    relation_acl = "SELECT jsonb_agg(jsonb_build_object('oid',c.oid,'acl',c.relacl,'columnas'," \
+                   "(SELECT jsonb_agg(jsonb_build_array(a.attnum,a.attacl) ORDER BY a.attnum) " \
+                   "FROM pg_attribute a WHERE a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped)) ORDER BY c.oid) " \
+                   "FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public'"
+    acl_before = query(relation_acl)
+    before = domain_state()
+    query('GRANT EXECUTE ON FUNCTION ' + signature + ' TO anon,authenticated,pa_int02b_public_probe; '
+          'GRANT EXECUTE ON FUNCTION ' + signature + ' TO service_role WITH GRANT OPTION;')
+    script(migrations[7])
+    assert domain_state() == before and query(relation_acl) == acl_before
+    assert json.loads(query("SELECT jsonb_build_object('invoker',NOT p.prosecdef,'servicio',"
+                            "has_function_privilege('service_role',p.oid,'EXECUTE'),'publicos',"
+                            "has_function_privilege('anon',p.oid,'EXECUTE') OR "
+                            "has_function_privilege('authenticated',p.oid,'EXECUTE') OR "
+                            "has_function_privilege('pa_int02b_public_probe',p.oid,'EXECUTE'),"
+                            "'delegable',EXISTS(SELECT 1 FROM aclexplode(p.proacl) a WHERE "
+                            "a.grantee='service_role'::regrole AND a.is_grantable)) FROM pg_proc p WHERE p.oid="
+                            + literal(signature) + '::regprocedure')) == {
+                                'invoker': True, 'servicio': True, 'publicos': False, 'delegable': False}
+    read(name, "1,'fixture-admin',NULL,NULL,NULL,1")
+    # Una sobrecarga inesperada aborta antes de cambiar la función existente.
+    body_before = query('SELECT prosrc FROM pg_proc WHERE oid=' + literal(signature) + '::regprocedure')
+    query('CREATE FUNCTION public.' + name + "(TEXT) RETURNS JSONB LANGUAGE sql AS $$ SELECT '{}'::JSONB $$;")
+    script(migrations[7], 'USUARIOS_ADMIN_SOBRECARGA_INESPERADA')
+    query('DROP FUNCTION public.' + name + '(TEXT)')
+    assert query('SELECT prosrc FROM pg_proc WHERE oid=' + literal(signature) + '::regprocedure') == body_before
+    assert query(relation_acl) == acl_before and domain_state() == before
+    passed('091: reinstalación limpia ACL/grant option, sin permisos nuevos en tablas; preflight rechaza sobrecargas')
+
+
 def race(first_sql, second_sql, label):
     """First RPC holds its own uncommitted result; second must visibly wait on Lock."""
     env = dict(os.environ)
@@ -412,15 +554,17 @@ def seed_and_install():
     passed('reinstalar072 después073 conserva EXECUTE de todas las lecturas privadas y su ejecución real')
     script(migrations[5])
     script(migrations[6])
+    script(migrations[7])
     assert domain_state() == before
     seed = json.loads((root / 'test/db/fixtures/pa-int02b-manifest-sintetico.json').read_text())
     query('SET ROLE service_role; SELECT public.pa_inicializar_participacion_legada(1,'
           + literal(uuid.uuid4()) + ',' + literal(json.dumps(seed, ensure_ascii=False)) + '::jsonb)')
-    passed('migraciones 068–073 y 087, repetición C aditiva y bootstrap sintético acotado')
+    passed('migraciones 068–073/087/091, repetición C aditiva y bootstrap sintético acotado')
 
 
 def main():
     seed_and_install()
+    administration_readings()
     readings()
 
     # C04/C05: no-op revalida revisión, historial conservado, replay no reotorga.
@@ -718,6 +862,7 @@ def main():
     script(migrations[4])
     script(migrations[5])
     script(migrations[6])
+    script(migrations[7])
     assert domain_state() == before
     assert query('SELECT count(*) FROM public.subcampania_equipo') == '2'
     assert query('SELECT count(*) FROM public.registro_plantacion') == '1'

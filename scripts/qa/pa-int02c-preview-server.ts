@@ -19,6 +19,8 @@ import { ParticipacionLecturasController } from '../../src/participacion/partici
 import { ParticipacionLecturasService } from '../../src/participacion/participacion-lecturas.service';
 import { participacionOpenApi } from '../../src/participacion/participacion-openapi.generated';
 import { SupabaseService } from '../../src/supabase/supabase.service';
+import { UsuariosAdministracionController } from '../../src/users/usuarios-administracion.controller';
+import { UsuariosAdministracionService } from '../../src/users/application/usuarios-administracion.service';
 
 const run = promisify(execFile);
 const runId = process.env.PA_C_PREVIEW_RUN;
@@ -151,6 +153,14 @@ const signatures: Record<string, string[]> = {
     'p_comando_id',
   ],
   pa_autoridad_leer: ['p_actor_id', 'p_auth_id', 'p_usuario_id'],
+  pa_usuarios_administracion_leer: [
+    'p_actor_id',
+    'p_auth_id',
+    'p_consulta',
+    'p_rol_global',
+    'p_despues_id',
+    'p_limite',
+  ],
   pa_capacidades_leer: [
     'p_actor_id',
     'p_auth_id',
@@ -217,11 +227,13 @@ async function rpc(name: string, args: Record<string, unknown>) {
   controllers: [
     ParticipacionComandosController,
     ParticipacionLecturasController,
+    UsuariosAdministracionController,
   ],
   providers: [
     VerifiedActorGuard,
     ParticipacionComandosService,
     ParticipacionLecturasService,
+    UsuariosAdministracionService,
     {
       provide: ConfigService,
       useValue: {

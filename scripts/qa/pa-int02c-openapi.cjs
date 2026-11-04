@@ -235,6 +235,14 @@ const schemas = {
     activo: bool,
     revision_autoridad: revision,
   }),
+  UsuarioAdministracion: obj({
+    usuario_id: id,
+    nombre: text,
+    username: nullableText,
+    rol_global: roles,
+    activo: { type: 'boolean', enum: [true] },
+    revision_autoridad: revision,
+  }),
   CambioUsuario: obj({
     usuario_id: id,
     permiso_anterior: permission,
@@ -335,6 +343,11 @@ for (const [name, data, page] of [
   ['PersonasLectura', array(ref('PersonaMinima')), true],
   ['RevisionLectura', ref('RevisionAccesos'), false],
   ['AutoridadLectura', ref('Autoridad'), false],
+  [
+    'UsuariosAdministracionLectura',
+    array(ref('UsuarioAdministracion'), 0, 20),
+    true,
+  ],
 ])
   schemas[name] = obj({
     data,
@@ -472,6 +485,27 @@ for (const [suffix, operation] of [
     true,
   );
 add(
+  '/api/v1/usuarios',
+  'get',
+  'Listar usuarios para administrar roles',
+  null,
+  'UsuariosAdministracionLectura',
+  [
+    param('consulta', 'query', {
+      type: 'string',
+      minLength: 2,
+      maxLength: 100,
+      description:
+        'NFC y trim; substring literal por nombre o username, sin distinguir mayúsculas.',
+    }),
+    param('rol_global', 'query', roles),
+    param('cursor', 'query', pagination.cursor),
+    param('limite', 'query', pagination.limite),
+  ],
+);
+paths['/api/v1/usuarios'].get.description =
+  'Solo ADMIN global activo; la RPC revalida identidad y rol. Lista únicamente cuentas activas, ordenadas por usuario_id ASC, sin datos de contacto ni credenciales. Todos los filtros son opcionales; consulta no interpreta % ni _ como comodines. Cursor firmado ligado a actor, sesión y filtros. La revisión observada permite preparar el cambio, pero no reserva autoridad: confirmar con POST /api/v1/usuarios/{usuario_id}/roles.';
+add(
   '/api/v1/usuarios/{usuario_id}/roles',
   'post',
   'CAMBIAR_ROL_GLOBAL',
@@ -480,6 +514,8 @@ add(
   [param('usuario_id', 'path', id, true)],
   true,
 );
+paths['/api/v1/usuarios/{usuario_id}/roles'].post.description =
+  'Solo ADMIN global activo; asigna uno de ADMIN, GENERAL, VALIDADOR o VOLUNTARIO. Conserva el motor existente: revisión esperada, motivo, historial y recibo atómicos, replay con la misma clave y protección del último administrador global activo. Un administrador contextual no puede cambiar roles globales. Revisión obsoleta o retirada del último ADMIN devuelve 409 con recibo RECHAZADO; releer y pedir nueva confirmación antes de una intención nueva.';
 add(
   '/api/v1/usuarios/{usuario_id}/inactivaciones',
   'post',
@@ -1565,9 +1601,9 @@ const document = {
   info: {
     title:
       'R3Foresta Participación aliada — INT02-C / INT03-A / INT02-D / INT05 / INT07',
-    version: '1.6.0',
+    version: '1.7.0',
     description:
-      'Gestión C, registro inicial INT03-A, consulta INT05 y correcciones INT07 de observaciones/participantes con recuperación durable, contexto/historial privados, búsqueda histórica y estado propio/público. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada.',
+      'Gestión C, listado administrativo de usuarios y roles globales, registro inicial INT03-A, consulta INT05 y correcciones INT07 de observaciones/participantes con recuperación durable, contexto/historial privados, búsqueda histórica y estado propio/público. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada.',
   },
   servers: [{ url: 'http://localhost:3000' }],
   paths,

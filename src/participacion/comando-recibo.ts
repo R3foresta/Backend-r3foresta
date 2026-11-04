@@ -349,10 +349,16 @@ export function validateAuthorityReply(value: unknown): RpcReply {
     id(authority.usuario_id);
     revision(authority.revision_autoridad);
     assert(
-      typeof authority.nombre === 'string' &&
+      (authority.nombre === null || typeof authority.nombre === 'string') &&
         roles.includes(authority.rol_global as string) &&
         typeof authority.activo === 'boolean',
     );
+    // Cuentas legadas sin nombre/username siguen siendo seleccionables. La
+    // presentación coincide con el selector091, sin modificar su autoridad.
+    body.data = {
+      ...authority,
+      nombre: (authority.nombre as string | null)?.trim() || 'Usuario',
+    };
   }
   return { http_status: reply.http_status, body };
 }

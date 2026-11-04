@@ -33,9 +33,11 @@ import { ParticipacionCargasService } from '../cargas/participacion-cargas.servi
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { validarImpacto } from '../../impact/domain/policies/impacto-proyeccion.policy';
+import { UsuariosAdministracionController } from '../../users/usuarios-administracion.controller';
+import { UsuariosAdministracionService } from '../../users/application/usuarios-administracion.service';
 
 describe('Contrato OpenAPI de participación v1', () => {
-  it('documenta las 40 rutas registradas por Nest y resuelve todos sus schemas', async () => {
+  it('documenta las 41 rutas registradas por Nest y resuelve todos sus schemas', async () => {
     const module = await Test.createTestingModule({
       imports: [JwtModule.register({})],
       controllers: [
@@ -49,6 +51,7 @@ describe('Contrato OpenAPI de participación v1', () => {
         ImpactImagenController,
         ImpactoConsultaController,
         MisRegistrosController,
+        UsuariosAdministracionController,
       ],
       providers: [
         VerifiedActorGuard,
@@ -62,6 +65,7 @@ describe('Contrato OpenAPI de participación v1', () => {
         { provide: ParticipacionRegistroService, useValue: {} },
         { provide: ParticipacionCorreccionesService, useValue: {} },
         { provide: ParticipacionCargasService, useValue: {} },
+        { provide: UsuariosAdministracionService, useValue: {} },
       ],
     }).compile();
     const app = module.createNestApplication();
@@ -75,7 +79,7 @@ describe('Contrato OpenAPI de participación v1', () => {
       expect(Object.keys(actual.paths).sort()).toEqual(
         Object.keys(participacionOpenApi.paths).sort(),
       );
-      expect(Object.keys(actual.paths)).toHaveLength(40);
+      expect(Object.keys(actual.paths)).toHaveLength(41);
       for (const route of Object.keys(actual.paths))
         expect(Object.keys(actual.paths[route]).sort()).toEqual(
           Object.keys(participacionOpenApi.paths[route]).sort(),

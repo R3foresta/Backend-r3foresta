@@ -1,0 +1,79 @@
+{
+  "origen": "HTTP directo contra PostgreSQL sintético aislado; sólo identidades de fixture.",
+  "ejemplos": {
+    "usuarios_administracion": {
+      "http": 200,
+      "body": {
+        "data": [
+          {
+            "usuario_id": "600",
+            "nombre": "ADMIN HTTP",
+            "username": "admin",
+            "rol_global": "ADMIN",
+            "activo": true,
+            "revision_autoridad": "0"
+          },
+          {
+            "usuario_id": "601",
+            "nombre": "ADMIN HTTP 2",
+            "username": "admin2",
+            "rol_global": "ADMIN",
+            "activo": true,
+            "revision_autoridad": "0"
+          }
+        ],
+        "observado_en": "2026-11-04T01:31:03.701Z",
+        "siguiente_cursor": "WzEsImM1NDA2NjhmZGNkODBkNmRiNWM2NTFhZjRjYmYxODUzMWRiYTBhNTliNDFkZTJhNTAyYTViNzkwYzM0MGYzMDQiLCI2MDEiXQ.Nr6dlLL-Ou-wOSQjKxZ0Xb3J9sDTx6gn7Y58ptBWEhI"
+      }
+    },
+    "autoridad": {
+      "http": 200,
+      "body": {
+        "data": {
+          "activo": true,
+          "nombre": "Plántador HTTP",
+          "rol_global": "VOLUNTARIO",
+          "usuario_id": "603",
+          "revision_autoridad": "0"
+        },
+        "observado_en": "2026-11-04T01:31:04.085148Z"
+      }
+    },
+    "rol_confirmado": {
+      "http": 200,
+      "body": {
+        "error": null,
+        "estado": "CONFIRMADO",
+        "operacion": "CAMBIAR_ROL_GLOBAL",
+        "resultado": {
+          "tipo": "ROL_GLOBAL",
+          "cambio": "CAMBIO_APLICADO",
+          "rol_nuevo": "GENERAL",
+          "usuario_id": "603",
+          "rol_anterior": "VOLUNTARIO",
+          "revision_nueva": "1",
+          "revision_anterior": "0"
+        },
+        "comando_id": "d639be14-990f-4832-b76f-fc2e46de8873",
+        "finalizado_en": "2026-11-04T01:31:04.128412Z"
+      }
+    },
+    "capacidad_rechazado": {
+      "http": 403,
+      "body": {
+        "error": {
+          "campos": [],
+          "codigo": "CAPACIDAD_INSUFICIENTE",
+          "ambitos": [],
+          "mensaje": "No dispone de esta capacidad.",
+          "reintento": "NUEVA_CONFIRMACION"
+        },
+        "estado": "RECHAZADO",
+        "operacion": "CAMBIAR_ROL_GLOBAL",
+        "resultado": null,
+        "comando_id": "bd9a6b9b-9366-4549-9322-f8a1c41d3d3e",
+        "finalizado_en": "2026-11-04T01:31:04.172431Z"
+      }
+    }
+  }
+}

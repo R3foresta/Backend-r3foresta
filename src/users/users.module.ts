@@ -6,6 +6,8 @@ import { UsersController } from './users.controller';
 import { PerfilV1Controller } from './perfil-v1.controller';
 import { PerfilV1Service } from './perfil-v1.service';
 import { VerifiedActorGuard } from '../auth/verified-actor.guard';
+import { UsuariosAdministracionController } from './usuarios-administracion.controller';
+import { UsuariosAdministracionService } from './application/usuarios-administracion.service';
 
 @Module({
   imports: [
@@ -20,8 +22,17 @@ import { VerifiedActorGuard } from '../auth/verified-actor.guard';
       inject: [ConfigService],
     }),
   ],
-  controllers: [UsersController, PerfilV1Controller],
-  providers: [UsersService, PerfilV1Service, VerifiedActorGuard],
+  controllers: [
+    UsersController,
+    PerfilV1Controller,
+    UsuariosAdministracionController,
+  ],
+  providers: [
+    UsersService,
+    PerfilV1Service,
+    UsuariosAdministracionService,
+    VerifiedActorGuard,
+  ],
   exports: [UsersService],
 })
 export class UsersModule {}

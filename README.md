@@ -30,6 +30,11 @@ están en [.env.example](.env.example).
 Para integrar gestión de acceso **sin credenciales ni Supabase**, ejecutar
 `npm run preview:participacion`. Entrega una API sintética en `127.0.0.1:3302`;
 ver [guía de participación](documentacion/modulos/participacion.md).
+La [administración de usuarios](documentacion/frontend/modulos/usuarios.md#administración-de-roles-globales)
+añade `GET /api/v1/usuarios` exclusivo de ADMIN para seleccionar cuentas y reutiliza
+el cambio de rol existente. Requiere la migración aditiva091; [verificación local](docs/evidencia/usuarios-administracion-local-2026-11-03.json).
+Pablo confirmó la aplicación de091; [registro y límites](docs/evidencia/usuarios-administracion-091-aplicacion-reportada.json).
+Cotejo remoto y despliegue pendientes.
 Para integrar INT04 con registro, reposición interna y fotos/PostGIS reales,
 usar `npm run preview:participacion-d -- --pg-bin /ruta/runtime-postgis/bin`
 en `127.0.0.1:3303`; [fixture y verificación](docs/pa-int02d-preview.md).

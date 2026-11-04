@@ -1,0 +1,233 @@
+{
+  "tarea": "Administración de usuarios y roles globales",
+  "fecha_local": "2026-11-03",
+  "zona_horaria": "America/La_Paz",
+  "revision_base": "f26cbfacfd68d240b2a5b92cb3a6192de90704a3",
+  "arbol_de_trabajo": true,
+  "alcance": "Selector activo exclusivo ADMIN con091; reutiliza cambio de rol/recuperación de072 sin modificar su transacción.",
+  "runtime": {
+    "node": "24.19.0",
+    "npm": "12.0.2",
+    "postgresql": "14.17 (Homebrew)",
+    "locale": "C.UTF-8"
+  },
+  "build": {
+    "comando": "npm run build",
+    "exit_code": 0
+  },
+  "unitarios": {
+    "comando": "npm run test:unit -- --runInBand --cacheDirectory=/private/tmp/r3-jest",
+    "suites": 84,
+    "pruebas": 1190,
+    "exit_code": 0,
+    "servicios_externos_sustituidos": true
+  },
+  "openapi": {
+    "comando": "node scripts/qa/pa-int02c-openapi.cjs --check",
+    "rutas": 41,
+    "schemas": 86,
+    "exit_code": 0
+  },
+  "postgresql_aislado": {
+    "comando": "python3 scripts/qa/pa-int02c-db-test.py",
+    "estado": "CORRECTO",
+    "entorno": {
+      "aislado": true,
+      "tcp": false,
+      "env_cargado": false,
+      "antecedente": "test/db/pa-int02c-fixture.sql",
+      "naturaleza": "SINTETICO_AISLADO_POST_067",
+      "postgresql": "14.17 (Homebrew)",
+      "lc_ctype": "C.UTF-8",
+      "lc_collate": "C.UTF-8",
+      "cluster_detenido": true,
+      "directorio_eliminado": true
+    },
+    "migraciones": [
+      "migrations/068_pa_participacion_comando.sql",
+      "migrations/069_pa_int02b_eventos_acceso.sql",
+      "migrations/070_pa_int02b_permisos_contextuales.sql",
+      "migrations/071_pa_int02b_bootstrap_controlado.sql",
+      "migrations/072_pa_int02c_comandos_acceso.sql",
+      "migrations/073_pa_int02c_lecturas.sql",
+      "migrations/087_pa_miembros_plantador_lectura.sql",
+      "migrations/091_usuarios_administracion_lectura.sql"
+    ],
+    "grupos_sql": 26,
+    "casos_091": [
+      "091: SQL solo ADMIN activo, identidad vinculada, roles públicos denegados y parámetros PT401/403/422",
+      "091: búsqueda NFC/case por nombre y username, comodines literales, colisiones, fallback y proyección mínima",
+      "091: keyset ID ASC, límite21, cuatro roles, solo activos, BIGINT/revisiones string y username nullable",
+      "091: reinstalación limpia ACL/grant option, sin permisos nuevos en tablas; preflight rechaza sobrecargas"
+    ],
+    "carreras": [
+      {
+        "caso": "dos retiros de últimos contextuales",
+        "espera_observada": "Lock",
+        "primero": "CONFIRMADO",
+        "segundo": "RECHAZADO",
+        "error_segundo": "ULTIMO_ADMINISTRADOR_CONTEXTUAL"
+      },
+      {
+        "caso": "baja antes de designación",
+        "espera_observada": "Lock",
+        "primero": "CONFIRMADO",
+        "segundo": "RECHAZADO",
+        "error_segundo": "DESTINO_INACTIVO"
+      },
+      {
+        "caso": "designación antes de baja",
+        "espera_observada": "Lock",
+        "primero": "CONFIRMADO",
+        "segundo": "RECHAZADO",
+        "error_segundo": "ULTIMO_ADMINISTRADOR_CONTEXTUAL"
+      },
+      {
+        "caso": "baja versus retiro del otro administrador",
+        "espera_observada": "Lock",
+        "primero": "CONFIRMADO",
+        "segundo": "RECHAZADO",
+        "error_segundo": "ULTIMO_ADMINISTRADOR_CONTEXTUAL"
+      },
+      {
+        "caso": "dos cambios de autoridad con misma revisión",
+        "espera_observada": "Lock",
+        "primero": "CONFIRMADO",
+        "segundo": "RECHAZADO",
+        "error_segundo": "REVISION_OBSOLETA"
+      },
+      {
+        "caso": "dos degradaciones de últimos ADMIN globales",
+        "espera_observada": "Lock",
+        "primero": "CONFIRMADO",
+        "segundo": "RECHAZADO",
+        "error_segundo": "ULTIMO_ADMIN_GLOBAL"
+      },
+      {
+        "caso": "misma clave/contenido en dos conexiones",
+        "espera_observada": "Lock",
+        "primero": "CONFIRMADO",
+        "segundo": "CONFIRMADO",
+        "error_segundo": null
+      },
+      {
+        "caso": "misma clave con contenido distinto en dos conexiones",
+        "espera_observada": "Lock",
+        "primero": "CONFIRMADO",
+        "segundo": null,
+        "error_segundo": "COMANDO_REUTILIZADO"
+      }
+    ],
+    "http": {
+      "implementacion_real": true,
+      "transporte_db": "psql socket privado",
+      "suite": "test/db/pa-int02c-http.spec.ts",
+      "exit_code": 0,
+      "pruebas": 15
+    }
+  },
+  "preview": {
+    "estado": "CORRECTO",
+    "entorno": "SINTETICO_LOCAL_INT02C",
+    "sin_datos_reales": true,
+    "transporte": "psql socket privado; SQLSTATE/details preservados",
+    "checks_aprobados": 51,
+    "checks": [
+      "fixture sólo sintética y tokens locales",
+      "servidor de esta ejecución",
+      "OpenAPI describe lectura propia del plantador",
+      "OpenAPI ofrece selector administrativo de usuarios",
+      "directorio administrativo exige sesión",
+      "directorio administrativo rechaza gestora aunque declare ADMIN",
+      "directorio administrativo rechaza voluntario aunque declare ADMIN",
+      "directorio administrativo rechaza logistica aunque declare ADMIN",
+      "ADMIN lista sólo usuarios activos con proyección mínima",
+      "directorio administrativo entrega cursor firmado",
+      "directorio administrativo pagina sin repetir usuarios",
+      "selector administrativo busca Unicode y filtra rol",
+      "selector administrativo busca username",
+      "selector administrativo distingue filtro sin coincidencias",
+      "visitante rechazado con envelope",
+      "cuenta inactiva revalidada",
+      "identidad discordante rechazada",
+      "sin permiso es vacío válido",
+      "plantador sólo obtiene su ámbito y acciones",
+      "gestora propia/ajena y PAUSADA",
+      "ADMIN global derivado en seis ámbitos",
+      "miembros mínimos y globales deduplicados",
+      "plantador lee equipo del ámbito propio",
+      "plantador no lee equipo ajeno",
+      "voluntario sin permiso no lee equipo",
+      "miembros ajenos denegados",
+      "plantador no obtiene búsqueda de gestión",
+      "plantador no modifica permisos",
+      "búsqueda Unicode privada sin contactos",
+      "correo exacto local encuentra cuenta activa",
+      "comando aplica permiso mediante PostgreSQL",
+      "voluntario recién habilitado lee el equipo",
+      "replay conserva el recibo exacto",
+      "GET propio recupera el terminal",
+      "ADMIN no recupera un comando ajeno",
+      "otra intención no sobrescribe la clave",
+      "SIN_CAMBIOS conserva revisión",
+      "revisión obsoleta es rechazo durable",
+      "selección ajena rechaza sin cambios parciales",
+      "último administrador contextual protegido",
+      "retiro incrementa revisión y conserva historia",
+      "plantador retirado pierde lectura de equipo",
+      "retiro no destruye el recibo anterior",
+      "usuario seleccionado conserva enlace a autoridad",
+      "autoridad usa su comando separado",
+      "cambio de rol seleccionado conserva recibo recuperable",
+      "selector administrativo refleja rol y revisión confirmados",
+      "202 inconcluso expone Retry-After con CORS",
+      "DTO rechaza actor enviado por cliente",
+      "origen externo no obtiene sesiones sintéticas",
+      "Host externo rechazado"
+    ],
+    "migraciones_sha256": {
+      "068_pa_participacion_comando.sql": "838e1e658d178e59af5318e5b64514aef6b02317c1d4b19a3bd71af77e353a45",
+      "069_pa_int02b_eventos_acceso.sql": "cc360b8799d6a681d3ac98fe0114feae38223dfea7bea9dda0a4b739d0afca39",
+      "070_pa_int02b_permisos_contextuales.sql": "fe577206af76c8aa5f61ad453d0916b0e025b13b1660ba996fc8bbbd81dddd39",
+      "071_pa_int02b_bootstrap_controlado.sql": "ef8a2e3ff9a4e370c8ff176e0f85b46447f135dd3e5bd34ce21f74f909dbb560",
+      "072_pa_int02c_comandos_acceso.sql": "747b74f9a1d4c0eab006544119c4a5d505c757939a4eeedaec77e95f25233ee7",
+      "073_pa_int02c_lecturas.sql": "7bfcc6d60e5baaf603a514475e5403137d28a478dba715eed22a63797c34b157",
+      "087_pa_miembros_plantador_lectura.sql": "23b858877b1d7655ce7a9643c024d3f6c36846495af79379d27a558ec331a5b3",
+      "091_usuarios_administracion_lectura.sql": "cd162dd707545a11ab8993e0cd4c49ff2cb01f69a63a33c2bb43957253d60796"
+    }
+  },
+  "sha256": {
+    "src/participacion/comando-recibo.ts": "cb28b01e5d7d1cec3068034b2dc1e11212afe428186d0282a84eb377c0c022e8",
+    "src/participacion/tests/participacion-comandos.service.spec.ts": "3f9ee0ba59d5021005560f4f4c5ec1eff49ca86ee29cb30b7bc993df863aa503",
+    "migrations/091_usuarios_administracion_lectura.sql": "cd162dd707545a11ab8993e0cd4c49ff2cb01f69a63a33c2bb43957253d60796",
+    "src/users/usuarios-administracion.controller.ts": "30df89c57dd62954a2a12eef150236c8b91a22d7928321083435fcaa1c687da5",
+    "src/users/application/usuarios-administracion.service.ts": "6de77b7eeb320084f48f16dd94dbfbb79a0d99530dba66cfc7b3ad2ed63ce269",
+    "src/users/dto/usuarios-administracion.dto.ts": "723834c866d6b5718c4e9f9aa4bf915bd19a97f33eca060423a666d11b1719e1",
+    "src/users/users.module.ts": "e390f8bb482803451f0469fa76a709a36db01dbabbbf64116034481647bab5a1",
+    "src/users/usuarios-administracion.http.spec.ts": "bb3bcc7d29a956b090724d5ee3e154e4265a5be1e70cdbb93442aad96541cfd9",
+    "src/users/application/usuarios-administracion.service.spec.ts": "07eeff48184b14ae4ded120e262c6f6c44c210f74cd42863b7c68d08794baea4",
+    "src/participacion/tests/participacion-openapi.spec.ts": "6470afbe5b54bb94a571ff75f5a2844a964ecf37a20f68ab7245e55be91bf168",
+    "test/db/pa-int02c-assertions.py": "49a65f7fd99a0402c8a0854be378a8db73bf1051090d062a4cdab6fc8150ba9c",
+    "test/db/pa-int02c-http.spec.ts": "8dcc32f2ef233f6dacb311a0ca891d4b85bfb811ed6174eef080f3008d7f3e0b",
+    "scripts/qa/pa-int02c-db-test.py": "d118d6b48aef0567d68377047d4b8b479ea9178ee0fd29f401ba7621002c59a1",
+    "scripts/qa/pa-int02c-preview.py": "efd70ed1d8cbd9ef34fb8cfa0d0f285dfb4993345f23043b84d285452661a025",
+    "scripts/qa/pa-int02c-preview-server.ts": "bffde9b32f3123d7921e043078a013019886fe9bb1a4acc766839d4beda0c432",
+    "scripts/qa/pa-int02c-openapi.cjs": "6dfd743786c6b34e3841697fcf86012c290eb4509eb36e206d78d689af688856"
+  },
+  "limites": [
+    "Sin Supabase ni datos reales; antecedente sintético mínimo post067.",
+    "Sin catálogo ni aplicación de091 en destino remoto acreditados.",
+    "Sin commit/push/despliegue ni WebAuthn real acreditados.",
+    "Las carreras conservan el motor072 y su disciplina cooperativa; SQL privilegiado externo queda fuera."
+  ],
+  "frontend": {
+    "ruta": "/app/usuarios",
+    "verificacion": "../pwa-r3foresta/docs/qa/usuarios-administracion/verificacion-local.json",
+    "pruebas": 1129,
+    "suites": 81,
+    "comprobaciones_navegador": 27,
+    "sql_remoto_aplicado": false,
+    "desplegado": false
+  },
+  "caso_legado": "Selector→autoridad→cambio de rol HTTP real para cuenta activa sin nombre ni username; presentación Usuario, sin mutar datos de perfil."
+}

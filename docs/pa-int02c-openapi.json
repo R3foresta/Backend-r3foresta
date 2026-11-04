@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "R3Foresta Participación aliada — INT02-C / INT03-A / INT02-D / INT05 / INT07",
-    "version": "1.6.0",
-    "description": "Gestión C, registro inicial INT03-A, consulta INT05 y correcciones INT07 de observaciones/participantes con recuperación durable, contexto/historial privados, búsqueda histórica y estado propio/público. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada."
+    "version": "1.7.0",
+    "description": "Gestión C, listado administrativo de usuarios y roles globales, registro inicial INT03-A, consulta INT05 y correcciones INT07 de observaciones/participantes con recuperación durable, contexto/historial privados, búsqueda histórica y estado propio/público. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada."
   },
   "servers": [
     {
@@ -1756,6 +1756,200 @@
         }
       }
     },
+    "/api/v1/usuarios": {
+      "get": {
+        "summary": "Listar usuarios para administrar roles",
+        "operationId": "Listarusuariosparaadministrarroles",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "consulta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100,
+              "description": "NFC y trim; substring literal por nombre o username, sin distinguir mayúsculas."
+            }
+          },
+          {
+            "name": "rol_global",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "GENERAL",
+                "VALIDADOR",
+                "VOLUNTARIO"
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lectura privada.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuariosAdministracionLectura"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        },
+        "description": "Solo ADMIN global activo; la RPC revalida identidad y rol. Lista únicamente cuentas activas, ordenadas por usuario_id ASC, sin datos de contacto ni credenciales. Todos los filtros son opcionales; consulta no interpreta % ni _ como comodines. Cursor firmado ligado a actor, sesión y filtros. La revisión observada permite preparar el cambio, pero no reserva autoridad: confirmar con POST /api/v1/usuarios/{usuario_id}/roles."
+      }
+    },
     "/api/v1/usuarios/{usuario_id}/roles": {
       "post": {
         "summary": "CAMBIAR_ROL_GLOBAL",
@@ -1942,7 +2136,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Solo ADMIN global activo; asigna uno de ADMIN, GENERAL, VALIDADOR o VOLUNTARIO. Conserva el motor existente: revisión esperada, motivo, historial y recibo atómicos, replay con la misma clave y protección del último administrador global activo. Un administrador contextual no puede cambiar roles globales. Revisión obsoleta o retirada del último ADMIN devuelve 409 con recibo RECHAZADO; releer y pedir nueva confirmación antes de una intención nueva."
       }
     },
     "/api/v1/usuarios/{usuario_id}/inactivaciones": {
@@ -7345,6 +7540,48 @@
           "revision_autoridad"
         ]
       },
+      "UsuarioAdministracion": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "usuario_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "rol_global": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "GENERAL",
+              "VALIDADOR",
+              "VOLUNTARIO"
+            ]
+          },
+          "activo": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "revision_autoridad": {
+            "$ref": "#/components/schemas/Revision"
+          }
+        },
+        "required": [
+          "usuario_id",
+          "nombre",
+          "username",
+          "rol_global",
+          "activo",
+          "revision_autoridad"
+        ]
+      },
       "CambioUsuario": {
         "type": "object",
         "additionalProperties": false,
@@ -7909,6 +8146,34 @@
         "required": [
           "data",
           "observado_en"
+        ]
+      },
+      "UsuariosAdministracionLectura": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsuarioAdministracion"
+            },
+            "minItems": 0,
+            "maxItems": 20
+          },
+          "observado_en": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "siguiente_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "observado_en",
+          "siguiente_cursor"
         ]
       },
       "ReciboOError": {
