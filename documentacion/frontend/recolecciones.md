@@ -299,3 +299,61 @@ Forma de la respuesta (campos clave):
 - El backend usa `whitelist: true, forbidNonWhitelisted: true` (ver [main.ts](../../src/main.ts)). Cualquier campo no documentado en el DTO devolverá 400.
 - Los identificadores son en español. No traducir `tipo_material`, `cantidad_inicial_canonica`, `unidad_canonica`, etc.
 - Para crear lotes de vivero a partir de una recolección, ver [frontend/lotes-vivero.md](./lotes-vivero.md).
+
+
+## GET /api/recolecciones/stock-summary/:plantaId/historial
+
+Lectura administrativa por especie para cuentas activas con rol global `ADMIN`,
+autenticadas con `Authorization: Bearer <JWT>`. El servidor verifica la identidad
+y el rol; `x-user-role` no concede permisos. Incluye recolecciones de **todos**
+los autores con `tipo_material=SEMILLA` y `estado_registro=VALIDADO`, tanto
+`ABIERTO` como `CERRADO`, incluso con saldo cero; excluye registros con
+`eliminado_en` distinto de null. La lista propia de recolecciones no cambia.
+
+- `plantaId`: entero positivo seguro; se admite una planta existente inactiva.
+- `page`: entero de 1 a 2147483647, por defecto 1.
+- `limit`: entero de 1 a 50, por defecto 10.
+- Orden: `fecha`, `created_at`, `id`, todos descendentes. La paginación usa
+  offset y conteo exacto; cambios concurrentes pueden desplazar filas entre
+  solicitudes de páginas diferentes.
+
+Respuesta 200:
+
+```json
+{
+  "success": true,
+  "planta": {
+    "planta_id": 1,
+    "especie": "Cedro",
+    "nombre_cientifico": "Cedrela",
+    "variedad": null,
+    "nombre_comun_principal": "Cedro",
+    "imagen_url": null
+  },
+  "data": [],
+  "pagination": {
+    "page": 1, "limit": 10, "total": 0, "totalPages": 0,
+    "hasNextPage": false, "hasPrevPage": false
+  }
+}
+```
+
+La cabecera describe la planta actual y existe incluso cuando no hay resultados.
+`data` contiene el mismo objeto canónico que el listado de recolecciones:
+`id`, `fecha`, `created_at`, `codigo_trazabilidad`, `usuario_id`, `usuario`
+(si existe), `nombre_recolector_snapshot`, snapshots de nombre científico,
+comercial y variedad, `cantidad_inicial_canonica`, `saldo_actual`,
+`unidad_canonica`, `estado_registro`, `estado_operativo`, `fotos` y
+`evidencias`, entre otros campos. Los aliases de nombres priorizan snapshots.
+`saldo_actual` se normaliza a número; el resto conserva la representación
+del contrato canónico y sus valores pueden ser nulos en datos legados. Cada
+`id` permite consultar el detalle existente `GET /api/recolecciones/:id`.
+
+Esta respuesta no suma cantidades históricas ni reemplaza `stock-summary`:
+ese resumen devuelve saldo disponible, separado en `G` y `UNIDAD`, y solo
+lista plantas activas. Una lectura fallida del resumen no equivale a saldo cero.
+
+Errores: 400 por ID, paginación o parámetros inválidos; 401 sin Bearer válido;
+403 para cuentas sin rol ADMIN; 404 si la planta no existe; 500 ante fallo
+de lectura. Datos privados con `Cache-Control: private, no-store`. No requiere
+migración nueva ni ejecuta escrituras.

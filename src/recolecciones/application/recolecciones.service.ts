@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import type { VerifiedActor } from '../../auth/verified-actor.guard';
+import { HistorialSemillasQueryDto } from '../api/dto/historial-semillas-query.dto';
 import {
   CreateRecoleccionDto,
   type TipoMaterialRecoleccionCanonico,
@@ -97,6 +99,14 @@ export class RecoleccionesService {
 
   findStockSummary(authId: string) {
     return this.consultasService.findStockSummary(authId);
+  }
+
+  findHistorialSemillas(
+    plantaId: number,
+    query: HistorialSemillasQueryDto,
+    actor: VerifiedActor,
+  ) {
+    return this.consultasService.findHistorialSemillas(plantaId, query, actor);
   }
 
   findByVivero(viveroId: number, filters: FiltersRecoleccionDto) {

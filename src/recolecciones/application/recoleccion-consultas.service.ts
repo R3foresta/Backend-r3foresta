@@ -5,6 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { VerifiedActor } from '../../auth/verified-actor.guard';
+import { HistorialSemillasQueryDto } from '../api/dto/historial-semillas-query.dto';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { FiltersRecoleccionDto } from '../api/dto/filters-recoleccion.dto';
 import { EstadoRegistro } from '../domain/enums/estado-registro.enum';
@@ -268,6 +270,70 @@ export class RecoleccionConsultasService {
         };
       }),
       actualizado_en: new Date().toISOString(),
+    };
+  }
+
+  async findHistorialSemillas(
+    plantaId: number,
+    filters: HistorialSemillasQueryDto,
+    actor: VerifiedActor,
+  ) {
+    this.authService.assertAdminRole(actor.rol);
+    const supabase = this.supabaseService.getAdminClient();
+    const { data: planta, error: plantaError } = await supabase
+      .from('planta')
+      .select(
+        'id, especie, nombre_cientifico, variedad, nombre_comun_principal, imagen_url',
+      )
+      .eq('id', plantaId)
+      .maybeSingle();
+    if (plantaError) {
+      this.logger.error(
+        'Error al obtener la planta del historial',
+        plantaError,
+      );
+      throw new InternalServerErrorException('Error al obtener la planta');
+    }
+    if (!planta) throw new NotFoundException('Planta no encontrada');
+    const plantaRow = planta as unknown as StockPlantRow;
+
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 10;
+    const offset = (page - 1) * limit;
+    const { data, error, count } = await supabase
+      .from('recoleccion')
+      .select(this.getCanonicalRecoleccionSelect(), { count: 'exact' })
+      .is('eliminado_en', null)
+      .eq('planta_id', plantaId)
+      .eq('tipo_material', 'SEMILLA')
+      .eq('estado_registro', EstadoRegistro.VALIDADO)
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) {
+      this.logger.error('Error al obtener el historial de semillas', error);
+      throw new InternalServerErrorException(
+        'Error al obtener el historial de semillas',
+      );
+    }
+    const result = await this.buildPaginatedResponse(
+      data || [],
+      count || 0,
+      page,
+      limit,
+      {},
+    );
+    return {
+      ...result,
+      planta: {
+        planta_id: Number(plantaRow.id),
+        especie: plantaRow.especie,
+        nombre_cientifico: plantaRow.nombre_cientifico,
+        variedad: plantaRow.variedad,
+        nombre_comun_principal: plantaRow.nombre_comun_principal,
+        imagen_url: plantaRow.imagen_url,
+      },
     };
   }
 

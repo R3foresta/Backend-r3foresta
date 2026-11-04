@@ -482,6 +482,38 @@ export function ApiFindStockSummaryRecolecciones() {
   );
 }
 
+export function ApiFindHistorialSemillas() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Consultar historial administrativo de semillas por planta',
+      description:
+        'Solo ADMIN con Bearer verificado. Incluye todas las recolecciones SEMILLA validadas de todos los autores, abiertas o cerradas, sin eliminadas. Orden descendente por fecha, creación e ID. El saldo disponible se consulta en stock-summary.',
+    }),
+    ApiParam({
+      name: 'plantaId',
+      type: Number,
+      description: 'ID positivo de planta, activa o inactiva',
+    }),
+    ApiQuery({ name: 'page', required: false, type: Number, example: 1 }),
+    ApiQuery({
+      name: 'limit',
+      required: false,
+      type: Number,
+      example: 10,
+      description: 'Entero entre 1 y 50',
+    }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Cabecera de planta, datos canónicos y paginación; puede estar vacío.',
+    }),
+    ApiResponse({ status: 400, description: 'ID o paginación inválidos' }),
+    ApiResponse({ status: 401, description: 'Bearer ausente o inválido' }),
+    ApiResponse({ status: 403, description: 'Cuenta sin rol ADMIN' }),
+    ApiResponse({ status: 404, description: 'Planta inexistente' }),
+  );
+}
+
 export function ApiFindByViveroRecolecciones() {
   return applyDecorators(
     ApiOperation({

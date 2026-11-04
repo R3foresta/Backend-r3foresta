@@ -32,9 +32,11 @@ import {
   ApiRegistrarDesecho,
   ApiRejectRecoleccionValidation,
   ApiFindStockSummaryRecolecciones,
+  ApiFindHistorialSemillas,
   ApiSubmitRecoleccionValidation,
   ApiUpdateDraftRecoleccion,
 } from './docs/recolecciones.swagger';
+import { HistorialSemillasQueryDto } from './dto/historial-semillas-query.dto';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 import { RecoleccionElegibilidadViveroQueryDto } from './dto/recoleccion-elegibilidad-vivero-query.dto';
 import { RejectValidationDto } from './dto/reject-validation.dto';
@@ -218,6 +220,25 @@ export class RecoleccionesController {
     }
 
     return this.recoleccionesService.findStockSummary(authId);
+  }
+
+  @Get('stock-summary/:plantaId/historial')
+  @ApiFindHistorialSemillas()
+  async findHistorialSemillas(
+    @Param('plantaId', ParseIntPipe) plantaId: number,
+    @Query() query: HistorialSemillasQueryDto,
+    @Req() request: ActorRequest,
+  ) {
+    if (!Number.isSafeInteger(plantaId) || plantaId <= 0) {
+      throw new BadRequestException(
+        'plantaId debe ser un entero positivo válido',
+      );
+    }
+    return this.recoleccionesService.findHistorialSemillas(
+      plantaId,
+      query,
+      request.actor,
+    );
   }
 
   @Get()
