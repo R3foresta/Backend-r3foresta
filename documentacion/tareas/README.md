@@ -3,11 +3,23 @@
 El trabajo vigente se sigue en [r3foresta-docs/ESTADO.md](../../../r3foresta-docs/ESTADO.md)
 y en la [guía de participación](../modulos/participacion.md).
 
-## Propuesta pendiente
+## Propuestas pendientes
 
 [Incorporación de plantas y trazabilidad de procedencia](plan-incorporacion-plantas-procedencia.md):
 compras, donaciones y saldo inicial. Conserva acuerdos del usuario y alternativas;
 todavía no está implementada.
+
+[Accesos de Recolección y Vivero](propuesta-permisos-por-vivero.md): opción elegida
+de accesos fijos combinables y asignación por vivero. Incluye tablas propuestas,
+matriz de permisos, una cuenta con ambos accesos y la continuidad de `VALIDADOR`.
+Un único operario recibe y maneja su vivero. Diseño documental; no implementado.
+
+[Encargos para implementar los accesos](encargos-accesos-recoleccion-vivero.md):
+T1 Recolección, T2 Vivero y T3 administración en el módulo existente; recepción de
+semillas e incorporación externa quedan como siguientes entregas. Tareas preparadas.
+
+[T1 · Acceso explícito de Recolección](t1-acceso-recoleccion.md): borrador para
+revisión del usuario; no iniciar investigación ni implementación antes de autorizarla.
 
 ## Decisiones y verificaciones conservadas
 
