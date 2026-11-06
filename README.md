@@ -46,9 +46,15 @@ La escritura inicial del backend normal requiere
 por omisión se pausa y conserva recuperación/terminales.
 
 
+T4 incorpora localmente [recepción de semillas y «Recibir y validar»](docs/t4-recepcion-semillas.md)
+con 096, incidencias, recuperación y elegibilidad física de consumo/desecho; incluye
+PWA solo M2. [Revisión coordinadora cerrada](docs/evidencia/t4-revision-coordinadora-2026-11-06.json),
+con comparación decimal y retiro de datos por vivero corregidos. Conciliación,
+cotejo/aplicación096 y corte remoto pendientes; T5 no iniciado.
+
 T1 añade localmente [acceso explícito de Recolección](docs/t1-acceso-recoleccion.md)
 con API exclusiva ADMIN, vigencias, revisión M1 independiente, auditoría y recuperación.
-Requiere 092/093 y corte coordinado. T2 añade localmente [acceso operativo por vivero](docs/t2-acceso-viveros.md), API ADMIN, ámbitos M2, revisión documental y DESECHO acotados con 094/095; [revisión coordinadora cerrada](docs/evidencia/t2-revision-coordinadora-2026-11-05.json). T3 incorpora Usuarios y permisos en la PWA y proyecciones exactas, [revisadas localmente](docs/evidencia/t3-revision-coordinadora-2026-11-06.json). Aplicación hasta095 [reportada por el usuario](docs/evidencia/t2-migraciones-095-aplicacion-reportada-2026-11-05.json); cotejo de catálogo, T4/T5 y despliegue pendientes.
+Requiere 092/093 y corte coordinado. T2 añade localmente [acceso operativo por vivero](docs/t2-acceso-viveros.md), API ADMIN, ámbitos M2, revisión documental y DESECHO acotados con 094/095; [revisión coordinadora cerrada](docs/evidencia/t2-revision-coordinadora-2026-11-05.json). T3 incorpora Usuarios y permisos en la PWA y proyecciones exactas, [revisadas localmente](docs/evidencia/t3-revision-coordinadora-2026-11-06.json). Aplicación hasta095 [reportada por el usuario](docs/evidencia/t2-migraciones-095-aplicacion-reportada-2026-11-05.json); cotejo de catálogo, corte de T4 y despliegue pendientes; T5 separado.
 
 ## Verificar un cambio
 

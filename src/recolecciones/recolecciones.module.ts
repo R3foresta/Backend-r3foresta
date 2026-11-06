@@ -1,4 +1,6 @@
 import { RecoleccionAccesosService } from './application/recoleccion-accesos.service';
+import { RecoleccionRecepcionService } from './application/recoleccion-recepcion.service';
+import { RecoleccionRecepcionController } from './api/recoleccion-recepcion.controller';
 import { RecoleccionAccesosController } from './api/recoleccion-accesos.controller';
 import { ActorModule } from '../auth/actor.module';
 import { Module } from '@nestjs/common';
@@ -36,10 +38,15 @@ import { RecoleccionFormDataParser } from './api/parsers/recoleccion-formdata.pa
     UbicacionesModule,
     PlantasModule,
   ],
-  controllers: [RecoleccionesController, RecoleccionAccesosController],
+  controllers: [
+    RecoleccionesController,
+    RecoleccionAccesosController,
+    RecoleccionRecepcionController,
+  ],
   providers: [
     RecoleccionesService,
     RecoleccionAccesosService,
+    RecoleccionRecepcionService,
     RecoleccionElegibilidadService,
     RecoleccionHistorialService,
     RecoleccionSnapshotsService,

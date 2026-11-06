@@ -1,5 +1,7 @@
 # Consumo frontend - Recolecciones
 
+> T4 local requiere096 para nuevos consumos/desechos: VALIDADO y recepción física conforme. GENERAL/VALIDADOR con M2 pueden «Recibir y validar» a otra persona sin M1 mediante la [API v1 de recepción](../../docs/t4-recepcion-semillas.md#api-consumible). Incidencias, recuperación y conciliación histórica conservan contrato separado de la revisión documental. Revisión/corte remoto pendientes.
+
 > T2 local acota revisión documental a ADMIN/VALIDADOR asignado al almacenamiento y DESECHO a ADMIN u operario vigente de ese vivero, sin M1/autoría como permiso. No registra recepción física. [Contrato actual y límites](../../docs/t2-acceso-viveros.md).
 
 Documento operativo para que el equipo de frontend (PWA) y herramientas IA consuman el backend sin inventar campos ni asumir comportamientos.

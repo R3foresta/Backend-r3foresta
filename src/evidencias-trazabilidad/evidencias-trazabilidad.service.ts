@@ -431,6 +431,7 @@ export class EvidenciasTrazabilidadService {
       // Las cargas v1 tienen su propia audiencia y proyección sanitizada.
       .neq('bucket', 'participacion_evidencias')
       .not('ruta_archivo', 'like', 'plantaciones/registros/pendientes/%')
+      .not('ruta_archivo', 'like', 'recepcion/pendientes/%')
       .gt('entidad_id', 0)
       .order('es_principal', { ascending: false })
       .order('orden', { ascending: true })
@@ -561,6 +562,7 @@ export class EvidenciasTrazabilidadService {
       (data as EvidenciaRow).ruta_archivo?.startsWith(
         'plantaciones/registros/pendientes/',
       ) ||
+      (data as EvidenciaRow).ruta_archivo?.startsWith('recepcion/pendientes/') ||
       BigInt((data as EvidenciaRow).entidad_id ?? 0) <= 0n
     ) {
       throw new NotFoundException('Evidencia de trazabilidad no encontrada');

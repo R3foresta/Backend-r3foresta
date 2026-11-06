@@ -1,5 +1,7 @@
 # Consumo frontend - Lotes de vivero
 
+> T4 local/096 exige VALIDADO y recepción física conforme para nuevos orígenes consumibles y DESECHO. «Recibir y validar» usa M2 de custodia sin M1 ni autorrecepción; [API, incidencias, recuperación y transición](../../docs/t4-recepcion-semillas.md). No se modifican asignaciones históricas ni el débito M3.
+
 Documento operativo para que una IA/frontend consuma el backend actual sin inventar campos ni llamar rutas incompletas.
 
 ## Estado real del backend

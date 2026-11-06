@@ -36,6 +36,9 @@ export function mapRecoleccionToCanonicalResponse(
 
   return {
     ...recoleccion,
+    recepcion_conforme: Array.isArray(recoleccion.recepcion)
+      ? recoleccion.recepcion.length === 1
+      : Boolean(recoleccion.recepcion?.id),
     nombre_cientifico: nombreCientifico,
     nombre_comercial: nombreComercial,
     nombre_comun_principal: nombreComercial,

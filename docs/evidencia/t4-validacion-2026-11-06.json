@@ -1,0 +1,271 @@
+{
+  "tarea": "T4_RECEPCION_SEMILLAS",
+  "fecha_local": "2026-11-06",
+  "registrado_en": "2026-11-06T17:34:22.006193+00:00",
+  "estado": "IMPLEMENTACION_LOCAL_VERIFICADA_PENDIENTE_REVISION_COORDINADORA",
+  "bases": {
+    "backend": "032527a342d5e696e3cb15e5903355d04a91560a",
+    "pwa": "fc48be2d1c317d004fd88fd0f4ca009a1c9cb47d",
+    "docs": "c750091a83c1d4f5148a3f8a8b2f797f5d2a5693",
+    "sin_commit_de_entrega": true,
+    "base_arbol": "docs/evidencia/t4-base-2026-11-06.json"
+  },
+  "contrato": {
+    "guia": "docs/t4-recepcion-semillas.md",
+    "openapi": "docs/recepcion-semillas-openapi.json",
+    "migracion": "096_recoleccion_recepcion.sql",
+    "tabla_hecho": "recoleccion_recepcion",
+    "revision": "revision_captura BIGINT decimal exacto",
+    "recepcion": "Una total conforme; sin duplicar saldo inicial",
+    "incidencia": "Observación inmutable; resolución solo por nueva comprobación total conforme, motivo y evidencia nueva",
+    "autoridad": "GENERAL/VALIDADOR activos con M2 de custodia sin M1, ADMIN global; veto de autorrecepción para todos",
+    "recuperacion": "UUID por actor/intención; replay exacto, conflicto de carga, revisión obsoleta, recibo propio tras perder M2/rol",
+    "stock": "Nuevos CONSUMO_A_VIVERO/DESECHO exigen VALIDADO y recepción conforme en ledger; M3 conserva asignaciones sin doble débito",
+    "capacidades": "Forma cerrada T3/M3 intacta; recibir deriva de operar M2 y capacidad por objeto; guard PWA permite recuperar tras perder rol",
+    "externos": "Nuevo comando no ejecuta Pinata/mint: anclaje pendiente explícito; bucket/URLs públicos legados conservan audiencia"
+  },
+  "verificacion": {
+    "backend_build": {
+      "estado": "CORRECTO",
+      "log": "docs/qa/t4-recepcion-2026-11-06/t4-backend-build-verified.log"
+    },
+    "backend_unit": {
+      "suites": 89,
+      "pruebas": 1268,
+      "estado": "CORRECTO"
+    },
+    "backend_lint": {
+      "estado": "CORRECTO",
+      "alcance": "Núcleo nuevo DTO, Swagger, controller, service, validador y pruebas; no acredita lint global legado"
+    },
+    "sql_http": {
+      "estado": "CORRECTO",
+      "grupos_sql": 69,
+      "carreras_observadas": [
+        "dos_receptores",
+        "mismo_comando",
+        "retiro_antes_recepcion",
+        "recepcion_antes_retiro",
+        "inactivar_cuenta_antes_recepcion",
+        "recepcion_antes_inactivar_cuenta",
+        "cambiar_rol_global_antes_recepcion",
+        "recepcion_antes_cambiar_rol_global"
+      ],
+      "http": {
+        "exit_code": 0,
+        "suite": "test/db/recepcion-semillas-http.spec.ts"
+      },
+      "entorno": {
+        "tipo": "SINTETICO_LOCAL",
+        "postgres": "14.24 (Postgres.app)",
+        "tcp": false,
+        "sin_env": true,
+        "postgis": "POSTGIS=\"3.2.10 7762352\" [EXTENSION] PGSQL=\"140\" GEOS=\"3.10.7-CAPI-1.16.7\" PROJ=\"8.1.1\" LIBXML=\"2.9.14\" LIBJSON=\"0.15\" LIBPROTOBUF=\"1.4.1\" WAGYU=\"0.5.0 (Internal)\"",
+        "cluster_detenido": true,
+        "directorio_eliminado": true
+      },
+      "evidencia": "docs/evidencia/t4-recepcion-local-2026-11-06.json"
+    },
+    "pwa": {
+      "build": "CORRECTO",
+      "lint": "CORRECTO",
+      "archivos_test": 92,
+      "pruebas": 1263,
+      "aviso_build": "Chunk MapLibre >1000 KB; no error",
+      "sin_script_typecheck_separado": true
+    },
+    "openapi": {
+      "T4": 6,
+      "T2": 36,
+      "M1": 5,
+      "participacion": {
+        "rutas": 41,
+        "schemas": 86
+      },
+      "estado": "REPRODUCIBLE"
+    },
+    "browser": {
+      "checks": 28,
+      "capturas": 10,
+      "errores": [],
+      "anchos": [
+        320,
+        390,
+        1280
+      ],
+      "versiones": {
+        "node": "v24.19.0",
+        "navegador": "156.0.8078.80",
+        "playwright": "1.64.1"
+      },
+      "api": "HTTP SINTETICA LOCAL; hosts externos bloqueados",
+      "visuales_inspeccionadas": [
+        "incidencia-390.png",
+        "confirmacion-1280.png"
+      ],
+      "evidencia": "../pwa-r3foresta/docs/qa/t4-recepcion-2026-11-06/resultados.json"
+    },
+    "diff_check": "CORRECTO en Backend y PWA",
+    "runtime": "Node24.19.0 explícito y npm12.0.2 por comando; metadata y logs finales adjuntos"
+  },
+  "versiones_backend": {
+    "node": "v24.19.0",
+    "node_path": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/node",
+    "npm": "12.0.2",
+    "python": "3.10.2",
+    "dependencias": {
+      "@nestjs/common": "11.1.9",
+      "@nestjs/swagger": "11.2.5",
+      "@supabase/supabase-js": "2.89.0",
+      "typescript": "5.9.3",
+      "jest": "30.2.0",
+      "prettier": "3.7.4"
+    }
+  },
+  "versiones_pwa": {
+    "node": "v24.5.0",
+    "node_path": "/opt/homebrew/Cellar/node/24.5.0/bin/node",
+    "npm": "12.0.2",
+    "dependencias": {
+      "react": "19.2.0",
+      "react-router-dom": "6.30.6",
+      "vite": "7.3.6",
+      "vitest": "5.0.2",
+      "typescript": "5.9.3",
+      "@testing-library/react": "16.3.3",
+      "jsdom": "30.1.1"
+    }
+  },
+  "conservacion": {
+    "pwa_preexistentes": {
+      "src/modules/recolecciones/RecoleccionFormDatosScreen.tsx": "20bad06257bf2685554d5cefe1316d0d31dba982b87cfaaf097435f520b6e166",
+      "src/modules/recolecciones/recoleccionFormTypes.ts": "a2a6f12398069236af22bb2aed1722c2280cc7640a0e870da88f3dcbbfcbac1f"
+    },
+    "documentos_encargo_preexistentes": {
+      "documentacion/tareas/README.md": "2141368d6a9bdb972b944319c369502972f79e0c77918fa7efeeabe9912bf554",
+      "documentacion/tareas/encargos-accesos-recoleccion-vivero.md": "da5c65562c09489fcad2ed06aa6b5c6c3d508ced61533e869c3bc2b82c59438a",
+      "documentacion/tareas/propuesta-permisos-por-vivero.md": "02ad08c480612a15858fac8b245eb465dba4b801bd006584bba5186643451e2a",
+      "documentacion/tareas/t4-recepcion-semillas.md": "c2abaed921fb7b29509d8c1015ffa54dd1c61ce2613126166880199fcc0ae916"
+    },
+    "migraciones_092_095": {
+      "092_usuario_acceso_recoleccion.sql": "74c2c01468f130c5ca072b17727f9d7b37470cddd4c21033315d509aa5d91fcc",
+      "093_recoleccion_acceso_explicito.sql": "27ece38fb0860ce87dba5e30338fed63ae3d0d09ec7b49c8588385531e3b0b27",
+      "094_usuario_vivero.sql": "7b18997966852c51a7a1baf55b8ac6209da2b37961cd5f61432f224b6387693d",
+      "095_vivero_operacion_por_ambito.sql": "ec4ffc511d67ad80fcb042886470c0cd2cb92643b2e25d97e5af3e91490b0d96"
+    },
+    "todos_iguales_por_sha256": true,
+    "evidencias_historicas_reescritas": false
+  },
+  "archivos_backend_sha256": {
+    "ARCHITECTURE.md": "1382f249448956112d480c480d5af8d430fcff2ffcdd90dd1d5be94ac136d09a",
+    "README.md": "13c6185c7d9cbff7bd984b4d05a093fb90afac28b774ec89b4d4354fd60e41a6",
+    "docs/README.md": "83c4044c2656e7385914e69994c33661c0b7629b5cfa78f715e58085cfad86c1",
+    "docs/evidencia/t4-base-2026-11-06.json": "b1d6f92b2b8fddf00fd02f369cdb5db0abb99c4a66229a2c80d8798909c65a89",
+    "docs/recepcion-semillas-openapi.json": "239b27edcbfb2847741653b70a62f56a51b9f0d9ac3051e76f9b25a4ab1b8b5d",
+    "docs/t4-recepcion-semillas.md": "659cbd41b78faca4cc01b229d627a3504d4edea16f46f681a49da76b283f394e",
+    "documentacion/frontend/lotes-vivero.md": "5f16a8f137ffb30ffc0096619930e6f95f1393294bc35099ceac1d803c1272a7",
+    "documentacion/frontend/recolecciones.md": "a2553413a1facb08e51b0accbfef9e46d4440edfcef8621edb7fd56737b0948e",
+    "migrations/096_recoleccion_recepcion.sql": "4aaecbfd926628a8bb792280a6e371f1ecb358d0c70e49f28be873e347af5ce1",
+    "package.json": "ac70b566ef318c298019850bb7479014704793ed10f594248d09bb75fbc8015a",
+    "scripts/qa/recepcion-semillas-openapi.cjs": "b9d84383f4d783af4cb5a377bc4a4c9d0b942bce4b959f18c6bd44770bad92b9",
+    "scripts/qa/recepcion-semillas-test.py": "c2902863c9d5081962e26e90da80e53c9da27ba7c302308b852d6f27c3e72ce0",
+    "src/evidencias-trazabilidad/evidencias-trazabilidad.service.ts": "980a2b27a680b744628ee1b011cea945f1eb5755dfbf6b92cddab860f2c46708",
+    "src/recolecciones/api/docs/recepcion-semillas.swagger.ts": "c30a20596e15be5e68bec773256871b6c6d95d2ebe2eea31bef50c0950a9baf0",
+    "src/recolecciones/api/dto/recepcion-semillas.dto.ts": "0d261a66e19de532a40bed41006c5d25e6240d32d6a728cad3829aeda0bc9e4a",
+    "src/recolecciones/api/recoleccion-recepcion.controller.ts": "c74f77b26d4a5a011c77dd23774944fe4c55a895e2742652a2aebe8fa1c95623",
+    "src/recolecciones/application/mappers/recoleccion-response.mapper.ts": "9a14e054745f43f6a3c038450775ebf0a097ab4bad929dcff2d452fafc253a7e",
+    "src/recolecciones/application/recoleccion-consultas.service.ts": "118df5d64b3250f27d821bcc4ea72907d3b5c950fe63011fcca39d8fe9c3c309",
+    "src/recolecciones/application/recoleccion-recepcion.service.ts": "48279cb6c1d8bd19c194d8514fa6e6cfdb90f62e7320633df515cb10dfb495c0",
+    "src/recolecciones/domain/policies/elegibilidad-inicio-vivero.policy.ts": "f06369e9027e79021de8544e6d58905065d3e09ce890fe5efef9bd749fb01faf",
+    "src/recolecciones/domain/policies/recepcion-semillas.policy.ts": "c9beb9b47bed8157409c837c596dc73364a135625e4d37b34efb8d4b1ab75deb",
+    "src/recolecciones/recolecciones.module.ts": "208a1055ddcd48ae173a1ba367eb4d3fa6234a11114cad3a052477622d21f0dd",
+    "src/recolecciones/tests/recoleccion-elegibilidad.service.spec.ts": "faebf300194cba8b16eae42e0d9a1aee60d5efbca0b17406075d9353e20f4d7b",
+    "src/recolecciones/tests/recoleccion-recepcion.spec.ts": "92b3c2540acddbe483e95ece66415d76149b6dbece1969932f25d8fdb10e80f7",
+    "src/recolecciones/tests/recolecciones.service.spec.ts": "a8606bdf42298dc3a165d901c320bc58582ff95a6de6539b425ed2ccbb8ce81c",
+    "test/README.md": "d648eeeefdbe4ca0dd2c837d26f0af21edca209eb6497af8407e41e1c0c75ec2",
+    "test/db/recepcion-semillas-http.spec.ts": "e7b1f4101dea94a9eb5605e0ddad8a1e79bf2bd74149f32cec89ae684032bc54",
+    "test/jest-recepcion-semillas-db.json": "9ebcff3a7e1c8add12070534959c3ed1ab185523ffc566e4568ae2f5ce0df213"
+  },
+  "archivos_pwa_sha256": {
+    "AGENTS.md": "6227f32aafe634b0c34f912de0c777b0a51ce648d628a84af8d28db925b48393",
+    "docs/QA_T4_RECEPCION.md": "b6221541e8d277eeedc99286a2d115b12b2c071cdceeb647cf038753234fa12f",
+    "scripts/qa/t4-recepcion-browser.cjs": "d3d8cb2b7ef28943564f315304b539dd82b90b045db158bf199e0bba1b2aadfa",
+    "src/App.tsx": "6144a367348d7361441b9ba398bcd00145b76b86e83fbb5c4c812fc9b3c495a2",
+    "src/modules/recolecciones/RecoleccionDetailScreen.tsx": "bfdee3b22dacfb8a396b9e5c69fe9696ce04ea272316abfc84d45bc33768e9f7",
+    "src/modules/vivero/README.md": "b31795ad8eef60943fd6b31e0624925485b1eadebcb9d9cce483d2d2a6eceee5",
+    "src/modules/vivero/recepcion/RecepcionForm.tsx": "c183f502937d1e6911dda427f98d8418e1d9af81ca11e23020f92ffad61656d8",
+    "src/modules/vivero/recepcion/RecepcionScreen.tsx": "2c8039029f63d9ebb3cbc8eed8f95f2d29a1f820641269cd9d5104816fb99470",
+    "src/modules/vivero/recepcion/recepcion.api.ts": "7ce854dea0b4684615b9e12df49b9fd87e5afad659ef669a0a7a7904bd1ce11b",
+    "src/modules/vivero/recepcion/recepcion.contract.ts": "f09bb0bf149c111ecd529561ca065f89bf44cafb50fda2e42c1636138c49126a",
+    "src/modules/vivero/recepcion/recepcion.test.tsx": "ded29271bf644f3d04b2623567944f1e3fd2b180be6cef39abee5fed19a095d9",
+    "src/modules/vivero/recepcion/useRecepcionCommand.ts": "c975fbb398576fd0b6d61aad9053d5d9652278cdfc3cba9f82392249b8451edb",
+    "src/modules/vivero/screens/ViveroScreen.tsx": "37a5ea2e9682ffa43731edd8b1da2af0f0663dcaeb6e74389bbca41fd0e26bdc",
+    "src/services/recolecciones.service.ts": "ffc3a95d88761f399e0238c6bb2005c6438387e1abf5c9be92e921d26577b2e1",
+    "src/utils/appAccess.ts": "2b31edad43cf6bb078a8fed08703da7e920a5da279e23c9dab7b6a535d0ba5d2"
+  },
+  "antecedentes_prueba_sha256": {
+    "test/db/vivero-acceso-fixture.sql": "47a36d874a6b646c595ea3105fc61797142931d126d13ea249cd2397a4c86436",
+    "test/db/vivero-acceso-postgis-fixture.sql": "4590d8498e69c0340ecb1df680fb9749bc8fd49994199a62ec349d6b0454ebe4",
+    "test/db/recoleccion-acceso-fixture.sql": "f6c05174b25abb920f88596d94684c2c2d4c6aad5c649747650282aa12a4943e",
+    "test/db/pa-int02c-fixture.sql": "cfef8a65ee2550a50a0c5e07678fff90ea5ea5ca51cf53243ced71454f667f83",
+    "migrations/077_pa_int02d_operaciones_compartidas.sql": "c11660a287349ccadc45ff0026008f193834e55cf28f2ce89b99ba46a799088b",
+    "package-lock.json": "1eeb7119917a64cf23f39c44be1925a86022dfea5e9237ec8d13daaa00bf563e"
+  },
+  "artefactos_sha256": {
+    "docs/qa/t4-recepcion-2026-11-06/t4-backend-unit-verified.log": "9dcf2b3c327ae81fde86b658c339383df44992fd327e13c0de5f6e9b10cae4e4",
+    "docs/qa/t4-recepcion-2026-11-06/t4-runtime-pwa-lint.json": "fd6d0c79dbf2f83456dc075dfb136e39dbbb825ff573eacf559421e8665cea9c",
+    "docs/qa/t4-recepcion-2026-11-06/t4-openapi-verified.log": "d3f3bb93ce726e035cf09a7a1ba849b222170222d1d2114b88b6dd793c50c4a5",
+    "docs/qa/t4-recepcion-2026-11-06/t4-runtime-pwa-build.json": "6c3e03c665e99ec58581e33959faee6e4b46f31fb5562784c4faf7e249967a82",
+    "docs/qa/t4-recepcion-2026-11-06/t4-runtime-browser.json": "68fd3e44c38e5ae8db7be0e37c665e12349cae6c14dc590e2d99394fb8f71bcd",
+    "docs/qa/t4-recepcion-2026-11-06/t4-runtime-openapi.json": "54011abff996b3e660390ccc42882d48a72b2fafb4a9f18706978e5dc5713fbc",
+    "docs/qa/t4-recepcion-2026-11-06/t4-pwa-versions.json": "7898fdcf647f48f00a0cbf378a0521312d0c92bfbc366b1cd95b7905d5a18b5f",
+    "docs/qa/t4-recepcion-2026-11-06/t4-backend-db-verified.log": "9a073d9db6ea4cd0cd4e1334fb3681b670fd9a73981bfe6f2d075e2bdc425805",
+    "docs/qa/t4-recepcion-2026-11-06/t4-backend-build-verified.log": "cf5797b242877d4b940561ce14d0df47c6c84cbb1ce806b399b218f1d3f3de70",
+    "docs/qa/t4-recepcion-2026-11-06/t4-runtime-backend-unit.json": "ea3acc8ad80f7a2c812a9cba53ad84deac23cf15ff8db66fceadab7af8629248",
+    "docs/qa/t4-recepcion-2026-11-06/t4-browser-verified.log": "3c43a15b93eb11e3ad37309b67def816e6816028750d4b29c079b7083a9b5034",
+    "docs/qa/t4-recepcion-2026-11-06/t4-backend-lint-verified.log": "017faac6a8da1fe11d19d057519caaf94703c1d856d7796c355e2c998126d5ea",
+    "docs/qa/t4-recepcion-2026-11-06/t4-runtime-backend-db.json": "7511a2230d7968a69389dd77aa235baaffab13447a42d455920dde94297b0f32",
+    "docs/qa/t4-recepcion-2026-11-06/t4-pwa-tests-verified.log": "7b9cb623b9abb741a58fe4c46aab2dc75ba1a21c6210f4e7cbcd9133cf6ea68a",
+    "docs/qa/t4-recepcion-2026-11-06/t4-pwa-build-verified.log": "bd8776b627361c81788c9f739bf158515de6c94d15ceab4d46bf87ae1af9ca1b",
+    "docs/qa/t4-recepcion-2026-11-06/t4-runtime-pwa-dev.json": "3a2b8cbd6bb5f7a1f22a89be0f5baf213a2ba5a50423e7e62ac5a585d0b49f24",
+    "docs/qa/t4-recepcion-2026-11-06/t4-runtime-backend-lint.json": "2455bf4e9baf389243fbd10323fda810aac542df88ef0a00e7a5f3a3b102eb0a",
+    "docs/qa/t4-recepcion-2026-11-06/t4-backend-versions.json": "c9dace7377df7c82e46a96839fc7ceeb5b4d0e9141d95baa0b4f7f6a7cbd3524",
+    "docs/qa/t4-recepcion-2026-11-06/t4-runtime-pwa-tests.json": "07e77c1359361f32081472fe3e1221bf2d53a7d20a3fcda8a73302b6611e8b9c",
+    "docs/qa/t4-recepcion-2026-11-06/t4-runtime-backend-build.json": "6c3e03c665e99ec58581e33959faee6e4b46f31fb5562784c4faf7e249967a82",
+    "docs/qa/t4-recepcion-2026-11-06/t4-pwa-lint-verified.log": "8401d694d1790b7d10549a1442308c8cfdab9ffe632d4d8763cbd05bf2000140",
+    "../pwa-r3foresta/docs/qa/t4-recepcion-2026-11-06/cola-320.png": "b8085cc02401f13f055e2e0677a73467ff2e08db75d2102574cf69b3b126e12b",
+    "../pwa-r3foresta/docs/qa/t4-recepcion-2026-11-06/historico-390.png": "18b866e6ffe191d5acc9ad9d0fd52a2fdc6db0caa03029bc02a4bb76d93e663e",
+    "../pwa-r3foresta/docs/qa/t4-recepcion-2026-11-06/confirmacion-1280.png": "937f0482e2080d8af9ce39bdf0b795ac87ab16b43abd6c1c2964561dd4c9f89a",
+    "../pwa-r3foresta/docs/qa/t4-recepcion-2026-11-06/resolucion-390.png": "37c54cead34a26b0181523484a818137f4c6693cb148ed02c9f697e542ccd73f",
+    "../pwa-r3foresta/docs/qa/t4-recepcion-2026-11-06/conforme-1280.png": "55fa3bdbf7efeec1c1d59c7b9170f2881fa80c65917d3e3a833a91a5f7837539",
+    "../pwa-r3foresta/docs/qa/t4-recepcion-2026-11-06/recuperacion-sin-m2-390.png": "82b1f9a001af8ee7cbad2732e61b039fdad936f8399d204c324bad1570df7531",
+    "../pwa-r3foresta/docs/qa/t4-recepcion-2026-11-06/cola-390.png": "37324fb6a3c4bc5c3c3073e5820e15502d16a3abd0baeed3593c48e786d56dd7",
+    "../pwa-r3foresta/docs/qa/t4-recepcion-2026-11-06/incidencia-390.png": "12ec68a055c9e18d5694dcb67d363184bced3b85a242dfa8e453c812e98112b6",
+    "../pwa-r3foresta/docs/qa/t4-recepcion-2026-11-06/cola-1280.png": "3ad0c4baeed835e55cf3569e6ff7a7b1b980294ea9f91954ac4b6f815f37e2ec",
+    "../pwa-r3foresta/docs/qa/t4-recepcion-2026-11-06/resultados.json": "872de51b12fa297b6665456b96c5707366a74952e2115c4488e12d828bf377ac",
+    "../pwa-r3foresta/docs/qa/t4-recepcion-2026-11-06/incierto-390.png": "774c65e3829f2f39e224d7ea030d4cc5992c54ba0789bb9dbb426dd471f7b207",
+    "docs/evidencia/t4-recepcion-local-2026-11-06.json": "1cb04359afb8539b7e88a616e39e92b840f218d92b929901d55eaee1941b4038"
+  },
+  "estado_canonico": {
+    "archivo": "../r3foresta-docs/ESTADO.md",
+    "sha256": "073d1a1bf7e57ac3133b5cdde1fa06c59ef2f021a9d1358d325b812e44197a03",
+    "cambio": "Apéndice breve de T4 con enlaces; resto preexistente conservado"
+  },
+  "limites": [
+    "No SQL remoto, catálogo destino, corte, commit de entrega, push ni despliegue",
+    "Antecedentes mínimos aislados T1/T2/077: no reconstrucción001–096",
+    "Navegador: cuentas/JWT/capacidades/recibos/saldos/Storage simulados; SQL/PostGIS y HTTP/JWT reales por separado",
+    "Sin WebAuthn real ni Pinata/blockchain; nuevo comando deja anclaje pendiente",
+    "Storage multipart fuera de SQL sin recuperación durable propia; respuestas perdidas pueden dejar cargas pendientes sin vínculo",
+    "VALIDADO histórico no acredita recepción; casos con movimientos/saldo previo/fecha envejecida requieren conciliación antes del corte",
+    "Recepción parcial y corrección documental de faltantes bloqueadas; solo resolución por nueva comprobación total conforme",
+    "Revisión humana/coordinadora pendiente; T5 no iniciado"
+  ],
+  "coordinacion": {
+    "destino": "01a18a33-5969-7261-b845-25979ea63c2f",
+    "host": "local",
+    "solicitud": "Revisar T4 antes de publicar o pasar a T5",
+    "aviso": "ENVIADO al chat coordinador; revisión solicitada antes de publicar o pasar a T5",
+    "enviado_en": "2026-11-06T17:36:54.926101+00:00"
+  }
+}

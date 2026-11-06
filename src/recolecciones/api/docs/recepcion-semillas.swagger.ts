@@ -1,0 +1,147 @@
+import type { SchemaObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
+const id: SchemaObject = {
+  type: 'string',
+  pattern: '^[1-9][0-9]*$',
+  maxLength: 19,
+};
+const revision: SchemaObject = {
+  type: 'string',
+  pattern: '^(0|[1-9][0-9]*)$',
+  maxLength: 19,
+};
+const date: SchemaObject = { type: 'string', format: 'date' };
+const instant: SchemaObject = { type: 'string', format: 'date-time' };
+const nullable = (schema: SchemaObject): SchemaObject => ({
+  ...schema,
+  nullable: true,
+});
+const object = (properties: Record<string, SchemaObject>): SchemaObject => ({
+  type: 'object',
+  additionalProperties: false,
+  required: Object.keys(properties),
+  properties,
+});
+const text: SchemaObject = { type: 'string' };
+const unit: SchemaObject = { type: 'string', enum: ['G', 'UNIDAD'] };
+const number: SchemaObject = { type: 'number' };
+const receipt = object({
+  id,
+  fecha_recepcion: date,
+  recibido_por: id,
+  registrado_en: instant,
+});
+const incident = object({
+  id,
+  cantidad_observada: number,
+  unidad_observada: unit,
+  fecha_recepcion: date,
+  registrado_en: instant,
+});
+export const RECEPCION_ORIGEN_SCHEMA = object({
+  recoleccion_id: id,
+  vivero_id: id,
+  recolector_id: id,
+  codigo_trazabilidad: text,
+  fecha_recoleccion: date,
+  tipo_material: { type: 'string', enum: ['SEMILLA', 'ESQUEJE'] },
+  nombre_cientifico_snapshot: nullable(text),
+  nombre_comercial_snapshot: nullable(text),
+  nombre_recolector_snapshot: nullable(text),
+  cantidad_declarada: number,
+  unidad_declarada: unit,
+  saldo_actual: number,
+  revision,
+  estado_registro: {
+    type: 'string',
+    enum: ['PENDIENTE_VALIDACION', 'VALIDADO'],
+  },
+  recepcion: nullable(receipt),
+  incidencia: nullable(incident),
+  requiere_conciliacion: { type: 'boolean' },
+  puede_recibir_validar: { type: 'boolean' },
+});
+export const RECEPCION_COLA_SCHEMA = object({
+  data: { type: 'array', items: RECEPCION_ORIGEN_SCHEMA },
+  siguiente_antes_de_id: nullable(id),
+});
+export const RECEPCION_DETALLE_SCHEMA = object({
+  ...RECEPCION_ORIGEN_SCHEMA.properties!,
+  historial: {
+    type: 'array',
+    items: object({
+      id,
+      clase: { type: 'string', enum: ['CONFORME', 'INCIDENCIA'] },
+      actor_id: id,
+      cantidad_declarada: number,
+      unidad_declarada: unit,
+      cantidad_observada: number,
+      unidad_observada: unit,
+      fecha_recepcion: date,
+      incidencia_id: nullable(id),
+      motivo_resolucion: nullable(text),
+      registrado_en: instant,
+    }),
+  },
+  evidencias: {
+    type: 'array',
+    items: object({
+      id,
+      bucket: text,
+      ruta_archivo: text,
+      mime_type: text,
+      titulo: nullable(text),
+      observacion_id: nullable(id),
+      public_url: { type: 'string', format: 'uri' },
+    }),
+  },
+});
+const result = object({
+  recoleccion_id: id,
+  vivero_id: id,
+  observacion_id: id,
+  recepcion_id: nullable(id),
+  incidencia_id: nullable(id),
+  revision_anterior: revision,
+  revision_nueva: revision,
+  cantidad_recibida: number,
+  unidad_recibida: unit,
+  fecha_recepcion: date,
+  recibido_por: id,
+  saldo_actual: number,
+  estado_registro: text,
+  anclaje_externo: { type: 'string', enum: ['PENDIENTE_NO_EJECUTADO'] },
+});
+export const RECEPCION_RECIBO_SCHEMA = object({
+  comando_id: { type: 'string', format: 'uuid' },
+  estado: {
+    type: 'string',
+    enum: [
+      'CONFIRMADO',
+      'INCIDENCIA',
+      'RECHAZADO',
+      'SIN_RESULTADO',
+      'CONFLICTO_CLAVE',
+    ],
+  },
+  resultado: nullable(result),
+  error: nullable(object({ codigo: text })),
+  finalizado_en: nullable(instant),
+});
+export const RECEPCION_CARGA_SCHEMA = object({
+  evidencia_ids: { type: 'array', items: id, minItems: 1, maxItems: 5 },
+  audiencia: { type: 'string', enum: ['BUCKET_LEGADO_PUBLICO'] },
+});
+export const RECEPCION_DIAGNOSTICO_SCHEMA: SchemaObject = {
+  type: 'array',
+  items: object({
+    recoleccion_id: id,
+    vivero_id: nullable(id),
+    cantidad_original: number,
+    saldo_actual: number,
+    unidad: unit,
+    fecha_recoleccion: date,
+    movimientos: { type: 'integer' },
+    lotes: { type: 'integer' },
+    recepcion_acreditada: { type: 'boolean', enum: [false] },
+  }),
+};

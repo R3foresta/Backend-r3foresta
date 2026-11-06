@@ -5,6 +5,7 @@ import { EstadoRegistro } from '../domain/enums/estado-registro.enum';
 describe('RecoleccionElegibilidadService', () => {
   let service: RecoleccionElegibilidadService;
   const elegibleBase = {
+    recepcion_conforme: true,
     tipo_material: 'SEMILLA',
     fotos_count: 2,
     latitud: -16.5,
@@ -13,6 +14,24 @@ describe('RecoleccionElegibilidadService', () => {
 
   beforeEach(() => {
     service = new RecoleccionElegibilidadService();
+  });
+
+  it('VALIDADO sin recepción física no habilita consumo, incluso con saldo', () => {
+    const r = service.evaluarRecoleccionElegibleParaInicioVivero(
+      {
+        ...elegibleBase,
+        recepcion_conforme: false,
+        estado_registro: 'VALIDADO',
+        estado_operativo: 'ABIERTO',
+        saldo_actual: 20,
+        planta_id: 1,
+      },
+      1,
+    );
+    expect(r.elegible).toBe(false);
+    expect(r.motivo_no_elegibilidad).toBe(
+      'Se requiere recepción física conforme.',
+    );
   });
 
   it('marca como elegible una recoleccion validada, abierta, con planta y saldo suficiente', () => {

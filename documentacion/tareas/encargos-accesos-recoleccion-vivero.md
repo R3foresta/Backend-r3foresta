@@ -1,6 +1,7 @@
 # Encargos de implementación: accesos de Recolección y Vivero
 
-Actualización: 6 de noviembre de 2026. Estado: **T1–T3 revisadas localmente; T4/T5 pendientes**.
+Actualización: 6 de noviembre de 2026. Estado: **T1–T4 implementadas y revisadas
+localmente; T5 pendiente**.
 Fuente de diseño: [propuesta elegida](propuesta-permisos-por-vivero.md).
 Este archivo divide la ejecución; no crea otro modelo de permisos.
 Inspección de referencia: backend `be62df0`. Cada agente debe comprobar el estado
@@ -36,7 +37,7 @@ estado y saldo. No crear una excepción de autoría ni confundirlo con merma de 
 | **T1** | Acceso explícito de Recolección y API para administrarlo | Propuesta elegida |
 | **T2** | Operación por vivero y API para asignar/retirar establecimientos | Contratos compartidos de T1 |
 | **T3** | Administración conjunta en «Usuarios y permisos» y navegación por capacidades | APIs de T1/T2 |
-| T4, posterior | Recepción de semillas y validación conjunta | T2 y reglas de negocio confirmadas |
+| **T4**, revisada localmente | Recepción de semillas y validación conjunta | T1–T3 revisadas y reglas de negocio confirmadas |
 | T5, posterior | Incorporación de plantas externas en vivero | T2 y contrato del plan de incorporación |
 
 Cada encargo incluye su contrato y pruebas. Las APIs administrativas nacen en T1
@@ -93,15 +94,21 @@ para administrar M1 y viveros M2 con las APIs revisadas, conservar el rol separa
 recuperar comandos y adaptar navegación/compatibilidad mínima de los flujos afectados.
 Aviso recibido y [revisión coordinadora cerrada el 6 de noviembre](../../docs/evidencia/t3-revision-coordinadora-2026-11-06.json), sin hallazgos pendientes. T4/T5 quedan fuera.
 
-## T4 y T5: siguientes encargos, fuera de los tres primeros
+## T4. Recepción de semillas
 
-**T4, recepción de semillas:** constancia `recoleccion_recepcion`, acción común
-«Recibir y validar», cantidad/unidad/actor/fecha/evidencia, atomicidad, reintentos
-y elegibilidad de consumo. Aplicar las reglas confirmadas: sin autorrecepción y
-desecho por el operario del vivero. Cantidades distintas requieren incidencia y
-resolución trazable; `VALIDADO` antiguo no se transforma en recepción acreditada.
+La [ficha T4](t4-recepcion-semillas.md) concreta la implementación local autorizada
+en GPT-6.1 Sol, esfuerzo máximo, sobre T1–T3 revisadas. Incluye constancia
+`recoleccion_recepcion`, «Recibir y validar», cantidad/unidad/actor/fecha/evidencia,
+atomicidad, recuperación y elegibilidad de consumo, con integración en la PWA.
+Sin autorrecepción; desecho por el operario del vivero. Cantidades distintas
+requieren incidencia y resolución trazable; `VALIDADO` antiguo no se transforma
+en recepción acreditada. Aviso recibido y [revisión coordinadora cerrada](../../docs/evidencia/t4-revision-coordinadora-2026-11-06.json)
+tras corregir comparación decimal y descarte de datos al retirar un vivero. SQL096,
+conciliación y corte externos pendientes; T5 no iniciado.
 
-**T5, plantas externas:** el mismo operario incorpora en su vivero compra, donación
+## T5. Plantas externas, pendiente
+
+El mismo operario incorpora en su vivero compra, donación
 o saldo inicial sin exigir acceso M1 ni inventar Recolección/EMBOLSADO. Ejecutar el
 [plan de incorporación existente](plan-incorporacion-plantas-procedencia.md), con
 continuidad de stock, evidencias, historia y entregas. La recepción directa en

@@ -40,7 +40,9 @@
     "test:db:participantes": "python3 scripts/qa/pa-int07-participantes-test.py",
     "preview:impacto": "python3 scripts/qa/pa-int05-db-test.py --serve",
     "test:db:vivero:acceso": "python3 scripts/qa/vivero-acceso-test.py",
-    "docs:vivero:acceso": "node scripts/qa/vivero-acceso-openapi.cjs"
+    "docs:vivero:acceso": "node scripts/qa/vivero-acceso-openapi.cjs",
+    "test:db:recepcion": "python3 scripts/qa/recepcion-semillas-test.py",
+    "docs:recepcion": "node scripts/qa/recepcion-semillas-openapi.cjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

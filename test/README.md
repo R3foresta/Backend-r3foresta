@@ -21,6 +21,7 @@ usan socket privado/DB sin TCP y destruyen exclusivamente su clúster al termina
 
 | Comando | Qué comprueba |
 |---|---|
+| `npm run test:db:recepcion -- --postgis --pg-bin /ruta/postgis/bin --evidence /ruta/nueva/t4.json` | T4/096: recepción, incidencia/resolución, replay/revisión/rollback, ledger protegido, ocho carreras observadas con retiro/rol/baja, HTTP/JWT y M3 sin doble débito. PostgreSQL/PostGIS desechable sin TCP/.env; Storage sintético. No servicios reales. |
 | `npm run test:db:plan` | Revisión atómica del plan y concurrencia/ACL 062–063 |
 | `npm run test:db:recoleccion:soft-delete` | RN-REC-09A/089 sobre antecedente mínimo M1 + 014/015: permisos, fechas DATE, rollback, conservación de fotos/compensación, instalación repetida y siete carreras con locks observados. PostgreSQL privado desechable sin TCP/.env. |
 | `npm run test:db:vivero:acceso -- --postgis --pg-bin /ruta/runtime-postgis/bin --evidence /ruta/nueva/t2.json` | T2/094–095 sobre T1 local: scopes, vigencias/revisión/auditoría/recuperación, M1/M2 independientes, RPC reales, retiro/rol/baja072, cancelación y desactivación masiva, JWT/HTTP/Storage sintético; con `--postgis` exige extensión real y prueba consumo M3 sin acceso M2 ni doble débito. Sin TCP/.env ni servicios reales. Evidencia propia; nunca sobrescribir la de T1. |
@@ -36,6 +37,7 @@ usan socket privado/DB sin TCP y destruyen exclusivamente su clúster al termina
 | `npm run test:db:participantes -- --pg-bin /ruta/postgis/bin` | INT07 participantes y lecturas: 085 sobre 082/084, altas/retiros/restauración, autorización efectiva propia, proyección pública, snapshots y carreras. Clúster privado desechable y evidencia separada; sin `.env` ni servicios externos. |
 | `python3 scripts/qa/pa-contexto-registro-test.py --pg-bin /ruta/postgis/bin` | Contexto v1 con avance por especie (086): PostgreSQL/PostGIS aislados, confirmaciones, rechazo, reposición excluida, ledger de corrección sintético, stock cero y privacidad. |
 | `npm run preview:impacto -- --pg-bin /ruta/postgis/bin --check` | Preview INT05/INT04 sintético y limpieza, sin servicios externos |
+| `node scripts/qa/recepcion-semillas-openapi.cjs --check` | Swagger real de las seis rutas T4 coincide con DTO/recibos/cola/detalle y artefacto consumible; no abre sockets ni servicios externos. |
 | `node scripts/qa/vivero-acceso-openapi.cjs --check` | Swagger real de gestión/operación M2 y rutas M1 afectadas (36 rutas) coincide con el contrato T2, incluidos almacenamiento BIGINT y pendientes combinables; sin sockets ni servicios externos. |
 | `node scripts/qa/recoleccion-acceso-openapi.cjs --check` | Swagger real de las cinco rutas de acceso M1 coincide con el artefacto consumible, sin abrir sockets ni cargar servicios externos. |
 | `node scripts/qa/pa-int02c-openapi.cjs --check` | OpenAPI y proyección Swagger coinciden con el generador |

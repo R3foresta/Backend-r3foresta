@@ -14,12 +14,12 @@ de accesos fijos combinables y asignación por vivero. Incluye tablas propuestas
 matriz de permisos, una cuenta con ambos accesos y la continuidad de `VALIDADOR`.
 Un único operario recibe y maneja su vivero en el modelo elegido. M1/T1, operación
 M2/T2 y administración visual T3 implementadas y revisadas localmente; recepción
-física y plantas externas continúan pendientes en T4/T5.
+física T4 implementada y revisada localmente y plantas externas T5 pendiente.
 
 [Encargos para implementar los accesos](encargos-accesos-recoleccion-vivero.md):
-T1 Recolección, T2 Vivero y T3 administración en el módulo existente; recepción de
-semillas e incorporación externa quedan como siguientes entregas. T1 revisada localmente;
-T2 implementada y revisada localmente ([contrato](../../docs/t2-acceso-viveros.md)); T3 revisada, T4/T5 pendientes.
+T1 Recolección, T2 Vivero y T3 administración en el módulo existente, revisadas
+localmente ([contrato T2](../../docs/t2-acceso-viveros.md)); T4 recepción de semillas
+implementada/revisada localmente y T5 incorporación externa pendiente.
 
 [T1 · Acceso explícito de Recolección](t1-acceso-recoleccion.md): autorizado el 5 de noviembre
 e implementado/verificado localmente. [Contrato y evidencia](../../docs/t1-acceso-recoleccion.md).
@@ -31,6 +31,12 @@ esfuerzo máximo, sobre T1 revisada. Aviso recibido y [revisión coordinadora ce
 [T3 · Administración de accesos](t3-administracion-accesos.md): implementación local
 en la PWA con GPT-6.1 Sol y esfuerzo máximo, revisada el 6 de noviembre.
 [Cierre y evidencia independiente](../../docs/evidencia/t3-revision-coordinadora-2026-11-06.json).
+
+[T4 · Recepción de semillas y «Recibir y validar»](t4-recepcion-semillas.md):
+implementación local autorizada el 6 de noviembre, con GPT-6.1 Sol y esfuerzo
+máximo. Incluye API y PWA, recepción total conforme e incidencias;
+[revisión coordinadora cerrada](../../docs/evidencia/t4-revision-coordinadora-2026-11-06.json)
+tras dos correcciones, sin hallazgos pendientes. T5 sigue pendiente.
 
 ## Decisiones y verificaciones conservadas
 

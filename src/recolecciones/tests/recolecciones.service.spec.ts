@@ -567,7 +567,8 @@ describe('RecoleccionesService', () => {
         {
           id: 2,
           vivero_id: 3,
-          estado_registro: 'VALIDADO', // ✅ VALIDADA
+          estado_registro: 'VALIDADO', // ✅ VALIDADA Y RECIBIDA
+          recepcion: { id: '12', fecha_recepcion: '2026-11-06', recibido_por: '7' },
           estado_operativo: 'ABIERTO',
           saldo_actual: 20,
           cantidad_inicial_canonica: 20,

@@ -1,7 +1,8 @@
 # Propuesta de accesos de Recolección y Vivero
 
-Creación: 4 de noviembre de 2026. Actualización: **5 de noviembre de 2026**.
-**Modelo elegido por el usuario; T1–T3 implementadas, verificadas y revisadas localmente; T4/T5 pendientes.**
+Creación: 4 de noviembre de 2026. Actualización: **6 de noviembre de 2026**.
+**Modelo elegido por el usuario; T1–T4 implementadas, verificadas y revisadas localmente;
+[cierre T4](../../docs/evidencia/t4-revision-coordinadora-2026-11-06.json); T5 pendiente.**
 [Entrega M1, contrato y límites](../../docs/t1-acceso-recoleccion.md).
 Base revisada: backend local `be62df0`, migraciones hasta 091 y modelo físico
 aportado del 4 de noviembre. No se ejecutó SQL ni se comprobó el entorno desplegado.
@@ -80,6 +81,10 @@ filas históricas ni se necesita un campo de cargo o un rol de receptor.
 `ADMIN` tiene acceso derivado: no necesita una fila en cada vivero.
 
 ### B. Constancia de recepción de material M1
+
+T4 implementa y revisa localmente este incremento con 096; el
+[contrato técnico y la conciliación pendiente](../../docs/t4-recepcion-semillas.md)
+concretan las tablas y reglas propuestas a continuación. No acredita aplicación remota.
 
 Se propone `recoleccion_recepcion`, independiente de las tablas de permisos:
 

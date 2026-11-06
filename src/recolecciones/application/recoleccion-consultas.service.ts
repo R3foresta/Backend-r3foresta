@@ -574,6 +574,9 @@ export class RecoleccionConsultasService {
       this.elegibilidadService.evaluarRecoleccionElegibleParaInicioVivero(
         {
           ...recoleccion,
+          recepcion_conforme: Array.isArray(recoleccion.recepcion)
+            ? recoleccion.recepcion.length === 1
+            : Boolean(recoleccion.recepcion?.id),
           fotos_count: evidencias.length,
           latitud: recoleccion.ubicacion?.coordenadas?.lat ?? null,
           longitud: recoleccion.ubicacion?.coordenadas?.lon ?? null,
@@ -618,6 +621,8 @@ export class RecoleccionConsultasService {
       estado_operativo,
       usuario_validacion_id,
       fecha_validacion,
+      revision_captura::text,
+      recepcion:recoleccion_recepcion(id::text,fecha_recepcion,recibido_por::text,registrado_en),
       usuario:usuario_id (id::text, nombre, apellido, username, correo),
       vivero:vivero_id (id::text, codigo, nombre, ubicacion_id),
       metodo:metodo_id (id, nombre, descripcion),

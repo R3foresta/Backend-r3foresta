@@ -1,0 +1,14 @@
+{
+  "node": "v24.19.0",
+  "node_path": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/node",
+  "npm": "12.0.2",
+  "python": "3.10.2",
+  "dependencias": {
+    "@nestjs/common": "11.1.9",
+    "@nestjs/swagger": "11.2.5",
+    "@supabase/supabase-js": "2.89.0",
+    "typescript": "5.9.3",
+    "jest": "30.2.0",
+    "prettier": "3.7.4"
+  }
+}

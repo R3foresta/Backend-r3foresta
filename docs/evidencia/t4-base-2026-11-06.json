@@ -1,0 +1,21 @@
+{
+  "fecha": "2026-11-06",
+  "backend_base": "032527a342d5e696e3cb15e5903355d04a91560a",
+  "pwa_base": "fc48be2d1c317d004fd88fd0f4ca009a1c9cb47d",
+  "backend_preexistentes": {
+    "documentacion/tareas/README.md": "2141368d6a9bdb972b944319c369502972f79e0c77918fa7efeeabe9912bf554",
+    "documentacion/tareas/encargos-accesos-recoleccion-vivero.md": "da5c65562c09489fcad2ed06aa6b5c6c3d508ced61533e869c3bc2b82c59438a",
+    "documentacion/tareas/propuesta-permisos-por-vivero.md": "02ad08c480612a15858fac8b245eb465dba4b801bd006584bba5186643451e2a",
+    "documentacion/tareas/t4-recepcion-semillas.md": "c2abaed921fb7b29509d8c1015ffa54dd1c61ce2613126166880199fcc0ae916"
+  },
+  "pwa_preexistentes": {
+    "src/modules/recolecciones/RecoleccionFormDatosScreen.tsx": "20bad06257bf2685554d5cefe1316d0d31dba982b87cfaaf097435f520b6e166",
+    "src/modules/recolecciones/recoleccionFormTypes.ts": "a2a6f12398069236af22bb2aed1722c2280cc7640a0e870da88f3dcbbfcbac1f"
+  },
+  "migraciones_preexistentes": {
+    "092_usuario_acceso_recoleccion.sql": "74c2c01468f130c5ca072b17727f9d7b37470cddd4c21033315d509aa5d91fcc",
+    "093_recoleccion_acceso_explicito.sql": "27ece38fb0860ce87dba5e30338fed63ae3d0d09ec7b49c8588385531e3b0b27",
+    "094_usuario_vivero.sql": "7b18997966852c51a7a1baf55b8ac6209da2b37961cd5f61432f224b6387693d",
+    "095_vivero_operacion_por_ambito.sql": "ec4ffc511d67ad80fcb042886470c0cd2cb92643b2e25d97e5af3e91490b0d96"
+  }
+}

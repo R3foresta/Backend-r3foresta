@@ -1,0 +1,14 @@
+{
+  "node": "v24.5.0",
+  "node_path": "/opt/homebrew/Cellar/node/24.5.0/bin/node",
+  "npm": "12.0.2",
+  "dependencias": {
+    "react": "19.2.0",
+    "react-router-dom": "6.30.6",
+    "vite": "7.3.6",
+    "vitest": "5.0.2",
+    "typescript": "5.9.3",
+    "@testing-library/react": "16.3.3",
+    "jsdom": "30.1.1"
+  }
+}

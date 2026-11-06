@@ -1,0 +1,223 @@
+{
+  "tarea": "T4_RECEPCION_SEMILLAS_REVISION_COORDINADORA",
+  "fecha_local": "2026-11-06",
+  "registrado_en": "2026-11-06T17:51:12.752874+00:00",
+  "estado": "REVISION_LOCAL_CERRADA_CON_CORRECCIONES_VERIFICADAS",
+  "hallazgos_pendientes": [],
+  "bases": {
+    "backend": "032527a342d5e696e3cb15e5903355d04a91560a",
+    "pwa": "fc48be2d1c317d004fd88fd0f4ca009a1c9cb47d",
+    "docs": "c750091a83c1d4f5148a3f8a8b2f797f5d2a5693",
+    "sin_commit_de_entrega": true,
+    "base_arbol": "docs/evidencia/t4-base-2026-11-06.json"
+  },
+  "entrega_original": {
+    "archivo": "docs/evidencia/t4-validacion-2026-11-06.json",
+    "sha256": "d3706cede264b2af31e998c5c5a54857a01d3c2e26b997683dc65c4ff7c5f963",
+    "conservada": true
+  },
+  "hallazgos_corregidos": [
+    {
+      "prioridad": "P2",
+      "caso": "Conversión decimal 1.001 KG frente a 1001 G bloqueaba resolución conforme",
+      "correccion": "Comparación exacta de decimales con BigInt, sin tolerancia ni redondeo; mínimo kg coherente con precisión canónica",
+      "archivo": "../pwa-r3foresta/src/modules/vivero/recepcion/recepcion.cantidad.ts",
+      "prueba": "resuelve una incidencia de 1001 G con 1.001 KG sin confundirla con un faltante",
+      "estado": "CORREGIDO_Y_VERIFICADO"
+    },
+    {
+      "prioridad": "P2",
+      "caso": "Conservar otro vivero mantenía visible el detalle/fotos del retirado al cambiar capacidades",
+      "correccion": "Filtrado inmediato por vivero actual, nueva lectura y cancelación de respuestas anteriores al cambiar M2; recuperación propia separada",
+      "archivo": "../pwa-r3foresta/src/modules/vivero/recepcion/RecepcionScreen.tsx",
+      "prueba": "retira el detalle y sus fotos al perder ese vivero aunque conserve otro",
+      "estado": "CORREGIDO_Y_VERIFICADO"
+    }
+  ],
+  "verificacion_independiente": {
+    "runtime": {
+      "node": "24.19.0",
+      "binario": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/node",
+      "npm": "12.0.2",
+      "fijado_en_PATH_por_comando": true
+    },
+    "regresiones_antes": {
+      "pruebas": 14,
+      "fallos_esperados": 2,
+      "correctas": 12,
+      "log": "docs/qa/t4-revision-coordinadora-2026-11-06/regresiones-antes.log"
+    },
+    "regresiones_despues": {
+      "pruebas": 22,
+      "correctas": 22,
+      "casos_decimales_adicionales": 8,
+      "log": "docs/qa/t4-revision-coordinadora-2026-11-06/regresiones-despues.log"
+    },
+    "backend": {
+      "build": "CORRECTO",
+      "suites": 89,
+      "unitarios": 1268,
+      "resultado": "CORRECTO"
+    },
+    "pwa": {
+      "build": "CORRECTO",
+      "lint": "CORRECTO",
+      "archivos_test": 92,
+      "unitarios": 1273,
+      "resultado": "CORRECTO",
+      "aviso_preexistente": "Chunk MapLibre >1000 KB"
+    },
+    "sql_http": {
+      "grupos_sql": 69,
+      "carreras": [
+        "dos_receptores",
+        "mismo_comando",
+        "retiro_antes_recepcion",
+        "recepcion_antes_retiro",
+        "inactivar_cuenta_antes_recepcion",
+        "recepcion_antes_inactivar_cuenta",
+        "cambiar_rol_global_antes_recepcion",
+        "recepcion_antes_cambiar_rol_global"
+      ],
+      "http_unitarios": 7,
+      "resultado": "CORRECTO",
+      "entorno": {
+        "tipo": "SINTETICO_LOCAL",
+        "postgres": "14.24 (Postgres.app)",
+        "tcp": false,
+        "sin_env": true,
+        "postgis": "POSTGIS=\"3.2.10 7762352\" [EXTENSION] PGSQL=\"140\" GEOS=\"3.10.7-CAPI-1.16.7\" PROJ=\"8.1.1\" LIBXML=\"2.9.14\" LIBJSON=\"0.15\" LIBPROTOBUF=\"1.4.1\" WAGYU=\"0.5.0 (Internal)\"",
+        "cluster_detenido": true,
+        "directorio_eliminado": true
+      },
+      "evidencia": "docs/qa/t4-revision-coordinadora-2026-11-06/sql-http.json"
+    },
+    "openapi": {
+      "T4_rutas": 6,
+      "T2_rutas": 36,
+      "M1_rutas": 5,
+      "participacion_rutas": 41,
+      "participacion_schemas": 86,
+      "resultado": "REPRODUCIBLE"
+    },
+    "diff_check": "CORRECTO en Backend/PWA",
+    "navegador": {
+      "ejecutado_en_esta_revision": false,
+      "artefactos_originales_cotejados": 33,
+      "checks_previos": 28,
+      "capturas_previas": 10,
+      "versiones": {
+        "node": "v24.19.0",
+        "navegador": "156.0.8078.80",
+        "playwright": "1.64.1"
+      },
+      "visuales_inspeccionadas": [
+        "incidencia-390.png",
+        "confirmacion-1280.png"
+      ],
+      "fuente": "../pwa-r3foresta/docs/qa/t4-recepcion-2026-11-06/resultados.json",
+      "limite": "API/Storage/cuentas sintéticos; nuevas regresiones de UI verificadas en jsdom"
+    }
+  },
+  "conservacion": {
+    "codigo_backend_T4_sin_cambios": {
+      "archivos": 20,
+      "sha256": {
+        "migrations/096_recoleccion_recepcion.sql": "4aaecbfd926628a8bb792280a6e371f1ecb358d0c70e49f28be873e347af5ce1",
+        "package.json": "ac70b566ef318c298019850bb7479014704793ed10f594248d09bb75fbc8015a",
+        "scripts/qa/recepcion-semillas-openapi.cjs": "b9d84383f4d783af4cb5a377bc4a4c9d0b942bce4b959f18c6bd44770bad92b9",
+        "scripts/qa/recepcion-semillas-test.py": "c2902863c9d5081962e26e90da80e53c9da27ba7c302308b852d6f27c3e72ce0",
+        "src/evidencias-trazabilidad/evidencias-trazabilidad.service.ts": "980a2b27a680b744628ee1b011cea945f1eb5755dfbf6b92cddab860f2c46708",
+        "src/recolecciones/api/docs/recepcion-semillas.swagger.ts": "c30a20596e15be5e68bec773256871b6c6d95d2ebe2eea31bef50c0950a9baf0",
+        "src/recolecciones/api/dto/recepcion-semillas.dto.ts": "0d261a66e19de532a40bed41006c5d25e6240d32d6a728cad3829aeda0bc9e4a",
+        "src/recolecciones/api/recoleccion-recepcion.controller.ts": "c74f77b26d4a5a011c77dd23774944fe4c55a895e2742652a2aebe8fa1c95623",
+        "src/recolecciones/application/mappers/recoleccion-response.mapper.ts": "9a14e054745f43f6a3c038450775ebf0a097ab4bad929dcff2d452fafc253a7e",
+        "src/recolecciones/application/recoleccion-consultas.service.ts": "118df5d64b3250f27d821bcc4ea72907d3b5c950fe63011fcca39d8fe9c3c309",
+        "src/recolecciones/application/recoleccion-recepcion.service.ts": "48279cb6c1d8bd19c194d8514fa6e6cfdb90f62e7320633df515cb10dfb495c0",
+        "src/recolecciones/domain/policies/elegibilidad-inicio-vivero.policy.ts": "f06369e9027e79021de8544e6d58905065d3e09ce890fe5efef9bd749fb01faf",
+        "src/recolecciones/domain/policies/recepcion-semillas.policy.ts": "c9beb9b47bed8157409c837c596dc73364a135625e4d37b34efb8d4b1ab75deb",
+        "src/recolecciones/recolecciones.module.ts": "208a1055ddcd48ae173a1ba367eb4d3fa6234a11114cad3a052477622d21f0dd",
+        "src/recolecciones/tests/recoleccion-elegibilidad.service.spec.ts": "faebf300194cba8b16eae42e0d9a1aee60d5efbca0b17406075d9353e20f4d7b",
+        "src/recolecciones/tests/recoleccion-recepcion.spec.ts": "92b3c2540acddbe483e95ece66415d76149b6dbece1969932f25d8fdb10e80f7",
+        "src/recolecciones/tests/recolecciones.service.spec.ts": "a8606bdf42298dc3a165d901c320bc58582ff95a6de6539b425ed2ccbb8ce81c",
+        "test/README.md": "d648eeeefdbe4ca0dd2c837d26f0af21edca209eb6497af8407e41e1c0c75ec2",
+        "test/db/recepcion-semillas-http.spec.ts": "e7b1f4101dea94a9eb5605e0ddad8a1e79bf2bd74149f32cec89ae684032bc54",
+        "test/jest-recepcion-semillas-db.json": "9ebcff3a7e1c8add12070534959c3ed1ab185523ffc566e4568ae2f5ce0df213"
+      }
+    },
+    "codigo_pwa_ajeno_a_las_correcciones_sin_cambios": {
+      "archivos": 10,
+      "sha256": {
+        "scripts/qa/t4-recepcion-browser.cjs": "d3d8cb2b7ef28943564f315304b539dd82b90b045db158bf199e0bba1b2aadfa",
+        "src/App.tsx": "6144a367348d7361441b9ba398bcd00145b76b86e83fbb5c4c812fc9b3c495a2",
+        "src/modules/recolecciones/RecoleccionDetailScreen.tsx": "bfdee3b22dacfb8a396b9e5c69fe9696ce04ea272316abfc84d45bc33768e9f7",
+        "src/modules/vivero/README.md": "b31795ad8eef60943fd6b31e0624925485b1eadebcb9d9cce483d2d2a6eceee5",
+        "src/modules/vivero/recepcion/recepcion.api.ts": "7ce854dea0b4684615b9e12df49b9fd87e5afad659ef669a0a7a7904bd1ce11b",
+        "src/modules/vivero/recepcion/recepcion.contract.ts": "f09bb0bf149c111ecd529561ca065f89bf44cafb50fda2e42c1636138c49126a",
+        "src/modules/vivero/recepcion/useRecepcionCommand.ts": "c975fbb398576fd0b6d61aad9053d5d9652278cdfc3cba9f82392249b8451edb",
+        "src/modules/vivero/screens/ViveroScreen.tsx": "37a5ea2e9682ffa43731edd8b1da2af0f0663dcaeb6e74389bbca41fd0e26bdc",
+        "src/services/recolecciones.service.ts": "ffc3a95d88761f399e0238c6bb2005c6438387e1abf5c9be92e921d26577b2e1",
+        "src/utils/appAccess.ts": "2b31edad43cf6bb078a8fed08703da7e920a5da279e23c9dab7b6a535d0ba5d2"
+      }
+    },
+    "formularios_preexistentes_sha256": {
+      "src/modules/recolecciones/RecoleccionFormDatosScreen.tsx": "20bad06257bf2685554d5cefe1316d0d31dba982b87cfaaf097435f520b6e166",
+      "src/modules/recolecciones/recoleccionFormTypes.ts": "a2a6f12398069236af22bb2aed1722c2280cc7640a0e870da88f3dcbbfcbac1f"
+    },
+    "migraciones_092_096_sha256": {
+      "092_usuario_acceso_recoleccion.sql": "74c2c01468f130c5ca072b17727f9d7b37470cddd4c21033315d509aa5d91fcc",
+      "093_recoleccion_acceso_explicito.sql": "27ece38fb0860ce87dba5e30338fed63ae3d0d09ec7b49c8588385531e3b0b27",
+      "094_usuario_vivero.sql": "7b18997966852c51a7a1baf55b8ac6209da2b37961cd5f61432f224b6387693d",
+      "095_vivero_operacion_por_ambito.sql": "ec4ffc511d67ad80fcb042886470c0cd2cb92643b2e25d97e5af3e91490b0d96",
+      "096_recoleccion_recepcion.sql": "4aaecbfd926628a8bb792280a6e371f1ecb358d0c70e49f28be873e347af5ce1"
+    },
+    "artefactos_iniciales_33_sin_cambios": true,
+    "documentos_de_encargo": "Cotejados intactos al comenzar la revisión; actualización posterior de estado y enlaces autorizada"
+  },
+  "archivos_cierre_backend_sha256": {
+    "README.md": "6326984fa436e6d67ec894aad4d52e8a708362c3e268f4dd34af3f6e92f40d40",
+    "ARCHITECTURE.md": "86300fd8c2a56a19fc11e41dd990bbc15454444770ba0c7091250c984ef4f810",
+    "docs/README.md": "68f621278dce87f6a5ad3c554da5686bdf18e7f344d0983de7f58c583f0f72c1",
+    "docs/t4-recepcion-semillas.md": "1486d0962adb44701d0f6e621db517a85e8b6a1281fef134be5e2ba56a0800c7",
+    "documentacion/tareas/README.md": "0486b38b6c3cebc61e73fda1a44398ccc39d129decdf487eb3b76a93dac23a6c",
+    "documentacion/tareas/encargos-accesos-recoleccion-vivero.md": "04e28e288d8a3e7ea4c99fafba66e43ac5ab861e69e869b12fdfd1f17566d7b3",
+    "documentacion/tareas/propuesta-permisos-por-vivero.md": "6143967536bfe00dbdd2cd03f40a6888eda3149ac7a33fd73aa8fdc411c0d8dc",
+    "documentacion/tareas/t4-recepcion-semillas.md": "6a34809743e710b86737cf28c85f94fc413f94b737c5b825be311baba94331c5"
+  },
+  "archivos_correcciones_y_cierre_pwa_sha256": {
+    "src/modules/vivero/recepcion/RecepcionForm.tsx": "c27fc80cb4a194591a65732548e46570f464eef8c12ca30168cc2f1420753b72",
+    "src/modules/vivero/recepcion/RecepcionScreen.tsx": "48f505882ffdcb3743e9a2bff556a56f8fbee7aab9ed8355b368f1eb5b5fdfd2",
+    "src/modules/vivero/recepcion/recepcion.test.tsx": "698a2798e2a8a54a4b13f900fda5f20c3330939c160d63431aca64a3037a3f5f",
+    "src/modules/vivero/recepcion/recepcion.cantidad.ts": "e3c137b0526f1c8d6d030f2c7e56f02f93b66e6f2b944894d6b9e86a140ad61d",
+    "docs/QA_T4_REVISION_2026-11-06.md": "7dafce83a7adf6f61b66be4b2cb0a07fde75bb7b1fc8d97cc823bd92e4de76ef",
+    "docs/README.md": "f0c716cb782f16986b70bfa197890d320147364cbddbe7a56b1b53521cb4cb12",
+    "README.md": "331267f08407ac8b3574b38a5397a68fdbd4f1e8798f3fca56dc634734e7cf1d",
+    "FRONTEND_GUIDE.md": "b4a1b9b4ed2931f629f8a0067dc70c32d61c5c8011879b5a6617a3a3f35f363f",
+    "FRONTEND_AUDIT.md": "f7e2b386e9242fd29b5d3e7ec3ed6b30e22a2a457493994538d97140bd21ea9e"
+  },
+  "artefactos_nuevos_sha256": {
+    "docs/qa/t4-revision-coordinadora-2026-11-06/backend-build.log": "79f35a6b81e344a3571d2f37ddc9c60aded055877d2758c5aed61990f6a28ccc",
+    "docs/qa/t4-revision-coordinadora-2026-11-06/backend-unitarios.log": "bb2556996ae2d78493db63ae859b621e40f0ed996701e3445ba04f2e31596893",
+    "docs/qa/t4-revision-coordinadora-2026-11-06/pwa-build.log": "84a4bbfbbc05ebfc265482023e9467a22f881be52820c0dfc9de51829d4097e4",
+    "docs/qa/t4-revision-coordinadora-2026-11-06/pwa-lint.log": "fa7e6a0ee0b7839ef5a74dc7f4017288198642fbe55ba898bd02ab74da551948",
+    "docs/qa/t4-revision-coordinadora-2026-11-06/pwa-unitarios.log": "68e1a9f30899301269a63c9e8b41af97354be03838f6c58625c8862d918b16aa",
+    "docs/qa/t4-revision-coordinadora-2026-11-06/regresiones-antes.log": "98fca43735107e01a21a455d65cd929b981a5fe3868fc5e8d2fc7c0254bc71db",
+    "docs/qa/t4-revision-coordinadora-2026-11-06/regresiones-despues.log": "bf8a6ef99b1dfb5792c6cc1c258cd4e4a38fd47d4ebc1123e242ee5066f723bf",
+    "docs/qa/t4-revision-coordinadora-2026-11-06/sql-http.json": "1cb04359afb8539b7e88a616e39e92b840f218d92b929901d55eaee1941b4038",
+    "docs/qa/t4-revision-coordinadora-2026-11-06/sql-http.log": "87d2e6f3488dbb09bd3481f33f7169581ecd6d7c6132235e51e70c43be150da9"
+  },
+  "estado_canonico": {
+    "archivo": "../r3foresta-docs/ESTADO.md",
+    "sha256": "c9910d3554023135b2a866d205f3824d2b1303919ff643e5d87cfde0152ce97a",
+    "cambio": "Solo cierre T4; resto del árbol documental ajeno conservado"
+  },
+  "limites": [
+    "Sin SQL remoto, aplicación/cotejo096, corte, commit de entrega, push ni despliegue",
+    "Antecedentes mínimos aislados: no reconstrucción001–096 ni catálogo Supabase destino",
+    "Storage multipart/Pinata/mint/WebAuthn remotos no acreditados; URLs públicas legadas conservadas",
+    "VALIDADO histórico no prueba recepción; conciliación real de remanentes pendiente antes de habilitar corte",
+    "Navegador previo sintético y nuevas pruebas UI jsdom; sin nueva ejecución de navegador",
+    "Sandbox negó inicialmente memoria compartida PostgreSQL, sockets HTTP y caché Vite; reejecución autorizada completó las comprobaciones",
+    "T5 no iniciado"
+  ]
+}

@@ -13,6 +13,7 @@ export interface RecoleccionOperativaSnapshot {
   fotos_count?: number | string | null;
   latitud?: number | string | null;
   longitud?: number | string | null;
+  recepcion_conforme?: boolean;
 }
 
 export interface EvaluacionElegibilidadInicioVivero {
@@ -134,8 +135,10 @@ export class ElegibilidadInicioViveroPolicy {
       }
 
       return this.crearResultado(
-        true,
-        null,
+        recoleccion.recepcion_conforme === true,
+        recoleccion.recepcion_conforme === true
+          ? null
+          : 'Se requiere recepción física conforme.',
         cantidadEvaluada,
         saldoActual,
         estadoOperativo,
@@ -152,7 +155,15 @@ export class ElegibilidadInicioViveroPolicy {
       );
     }
 
-    return this.crearResultado(true, null, null, saldoActual, estadoOperativo);
+    return this.crearResultado(
+      recoleccion.recepcion_conforme === true,
+      recoleccion.recepcion_conforme === true
+        ? null
+        : 'Se requiere recepción física conforme.',
+      null,
+      saldoActual,
+      estadoOperativo,
+    );
   }
 
   static validar(

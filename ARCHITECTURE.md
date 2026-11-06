@@ -7,7 +7,7 @@ viven en [r3foresta-docs](https://github.com/R3foresta/r3foresta-docs).
 
 Actualización transversal del 5 de noviembre de 2026: [T1 M1 local](docs/t1-acceso-recoleccion.md)
 añade 092/093, acceso explícito independiente del rol y gestión ADMIN recuperable.
-T2 incorpora [asignaciones por vivero](docs/t2-acceso-viveros.md) con 094/095; revisión y aplicación/corte remoto conservan estado separado. T3 añade administración visual y proyecciones exactas, [revisadas localmente el 6 de noviembre](docs/evidencia/t3-revision-coordinadora-2026-11-06.json). T4/T5 pendientes.
+T2 incorpora [asignaciones por vivero](docs/t2-acceso-viveros.md) con 094/095; revisión y aplicación/corte remoto conservan estado separado. T3 añade administración visual y proyecciones exactas, [revisadas localmente el 6 de noviembre](docs/evidencia/t3-revision-coordinadora-2026-11-06.json). T4 añade localmente [recepción física e incidencias](docs/t4-recepcion-semillas.md) con 096 y PWA, [revisadas y corregidas localmente](docs/evidencia/t4-revision-coordinadora-2026-11-06.json); conciliación, aplicación/corte remoto pendientes, T5 separado.
 
 ## Fuentes y mapa de código
 
@@ -45,7 +45,7 @@ GET del plan conserva la lectura para cuentas activas y su escritura requiere AD
 
 En M1, GENERAL/VALIDADOR activos necesitan vigencia explícita para capturar y
 mantener lo propio; ADMIN deriva acceso. La aprobación propia está prohibida incluso
-para ADMIN. T2 limita revisión documental a ADMIN/VALIDADOR asignado al almacenamiento; GENERAL no obtiene todavía la recepción conjunta de T4. DESECHO exige ADMIN u operario vigente del almacenamiento, sin M1 ni autoridad por autoría. Las capacidades M1 tienen contrato propio, separado
+para ADMIN. T2 limita revisión documental a ADMIN/VALIDADOR asignado al almacenamiento; T4 habilita recepción conjunta para GENERAL/VALIDADOR con M2 de custodia, sin M1 y sin autorrecepción. La revisión documental legada conserva su audiencia y no acredita recepción física. DESECHO exige ADMIN u operario vigente del almacenamiento, sin M1 ni autoridad por autoría. Las capacidades M1 tienen contrato propio, separado
 del DTO de participación.
 
 Los controllers de campañas, subcampañas, recolecciones, vivero, plantaciones,
