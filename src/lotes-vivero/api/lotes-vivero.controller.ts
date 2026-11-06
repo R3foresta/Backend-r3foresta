@@ -1,3 +1,5 @@
+import { PrivateResponseInterceptor } from '../../auth/private-response.interceptor';
+import { BigintIdPipe } from '../../common/dto/bigint-id';
 import { InternalActorGuard } from '../../auth/internal-actor.guard';
 import {
   BadRequestException,
@@ -6,7 +8,6 @@ import {
   Get,
   Headers,
   Param,
-  ParseIntPipe,
   Post,
   Query,
   UnauthorizedException,
@@ -15,7 +16,12 @@ import {
 } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiResponse,
+  ApiOperation,
+} from '@nestjs/swagger';
 import { LotesViveroService } from '../application/lotes-vivero.service';
 import {
   ApiCrearAsignacion,
@@ -55,17 +61,15 @@ import { RegistrarDespachoDto } from './dto/registrar-despacho.dto';
 import { RegistrarEmbolsadoDto } from './dto/registrar-embolsado.dto';
 import { RegistrarMermaDto } from './dto/registrar-merma.dto';
 
-// TODO(vivero-mvp): revisar política de autenticación para endpoints GET.
-//   Spec: RF-VIV-07 (timeline / cadena de custodia) y RF-VIV-09 (listado operativo)
-//   indican "control de acceso por rol". Hoy todos los GET de este controller son
-//   públicos (no exigen `x-auth-id`), mientras que los POST sí lo exigen.
-//   Esto es una inconsistencia y un posible problema de privacidad de datos
-//   operativos. Confirmar con producto si los GET deben ir tras `x-auth-id`
-//   (y eventualmente rol), o si quedan abiertos por diseño. Sincronizar también
-//   con la doc del módulo (modulos/lotes-vivero.md sección "Autenticación").
 @ApiTags('lotes-vivero')
+@ApiResponse({
+  status: 403,
+  description:
+    'Sin ámbito operativo vigente para el vivero del recurso o evidencia no autorizada.',
+})
 @ApiBearerAuth()
 @UseGuards(InternalActorGuard)
+@UseInterceptors(PrivateResponseInterceptor)
 @Controller('lotes-vivero')
 export class LotesViveroController {
   constructor(private readonly lotesViveroService: LotesViveroService) {}
@@ -101,15 +105,21 @@ export class LotesViveroController {
 
   @Get(':id/embolsado/context')
   @ApiObtenerContextoEmbolsado()
-  obtenerContextoEmbolsado(@Param('id', ParseIntPipe) loteId: number) {
-    return this.lotesViveroService.obtenerContextoEmbolsado(loteId);
+  obtenerContextoEmbolsado(
+    @Param('id', BigintIdPipe) loteId: number | string,
+    @Headers('x-auth-id') authId: string,
+  ) {
+    return this.lotesViveroService.obtenerContextoEmbolsado(
+      loteId,
+      this.requireAuthId(authId),
+    );
   }
 
   @Post(':id/embolsado/evidencias-pendientes')
   @ApiCrearEvidenciasPendientesEmbolsado()
   @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
   crearEvidenciasPendientesEmbolsado(
-    @Param('id', ParseIntPipe) loteId: number,
+    @Param('id', BigintIdPipe) loteId: number | string,
     @Body() dto: CrearEvidenciaPendienteViveroDto,
     @Headers('x-auth-id') authId?: string,
     @UploadedFiles() files?: { fotos?: any[] },
@@ -125,7 +135,7 @@ export class LotesViveroController {
   @Post(':id/embolsado')
   @ApiRegistrarEmbolsado()
   registrarEmbolsado(
-    @Param('id', ParseIntPipe) loteId: number,
+    @Param('id', BigintIdPipe) loteId: number | string,
     @Body() dto: RegistrarEmbolsadoDto,
     @Headers('x-auth-id') authId?: string,
   ) {
@@ -138,8 +148,14 @@ export class LotesViveroController {
 
   @Get(':id/embolsado')
   @ApiObtenerResultadoEmbolsado()
-  obtenerResultadoEmbolsado(@Param('id', ParseIntPipe) loteId: number) {
-    return this.lotesViveroService.obtenerResultadoEmbolsado(loteId);
+  obtenerResultadoEmbolsado(
+    @Param('id', BigintIdPipe) loteId: number | string,
+    @Headers('x-auth-id') authId: string,
+  ) {
+    return this.lotesViveroService.obtenerResultadoEmbolsado(
+      loteId,
+      this.requireAuthId(authId),
+    );
   }
 
   // ---- Descarte pre-embolsado ----
@@ -148,7 +164,7 @@ export class LotesViveroController {
   @ApiCrearEvidenciasPendientesDescartePreEmbolsado()
   @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
   crearEvidenciasPendientesDescartePreEmbolsado(
-    @Param('id', ParseIntPipe) loteId: number,
+    @Param('id', BigintIdPipe) loteId: number | string,
     @Body() dto: CrearEvidenciaPendienteViveroDto,
     @Headers('x-auth-id') authId?: string,
     @UploadedFiles() files?: { fotos?: any[] },
@@ -164,7 +180,7 @@ export class LotesViveroController {
   @Post(':id/descarte-pre-embolsado')
   @ApiRegistrarDescartePreEmbolsado()
   registrarDescartePreEmbolsado(
-    @Param('id', ParseIntPipe) loteId: number,
+    @Param('id', BigintIdPipe) loteId: number | string,
     @Body() dto: RegistrarDescartePreEmbolsadoDto,
     @Headers('x-auth-id') authId?: string,
   ) {
@@ -181,7 +197,7 @@ export class LotesViveroController {
   @ApiCrearEvidenciasPendientesAdaptabilidad()
   @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
   crearEvidenciasPendientesAdaptabilidad(
-    @Param('id', ParseIntPipe) loteId: number,
+    @Param('id', BigintIdPipe) loteId: number | string,
     @Body() dto: CrearEvidenciaPendienteViveroDto,
     @Headers('x-auth-id') authId?: string,
     @UploadedFiles() files?: { fotos?: any[] },
@@ -197,7 +213,7 @@ export class LotesViveroController {
   @Post(':id/adaptabilidad')
   @ApiRegistrarAdaptabilidad()
   registrarAdaptabilidad(
-    @Param('id', ParseIntPipe) loteId: number,
+    @Param('id', BigintIdPipe) loteId: number | string,
     @Body() dto: RegistrarAdaptabilidadDto,
     @Headers('x-auth-id') authId?: string,
   ) {
@@ -210,15 +226,21 @@ export class LotesViveroController {
 
   @Get(':id/adaptabilidad')
   @ApiObtenerAdaptabilidades()
-  obtenerAdaptabilidades(@Param('id', ParseIntPipe) loteId: number) {
-    return this.lotesViveroService.obtenerAdaptabilidades(loteId);
+  obtenerAdaptabilidades(
+    @Param('id', BigintIdPipe) loteId: number | string,
+    @Headers('x-auth-id') authId: string,
+  ) {
+    return this.lotesViveroService.obtenerAdaptabilidades(
+      loteId,
+      this.requireAuthId(authId),
+    );
   }
 
   @Post(':id/merma/evidencias-pendientes')
   @ApiCrearEvidenciasPendientesMerma()
   @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
   crearEvidenciasPendientesMerma(
-    @Param('id', ParseIntPipe) loteId: number,
+    @Param('id', BigintIdPipe) loteId: number | string,
     @Body() dto: CrearEvidenciaPendienteViveroDto,
     @Headers('x-auth-id') authId?: string,
     @UploadedFiles() files?: { fotos?: any[] },
@@ -234,7 +256,7 @@ export class LotesViveroController {
   @Post(':id/merma')
   @ApiRegistrarMerma()
   registrarMerma(
-    @Param('id', ParseIntPipe) loteId: number,
+    @Param('id', BigintIdPipe) loteId: number | string,
     @Body() dto: RegistrarMermaDto,
     @Headers('x-auth-id') authId?: string,
   ) {
@@ -249,7 +271,7 @@ export class LotesViveroController {
   @ApiCrearEvidenciasPendientesDespacho()
   @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
   crearEvidenciasPendientesDespacho(
-    @Param('id', ParseIntPipe) loteId: number,
+    @Param('id', BigintIdPipe) loteId: number | string,
     @Body() dto: CrearEvidenciaPendienteViveroDto,
     @Headers('x-auth-id') authId?: string,
     @UploadedFiles() files?: { fotos?: any[] },
@@ -265,7 +287,7 @@ export class LotesViveroController {
   @Post(':id/despacho')
   @ApiRegistrarDespacho()
   registrarDespacho(
-    @Param('id', ParseIntPipe) loteId: number,
+    @Param('id', BigintIdPipe) loteId: number | string,
     @Body() dto: RegistrarDespachoDto,
     @Headers('x-auth-id') authId?: string,
   ) {
@@ -278,46 +300,86 @@ export class LotesViveroController {
 
   @Get(':id/despacho')
   @ApiObtenerDespachos()
-  obtenerDespachos(@Param('id', ParseIntPipe) loteId: number) {
-    return this.lotesViveroService.obtenerDespachos(loteId);
+  obtenerDespachos(
+    @Param('id', BigintIdPipe) loteId: number | string,
+    @Headers('x-auth-id') authId: string,
+  ) {
+    return this.lotesViveroService.obtenerDespachos(
+      loteId,
+      this.requireAuthId(authId),
+    );
   }
 
   @Get(':id/merma')
   @ApiObtenerMermas()
-  obtenerMermas(@Param('id', ParseIntPipe) loteId: number) {
-    return this.lotesViveroService.obtenerMermas(loteId);
+  obtenerMermas(
+    @Param('id', BigintIdPipe) loteId: number | string,
+    @Headers('x-auth-id') authId: string,
+  ) {
+    return this.lotesViveroService.obtenerMermas(
+      loteId,
+      this.requireAuthId(authId),
+    );
   }
 
   @Get()
   @ApiListarLotes()
-  listarLotes(@Query() filters: FiltrarLotesViveroDto) {
-    return this.lotesViveroService.listarLotes(filters);
+  listarLotes(
+    @Query() filters: FiltrarLotesViveroDto,
+    @Headers('x-auth-id') authId: string,
+  ) {
+    return this.lotesViveroService.listarLotes(
+      filters,
+      this.requireAuthId(authId),
+    );
   }
 
   @Get('stock/especies')
-  listarStockDisponiblePorEspecie() {
-    return this.lotesViveroService.listarStockDisponiblePorEspecie();
+  @ApiOperation({
+    summary: 'Stock por especie filtrado por viveros efectivos antes de sumar.',
+  })
+  listarStockDisponiblePorEspecie(@Headers('x-auth-id') authId: string) {
+    return this.lotesViveroService.listarStockDisponiblePorEspecie(
+      this.requireAuthId(authId),
+    );
   }
 
   @Get(':id/saldos')
   @ApiObtenerSaldos()
-  obtenerSaldos(@Param('id', ParseIntPipe) loteId: number) {
-    return this.lotesViveroService.obtenerSaldos(loteId);
+  obtenerSaldos(
+    @Param('id', BigintIdPipe) loteId: number | string,
+    @Headers('x-auth-id') authId: string,
+  ) {
+    return this.lotesViveroService.obtenerSaldos(
+      loteId,
+      this.requireAuthId(authId),
+    );
   }
 
   @Get(':id/timeline')
   @ApiObtenerTimeline()
   obtenerTimeline(
-    @Param('id', ParseIntPipe) loteId: number,
+    @Param('id', BigintIdPipe) loteId: number | string,
     @Query() filters: FiltrarTimelineLoteDto,
+    @Headers('x-auth-id') authId: string,
   ) {
-    return this.lotesViveroService.obtenerTimeline(loteId, filters);
+    return this.lotesViveroService.obtenerTimeline(
+      loteId,
+      filters,
+      this.requireAuthId(authId),
+    );
   }
 
   @Get(':id')
   @ApiObtenerDetalleLote()
-  obtenerDetalle(@Param('id', ParseIntPipe) loteId: number) {
-    return this.lotesViveroService.obtenerDetalle(loteId);
+  obtenerDetalle(
+    @Param('id', BigintIdPipe) loteId: number | string,
+    @Headers('x-auth-id') authId: string,
+  ) {
+    return this.lotesViveroService.obtenerDetalle(
+      loteId,
+      this.requireAuthId(authId),
+    );
   }
 
   // ---- Asignaciones ----
@@ -325,7 +387,7 @@ export class LotesViveroController {
   @Post(':id/asignaciones')
   @ApiCrearAsignacion()
   crearAsignacion(
-    @Param('id', ParseIntPipe) loteId: number,
+    @Param('id', BigintIdPipe) loteId: number | string,
     @Body() dto: CrearAsignacionDto,
     @Headers('x-auth-id') authId?: string,
   ) {
@@ -338,15 +400,21 @@ export class LotesViveroController {
 
   @Get(':id/asignaciones')
   @ApiListarAsignaciones()
-  listarAsignaciones(@Param('id', ParseIntPipe) loteId: number) {
-    return this.lotesViveroService.listarAsignaciones(loteId);
+  listarAsignaciones(
+    @Param('id', BigintIdPipe) loteId: number | string,
+    @Headers('x-auth-id') authId: string,
+  ) {
+    return this.lotesViveroService.listarAsignaciones(
+      loteId,
+      this.requireAuthId(authId),
+    );
   }
 
   @Post(':id/asignaciones/:asignacionId/devolucion')
   @ApiDevolverAsignacion()
   devolverAsignacion(
-    @Param('id', ParseIntPipe) loteId: number,
-    @Param('asignacionId', ParseIntPipe) asignacionId: number,
+    @Param('id', BigintIdPipe) loteId: number | string,
+    @Param('asignacionId', BigintIdPipe) asignacionId: number | string,
     @Body() dto: DevolverAsignacionDto,
     @Headers('x-auth-id') authId?: string,
   ) {

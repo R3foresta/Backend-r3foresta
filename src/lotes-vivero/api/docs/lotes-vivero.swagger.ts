@@ -2,12 +2,10 @@ import { applyDecorators } from '@nestjs/common';
 import {
   ApiBody,
   ApiConsumes,
-  ApiHeader,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiResponse,
-  ApiSecurity,
 } from '@nestjs/swagger';
 import { CausaDescartePreEmbolsado } from '../../domain/enums/causa-descarte-pre-embolsado.enum';
 import { CausaMermaVivero } from '../../domain/enums/causa-merma-vivero.enum';
@@ -18,10 +16,12 @@ import { SubetapaAdaptabilidad } from '../../domain/enums/subetapa-adaptabilidad
 import { TipoEventoVivero } from '../../domain/enums/tipo-evento-vivero.enum';
 import { UnidadMedidaVivero } from '../../domain/enums/unidad-medida-vivero.enum';
 
-const AUTH_ID_HEADER = {
-  name: 'x-auth-id',
-  description: 'ID de autenticacion del usuario de Supabase',
-  required: true,
+// Entradas operativas: cadenas exactas y compatibilidad con números legados seguros.
+const OPERATION_ID_SCHEMA = {
+  oneOf: [
+    { type: 'string', pattern: '^[1-9][0-9]*$', maxLength: 19 },
+    { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  ],
 };
 
 export function ApiCrearEvidenciaPendiente() {
@@ -29,17 +29,20 @@ export function ApiCrearEvidenciaPendiente() {
     ApiOperation({
       summary: 'Crear evidencias pendientes para evento de vivero',
       description:
-        'Sube fotos y crea evidencias con entidad_id=0 para el tipo EVENTO_LOTE_VIVERO. Luego sus IDs se envian en POST /lotes-vivero para que la RPC de INICIO las vincule atomicamente al evento.',
+        'Requiere ADMIN u operario del vivero indicado. Sube fotos y crea evidencias con entidad_id=0 para el tipo EVENTO_LOTE_VIVERO. Luego sus IDs se envian en POST /lotes-vivero para que la RPC de INICIO las vincule atomicamente al evento.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiConsumes('multipart/form-data'),
     ApiBody({
       description: 'Datos y archivos de evidencia pendiente',
       schema: {
         type: 'object',
-        required: ['fotos'],
+        required: ['fotos', 'vivero_id'],
         properties: {
+          vivero_id: {
+            ...OPERATION_ID_SCHEMA,
+            description:
+              'Contexto autorizado del INICIO, revalidado al vincular.',
+          },
           titulo: {
             type: 'string',
             maxLength: 120,
@@ -83,7 +86,10 @@ export function ApiCrearEvidenciaPendiente() {
       status: 400,
       description: 'Datos invalidos o formato de archivo no permitido',
     }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({
       status: 404,
       description: 'Falta tipo_entidad_evidencia EVENTO_LOTE_VIVERO',
@@ -99,8 +105,6 @@ export function ApiCrearLoteDesdeRecoleccion() {
       description:
         'Inicia un lote de vivero usando la RPC fn_vivero_crear_lote_desde_recoleccion. Crea lote, evento INICIO, movimiento CONSUMO_A_VIVERO, descuenta saldo y vincula evidencias en una sola transaccion. El codigo de trazabilidad queda en formato VIV-000001-REC-000001.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiBody({
       description: 'Datos del inicio de lote de vivero',
       schema: {
@@ -116,14 +120,12 @@ export function ApiCrearLoteDesdeRecoleccion() {
         ],
         properties: {
           recoleccion_id: {
-            type: 'number',
-            minimum: 1,
+            ...OPERATION_ID_SCHEMA,
             example: 45,
             description: 'ID de la recoleccion origen',
           },
           vivero_id: {
-            type: 'number',
-            minimum: 1,
+            ...OPERATION_ID_SCHEMA,
             example: 1,
             description: 'ID del vivero receptor',
           },
@@ -152,7 +154,7 @@ export function ApiCrearLoteDesdeRecoleccion() {
           },
           evidencia_ids: {
             type: 'array',
-            items: { type: 'number', minimum: 1 },
+            items: OPERATION_ID_SCHEMA,
             example: [501],
             description:
               'IDs de evidencias pendientes a asociar al evento de inicio',
@@ -174,7 +176,10 @@ export function ApiCrearLoteDesdeRecoleccion() {
       status: 400,
       description: 'Datos invalidos o saldo de recoleccion insuficiente',
     }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({
       status: 404,
       description: 'Recoleccion o vivero no encontrado',
@@ -188,13 +193,11 @@ export function ApiRegistrarEmbolsado() {
     ApiOperation({
       summary: 'Registrar evento de embolsado',
       description:
-        'Registra el embolsado llamando fn_vivero_registrar_embolsado. Crea el evento EMBOLSADO, materializa el saldo vivo e inica el conteo de plantas vivas en UNIDAD. El responsable_id sale del usuario autenticado (x-auth-id), nunca del body.',
+        'Registra el embolsado llamando fn_vivero_registrar_embolsado. Crea el evento EMBOLSADO, materializa el saldo vivo e inica el conteo de plantas vivas en UNIDAD. El responsable_id sale del usuario verificado por JWT, nunca del body.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiBody({
@@ -216,7 +219,7 @@ export function ApiRegistrarEmbolsado() {
           },
           evidencia_ids: {
             type: 'array',
-            items: { type: 'integer', minimum: 1 },
+            items: OPERATION_ID_SCHEMA,
             minItems: 1,
             example: [137],
             description:
@@ -240,7 +243,10 @@ export function ApiRegistrarEmbolsado() {
       description:
         'Datos invalidos, lote sin INICIO, EMBOLSADO duplicado, evidencia ya vinculada o saldo incorrecto.',
     }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
@@ -253,11 +259,9 @@ export function ApiRegistrarAdaptabilidad() {
       description:
         'Registra un evento ADAPTABILIDAD via RPC fn_vivero_registrar_adaptabilidad. Actualiza subetapa_actual del lote sin modificar el saldo vivo. Permite multiples registros y secuencia flexible de subetapas. La evidencia es opcional.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiBody({
@@ -279,7 +283,7 @@ export function ApiRegistrarAdaptabilidad() {
           },
           evidencia_ids: {
             type: 'array',
-            items: { type: 'integer', minimum: 1 },
+            items: OPERATION_ID_SCHEMA,
             example: [310, 311],
             description:
               'IDs de evidencias pendientes obtenidos en POST :id/adaptabilidad/evidencias-pendientes. Opcional: puede omitirse o enviarse vacio.',
@@ -302,7 +306,10 @@ export function ApiRegistrarAdaptabilidad() {
       description:
         'Datos invalidos, lote sin EMBOLSADO previo, lote FINALIZADO, fecha invalida o evidencia ya vinculada.',
     }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({
       status: 403,
       description: 'Rol del usuario sin permiso de escritura',
@@ -317,13 +324,11 @@ export function ApiRegistrarMerma() {
     ApiOperation({
       summary: 'Registrar merma de plantas',
       description:
-        'Registra la perdida de plantas via RPC fn_vivero_registrar_merma. Reduce el saldo vivo del lote, vincula evidencias y activa cierre automatico si el saldo llega a 0. El responsable_id sale del usuario autenticado (x-auth-id), nunca del body.',
+        'Registra la perdida de plantas via RPC fn_vivero_registrar_merma. Reduce el saldo vivo del lote, vincula evidencias y activa cierre automatico si el saldo llega a 0. El responsable_id sale del usuario verificado por JWT, nunca del body.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiBody({
@@ -355,7 +360,7 @@ export function ApiRegistrarMerma() {
           },
           evidencia_ids: {
             type: 'array',
-            items: { type: 'integer', minimum: 1 },
+            items: OPERATION_ID_SCHEMA,
             minItems: 1,
             example: [201, 202],
             description:
@@ -379,7 +384,10 @@ export function ApiRegistrarMerma() {
       description:
         'Datos invalidos, lote sin EMBOLSADO previo, cantidad supera saldo, evidencia ya vinculada o eliminada.',
     }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({
       status: 403,
       description: 'Rol del usuario sin permiso de escritura',
@@ -396,11 +404,9 @@ export function ApiRegistrarDescartePreEmbolsado() {
       description:
         'Cierra un lote que tiene INICIO pero no tiene EMBOLSADO, llamando la RPC fn_vivero_registrar_descarte_pre_embolsado en una sola transaccion. No crea saldo vivo ni modifica saldo_vivo_actual. Requiere causa, evidencia obligatoria, cantidad total del material en proceso y unidad igual a unidad_medida_inicial.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiBody({
@@ -439,7 +445,7 @@ export function ApiRegistrarDescartePreEmbolsado() {
           },
           evidencia_ids: {
             type: 'array',
-            items: { type: 'integer', minimum: 1 },
+            items: OPERATION_ID_SCHEMA,
             minItems: 1,
             example: [401],
             description:
@@ -463,7 +469,10 @@ export function ApiRegistrarDescartePreEmbolsado() {
       description:
         'Datos invalidos, falta evidencia/causa, lote sin INICIO, lote con EMBOLSADO, cantidad parcial o unidad distinta.',
     }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({
       status: 403,
       description: 'Rol del usuario sin permiso de escritura',
@@ -478,13 +487,11 @@ export function ApiRegistrarDespacho() {
     ApiOperation({
       summary: 'Registrar despacho manual de plantas',
       description:
-        'Registra la salida de plantas del vivero hacia un destino distinto de una subcampania, llamando la RPC fn_vivero_registrar_despacho en una sola transaccion. El responsable_id sale del usuario autenticado (x-auth-id), nunca del body. Requiere EMBOLSADO previo y al menos una evidencia. Valida contra el saldo vivo FISICO del lote (RN-VIV-56): las asignaciones a subcampanias ya descontaron el saldo, no existe stock reservado que restar. Si el stock llega a cero, el lote se cierra automaticamente. El destino PLANTACION_CAMPANIA se rechaza aqui: las salidas hacia subcampanias se registran con POST /lotes-vivero/:id/asignaciones (asignacion fisica).',
+        'Registra la salida de plantas del vivero hacia un destino distinto de una subcampania, llamando la RPC fn_vivero_registrar_despacho en una sola transaccion. El responsable_id sale del usuario verificado por JWT, nunca del body. Requiere EMBOLSADO previo y al menos una evidencia. Valida contra el saldo vivo FISICO del lote (RN-VIV-56): las asignaciones a subcampanias ya descontaron el saldo, no existe stock reservado que restar. Si el stock llega a cero, el lote se cierra automaticamente. El destino PLANTACION_CAMPANIA se rechaza aqui: las salidas hacia subcampanias se registran con POST /lotes-vivero/:id/asignaciones (asignacion fisica).',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiBody({
@@ -532,7 +539,7 @@ export function ApiRegistrarDespacho() {
           },
           evidencia_ids: {
             type: 'array',
-            items: { type: 'integer', minimum: 1 },
+            items: OPERATION_ID_SCHEMA,
             minItems: 1,
             example: [305, 306],
             description:
@@ -556,7 +563,10 @@ export function ApiRegistrarDespacho() {
       description:
         'Datos invalidos, lote sin EMBOLSADO previo, cantidad supera saldo, destino PLANTACION_CAMPANIA usado, evidencia ya vinculada o eliminada.',
     }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({
       status: 403,
       description: 'Rol del usuario sin permiso de escritura',
@@ -573,11 +583,9 @@ export function ApiCrearEvidenciasPendientesDespacho() {
       description:
         'Sube fotos al storage y crea registros en evidencias_trazabilidad con entidad_id=0, vinculando el codigo_trazabilidad del lote. Los IDs retornados deben enviarse en POST :id/despacho.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiConsumes('multipart/form-data'),
@@ -612,7 +620,10 @@ export function ApiCrearEvidenciasPendientesDespacho() {
         'Evidencias pendientes creadas. Devuelve { success: true, data } con evidencia_ids y evidencias con codigo_trazabilidad del lote.',
     }),
     ApiResponse({ status: 400, description: 'Sin fotos o lote no ACTIVO' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
@@ -627,7 +638,7 @@ export function ApiObtenerDespachos() {
     }),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiResponse({
@@ -649,7 +660,7 @@ export function ApiObtenerDetalleLote() {
     }),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiResponse({
@@ -680,19 +691,19 @@ export function ApiListarLotes() {
     ApiQuery({
       name: 'vivero_id',
       required: false,
-      type: Number,
+      type: String,
       description: 'ID del vivero',
     }),
     ApiQuery({
       name: 'recoleccion_id',
       required: false,
-      type: Number,
+      type: String,
       description: 'ID de la recoleccion origen',
     }),
     ApiQuery({
       name: 'lote_vivero_id',
       required: false,
-      type: Number,
+      type: String,
       description: 'ID especifico del lote',
     }),
     ApiQuery({
@@ -737,7 +748,7 @@ export function ApiObtenerTimeline() {
     }),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiQuery({
@@ -749,7 +760,7 @@ export function ApiObtenerTimeline() {
     ApiQuery({
       name: 'responsable_id',
       required: false,
-      type: Number,
+      type: String,
       description: 'ID del usuario responsable del evento',
     }),
     ApiQuery({
@@ -783,7 +794,7 @@ export function ApiObtenerContextoEmbolsado() {
     }),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiResponse({
@@ -803,11 +814,9 @@ export function ApiCrearEvidenciasPendientesEmbolsado() {
       description:
         'Sube fotos al storage y crea registros en evidencias_trazabilidad con entidad_id=0, vinculando el codigo_trazabilidad del lote. Los IDs retornados deben enviarse en POST :id/embolsado.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiConsumes('multipart/form-data'),
@@ -842,7 +851,10 @@ export function ApiCrearEvidenciasPendientesEmbolsado() {
         'Evidencias pendientes creadas. Devuelve { success: true, data } con evidencia_ids y evidencias con codigo_trazabilidad del lote.',
     }),
     ApiResponse({ status: 400, description: 'Sin fotos o lote no ACTIVO' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
@@ -857,7 +869,7 @@ export function ApiObtenerResultadoEmbolsado() {
     }),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiResponse({
@@ -877,11 +889,9 @@ export function ApiCrearEvidenciasPendientesMerma() {
       description:
         'Sube fotos al storage y crea registros en evidencias_trazabilidad con entidad_id=0, vinculando el codigo_trazabilidad del lote. Los IDs retornados deben enviarse en POST :id/merma.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiConsumes('multipart/form-data'),
@@ -916,7 +926,10 @@ export function ApiCrearEvidenciasPendientesMerma() {
         'Evidencias pendientes creadas. Devuelve { success: true, data } con evidencia_ids y evidencias con codigo_trazabilidad del lote.',
     }),
     ApiResponse({ status: 400, description: 'Sin fotos o lote no ACTIVO' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
@@ -929,11 +942,9 @@ export function ApiCrearEvidenciasPendientesDescartePreEmbolsado() {
       description:
         'Sube fotos al storage y crea registros en evidencias_trazabilidad con entidad_id=0, vinculando el codigo_trazabilidad del lote. Los IDs retornados deben enviarse en POST :id/descarte-pre-embolsado.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiConsumes('multipart/form-data'),
@@ -972,21 +983,15 @@ export function ApiCrearEvidenciasPendientesDescartePreEmbolsado() {
       description:
         'Sin fotos, lote no ACTIVO, lote sin INICIO o lote con EMBOLSADO.',
     }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
 }
 
-// TODO(vivero-mvp): este decorador marca x-auth-id como requerido, pero el endpoint
-//   GET /lotes-vivero/:id/merma del controller no valida el header. Swagger queda
-//   engañando al consumidor. Decidir cuál es la verdad:
-//     a) si el endpoint debe exigir auth (alinear con RF-VIV-07 "control de acceso
-//        por rol"), agregar la validación `x-auth-id` en el controller, o
-//     b) si seguirá siendo público, quitar ApiSecurity/ApiHeader aquí.
-//   La misma duda aplica a los otros GET (ApiListarLotes, ApiObtenerTimeline,
-//   ApiObtenerAdaptabilidades, ApiObtenerResultadoEmbolsado,
-//   ApiObtenerContextoEmbolsado): revisar consistencia global.
 export function ApiObtenerMermas() {
   return applyDecorators(
     ApiOperation({
@@ -994,11 +999,9 @@ export function ApiObtenerMermas() {
       description:
         'Devuelve todos los eventos MERMA del lote en orden cronologico con sus evidencias vinculadas y el saldo vivo actual.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiResponse({
@@ -1018,11 +1021,9 @@ export function ApiCrearEvidenciasPendientesAdaptabilidad() {
       description:
         'Sube fotos al storage y crea registros en evidencias_trazabilidad con entidad_id=0, vinculando el codigo_trazabilidad del lote. Los IDs retornados pueden enviarse en POST :id/adaptabilidad. Este paso es opcional: adaptabilidad no requiere evidencia obligatoria.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiConsumes('multipart/form-data'),
@@ -1057,7 +1058,10 @@ export function ApiCrearEvidenciasPendientesAdaptabilidad() {
         'Evidencias pendientes creadas. Devuelve { success: true, data } con evidencia_ids y evidencias con codigo_trazabilidad del lote.',
     }),
     ApiResponse({ status: 400, description: 'Sin fotos o lote no ACTIVO' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
@@ -1072,7 +1076,7 @@ export function ApiObtenerSaldos() {
     }),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiResponse({
@@ -1094,7 +1098,7 @@ export function ApiObtenerAdaptabilidades() {
     }),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiResponse({
@@ -1114,13 +1118,11 @@ export function ApiCrearAsignacion() {
     ApiOperation({
       summary: 'Asignación física de lote a subcampaña (entrega real)',
       description:
-        'Registra la ENTREGA FÍSICA de plantas del lote a una subcampaña (RF-VIV-11) llamando la RPC fn_vivero_asignar_stock_subcampania en una sola transacción: crea la asignación, registra el evento DESPACHO con origen ASIGNACION_SUBCAMPANIA, DESCUENTA LOTE_VIVERO.saldo_vivo_actual, vincula la evidencia obligatoria de entrega (RN-VIV-54) y registra ASIGNACION_VIVERO en la línea de tiempo de M3. Valida contra el saldo físico del lote sin restar asignaciones previas (RN-VIV-47/57). Requiere lote ACTIVO con EMBOLSADO y saldo vivo positivo (RN-VIV-61). Para PLANTACION_INICIAL, la especie del lote debe pertenecer al plan de especies de la subcampaña; se rechaza antes de entregar si no pertenece. Permisos: ADMIN o COORDINADOR de la subcampaña. No es una reserva lógica: las plantas salen del vivero al asignar.',
+        'Registra la ENTREGA FÍSICA de plantas del lote a una subcampaña (RF-VIV-11) llamando la RPC fn_vivero_asignar_stock_subcampania en una sola transacción: crea la asignación, registra el evento DESPACHO con origen ASIGNACION_SUBCAMPANIA, DESCUENTA LOTE_VIVERO.saldo_vivo_actual, vincula la evidencia obligatoria de entrega (RN-VIV-54) y registra ASIGNACION_VIVERO en la línea de tiempo de M3. Valida contra el saldo físico del lote sin restar asignaciones previas (RN-VIV-47/57). Requiere lote ACTIVO con EMBOLSADO y saldo vivo positivo (RN-VIV-61). Para PLANTACION_INICIAL, la especie del lote debe pertenecer al plan de especies de la subcampaña; se rechaza antes de entregar si no pertenece. Permisos: ADMIN o COORDINADOR de la subcampaña con acceso vigente al vivero del lote. No es una reserva lógica: las plantas salen del vivero al asignar.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiBody({
@@ -1135,7 +1137,7 @@ export function ApiCrearAsignacion() {
           'evidencia_ids',
         ],
         properties: {
-          subcampania_id: { type: 'integer', example: 33 },
+          subcampania_id: { ...OPERATION_ID_SCHEMA, example: '33' },
           cantidad_asignada: { type: 'integer', minimum: 1, example: 100 },
           proposito: {
             type: 'string',
@@ -1149,7 +1151,7 @@ export function ApiCrearAsignacion() {
           },
           evidencia_ids: {
             type: 'array',
-            items: { type: 'integer' },
+            items: OPERATION_ID_SCHEMA,
             minItems: 1,
             example: [501],
             description:
@@ -1165,7 +1167,10 @@ export function ApiCrearAsignacion() {
         'Entrega registrada. Devuelve { success: true, data } con asignacion_id, evento_lote_vivero_id, evento_plantacion_id, lote_vivero_id, subcampania_id, cantidad_asignada, saldo_vivo_antes, saldo_vivo_despues, evidencia_ids_vinculadas, lote_finalizado y motivo_cierre.',
     }),
     ApiResponse({ status: 400, description: 'Datos inválidos' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({ status: 403, description: 'Sin permisos de escritura' }),
     ApiResponse({
       status: 404,
@@ -1190,7 +1195,7 @@ export function ApiListarAsignaciones() {
     }),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiResponse({
@@ -1208,18 +1213,16 @@ export function ApiDevolverAsignacion() {
     ApiOperation({
       summary: 'Devolución física de stock asignado al vivero',
       description:
-        'Registra el retorno FÍSICO (parcial o total) de plantas asignadas a una subcampaña que no fueron consumidas (RF-VIV-12) llamando la RPC fn_m3_devolver_asignacion_vivero en una sola transacción: aumenta cantidad_devuelta de la asignación, AUMENTA LOTE_VIVERO.saldo_vivo_actual (RN-VIV-48), registra el evento M2 DEVOLUCION_PLANTACION y el evento M3 DEVOLUCION_A_VIVERO, y reabre el lote si estaba FINALIZADO. La devolución total transiciona la asignación a DEVUELTA por trigger. En MVP no exige evidencia fotográfica. Permisos: ADMIN o COORDINADOR de la subcampaña.',
+        'Registra el retorno FÍSICO (parcial o total) de plantas asignadas a una subcampaña que no fueron consumidas (RF-VIV-12) llamando la RPC fn_m3_devolver_asignacion_vivero en una sola transacción: aumenta cantidad_devuelta de la asignación, AUMENTA LOTE_VIVERO.saldo_vivo_actual (RN-VIV-48), registra el evento M2 DEVOLUCION_PLANTACION y el evento M3 DEVOLUCION_A_VIVERO, y reabre el lote si estaba FINALIZADO. La devolución total transiciona la asignación a DEVUELTA por trigger. En MVP no exige evidencia fotográfica. Permisos: ADMIN o COORDINADOR de la subcampaña con acceso vigente al vivero del lote.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({
       name: 'id',
-      type: Number,
+      type: String,
       description: 'ID del lote de vivero',
     }),
     ApiParam({
       name: 'asignacionId',
-      type: Number,
+      type: String,
       description: 'ID de la asignación a devolver',
     }),
     ApiBody({
@@ -1264,7 +1267,10 @@ export function ApiDevolverAsignacion() {
         'Devolución registrada. Devuelve { success: true, data } con asignacion_id, estado, cantidad_devuelta, cantidad_devuelta_total, saldo_asignado_disponible, lote_vivero_id, saldo_vivo_antes/despues, lote_reabierto, evento_lote_vivero_id y evento_plantacion_id.',
     }),
     ApiResponse({ status: 400, description: 'Datos inválidos' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
     ApiResponse({ status: 403, description: 'Sin permisos de escritura' }),
     ApiResponse({
       status: 404,

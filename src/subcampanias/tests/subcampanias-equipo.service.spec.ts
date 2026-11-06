@@ -10,6 +10,15 @@ import { lifecycleFixture } from './subcampanias-lifecycle.test-utils';
 
 const miembro = { usuario_id: 7, rol: RolEnSubcampania.OPERARIO };
 describe('SubcampaniasEquipoService', () => {
+  it('conserva el actor logístico BIGINT antes de comprobar COORDINADOR en T3', async () => {
+    const query = { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), is: jest.fn().mockReturnThis(), single: jest.fn().mockResolvedValue({ data: { id: 1 }, error: null }), order: jest.fn().mockResolvedValue({ data: [{ id: 1, usuario_id: '9007199254740993', rol: 'COORDINADOR' }], error: null }) };
+    const f = lifecycleFixture([]);
+    f.from.mockReturnValue(query);
+    const result = await new SubcampaniasEquipoService(f.supabase, f.auth).listar(1);
+    expect(query.select).toHaveBeenCalledWith(expect.stringContaining('usuario_id::text'));
+    expect(result.data[0].usuario_id).toBe('9007199254740993');
+  });
+
   it('devuelve los miembros hidratados en el mismo commit que el cambio de equipo', async () => {
     const rows = [
       { id: 1, ...miembro, nombre_usuario: 'Persona', foto_perfil_url: null },

@@ -1,0 +1,10 @@
+{
+  "fecha": "2026-11-05",
+  "repositorio": "/Users/pabloandresfernandezcari/Projects/R3foresta/r3foresta-docs",
+  "head": "1dffbbf94355b1263b64ea25befa38513f1fe22a",
+  "antes_de_actualizar_t2": {
+    "ESTADO.md": "c9dee7c88f25b68d6eb9bdb45ce60a1f85a6b0de7ea9bf46445081af59dd41c3",
+    "90-contratos-integracion/01_contrato_recoleccion_a_vivero.md": "c587c6d91d0f34465756b38c11b157a7c7496fe5ad3b4a685ff95b7f0fb70d2e",
+    "90-contratos-integracion/02_contrato_vivero_a_plantacion.md": "7b2ad5a7b2cae0b6008a1541cfc1b8978c4d7631989aeeb05dbee0b1015a0c9a"
+  }
+}

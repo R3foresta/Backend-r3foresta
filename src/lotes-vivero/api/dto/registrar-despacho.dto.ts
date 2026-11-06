@@ -1,3 +1,4 @@
+import { BigintId } from '../../../common/dto/bigint-id';
 import {
   ArrayMinSize,
   IsArray,
@@ -31,17 +32,15 @@ export class RegistrarDespachoDto {
   destino_referencia: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  comunidad_destino_id?: number;
+  @BigintId()
+  comunidad_destino_id?: number | string;
 
   @IsArray()
   @ArrayMinSize(1, {
     message: 'Se requiere al menos una evidencia para DESPACHO',
   })
-  @IsInt({ each: true })
-  evidencia_ids: number[];
+  @BigintId(true)
+  evidencia_ids: (number | string)[];
 
   @IsOptional()
   @IsString()

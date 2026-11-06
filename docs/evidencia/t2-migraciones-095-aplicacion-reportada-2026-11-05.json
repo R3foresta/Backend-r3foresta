@@ -1,0 +1,18 @@
+{
+  "fecha": "2026-11-05",
+  "fuente": "Confirmación del usuario en este chat",
+  "declaracion": "las migraciones hasta la 95 están todas success",
+  "alcance": "Aplicación reportada por el usuario hasta 095; el agente no ejecutó SQL remoto",
+  "verificado": false,
+  "limites": [
+    "Sin identificador de entorno o catálogo destino aportado en esta confirmación",
+    "Success no acredita por sí solo correspondencia de cuerpos SQL, backend desplegado ni HTTP remoto",
+    "Se congelan 094/095 desde esta confirmación; cualquier cambio SQL posterior deberá ser aditivo"
+  ],
+  "sha256_archivos_locales_al_reporte": {
+    "migrations/092_usuario_acceso_recoleccion.sql": "74c2c01468f130c5ca072b17727f9d7b37470cddd4c21033315d509aa5d91fcc",
+    "migrations/093_recoleccion_acceso_explicito.sql": "27ece38fb0860ce87dba5e30338fed63ae3d0d09ec7b49c8588385531e3b0b27",
+    "migrations/094_usuario_vivero.sql": "7b18997966852c51a7a1baf55b8ac6209da2b37961cd5f61432f224b6387693d",
+    "migrations/095_vivero_operacion_por_ambito.sql": "ec4ffc511d67ad80fcb042886470c0cd2cb92643b2e25d97e5af3e91490b0d96"
+  }
+}

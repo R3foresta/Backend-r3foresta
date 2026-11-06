@@ -1,3 +1,4 @@
+import { ViveroAuthService } from './vivero-auth.service';
 import { Injectable } from '@nestjs/common';
 import { CrearAsignacionDto } from '../api/dto/crear-asignacion.dto';
 import { CrearEvidenciaPendienteViveroDto } from '../api/dto/crear-evidencia-pendiente-vivero.dto';
@@ -28,6 +29,7 @@ import { ViveroSaldosService } from './vivero-saldos.service';
 @Injectable()
 export class LotesViveroService {
   constructor(
+    private readonly authService: ViveroAuthService,
     private readonly inicioService: ViveroInicioService,
     private readonly eventosService: ViveroEventosService,
     private readonly consultasService: ViveroConsultasService,
@@ -54,19 +56,20 @@ export class LotesViveroService {
   }
 
   registrarEmbolsado(
-    loteId: number,
+    loteId: number | string,
     dto: RegistrarEmbolsadoDto,
     authId: string,
   ) {
     return this.eventosService.registrarEmbolsado(loteId, dto, authId);
   }
 
-  obtenerContextoEmbolsado(loteId: number) {
+  async obtenerContextoEmbolsado(loteId: number | string, authId: string) {
+    await this.authorizeLote(loteId, authId);
     return this.embolsadoService.obtenerContexto(loteId);
   }
 
   crearEvidenciasPendientesEmbolsado(
-    loteId: number,
+    loteId: number | string,
     dto: CrearEvidenciaPendienteViveroDto,
     authId: string,
     files: ViveroEvidenceFileInput[],
@@ -79,12 +82,13 @@ export class LotesViveroService {
     );
   }
 
-  obtenerResultadoEmbolsado(loteId: number) {
+  async obtenerResultadoEmbolsado(loteId: number | string, authId: string) {
+    await this.authorizeLote(loteId, authId);
     return this.embolsadoService.obtenerResultado(loteId);
   }
 
   registrarAdaptabilidad(
-    loteId: number,
+    loteId: number | string,
     dto: RegistrarAdaptabilidadDto,
     authId: string,
   ) {
@@ -92,7 +96,7 @@ export class LotesViveroService {
   }
 
   crearEvidenciasPendientesAdaptabilidad(
-    loteId: number,
+    loteId: number | string,
     dto: CrearEvidenciaPendienteViveroDto,
     authId: string,
     files: ViveroEvidenceFileInput[],
@@ -105,16 +109,21 @@ export class LotesViveroService {
     );
   }
 
-  obtenerAdaptabilidades(loteId: number) {
+  async obtenerAdaptabilidades(loteId: number | string, authId: string) {
+    await this.authorizeLote(loteId, authId);
     return this.adaptabilidadService.obtenerAdaptabilidades(loteId);
   }
 
-  registrarMerma(loteId: number, dto: RegistrarMermaDto, authId: string) {
+  registrarMerma(
+    loteId: number | string,
+    dto: RegistrarMermaDto,
+    authId: string,
+  ) {
     return this.eventosService.registrarMerma(loteId, dto, authId);
   }
 
   crearEvidenciasPendientesMerma(
-    loteId: number,
+    loteId: number | string,
     dto: CrearEvidenciaPendienteViveroDto,
     authId: string,
     files: ViveroEvidenceFileInput[],
@@ -127,16 +136,21 @@ export class LotesViveroService {
     );
   }
 
-  obtenerMermas(loteId: number) {
+  async obtenerMermas(loteId: number | string, authId: string) {
+    await this.authorizeLote(loteId, authId);
     return this.mermaService.obtenerMermas(loteId);
   }
 
-  registrarDespacho(loteId: number, dto: RegistrarDespachoDto, authId: string) {
+  registrarDespacho(
+    loteId: number | string,
+    dto: RegistrarDespachoDto,
+    authId: string,
+  ) {
     return this.eventosService.registrarDespacho(loteId, dto, authId);
   }
 
   crearEvidenciasPendientesDespacho(
-    loteId: number,
+    loteId: number | string,
     dto: CrearEvidenciaPendienteViveroDto,
     authId: string,
     files: ViveroEvidenceFileInput[],
@@ -149,12 +163,13 @@ export class LotesViveroService {
     );
   }
 
-  obtenerDespachos(loteId: number) {
+  async obtenerDespachos(loteId: number | string, authId: string) {
+    await this.authorizeLote(loteId, authId);
     return this.despachoService.obtenerDespachos(loteId);
   }
 
   registrarDescartePreEmbolsado(
-    loteId: number,
+    loteId: number | string,
     dto: RegistrarDescartePreEmbolsadoDto,
     authId: string,
   ) {
@@ -166,7 +181,7 @@ export class LotesViveroService {
   }
 
   crearEvidenciasPendientesDescartePreEmbolsado(
-    loteId: number,
+    loteId: number | string,
     dto: CrearEvidenciaPendienteViveroDto,
     authId: string,
     files: ViveroEvidenceFileInput[],
@@ -179,37 +194,57 @@ export class LotesViveroService {
     );
   }
 
-  listarLotes(filters: FiltrarLotesViveroDto) {
-    return this.consultasService.listarLotes(filters);
+  async listarLotes(filters: FiltrarLotesViveroDto, authId: string) {
+    const usuario = await this.authService.getUserByAuthId(authId);
+    const ambitos = await this.authService.ambitos(usuario);
+    if (filters.vivero_id)
+      await this.authService.assertVivero(usuario, filters.vivero_id);
+    if (filters.lote_vivero_id)
+      await this.authService.assertLote(usuario, filters.lote_vivero_id);
+    return this.consultasService.listarLotes(filters, ambitos);
   }
 
-  obtenerDetalle(loteId: number) {
+  async obtenerDetalle(loteId: number | string, authId: string) {
+    await this.authorizeLote(loteId, authId);
     return this.consultasService.obtenerDetalle(loteId);
   }
 
-  obtenerTimeline(loteId: number, filters: FiltrarTimelineLoteDto) {
+  async obtenerTimeline(
+    loteId: number | string,
+    filters: FiltrarTimelineLoteDto,
+    authId: string,
+  ) {
+    await this.authorizeLote(loteId, authId);
     return this.consultasService.obtenerTimeline(loteId, filters);
   }
 
-  obtenerSaldos(loteId: number) {
+  async obtenerSaldos(loteId: number | string, authId: string) {
+    await this.authorizeLote(loteId, authId);
     return this.saldosService.obtenerSaldos(loteId);
   }
 
-  listarStockDisponiblePorEspecie() {
-    return this.saldosService.listarStockDisponiblePorEspecie();
+  async listarStockDisponiblePorEspecie(authId: string) {
+    const usuario = await this.authService.getUserByAuthId(authId);
+    const ambitos = await this.authService.ambitos(usuario);
+    return this.saldosService.listarStockDisponiblePorEspecie(ambitos);
   }
 
-  crearAsignacion(loteId: number, dto: CrearAsignacionDto, authId: string) {
+  crearAsignacion(
+    loteId: number | string,
+    dto: CrearAsignacionDto,
+    authId: string,
+  ) {
     return this.asignacionesService.crearAsignacion(loteId, dto, authId);
   }
 
-  listarAsignaciones(loteId: number) {
+  async listarAsignaciones(loteId: number | string, authId: string) {
+    await this.authorizeLote(loteId, authId);
     return this.asignacionesService.listarAsignaciones(loteId);
   }
 
   devolverAsignacion(
-    loteId: number,
-    asignacionId: number,
+    loteId: number | string,
+    asignacionId: number | string,
     dto: DevolverAsignacionDto,
     authId: string,
   ) {
@@ -219,5 +254,9 @@ export class LotesViveroService {
       dto,
       authId,
     );
+  }
+  private async authorizeLote(loteId: number | string, authId: string) {
+    const usuario = await this.authService.getUserByAuthId(authId);
+    await this.authService.assertLote(usuario, loteId);
   }
 }

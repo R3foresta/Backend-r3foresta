@@ -19,7 +19,7 @@ function buildAuthService(): ViveroAuthService {
       nombre: 'Op Vivero',
       rol: 'GENERAL',
     }),
-    assertCanWrite: jest.fn(),
+    assertLote: jest.fn(),
   } as unknown as ViveroAuthService;
 }
 

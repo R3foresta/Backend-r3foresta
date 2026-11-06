@@ -1,3 +1,4 @@
+import { BigintId } from '../../../common/dto/bigint-id';
 import {
   ArrayMinSize,
   IsArray,
@@ -18,10 +19,8 @@ import { PropositoAsignacion } from '../../domain/enums/proposito-asignacion.enu
  * de la salida/entrega (RN-VIV-47, RN-VIV-54).
  */
 export class CrearAsignacionDto {
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  subcampania_id: number;
+  @BigintId()
+  subcampania_id: number | string;
 
   @Type(() => Number)
   @IsInt()
@@ -38,10 +37,8 @@ export class CrearAsignacionDto {
   /** Evidencias pendientes (pre-subidas) que respaldan la entrega. Minimo 1. */
   @IsArray()
   @ArrayMinSize(1)
-  @Type(() => Number)
-  @IsInt({ each: true })
-  @Min(1, { each: true })
-  evidencia_ids: number[];
+  @BigintId(true)
+  evidencia_ids: (number | string)[];
 
   @IsOptional()
   @IsString()

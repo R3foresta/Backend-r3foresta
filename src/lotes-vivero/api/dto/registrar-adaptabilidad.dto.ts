@@ -1,8 +1,8 @@
+import { BigintId } from '../../../common/dto/bigint-id';
 import {
   IsArray,
   IsDateString,
   IsEnum,
-  IsInt,
   IsOptional,
   IsString,
   MaxLength,
@@ -22,8 +22,8 @@ export class RegistrarAdaptabilidadDto {
 
   @IsOptional()
   @IsArray()
-  @IsInt({ each: true })
-  evidencia_ids?: number[];
+  @BigintId(true)
+  evidencia_ids?: (number | string)[];
 
   @IsOptional()
   @IsString()

@@ -1,3 +1,4 @@
+import { BigintId } from '../../../common/dto/bigint-id';
 import {
   ArrayMinSize,
   ArrayUnique,
@@ -25,10 +26,8 @@ export class RegistrarEmbolsadoDto {
     message: 'Se requiere al menos una evidencia para EMBOLSADO',
   })
   @ArrayUnique({ message: 'evidencia_ids no debe contener IDs duplicados' })
-  @Type(() => Number)
-  @IsInt({ each: true })
-  @Min(1, { each: true })
-  evidencia_ids: number[];
+  @BigintId(true)
+  evidencia_ids: (number | string)[];
 
   @IsOptional()
   @IsString()

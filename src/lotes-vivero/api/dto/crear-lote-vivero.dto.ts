@@ -1,10 +1,10 @@
+import { BigintId } from '../../../common/dto/bigint-id';
 import {
   ArrayNotEmpty,
   ArrayUnique,
   IsDateString,
   IsEnum,
   IsArray,
-  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -15,15 +15,11 @@ import { Type } from 'class-transformer';
 import { UnidadMedidaVivero } from '../../domain/enums/unidad-medida-vivero.enum';
 
 export class CrearLoteViveroDto {
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  recoleccion_id: number;
+  @BigintId()
+  recoleccion_id: number | string;
 
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  vivero_id: number;
+  @BigintId()
+  vivero_id: number | string;
 
   @IsDateString()
   fecha_inicio: string;
@@ -42,10 +38,8 @@ export class CrearLoteViveroDto {
   @IsArray()
   @ArrayNotEmpty()
   @ArrayUnique()
-  @Type(() => Number)
-  @IsInt({ each: true })
-  @Min(1, { each: true })
-  evidencia_ids: number[];
+  @BigintId(true)
+  evidencia_ids: (number | string)[];
 
   @IsOptional()
   @IsString()

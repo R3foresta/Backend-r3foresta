@@ -42,6 +42,15 @@ describe('PATCH solo fotos frente a DELETE de borrador', () => {
         codigo_trazabilidad: 'REC-FIXTURE',
       };
       const client = {
+        rpc: async (_name: string, args: any) => {
+          const result = insert();
+          return result.error
+            ? result
+            : {
+                data: { id: args.p_recoleccion_id, evidencia_ids: [501] },
+                error: null,
+              };
+        },
         from(table: string) {
           let activeOnly = false,
             inserting = false;

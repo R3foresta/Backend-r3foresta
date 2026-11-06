@@ -1,5 +1,7 @@
 # Consumo frontend - Recolecciones
 
+> T2 local acota revisión documental a ADMIN/VALIDADOR asignado al almacenamiento y DESECHO a ADMIN u operario vigente de ese vivero, sin M1/autoría como permiso. No registra recepción física. [Contrato actual y límites](../../docs/t2-acceso-viveros.md).
+
 Documento operativo para que el equipo de frontend (PWA) y herramientas IA consuman el backend sin inventar campos ni asumir comportamientos.
 
 Referencia interna del backend: [modulos/recolecciones.md](../modulos/recolecciones.md).
@@ -25,6 +27,12 @@ La audiencia interna incluye `ADMIN`, `GENERAL` y `VALIDADOR`; las reglas de cad
 operación siguen aplicándose. `x-auth-id` es opcional y, si se envía, debe coincidir
 con `sub`. `x-user-role` no concede permisos: el guard lo deriva de la cuenta.
 
+T1 añade [acceso M1 explícito y su administración por API](../../docs/t1-acceso-recoleccion.md).
+Consultar `/api/v1/me/acceso-recoleccion`: GENERAL/VALIDADOR requieren acceso efectivo
+para capturar y mantener lo propio; ADMIN deriva acceso. La revisión M1 se mantiene
+separada de `revision_autoridad`. El autor no puede aprobar su ficha, incluso ADMIN.
+T2 permite DESECHO a ADMIN u operario vigente del almacenamiento y aporta capacidades por vivero; la UI conjunta sigue en T3. Aplicación hasta095 reportada por el usuario; cotejo y despliegue se acreditan aparte.
+
 Abrir la URL directamente en la barra del navegador no agrega el Bearer almacenado
 por la PWA y devuelve 401. Un 500 con `Error al obtener evidencias de recolecciones`
 corresponde a una lectura posterior a la autenticación en el backend.
@@ -37,11 +45,11 @@ corresponde a una lectura posterior a la autenticación en el backend.
 | PATCH | `/api/recolecciones/:id/draft` | Editar borrador antes de enviar a validación |
 | DELETE | `/api/recolecciones/:id` | Eliminar lógicamente un `BORRADOR` propio (o cualquiera si es ADMIN) |
 | PATCH | `/api/recolecciones/:id/submit` | Enviar borrador a la bandeja del validador |
-| PATCH | `/api/recolecciones/:id/approve` | Validar (solo VALIDADOR / ADMIN). Dispara IPFS + NFT |
+| PATCH | `/api/recolecciones/:id/approve` | Validar (VALIDADOR / ADMIN distintos del autor). Dispara IPFS + NFT |
 | PATCH | `/api/recolecciones/:id/reject` | Rechazar con motivo (solo VALIDADOR / ADMIN) |
 | GET | `/api/recolecciones/pending-validation` | Bandeja del validador |
 | GET | `/api/recolecciones` | Lista propia con filtros |
-| GET | `/api/recolecciones/vivero/:viveroId` | Recolecciones aptas para un vivero (cuenta interna) |
+| GET | `/api/recolecciones/vivero/:viveroId` | M1: recolecciones propias por vivero; revisión ADMIN global o VALIDADOR asignado al almacenamiento |
 | GET | `/api/recolecciones/:id` | Detalle. Pasa `cantidad_solicitada_vivero` para chequear elegibilidad de consumo |
 
 ## Flujo recomendado en la UI
@@ -88,7 +96,7 @@ if (!response.ok) throw new Error(result.message);
 `API_URL` incluye `/api`. No se envía body, motivo, usuario, fecha ni rol.
 El actor proviene del JWT verificado y el servidor vuelve a comprobar su cuenta,
 rol y propiedad dentro de la transacción. Audiencia: cuenta interna activa
-(`GENERAL`, `VALIDADOR`, `ADMIN`); permiso por objeto: creador o `ADMIN`.
+(`GENERAL`, `VALIDADOR`, `ADMIN`); permiso por objeto: creador con M1 efectivo o `ADMIN`.
 
 Respuesta `200`:
 
@@ -112,7 +120,7 @@ Respuesta `200`:
 | 409 | Ya no está en `BORRADOR`, o hay conflicto concurrente; refrescar antes de reintentar |
 | 500 | Fallo interno; si el resultado es incierto, releer antes de repetir |
 
-Mostrar la acción solo en `BORRADOR` cuando la cuenta sea creadora o `ADMIN`.
+Mostrar la acción solo en `BORRADOR` cuando la cuenta sea creadora con M1 efectivo o `ADMIN`.
 El backend valida siempre estas condiciones. `RECHAZADO` no puede eliminarse
 directamente mediante esta ruta.
 
@@ -153,7 +161,7 @@ Campos FormData:
 | `tipo_material` | string | sí | `SEMILLA` o `ESQUEJE` |
 | `planta_id` | number | sí | Catálogo `planta` |
 | `metodo_id` | number | sí | Catálogo `metodo_recoleccion` |
-| `vivero_id` | number | no | |
+| `vivero_id` | string decimal | no | ID exacto hasta BIGINT; admite números JSON seguros legados |
 | `observaciones` | string | no | máx. 1000 chars |
 | `ubicacion` | string JSON | sí | Serializar `CreateUbicacionDto` como JSON en el campo |
 | `fotos` | File[] | sí | 2–10 archivos JPG/JPEG/PNG/WEBP/HEIC/HEIF |
@@ -203,7 +211,8 @@ Sin body. Transiciona de `BORRADOR` a `PENDIENTE_VALIDACION`.
 
 ## PATCH /api/recolecciones/:id/approve y /:id/reject
 
-Requiere Bearer y rol `VALIDADOR` o `ADMIN` verificado por el servidor.
+Requiere Bearer y ADMIN o VALIDADOR asignado al vivero de almacenamiento, verificado
+por el servidor. La aprobación propia está prohibida incluso para ADMIN.
 
 Body de `reject`:
 
@@ -232,7 +241,7 @@ Query string admite `FiltersRecoleccionDto`:
 | Parámetro | Tipo | Notas |
 |---|---|---|
 | `fecha_inicio`, `fecha_fin` | ISO date | Rango de captura |
-| `vivero_id` | number | |
+| `vivero_id` | string decimal | ID exacto hasta BIGINT |
 | `tipo_material` | `SEMILLA \| ESQUEJE` | |
 | `q` o `search` | string | Busca en `codigo_trazabilidad`, `observaciones`, snapshots de planta y nombre común |
 | `page` | int ≥ 1 | default 1 |
@@ -243,8 +252,16 @@ Para ver recolecciones de otros usuarios usa la bandeja de validación o el filt
 
 ## GET /api/recolecciones/pending-validation
 
-Mismos filtros y Bearer. `VALIDADOR` y `ADMIN` ven pendientes globales;
-las demás cuentas internas ven los propios.
+Mismos filtros y Bearer. ADMIN ve pendientes globales. VALIDADOR combina la cola de
+sus viveros asignados con los propios si tiene M1 efectivo, incluso sin M2; GENERAL
+con M1 ve propios. La unión no duplica fichas y se filtra antes del total y la
+paginación. Sin M1 ni viveros asignados, VALIDADOR recibe una lista vacía. Ver una
+ficha propia en esa bandeja no concede aprobación propia.
+
+Conservar `vivero_id`/`viveroId` como cadenas decimales desde el catálogo hasta los
+filtros, multipart y JSON; no usar `Number()`. Las respuestas de detalle/listas
+devuelven `vivero_id` y `usuario_id` como cadenas exactas. Un número JSON inseguro
+se rechaza; los IDs decimales admiten hasta `9223372036854775807`.
 
 ## GET /api/recolecciones/:id
 
@@ -289,10 +306,11 @@ Forma de la respuesta (campos clave):
 | HTTP | Causa frecuente |
 |---|---|
 | 400 | DTO inválido, `forbidNonWhitelisted` rechaza campos extra, fecha futura |
-| 401 | Falta `x-auth-id` |
-| 403 | Rol insuficiente (intento de aprobar sin VALIDADOR/ADMIN, edición de recolección ajena) |
+| 401 | Bearer ausente o inválido |
+| 403 | M1 ausente/retirado, objeto ajeno o aprobación propia; revisión exige VALIDADOR/ADMIN distintos del autor |
 | 404 | `id` no existe |
-| 409 | Transición de estado inválida (p.ej. `approve` sobre un `BORRADOR`) |
+| 409 | Ficha modificada durante la preparación; releer antes de repetir. Estado/datos inválidos devuelven 400 |
+| 503 | Escritura inconclusa; consultar la ficha antes de repetir. Comandos de acceso M1 conservan su UUID e intención |
 
 ## Notas para IA / agentes
 

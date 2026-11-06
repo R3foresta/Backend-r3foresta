@@ -21,7 +21,7 @@ export class ViveroEventosService {
   ) {}
 
   registrarEmbolsado(
-    loteId: number,
+    loteId: number | string,
     dto: RegistrarEmbolsadoDto,
     authId: string,
   ) {
@@ -29,23 +29,31 @@ export class ViveroEventosService {
   }
 
   registrarAdaptabilidad(
-    loteId: number,
+    loteId: number | string,
     dto: RegistrarAdaptabilidadDto,
     authId: string,
   ) {
     return this.adaptabilidadService.registrar(loteId, dto, authId);
   }
 
-  registrarMerma(loteId: number, dto: RegistrarMermaDto, authId: string) {
+  registrarMerma(
+    loteId: number | string,
+    dto: RegistrarMermaDto,
+    authId: string,
+  ) {
     return this.mermaService.registrar(loteId, dto, authId);
   }
 
-  registrarDespacho(loteId: number, dto: RegistrarDespachoDto, authId: string) {
+  registrarDespacho(
+    loteId: number | string,
+    dto: RegistrarDespachoDto,
+    authId: string,
+  ) {
     return this.despachoService.registrar(loteId, dto, authId);
   }
 
   registrarDescartePreEmbolsado(
-    loteId: number,
+    loteId: number | string,
     dto: RegistrarDescartePreEmbolsadoDto,
     authId: string,
   ) {

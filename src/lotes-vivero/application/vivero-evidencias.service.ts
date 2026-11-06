@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -32,6 +34,7 @@ type FotoSubidaVivero = {
 
 export type CrearPendienteViveroOptions = {
   eventoTipo?: TipoEventoVivero;
+  loteId?: number | string;
 };
 
 @Injectable()
@@ -60,7 +63,18 @@ export class ViveroEvidenciasService {
     options: CrearPendienteViveroOptions = {},
   ) {
     const usuario = await this.authService.getUserByAuthId(authId);
-    this.authService.assertCanWrite(usuario.rol);
+    const evento =
+      options.eventoTipo ?? dto.evento_tipo ?? TipoEventoVivero.INICIO;
+    const viveroId = options.loteId
+      ? await this.authService.assertLote(usuario, options.loteId)
+      : dto.vivero_id;
+    if (!viveroId)
+      throw new BadRequestException(
+        'vivero_id es obligatorio para la carga previa a INICIO.',
+      );
+    await this.authService.assertVivero(usuario, viveroId);
+    if (evento !== TipoEventoVivero.INICIO && !options.loteId)
+      throw new BadRequestException('Para un evento use la ruta del lote.');
     this.validarFotos(files);
     const preparedFiles =
       this.evidenceFileService.prepareOriginalEvidenceFiles(files);
@@ -68,9 +82,8 @@ export class ViveroEvidenciasService {
     const supabase = this.supabaseService.getAdminClient();
     const tipoEntidadId = await this.resolveTipoEntidadEventoViveroId();
     const metadataPayload = this.parseMetadata(dto.metadata);
-    const evento =
-      dto.evento_tipo ?? options.eventoTipo ?? TipoEventoVivero.INICIO;
     const fotosSubidas: FotoSubidaVivero[] = [];
+    let resultadoIncierto = false;
     const timestampBase = Date.now();
 
     try {
@@ -156,43 +169,36 @@ export class ViveroEvidenciasService {
         };
       });
 
-      const { data, error } = await supabase
-        .from('evidencias_trazabilidad')
-        .insert(evidenciasInsert)
-        .select(
-          `
-          id,
-          tipo_entidad_id,
-          entidad_id,
-          codigo_trazabilidad,
-          bucket,
-          ruta_archivo,
-          storage_object_id,
-          tipo_archivo,
-          mime_type,
-          tamano_bytes,
-          hash_sha256,
-          titulo,
-          descripcion,
-          metadata,
-          es_principal,
-          orden,
-          tomado_en,
-          creado_en,
-          creado_por_usuario_id
-        `,
-        );
-
-      if (error) {
-        this.logger.error(
-          'Error al registrar evidencias pendientes de vivero:',
-          error,
-        );
-        throw new InternalServerErrorException(
-          'Error al registrar evidencias pendientes de vivero',
+      const { data: ids, error: persistError } = await supabase.rpc(
+        'm2_evidencias_preparar',
+        {
+          p_actor_id: usuario.id,
+          p_vivero_id: viveroId,
+          p_lote_id: options.loteId ?? null,
+          p_evento: evento,
+          p_fotos: evidenciasInsert,
+        },
+      );
+      if (persistError) {
+        if (persistError.code === '42501')
+          throw new ForbiddenException('CAPACIDAD_INSUFICIENTE');
+        if (['22023', 'P0001', 'P0002', '23503'].includes(persistError.code))
+          throw new BadRequestException(persistError.message);
+        resultadoIncierto = true;
+        throw new HttpException(
+          'RESULTADO_NO_DETERMINADO: conserve las referencias de la carga.',
+          503,
         );
       }
-
+      resultadoIncierto = true; // El commit puede existir aunque falle la lectura posterior.
+      if (!Array.isArray(ids) || ids.length !== fotosSubidas.length)
+        throw new HttpException('RESULTADO_NO_DETERMINADO', 503);
+      const { data, error } = await supabase
+        .from('evidencias_trazabilidad')
+        .select('*')
+        .in('id', ids);
+      if (error || !data)
+        throw new HttpException('RESULTADO_NO_DETERMINADO', 503);
       const evidencias = (data || []).map((evidencia: any) => {
         const { data: publicUrlData } = supabase.storage
           .from(evidencia.bucket)
@@ -210,7 +216,7 @@ export class ViveroEvidenciasService {
         evidencia_ids: evidencias.map((evidencia: any) => Number(evidencia.id)),
       };
     } catch (error) {
-      if (fotosSubidas.length > 0) {
+      if (!resultadoIncierto && fotosSubidas.length > 0) {
         await supabase.storage
           .from(this.bucketEvidencias)
           .remove(fotosSubidas.map((foto) => foto.ruta_archivo));
@@ -222,7 +228,7 @@ export class ViveroEvidenciasService {
 
   private async resolveTipoEntidadEventoViveroId(): Promise<number> {
     const { data, error } = await this.supabaseService
-      .getClient()
+      .getAdminClient()
       .from('tipos_entidad_evidencia')
       .select('id, activo')
       .ilike('codigo', 'EVENTO_LOTE_VIVERO')

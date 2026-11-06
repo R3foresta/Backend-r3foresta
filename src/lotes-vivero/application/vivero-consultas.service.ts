@@ -1,3 +1,4 @@
+import { exactId } from '../../common/dto/bigint-id';
 import {
   Injectable,
   InternalServerErrorException,
@@ -64,7 +65,10 @@ export class ViveroConsultasService {
     private readonly timelineService: ViveroTimelineService,
   ) {}
 
-  async listarLotes(filters: FiltrarLotesViveroDto) {
+  async listarLotes(
+    filters: FiltrarLotesViveroDto,
+    ambitos: string[] | null = null,
+  ) {
     const supabase = this.supabaseService.getAdminClient();
     const page = filters.page || 1;
     const limit = Math.min(filters.limit || 20, 50);
@@ -76,6 +80,9 @@ export class ViveroConsultasService {
       .order('fecha_inicio', { ascending: false })
       .order('created_at', { ascending: false })
       .order('id', { ascending: false });
+
+    if (ambitos !== null)
+      query = query.in('vivero_id', ambitos.length ? ambitos : ['-1']);
 
     if (filters.subcampania_id) {
       const { data: asigData } = await supabase
@@ -175,7 +182,10 @@ export class ViveroConsultasService {
     };
   }
 
-  async obtenerTimeline(loteId: number, filters: FiltrarTimelineLoteDto) {
+  async obtenerTimeline(
+    loteId: number | string,
+    filters: FiltrarTimelineLoteDto,
+  ) {
     return this.timelineService.obtenerTimeline(loteId, filters);
   }
 
@@ -185,7 +195,7 @@ export class ViveroConsultasService {
   // desde el frontend para validaciones de fecha contra eventos previos
   // (RN-VIV-10/RN-VIV-33).
   // ---------------------------------------------------------------------------
-  async obtenerDetalle(loteId: number) {
+  async obtenerDetalle(loteId: number | string) {
     const supabase = this.supabaseService.getAdminClient();
 
     const { data: loteRow, error: loteError } = await supabase
@@ -391,7 +401,7 @@ export class ViveroConsultasService {
       motivo_cierre,
       recoleccion_id,
       planta_id,
-      vivero_id,
+      vivero_id::text,
       responsable_id,
       nombre_cientifico_snapshot,
       nombre_comercial_snapshot,
@@ -408,7 +418,7 @@ export class ViveroConsultasService {
       created_at,
       updated_at,
       vivero:vivero_id (
-        id,
+        id::text,
         codigo,
         nombre
       ),
@@ -453,7 +463,7 @@ export class ViveroConsultasService {
       motivo_cierre: row.motivo_cierre,
       recoleccion_id: Number(row.recoleccion_id),
       planta_id: Number(row.planta_id),
-      vivero_id: Number(row.vivero_id),
+      vivero_id: exactId(row.vivero_id),
       responsable_id: Number(row.responsable_id),
       nombre_cientifico_snapshot: row.nombre_cientifico_snapshot,
       nombre_comercial_snapshot: row.nombre_comercial_snapshot,

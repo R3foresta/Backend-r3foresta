@@ -1,11 +1,13 @@
 import {
   Injectable,
+  ForbiddenException,
   InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { VerifiedActor } from '../../auth/verified-actor.guard';
+import { exactId } from '../../common/dto/bigint-id';
 import { HistorialSemillasQueryDto } from '../api/dto/historial-semillas-query.dto';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { FiltersRecoleccionDto } from '../api/dto/filters-recoleccion.dto';
@@ -48,7 +50,9 @@ export class RecoleccionConsultasService {
     const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('recoleccion')
-      .select('*')
+      .select(
+        '*,usuario_id_exacto:usuario_id::text,vivero_id_exacto:vivero_id::text',
+      )
       .is('eliminado_en', null)
       .eq('id', id)
       .single();
@@ -57,6 +61,14 @@ export class RecoleccionConsultasService {
       throw new NotFoundException(`Recolección con id ${id} no encontrada`);
     }
 
+    // Cast en PostgreSQL antes del JSON: autoría y ámbito conservan el BIGINT.
+    for (const field of ['usuario_id', 'vivero_id']) {
+      const alias = `${field}_exacto`;
+      if (typeof data[alias] === 'string' || data[alias] === null) {
+        data[field] = data[alias];
+        delete data[alias];
+      }
+    }
     return data;
   }
 
@@ -71,6 +83,15 @@ export class RecoleccionConsultasService {
     const offset = (page - 1) * limit;
     const usuario = await this.authService.getUserByAuthId(authId);
     const esRolGlobal = this.authService.isGlobalReviewer(usuario.rol);
+    const revisorLocal = usuario.rol === 'VALIDADOR';
+    const ambitos = revisorLocal
+      ? await this.authService.ambitosRevision(usuario)
+      : [];
+    const propios = revisorLocal
+      ? await this.authService.hasM1Access(usuario.rol, usuario.id)
+      : false;
+    if (!esRolGlobal && !revisorLocal)
+      await this.authService.assertCanCreate(usuario.rol, usuario.id);
 
     let query = supabase
       .from('recoleccion')
@@ -78,9 +99,16 @@ export class RecoleccionConsultasService {
       .is('eliminado_en', null)
       .eq('estado_registro', EstadoRegistro.PENDIENTE_VALIDACION);
 
-    if (!esRolGlobal) {
+    if (filters.vivero_id) query = query.eq('vivero_id', filters.vivero_id);
+    if (revisorLocal && propios && ambitos?.length)
+      query = query.or(
+        `usuario_id.eq.${exactId(usuario.id)},vivero_id.in.(${ambitos.join(',')})`,
+      );
+    else if (revisorLocal && propios)
       query = query.eq('usuario_id', usuario.id);
-    }
+    else if (revisorLocal)
+      query = query.in('vivero_id', ambitos?.length ? ambitos : ['-1']);
+    else if (!esRolGlobal) query = query.eq('usuario_id', usuario.id);
 
     query = this.applyCommonListFilters(query, filters);
     const searchTerm = filters.search ?? filters.q;
@@ -113,6 +141,7 @@ export class RecoleccionConsultasService {
   async findAll(authId: string, filters: FiltersRecoleccionDto) {
     const supabase = this.supabaseService.getAdminClient();
     const usuario = await this.authService.getUserByAuthId(authId);
+    await this.authService.assertCanCreate(usuario.rol, usuario.id);
     const page = filters.page || 1;
     const limit = Math.min(filters.limit || 10, 50);
     const offset = (page - 1) * limit;
@@ -375,7 +404,19 @@ export class RecoleccionConsultasService {
     }
   }
 
-  async findByVivero(viveroId: number, filters: FiltersRecoleccionDto) {
+  async findByVivero(
+    viveroId: number | string,
+    filters: FiltersRecoleccionDto,
+    actor: VerifiedActor,
+  ) {
+    viveroId = exactId(viveroId);
+    const usuario = await this.authService.getUserByAuthId(actor.auth_id);
+    const ambitos = await this.authService.ambitosRevision(usuario);
+    const global =
+      ambitos === null ||
+      (usuario.rol === 'VALIDADOR' && ambitos.includes(String(viveroId)));
+    if (!global)
+      await this.authService.assertCanCreate(usuario.rol, usuario.id);
     const supabase = this.supabaseService.getAdminClient();
     const { data: vivero, error: viveroError } = await supabase
       .from('vivero')
@@ -397,6 +438,7 @@ export class RecoleccionConsultasService {
       .is('eliminado_en', null)
       .eq('vivero_id', viveroId);
 
+    if (!global) query = query.eq('usuario_id', usuario.id);
     query = this.applyCommonListFilters(query, filters);
     const searchTerm = filters.search ?? filters.q;
     const normalizedSearch = searchTerm?.trim();
@@ -423,6 +465,14 @@ export class RecoleccionConsultasService {
       limit,
       filters,
     );
+  }
+
+  async findOneAutorizado(id: number, actor: VerifiedActor, cantidad?: number) {
+    if (!actor) throw new ForbiddenException('Se requiere actor verificado.');
+    const usuario = await this.authService.getUserByAuthId(actor.auth_id);
+    const row = await this.getRawRecoleccion(id);
+    await this.authService.assertCanRead(row, usuario.id, usuario.rol);
+    return this.findOne(id, cantidad);
   }
 
   async findOne(id: number, cantidadSolicitadaVivero?: number) {
@@ -551,9 +601,9 @@ export class RecoleccionConsultasService {
       nombre_recolector_snapshot,
       especie_nueva,
       observaciones,
-      usuario_id,
+      usuario_id::text,
       ubicacion_id,
-      vivero_id,
+      vivero_id::text,
       metodo_id,
       planta_id,
       codigo_trazabilidad,
@@ -568,8 +618,8 @@ export class RecoleccionConsultasService {
       estado_operativo,
       usuario_validacion_id,
       fecha_validacion,
-      usuario:usuario_id (id, nombre, apellido, username, correo),
-      vivero:vivero_id (id, codigo, nombre, ubicacion_id),
+      usuario:usuario_id (id::text, nombre, apellido, username, correo),
+      vivero:vivero_id (id::text, codigo, nombre, ubicacion_id),
       metodo:metodo_id (id, nombre, descripcion),
       planta:planta_id (
         id,

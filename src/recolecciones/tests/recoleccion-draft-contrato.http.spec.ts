@@ -114,7 +114,7 @@ describe('PATCH draft de Recolección: contrato de ubicación y actor', () => {
       cantidad_inicial_canonica: 100,
       planta_id: 2,
       metodo_id: 1,
-      vivero_id: 3,
+      vivero_id: '3',
       ubicacion: {
         ...ubicacion,
         pais_id: 1,

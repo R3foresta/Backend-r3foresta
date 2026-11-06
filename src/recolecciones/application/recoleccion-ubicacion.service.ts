@@ -15,7 +15,7 @@ export class RecoleccionUbicacionService {
   ) {}
 
   async validateAndNormalizeUbicacionPayload(ubicacion: CreateUbicacionDto) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     let paisId = ubicacion.pais_id ?? null;
 
     if (ubicacion.division_id) {

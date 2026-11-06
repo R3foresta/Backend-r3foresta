@@ -67,7 +67,14 @@ describe('GET recolecciones con evidencias privadas', () => {
   ]);
   const adminFrom = jest.fn((table: string) => {
     if (table === 'usuario')
-      return queryResult({ id: 7, nombre: 'Fixture', rol: 'ADMIN' });
+      return queryResult({
+        id: 7,
+        nombre: 'Fixture',
+        rol: 'ADMIN',
+        activo: true,
+      });
+    if (table === 'tipos_entidad_evidencia')
+      return queryResult({ id: 42, activo: true });
     if (table === 'recoleccion') return recolecciones;
     if (table === 'evidencias_trazabilidad') return evidencias;
     throw new Error(`Tabla privada inesperada: ${table}`);
@@ -80,10 +87,14 @@ describe('GET recolecciones con evidencias privadas', () => {
       message: `permission denied for table ${table}`,
     });
   });
-  const rpc = jest.fn((_name: string, params: { p_auth_id: string }) => ({
-    data: { usuario_id: '7', rol: params.p_auth_id, activo: true },
-    error: null,
-  }));
+  const rpc = jest.fn((_name: string, params: { p_auth_id: string }) =>
+    _name === 'm1_acceso_efectivo'
+      ? { data: true, error: null }
+      : {
+          data: { usuario_id: '7', rol: params.p_auth_id, activo: true },
+          error: null,
+        },
+  );
   const storage = {
     from: jest.fn(() => ({
       getPublicUrl: (path: string) => ({

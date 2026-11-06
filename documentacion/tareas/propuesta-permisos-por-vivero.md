@@ -1,7 +1,8 @@
 # Propuesta de accesos de Recolección y Vivero
 
 Creación: 4 de noviembre de 2026. Actualización: **5 de noviembre de 2026**.
-**Modelo de accesos elegido por el usuario; diseño pendiente de implementación.**
+**Modelo elegido por el usuario; T1–T3 implementadas, verificadas y revisadas localmente; T4/T5 pendientes.**
+[Entrega M1, contrato y límites](../../docs/t1-acceso-recoleccion.md).
 Base revisada: backend local `be62df0`, migraciones hasta 091 y modelo físico
 aportado del 4 de noviembre. No se ejecutó SQL ni se comprobó el entorno desplegado.
 
@@ -29,11 +30,12 @@ de permisos por acción.
 
 ## 2. Qué pasa con `VALIDADOR`
 
-**No se elimina el rol global `VALIDADOR`, ni sus cuentas o historia.** Hoy sigue
-funcionando tal como está en el código. El cambio propuesto es cómo se autoriza
+**No se elimina el rol global `VALIDADOR`, ni sus cuentas o historia.** La tabla
+siguiente conserva el contraste con la inspección de referencia `be62df0`; T1 ya
+habilita la captura por M1 explícito según su entrega enlazada. El cambio propuesto es cómo se autoriza
 su función de revisión dentro de M1/M2 después del corte:
 
-| Situación | Código actual | Diseño elegido |
+| Situación | Código de referencia `be62df0` | Diseño elegido |
 |---|---|---|
 | `VALIDADOR` sin asignación a un vivero | Puede revisar globalmente pendientes M1 | El rol por sí solo no permite recibir/validar en ningún vivero |
 | `VALIDADOR` asignado a A | No existe esa asignación en el modelo actual | Recibe, valida y opera en A como cualquier otro operario |
@@ -197,9 +199,9 @@ Esto no describe lo que el código permite actualmente con solo el rol `VALIDADO
 ## 6. Reglas confirmadas y orden de trabajo
 
 Las dos decisiones anteriores quedan resueltas por el usuario: **sin
-autoconfirmación del recolector y desecho a cargo de Vivero**. Estas reglas cambian
-el código actual de M1, que permite desecho al creador o ADMIN; requieren alinear
-servicio, RPC, interfaz y pruebas. La combinación de accesos no evita comprobar
+autoconfirmación del recolector y desecho a cargo de Vivero**. En la inspección de referencia M1 permitía desecho al creador o ADMIN; T1 cierra
+esa vía y la aprobación propia en service/RPC. El acceso de Vivero y la interfaz
+conjunta conservan las entregas posteriores. La combinación de accesos no evita comprobar
 actor, establecimiento y estado ni permite modificar cantidades libremente.
 
 La ejecución se divide en [encargos para agentes](encargos-accesos-recoleccion-vivero.md):
@@ -215,7 +217,8 @@ combinación M1/M2, rechazo de acceso ajeno por ID, semillas de otro recolector,
 diferencias de cantidad, reintentos sin doble recepción y continuidad de lotes externos.
 Las migraciones futuras serán aditivas y deberán comprobar el catálogo destino.
 
-No se modifican ahora código, SQL, OpenAPI, cuentas ni permisos reales. Tampoco
+El diseño original no modificó código ni permisos reales. T1 añade ahora código,
+SQL y OpenAPI locales según su entrega enlazada, sin modificar cuentas o permisos reales. Tampoco
 se añade una jerarquía de encargados, recepción parcial o un motor RBAC por acción.
 
 ## Fuentes para concretar el contrato

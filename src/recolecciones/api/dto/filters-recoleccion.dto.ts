@@ -9,6 +9,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TipoMaterial } from '../../domain/enums/tipo-material.enum';
+import { BigintId } from '../../../common/dto/bigint-id';
 
 export class FiltersRecoleccionDto {
   @ApiPropertyOptional({
@@ -28,14 +29,17 @@ export class FiltersRecoleccionDto {
   fecha_fin?: string;
 
   @ApiPropertyOptional({
-    description: 'Filtrar por ID de vivero',
-    example: 3,
-    type: Number,
+    description: 'ID exacto de vivero hasta BIGINT; usar cadena decimal.',
+    type: String,
+    example: '3',
+    oneOf: [
+      { type: 'string', pattern: '^[1-9][0-9]*$', maxLength: 19 },
+      { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+    ],
   })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  vivero_id?: number;
+  @BigintId()
+  vivero_id?: number | string;
 
   @ApiPropertyOptional({
     description: 'Filtrar por tipo de material',

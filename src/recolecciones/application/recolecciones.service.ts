@@ -109,12 +109,20 @@ export class RecoleccionesService {
     return this.consultasService.findHistorialSemillas(plantaId, query, actor);
   }
 
-  findByVivero(viveroId: number, filters: FiltersRecoleccionDto) {
-    return this.consultasService.findByVivero(viveroId, filters);
+  findByVivero(
+    viveroId: number | string,
+    filters: FiltersRecoleccionDto,
+    actor: VerifiedActor,
+  ) {
+    return this.consultasService.findByVivero(viveroId, filters, actor);
   }
 
-  findOne(id: number, cantidadSolicitadaVivero?: number) {
-    return this.consultasService.findOne(id, cantidadSolicitadaVivero);
+  findOne(id: number, actor: VerifiedActor, cantidadSolicitadaVivero?: number) {
+    return this.consultasService.findOneAutorizado(
+      id,
+      actor,
+      cantidadSolicitadaVivero,
+    );
   }
 
   private getCanonicalRecoleccionSelect(): string {

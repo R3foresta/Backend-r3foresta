@@ -1,3 +1,4 @@
+import { throwViveroMutationFailure } from './vivero-rpc-error';
 import {
   BadRequestException,
   Injectable,
@@ -53,11 +54,13 @@ export class ViveroDescartePreEmbolsadoService {
   ) {}
 
   async crearEvidenciasPendientes(
-    loteId: number,
+    loteId: number | string,
     dto: CrearEvidenciaPendienteViveroDto,
     authId: string,
     files: ViveroEvidenceFileInput[],
   ) {
+    const usuario = await this.authService.getUserByAuthId(authId);
+    await this.authService.assertLote(usuario, loteId);
     const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase
@@ -124,7 +127,7 @@ export class ViveroDescartePreEmbolsadoService {
       dto,
       authId,
       files,
-      { eventoTipo: TipoEventoVivero.DESCARTE_PRE_EMBOLSADO },
+      { eventoTipo: TipoEventoVivero.DESCARTE_PRE_EMBOLSADO, loteId },
     );
 
     const evidenciaIds: number[] = resultado.evidencia_ids;
@@ -163,12 +166,12 @@ export class ViveroDescartePreEmbolsadoService {
   }
 
   async registrar(
-    loteId: number,
+    loteId: number | string,
     dto: RegistrarDescartePreEmbolsadoDto,
     authId: string,
   ) {
     const usuario = await this.authService.getUserByAuthId(authId);
-    this.authService.assertCanWrite(usuario.rol);
+    await this.authService.assertLote(usuario, loteId);
 
     const supabase = this.supabaseService.getAdminClient();
 
@@ -186,6 +189,7 @@ export class ViveroDescartePreEmbolsadoService {
       .single();
 
     if (error) {
+      throwViveroMutationFailure(error);
       this.logger.error('Error al registrar descarte pre-embolsado:', error);
       throw new BadRequestException(
         error.message || 'No se pudo registrar el descarte pre-embolsado.',

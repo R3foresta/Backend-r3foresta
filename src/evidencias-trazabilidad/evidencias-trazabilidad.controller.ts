@@ -1,15 +1,16 @@
+import { BigintIdPipe } from '../common/dto/bigint-id';
+import { PrivateResponseInterceptor } from '../auth/private-response.interceptor';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import type { ActorRequest } from '../auth/verified-actor.guard';
 import { InternalActorGuard } from '../auth/internal-actor.guard';
 import {
   Body,
   Controller,
   Get,
-  Headers,
   Param,
-  ParseIntPipe,
   Post,
   Query,
-  UnauthorizedException,
+  Req,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
@@ -18,12 +19,10 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
   ApiConsumes,
-  ApiHeader,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiResponse,
-  ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
 import { EvidenciasTrazabilidadService } from './evidencias-trazabilidad.service';
@@ -33,6 +32,7 @@ import { ListEvidenciasTrazabilidadDto } from './dto/list-evidencias-trazabilida
 @ApiTags('evidencias-trazabilidad')
 @ApiBearerAuth()
 @UseGuards(InternalActorGuard)
+@UseInterceptors(PrivateResponseInterceptor)
 @Controller('evidencias-trazabilidad')
 export class EvidenciasTrazabilidadController {
   constructor(
@@ -44,12 +44,6 @@ export class EvidenciasTrazabilidadController {
     summary: 'Agregar evidencias a una recolección',
     description:
       'Sube 1 a 5 fotos y crea registros en evidencias_trazabilidad para una recolección existente.',
-  })
-  @ApiSecurity('x-auth-id')
-  @ApiHeader({
-    name: 'x-auth-id',
-    description: 'ID de autenticación del usuario de Supabase',
-    required: true,
   })
   @ApiConsumes('multipart/form-data')
   @ApiParam({
@@ -87,23 +81,19 @@ export class EvidenciasTrazabilidadController {
     description: 'Evidencias creadas exitosamente',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 401, description: 'Header x-auth-id faltante' })
+  @ApiResponse({ status: 401, description: 'Bearer ausente o inválido' })
   @ApiResponse({ status: 404, description: 'Recolección no encontrada' })
   @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 5 }]))
   async createForRecoleccion(
-    @Param('recoleccionId', ParseIntPipe) recoleccionId: number,
+    @Param('recoleccionId', BigintIdPipe) recoleccionId: number | string,
     @Body() body: CreateEvidenciaRecoleccionDto,
-    @Headers('x-auth-id') authId?: string,
+    @Req() req: ActorRequest,
     @UploadedFiles() files?: { fotos?: any[] },
   ) {
-    if (!authId) {
-      throw new UnauthorizedException('Header x-auth-id es requerido');
-    }
-
     return this.evidenciasTrazabilidadService.createForRecoleccion(
       recoleccionId,
       body,
-      authId,
+      req.actor.auth_id,
       files?.fotos,
     );
   }
@@ -118,8 +108,11 @@ export class EvidenciasTrazabilidadController {
   @ApiResponse({ status: 400, description: 'Parámetros inválidos' })
   @ApiResponse({ status: 404, description: 'Tipo de entidad no encontrado' })
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })
-  async list(@Query() filters: ListEvidenciasTrazabilidadDto) {
-    return this.evidenciasTrazabilidadService.list(filters);
+  async list(
+    @Query() filters: ListEvidenciasTrazabilidadDto,
+    @Req() req: ActorRequest,
+  ) {
+    return this.evidenciasTrazabilidadService.list(filters, req.actor);
   }
 
   @Get('entidad/:tipoEntidadCodigo/:entidadId')
@@ -152,7 +145,8 @@ export class EvidenciasTrazabilidadController {
   @ApiResponse({ status: 404, description: 'Tipo de entidad no encontrado' })
   async findByEntidad(
     @Param('tipoEntidadCodigo') tipoEntidadCodigo: string,
-    @Param('entidadId', ParseIntPipe) entidadId: number,
+    @Param('entidadId', BigintIdPipe) entidadId: number | string,
+    @Req() req: ActorRequest,
     @Query('incluir_eliminadas') incluirEliminadas?: string,
   ) {
     const includeDeleted =
@@ -162,6 +156,7 @@ export class EvidenciasTrazabilidadController {
       tipoEntidadCodigo,
       entidadId,
       includeDeleted,
+      req.actor,
     );
   }
 
@@ -188,7 +183,8 @@ export class EvidenciasTrazabilidadController {
     description: 'Evidencias de recolección obtenidas',
   })
   async findByRecoleccion(
-    @Param('recoleccionId', ParseIntPipe) recoleccionId: number,
+    @Param('recoleccionId', BigintIdPipe) recoleccionId: number | string,
+    @Req() req: ActorRequest,
     @Query('incluir_eliminadas') incluirEliminadas?: string,
   ) {
     const includeDeleted =
@@ -197,6 +193,7 @@ export class EvidenciasTrazabilidadController {
     return this.evidenciasTrazabilidadService.findByRecoleccion(
       recoleccionId,
       includeDeleted,
+      req.actor,
     );
   }
 
@@ -205,7 +202,10 @@ export class EvidenciasTrazabilidadController {
   @ApiParam({ name: 'id', type: Number, description: 'ID de evidencia' })
   @ApiResponse({ status: 200, description: 'Evidencia obtenida' })
   @ApiResponse({ status: 404, description: 'Evidencia no encontrada' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.evidenciasTrazabilidadService.findOne(id);
+  async findOne(
+    @Param('id', BigintIdPipe) id: number | string,
+    @Req() req: ActorRequest,
+  ) {
+    return this.evidenciasTrazabilidadService.findOne(id, req.actor);
   }
 }

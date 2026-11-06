@@ -1,3 +1,4 @@
+import { BigintId } from '../../../common/dto/bigint-id';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
@@ -5,7 +6,6 @@ import {
   IsArray,
   IsDateString,
   IsEnum,
-  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -35,10 +35,8 @@ export class RegistrarDescartePreEmbolsadoDto {
     message: 'Se requiere al menos una evidencia para DESCARTE_PRE_EMBOLSADO',
   })
   @ArrayUnique({ message: 'evidencia_ids no debe contener IDs duplicados' })
-  @Type(() => Number)
-  @IsInt({ each: true })
-  @Min(1, { each: true })
-  evidencia_ids: number[];
+  @BigintId(true)
+  evidencia_ids: (number | string)[];
 
   @IsOptional()
   @IsString()

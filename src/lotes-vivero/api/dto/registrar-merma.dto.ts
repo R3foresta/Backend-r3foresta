@@ -1,3 +1,4 @@
+import { BigintId } from '../../../common/dto/bigint-id';
 import {
   ArrayMinSize,
   IsArray,
@@ -26,8 +27,8 @@ export class RegistrarMermaDto {
 
   @IsArray()
   @ArrayMinSize(1, { message: 'Se requiere al menos una evidencia para MERMA' })
-  @IsInt({ each: true })
-  evidencia_ids: number[];
+  @BigintId(true)
+  evidencia_ids: (number | string)[];
 
   @IsOptional()
   @IsString()

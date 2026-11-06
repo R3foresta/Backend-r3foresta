@@ -2,6 +2,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { EvidenceFileService } from '../common/files/evidence-file.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { RecoleccionAuthService } from '../recolecciones/application/recoleccion-auth.service';
 import { EvidenciasTrazabilidadService } from './evidencias-trazabilidad.service';
 
 function createQueryBuilder(
@@ -17,6 +18,7 @@ function createQueryBuilder(
   const builder: any = {
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
     neq: jest.fn().mockReturnThis(),
     not: jest.fn().mockReturnThis(),
     gt: jest.fn().mockReturnThis(),
@@ -69,6 +71,20 @@ describe('EvidenciasTrazabilidadService', () => {
     const supabaseService = {
       getAdminClient: jest.fn().mockReturnValue({
         from,
+        rpc: async (_name: string, args: any) => {
+          const r = await from('evidencias_trazabilidad')
+            .insert(args.p_fotos)
+            .select('*');
+          return r.error
+            ? r
+            : {
+                data: {
+                  id: args.p_recoleccion_id,
+                  evidencia_ids: (r.data || []).map((x: any) => x.id),
+                },
+                error: null,
+              };
+        },
         storage: {
           from: jest.fn().mockReturnValue(storageBucket),
         },
@@ -84,6 +100,12 @@ describe('EvidenciasTrazabilidadService', () => {
     service = new EvidenciasTrazabilidadService(
       supabaseService,
       new EvidenceFileService(),
+      {
+        getUserByAuthId: async () => ({ id: 7, rol: 'ADMIN' }),
+        assertOwnerOrAdmin: async () => {},
+        assertCanRead: async () => {},
+        isGlobalReviewer: () => true,
+      } as unknown as RecoleccionAuthService,
     );
   });
 
@@ -94,10 +116,19 @@ describe('EvidenciasTrazabilidadService', () => {
         error: null,
       }),
     );
-    await expect(service.findOne(90)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(
+      service.findOne(90, {
+        auth_id: 'fixture',
+        usuario_id: '7',
+        rol: 'ADMIN',
+      }),
+    ).rejects.toBeInstanceOf(NotFoundException);
     const query = createQueryBuilder({ data: [], error: null, count: 0 });
     from.mockReturnValue(query);
-    await service.list({});
+    await service.list(
+      {},
+      { auth_id: 'fixture', usuario_id: '7', rol: 'ADMIN' },
+    );
     expect(query.neq).toHaveBeenCalledWith(
       'bucket',
       'participacion_evidencias',
@@ -115,7 +146,12 @@ describe('EvidenciasTrazabilidadService', () => {
       error: null,
     });
     const recoleccionQuery = createQueryBuilder({
-      data: { id: 33, codigo_trazabilidad: 'REC-2026-00033' },
+      data: {
+        id: 33,
+        estado_registro: 'BORRADOR',
+        revision_captura: '0',
+        codigo_trazabilidad: 'REC-2026-00033',
+      },
       error: null,
     });
     const tipoEntidadQuery = createQueryBuilder({
@@ -268,7 +304,12 @@ describe('EvidenciasTrazabilidadService', () => {
           return createQueryBuilder({ data: { id: 7 }, error: null });
         if (table === 'recoleccion')
           return createQueryBuilder({
-            data: { id: 33, codigo_trazabilidad: 'REC-FIXTURE' },
+            data: {
+              id: 33,
+              estado_registro: 'BORRADOR',
+              revision_captura: '0',
+              codigo_trazabilidad: 'REC-FIXTURE',
+            },
             error: null,
           });
         if (table === 'tipos_entidad_evidencia')

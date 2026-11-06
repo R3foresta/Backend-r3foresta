@@ -1,10 +1,12 @@
 import {
   BadRequestException,
   Injectable,
+  HttpException,
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { guardarRecoleccion } from './recoleccion-rpc';
 import { UpdateDraftDto } from '../api/dto/update-draft.dto';
 import { EstadoRegistro } from '../domain/enums/estado-registro.enum';
 import {
@@ -39,9 +41,15 @@ export class RecoleccionDraftService {
     userRole: string,
     files: RecoleccionFotoInput[] = [],
   ) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const usuario = await this.authService.getUserByAuthId(authId);
     const recoleccion = await this.consultasService.getRawRecoleccion(id);
+    await this.authService.assertOwnerOrAdmin(
+      { usuario_id: recoleccion.usuario_id as number },
+      usuario.id,
+      usuario.rol,
+    );
+
     const estadoActual = String(
       recoleccion.estado_registro ?? '',
     ).toUpperCase();
@@ -55,11 +63,6 @@ export class RecoleccionDraftService {
       );
     }
 
-    this.authService.assertOwnerOrAdmin(
-      { usuario_id: recoleccion.usuario_id as number },
-      usuario.id,
-      usuario.rol,
-    );
     this.evidenciasService.validarDraftFotos(files);
 
     const updatePayload: Record<string, unknown> = {};
@@ -112,7 +115,6 @@ export class RecoleccionDraftService {
     }
 
     if (estadoActual === EstadoRegistro.RECHAZADO) {
-      updatePayload.estado_registro = EstadoRegistro.BORRADOR;
       this.logger.log(
         `📝 Recolección ${id}: RECHAZADO → BORRADOR (edición de borrador)`,
       );
@@ -133,12 +135,10 @@ export class RecoleccionDraftService {
       throw new BadRequestException('No se enviaron campos para actualizar.');
     }
 
-    const rollbackPayload: Record<string, unknown> = {};
-    let recoleccionActualizada = false;
-    let insertedEvidenceIds: number[] = [];
     let uploadedPaths: string[] = [];
     let nuevaUbicacionId: number | null = null;
-    let vinculoUbicacionIntentado = false;
+    let escrituraEnviada = false;
+    let confirmada = false;
 
     try {
       if (nuevaUbicacionPayload) {
@@ -174,52 +174,35 @@ export class RecoleccionDraftService {
         Object.assign(updatePayload, snapshotPayload);
       }
 
-      for (const key of Object.keys(updatePayload)) {
-        rollbackPayload[key] = (recoleccion as Record<string, unknown>)[key];
-      }
-
-      if (Object.keys(updatePayload).length > 0) {
-        vinculoUbicacionIntentado = nuevaUbicacionId !== null;
-        const { error: updateError } = await supabase
-          .from('recoleccion')
-          .update(updatePayload)
-          .eq('id', id);
-
-        if (updateError) {
-          this.logger.error('❌ Error al actualizar borrador:', updateError);
-          throw new InternalServerErrorException(
-            'Error al actualizar borrador',
-          );
-        }
-
-        recoleccionActualizada = true;
-      }
-
-      if (files.length > 0) {
-        const appendResult =
-          await this.evidenciasService.appendDraftFotosAsEvidencias(
-            id,
-            String(recoleccion.codigo_trazabilidad ?? ''),
-            usuario.id,
-            files,
-          );
-
-        insertedEvidenceIds = appendResult.insertedEvidenceIds;
-        uploadedPaths = appendResult.uploadedPaths;
-      }
+      const fotos = files.length
+        ? await this.evidenciasService.uploadFotosCreacion(files)
+        : [];
+      uploadedPaths = fotos.map((foto) => foto.ruta_archivo);
+      escrituraEnviada = true;
+      await guardarRecoleccion(
+        supabase,
+        usuario.id,
+        'EDITAR',
+        id,
+        recoleccion.revision_captura,
+        updatePayload,
+        fotos.map((foto) => ({
+          ...foto,
+          metadata: { ...foto.metadata, origen: 'UPDATE_DRAFT' },
+        })),
+      );
+      confirmada = true;
     } catch (error) {
-      // Antes de intentar el vínculo sabemos que esta llamada no la referenció.
-      // Después, incluso un fallo de transporte puede ocultar un UPDATE confirmado.
-      if (nuevaUbicacionId !== null && !vinculoUbicacionIntentado) {
-        await this.removeUbicacionSinVinculo(nuevaUbicacionId);
+      // Un rechazo SQL conocido revierte la RPC completa. Una respuesta perdida
+      // conserva recursos: podría haber quedado confirmada la ficha y sus fotos.
+      const rechazo =
+        error instanceof HttpException &&
+        [400, 403, 404, 409].includes(error.getStatus());
+      if (!confirmada && (!escrituraEnviada || rechazo)) {
+        if (nuevaUbicacionId !== null)
+          await this.removeUbicacionSinVinculo(nuevaUbicacionId);
+        await this.evidenciasService.removeStoragePaths(uploadedPaths);
       }
-      await this.evidenciasService.deleteEvidenceIds(insertedEvidenceIds);
-      await this.evidenciasService.removeStoragePaths(uploadedPaths);
-
-      if (recoleccionActualizada && Object.keys(rollbackPayload).length > 0) {
-        await supabase.from('recoleccion').update(rollbackPayload).eq('id', id);
-      }
-
       throw error;
     }
 

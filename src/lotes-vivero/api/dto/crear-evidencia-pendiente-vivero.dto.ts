@@ -1,3 +1,4 @@
+import { BigintId } from '../../../common/dto/bigint-id';
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
@@ -10,6 +11,10 @@ import {
 import { TipoEventoVivero } from '../../domain/enums/tipo-evento-vivero.enum';
 
 export class CrearEvidenciaPendienteViveroDto {
+  @IsOptional()
+  @BigintId()
+  vivero_id?: number | string;
+
   @IsOptional()
   @IsString({ message: 'titulo debe ser texto' })
   @MaxLength(120, { message: 'titulo no puede superar 120 caracteres' })

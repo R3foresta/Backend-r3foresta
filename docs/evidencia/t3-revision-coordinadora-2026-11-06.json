@@ -1,0 +1,357 @@
+{
+  "tarea": "T3_REVISION_COORDINADORA",
+  "fecha_local": "2026-11-06",
+  "zona": "America/La_Paz",
+  "registrado_en": "2026-11-06T10:49:15.370981+00:00",
+  "estado": "REVISADA_LOCALMENTE_SIN_HALLAZGOS_PENDIENTES",
+  "coordinador": "01a18a33-5969-7261-b845-25979ea63c2f",
+  "implementador": "01a1ae5c-a9cb-7111-b977-0859ae494758",
+  "base": {
+    "pwa": "dbcedc51eac388045a5d383d6a326e241c40b312",
+    "backend": "6f59263c349c664c15893528df1c129a7d25ef0d más T1/T2/T3 locales",
+    "sin_commit_de_entrega": true
+  },
+  "cortes_del_implementador": [
+    {
+      "ruta": "../pwa-r3foresta/docs/evidencia/t3-validacion-2026-11-05.json",
+      "sha256": "d327cc6c06669b39e70453ba7ab0482696fa0a3ec95729d113397189ee5e6630"
+    },
+    {
+      "ruta": "../pwa-r3foresta/docs/evidencia/t3-correccion-validacion-2026-11-06.json",
+      "sha256": "678fbe2280ff19c733a8c95dfd5bbfdd9e2ddb3cd74d6fbbdae4db5f5885a12f"
+    }
+  ],
+  "nota_cortes": "Los manifests del implementador conservan el corte anterior al cierre documental de esta revisión; no se reescriben.",
+  "hallazgos_resueltos": [
+    {
+      "prioridad": "P2",
+      "hallazgo": "La entrada normal del revisor M2 sin M1 consultaba la lista propia M1 y recibía403.",
+      "correccion": "El índice espera M1 y monta sólo su lista autorizada; el revisor sin M1 entra a pending-validation. Volver lleva a Inicio sin crear bucle; con M1 conserva el regreso a la lista propia.",
+      "regresion": "Inicio, barra, lista propia, ausencia de M1 y ambos destinos de regreso con fixture que exige M1."
+    },
+    {
+      "prioridad": "P3",
+      "hallazgo": "DESECHO incierto exigía dos consultas sucesivas de saldo para preparar otra operación.",
+      "correccion": "Una lectura posterior correcta basta; carga/error mantienen el bloqueo y no se reenvía el POST físico.",
+      "regresion": "Saldo positivo, saldo agotado, consulta en curso, fallo de lectura y reintento correcto."
+    }
+  ],
+  "verificacion_independiente": {
+    "pwa": {
+      "node": "v24.19.0",
+      "PATH_prefix": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin",
+      "build_exit_code": 0,
+      "lint_exit_code": 0,
+      "tests_exit_code": 0,
+      "archivos_test": 91,
+      "pruebas": 1251
+    },
+    "backend": {
+      "alcance": "Base T3 recibida; fuentes de backend sin cambios en las correcciones frontend",
+      "suites": 88,
+      "pruebas": 1256,
+      "build": "CORRECTO",
+      "openapi": {
+        "t2_rutas": 36,
+        "t1_rutas": 5,
+        "participacion_rutas": 41,
+        "participacion_schemas": 86,
+        "resultado": "COINCIDENTE"
+      }
+    },
+    "navegador": {
+      "exit_code": 0,
+      "estado": "APROBADO",
+      "entorno": "SINTETICO_LOCAL_T3_HTTP",
+      "versiones": {
+        "node": "v24.5.0",
+        "navegador": "156.0.8078.80",
+        "playwright": "1.61.1"
+      },
+      "comprobaciones": 60,
+      "checks": [
+        "sin desborde horizontal: cuenta-390",
+        "sin desborde horizontal: cuenta-320",
+        "sin desborde horizontal: cuenta-1280",
+        "cancelar confirmación no escribe",
+        "solo M1 sin cambiar rol ni M2",
+        "M2 concede viveros BIGINT vecinos como asignaciones independientes",
+        "retirar A conserva B, M1 y rol",
+        "solo M2 tras retirar M1",
+        "ningún acceso tras retiros explícitos independientes",
+        "revisión obsoleta produce rechazo y no concede acceso",
+        "sin desborde horizontal: conflicto-1280",
+        "tras 409 se relee y confirma otra intención con otro UUID",
+        "503 y GET202 conservan el mismo UUID e intención",
+        "sin desborde horizontal: resultado-incierto-390",
+        "recuperación propia tras perder ADMIN usa el recibo original sin directorio",
+        "sin desborde horizontal: recuperacion-sin-admin-390",
+        "ADMIN deriva M1 y todos los viveros sin asignaciones",
+        "VOLUNTARIO conserva historia pero no recibe nuevas asignaciones",
+        "cuenta inactiva permite retirar vigencia conservada y bloquea otorgar",
+        "regresión de rol conserva rechazo de último ADMIN",
+        "cambio de cuenta descarta selección y lectura administrativa tardía",
+        "logout retira datos administrativos antes de ofrecer acceso privado",
+        "multipart INICIO conserva vivero BIGINT exacto",
+        "alta INICIO usa origen mínimo y vivero exactos",
+        "solo M2 inicia con origen mínimo sin pedir ficha/fotos M1 ajenas",
+        "DESECHO usa endpoint existente con cantidad observada",
+        "DESECHO refresca el saldo del servidor después del resultado confirmado",
+        "sin desborde horizontal: material-m2-390",
+        "DESECHO usa endpoint existente con cantidad observada",
+        "DESECHO incierto deshabilita la confirmación física",
+        "durante la consulta no se presenta saldo antiguo ni se prepara otro DESECHO",
+        "sin desborde horizontal: material-consulta-pendiente-390",
+        "una consulta correcta basta para preparar otra operación, sin otra consulta ni POST automático",
+        "sin desborde horizontal: material-observado-390",
+        "DESECHO usa endpoint existente con cantidad observada",
+        "DESECHO incierto deshabilita la confirmación física",
+        "fallar la lectura mantiene bloqueado el material y nunca reenvía DESECHO",
+        "el reintento consulta material sin preparar ni repetir la operación física",
+        "tras una lectura fallida, sólo el reintento correcto habilita preparar otro desecho",
+        "sin desborde horizontal: material-recuperado-1280",
+        "URL directa M1 denegada para operario M2 puro",
+        "URL de lote ajeno no monta el formulario ni sube fotos",
+        "la fixture exige M1 para GET de la lista propia del revisor",
+        "entrada de Inicio para revisor sólo M2 usa la cola y nunca pide la lista propia M1",
+        "sin desborde horizontal: revision-desde-inicio-sin-m1-1280",
+        "Volver del revisor sin M1 sale a Inicio sin bucle a su cola",
+        "entrada del menú para revisor sólo M2 tampoco consulta la lista propia prohibida",
+        "sin desborde horizontal: revision-desde-menu-sin-m1-390",
+        "VALIDADOR sin M1 revisa su vivero y nunca aprueba lo propio",
+        "sin desborde horizontal: revision-sin-m1-1280",
+        "con M1 la entrada normal conserva la lista propia",
+        "M1 permite pendientes propios sin aprobación propia",
+        "Volver con M1 conserva el regreso a la lista propia",
+        "sin M2 no se monta alta por URL: cuenta sintética 9",
+        "M3 conserva su entrada independiente de M2",
+        "sin M2 no se monta alta por URL: cuenta sintética 10",
+        "sin M2 no se monta alta por URL: cuenta sintética 11",
+        "Impacto conserva entrada pública sin consultas de capacidades M1/M2",
+        "UUIDs separados por cada intención y dominio",
+        "ninguna llamada de administración agregó actor o rol al payload"
+      ],
+      "capturas": 13,
+      "medidas_ui": [
+        {
+          "name": "cuenta-390",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "name": "cuenta-320",
+          "viewport": 320,
+          "document": 320
+        },
+        {
+          "name": "cuenta-1280",
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "name": "conflicto-1280",
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "name": "resultado-incierto-390",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "name": "recuperacion-sin-admin-390",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "name": "material-m2-390",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "name": "material-consulta-pendiente-390",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "name": "material-observado-390",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "name": "material-recuperado-1280",
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "name": "revision-desde-inicio-sin-m1-1280",
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "name": "revision-desde-menu-sin-m1-390",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "name": "revision-sin-m1-1280",
+          "viewport": 1280,
+          "document": 1280
+        }
+      ],
+      "errores": [],
+      "reporte_temporal": {
+        "ruta": "/private/tmp/t3-review-browser-2026-11-06/resultados.json",
+        "sha256": "8091e4bacda3f258a18179d51c0741c6a14509930bf2749b2023ff1a4b8c53e8"
+      },
+      "inspeccion_visual": [
+        "cuenta móvil/escritorio",
+        "lectura de material en curso",
+        "revisión desde entrada de barra sin M1"
+      ],
+      "servicios_coordinador": "API y navegador cerrados por runner; Vite detenido después del QA."
+    },
+    "logs_temporales": {
+      "pwa_pruebas": {
+        "ruta": "/private/tmp/t3-review-pwa-tests-node24-19-2026-11-06.log",
+        "sha256": "ea1048a863b72b13991ef6a8390dd902afd501ad471b7aeffe53331d352a433d"
+      },
+      "pwa_build": {
+        "ruta": "/private/tmp/t3-review-pwa-build-node24-19-2026-11-06.log",
+        "sha256": "69f4a1271c16d1dfa4be97a6e9db28f7cb57a6e2c6c34ae3b74aedb60b9352df"
+      },
+      "pwa_lint": {
+        "ruta": "/private/tmp/t3-review-pwa-lint-node24-19-2026-11-06.log",
+        "sha256": "fa7e6a0ee0b7839ef5a74dc7f4017288198642fbe55ba898bd02ab74da551948"
+      },
+      "backend_unitarios_base": {
+        "ruta": "/private/tmp/t3-review-backend-unitarios.log",
+        "sha256": "2002527f64b3aecd971ed10efcf6b45b3735c35135ad63b9e8b590eeb0516693"
+      },
+      "backend_build_base": {
+        "ruta": "/private/tmp/t3-review-backend-build.log",
+        "sha256": "79f35a6b81e344a3571d2f37ddc9c60aded055877d2758c5aed61990f6a28ccc"
+      },
+      "navegador": {
+        "ruta": "/private/tmp/t3-review-browser-2026-11-06.log",
+        "sha256": "d6e6758f946d5f90b4368744bc906dd8114c66ed8700a2465a8b7932da3edf00"
+      }
+    },
+    "snapshot_fuentes": {
+      "ruta": "/private/tmp/t3-review-base-corregida-2026-11-06.json",
+      "sha256": "4f4c76cc157bc330bc4803692e56111243aa512a306c2a1c3977b64fca02aaef",
+      "archivos": 461,
+      "sin_cambios_desde_inicio_de_pruebas": true
+    }
+  },
+  "preservacion": {
+    "092_095_preservadas": true,
+    "evidencias_historicas_preservadas": true,
+    "dto_y_motor_participacion_sin_cambios": true,
+    "backend_ajeno_sin_cambios_antes_del_cierre_documental": 769
+  },
+  "limites": [
+    "Revisión local; no acredita autorización ni despliegue en un entorno remoto.",
+    "Chrome usa API HTTP sintética, sin JWT/RPC/SQL/Storage/WebAuthn reales; no se repitió SQL/HTTP/PostGIS de T2 para estas proyecciones.",
+    "El QA independiente de Chrome usa Node24.5.0 y Playwright1.61.1; build/lint/pruebas PWA se acreditan por separado con Node24.19.0 explícito.",
+    "AUD-007 (operaciones físicas sin comando durable), URLs públicas legadas, lint global backend, aceptación/dispositivo y corte externo conservan sus límites.",
+    "No se hizo SQL remoto, commit de entrega, push o despliegue. T4/T5 no iniciadas."
+  ],
+  "sha256_fuentes_t3_pwa": {
+    "scripts/qa/t3-access-browser.cjs": "5a71ef627933ae19544fe295c35a2413bcd26541d20f80b2bfa320dc0921db23",
+    "src/App.tsx": "c8c0c1c7538d5e48b3fc38c917d7acce19be5500147814ead0bd1ec02a9aa690",
+    "src/api/lotes-vivero.api.ts": "4c9cc7499d2afe5fb15f6c660f157f5782d12a48e8b9b2b16d864216881ab1fd",
+    "src/api/plantacion.api.ts": "63dc6f456b5bf660dcf13a1ea566933cb80722b331c9aa2c31e6201d4b1d2fcd",
+    "src/components/BottomNav.tsx": "3ab6d14070f759cce341a9cc8105590e5962c52797a7eb154125ba36aa4e173d",
+    "src/components/MenuLateral.tsx": "3876f20e460821b79ec41fd049bcc79b3d8c8ec6be027b133a94d12fda61b880",
+    "src/hooks/useViveros.ts": "34ef5182a0edcf76e81fc96c7dd0f2fafee16cf878c047b6f082a2a89e7e2c32",
+    "src/layouts/AppLayout.tsx": "542c6692ca9671052d21ef44b641f3c7e54fed871bde08543e4f322db43e7f21",
+    "src/modules/accesos/OperationalAccessGate.tsx": "91dae3a915cffa3eb3f829f68c058294ec822fb3f479a2584706b581da9b38fa",
+    "src/modules/accesos/OperationalAccessProvider.tsx": "232c0b8e291dc17f1f18b714bac744664277bf6b709dbc6d240a20eb41ad7b30",
+    "src/modules/accesos/README.md": "5ce83a065acd65c1589f831a3fba606538f7801953f3e5f7954179e55d1aef51",
+    "src/modules/accesos/accesos.api.test.ts": "85d5128af1b112b85dbfbf91b08b0d1af6d5e0af403aefcd24c47ff7e644a53b",
+    "src/modules/accesos/accesos.api.ts": "594796fb6f221578e4cefab68043963778b492b2a7d0ce9504792fe11e15fc6d",
+    "src/modules/accesos/accesos.contract.ts": "dc4397a64d2415f934b4b57b49849a5d8690dce87a127985550134e43d0b976d",
+    "src/modules/accesos/accessPolicy.ts": "1f8d1944093c2a26d4bfac8efad9e39136716079fa88ffecd2db61e1d3edcde6",
+    "src/modules/accesos/capabilitiesContext.ts": "2c22bc8e008b3377af8118b346e2578d6d32a7020220fd5be6a9657ec8a85b24",
+    "src/modules/accesos/moduleCommandStore.ts": "02f0521dd563e9a92bfe84d5d7d055534e985e85433b9e43bd411dfcb6580b59",
+    "src/modules/accesos/moduleCommands.test.tsx": "f9c807880b8e1067bc5cb7d1001448ca899c14887df6312eb55dfd102f78ac98",
+    "src/modules/accesos/operationalAccess.test.tsx": "f516fb3e9aff502254adcc774f6d22991423faba895d3aa06e314d0d15320b4d",
+    "src/modules/accesos/test-fixtures.ts": "6a72684e9abe6e62f24356df3abb65c7d50c6a89215fb0975333f0df4d948d05",
+    "src/modules/accesos/types.ts": "f4c21f6ddfe002f7f3cada8b839ea99e1b1154efafe80a40babce1d8069cb7d2",
+    "src/modules/accesos/useModuleCommand.ts": "1676202201f1af2bb8cd6509585bc889e647c92381403cf3bba171b64df5480b",
+    "src/modules/home/HomeScreen.tsx": "c805400ae8c95b35462bff7b06710c195d8378043e25661ea7b47e7ef371e935",
+    "src/modules/recolecciones/RecoleccionDetailScreen.test.tsx": "f5f0b8e8bcd68f15bb0150b9de0445fa2bb0745ed50a98f727cd753f6e6cf548",
+    "src/modules/recolecciones/RecoleccionDetailScreen.tsx": "9ddc4960728e49b72453516290772f6a180db810a4ab85aea260f8c460d8388a",
+    "src/modules/recolecciones/RecoleccionFormUbicacionScreen.tsx": "650eaa19354997abe295733c8676b64917665d6ba2b829819f1c353773f79cf9",
+    "src/modules/recolecciones/RecoleccionesScreen.tsx": "74a154c326f1ba068c58a74b21bb5ab9cd2103db307420e72e1b8e0a7c9f078b",
+    "src/modules/recolecciones/RecoleccionesValidacionScreen.tsx": "aabb5e0482eb365f752a6f08e05e8071be11a4dd79d589ecf6f6efb757fa186f",
+    "src/modules/recolecciones/components/RecoleccionDeleteAction.tsx": "bf7c784a2a37ac941201960482ade0e210ee7ff98c24eea33e71c022fd043fd5",
+    "src/modules/recolecciones/recoleccionFormTypes.ts": "26a52088cb5661da51a6fa61171aff6c6e677713b667d2f1776fa0c4ad44be84",
+    "src/modules/recolecciones/recoleccionStatus.ts": "788e6236d9fe4772ff20d2497dd1933351b01e35f06711f9ddad782e64d8f04f",
+    "src/modules/recolecciones/validators/recoleccionForm.ts": "dd14251fa89f3d2663e2c883de9c9f1793f39972e5e49ba7b9fbbdaebfe61d5b",
+    "src/modules/usuarios/README.md": "7e07a27136ad22420597dc3736176876e652afda157fda54580c8b6cc4dc11d1",
+    "src/modules/usuarios/components/ModuleCommandStatus.tsx": "1e1d21219bd6a562a95d11d5e2fdfc03a76ba583cb8fbc6a7936f01067709551",
+    "src/modules/usuarios/components/UsuarioModuleAccess.test.tsx": "2233787a2db5c8d3df8cef27cb59b9f6e70737c0fc7506f80e458575d4afbe28",
+    "src/modules/usuarios/components/UsuarioModuleAccess.tsx": "b06b16aecf95d1b04a0754e4e85c2a58e76e3bda5d08a58f40281403497a24cb",
+    "src/modules/usuarios/components/UsuarioPorId.tsx": "8812aab90f7fce281c4da65b4150bab2fe51e7b9f9b0d0cada767d195822c31f",
+    "src/modules/usuarios/components/UsuarioRoleForm.tsx": "880fdc9dce132c2b4679611710379c6fd18aa7500a61ad1af8c3cfbba8668ab1",
+    "src/modules/usuarios/components/UsuariosEntry.test.tsx": "8f09ecb28dc9d8de59e566e32718ded158162b87f83e318f3cf2738071a27f8f",
+    "src/modules/usuarios/components/UsuariosEntry.tsx": "fc1e0ba740d8c1bfddbf7def18f570ed86666eb13db26a62b93423f92c4ba633",
+    "src/modules/usuarios/hooks/useHasPendingUserCommand.ts": "2203c45e338082ec8504fa4d838ec4d460ba0d3ce09532cb2a0955ec75f3b895",
+    "src/modules/usuarios/pages/GestionUsuariosScreen.tsx": "bf2668b999bb340b73bd938b2fc43e988169c175bab7334857ac8ee27c7912a9",
+    "src/modules/usuarios/types.ts": "54e0c5ab04414f9fa447d694806488905216a3f1a58fe5b9cf664b001fe60893",
+    "src/modules/vivero/README.md": "be237e356b4b6fdb79d5ec55bd87d13d440ea328c16fe2be84c3ca9d2ec3039c",
+    "src/modules/vivero/api/origenes.api.test.ts": "68cf5a12c2aba4538d91102850a75949efaeaaf03068a762337ba9ad0b57b99a",
+    "src/modules/vivero/api/origenes.api.ts": "16ccb76ace519b0632ed41e9f1dd08dcdab03f5bc506ce3b33c49334de1c9f85",
+    "src/modules/vivero/components/OrigenCard.tsx": "92819760c9a38f8f2bd792bd9dcb451a4e571a8a016e5e609b0b7428f4af17e2",
+    "src/modules/vivero/components/QuickActions.tsx": "5d2cf2046cbb9b8b8f1753cafe15d20cf562bfd226e0d50974fb993d8bd03ac5",
+    "src/modules/vivero/components/ViveroLotAsignacionesTab.tsx": "b3e640b52b7d12abda795a751d89270988184f8a8f698c6c47fd24474a388a06",
+    "src/modules/vivero/components/event/forms/AsignacionForm.tsx": "a70eb6eff030f954b6dddde6e7a36ca71bfd24662f41fb12a13b6cc16ef249e6",
+    "src/modules/vivero/hooks/useM2Logistics.test.tsx": "4350cdd3b60d47822c451144b62b05c464bbd933f3316c3c2dec7a5374b38709",
+    "src/modules/vivero/hooks/useM2Logistics.ts": "a80b88fc2aef9ac5ecd86bd861e491e27d822e2122aa0998e2c0431fc5ff598d",
+    "src/modules/vivero/hooks/useOrigenes.ts": "f292f4eecdbb27db7092c073d07f3b986a92fb4571d3fe4f3a25d8922850d407",
+    "src/modules/vivero/mappers/lote.mapper.ts": "9d2dad32e9113829f723f6a5f9fc3b67f9af5fb763ebf4e2afd63e2d2fb39329",
+    "src/modules/vivero/screens/ViveroEventScreen.tsx": "a33a8af306f7c95f53f23a5acdfc82dbf78391ca3e9cf5c7921bf9d87b70a89d",
+    "src/modules/vivero/screens/ViveroMaterialScreen.tsx": "38091a19702c068a3d2084ab07766a3e06ea94d7966b9a953540bfca738634c9",
+    "src/modules/vivero/screens/ViveroNewScreen.test.tsx": "a4a6c15ad2263f6a806885e58a645a30d2023d61c791924956c853aa69bccd40",
+    "src/modules/vivero/screens/ViveroNewScreen.tsx": "555535efc024a75579cab1750777241d92a96e8b2657fabab3483ccd535ae6a8",
+    "src/modules/vivero/screens/ViveroScreen.tsx": "83ab7cb2a8c5eb5b374b83988aacd3c02a7d5fcdf498e44a18703b5014be9037",
+    "src/modules/vivero/types/contracts.ts": "170866135b04c0b9bff6072e56cfab1fcba13c00450fab0856d0dfc7fbfc0796",
+    "src/modules/vivero/types/view-models.ts": "22e3d63a43cdca40ab3cdee8c14e3a77316ada8e994be85b19ea32d8df77b599",
+    "src/routes/participantAccess.test.tsx": "d9bf5f579f4bb978f65e1ed02cad7d76d725226c39379844ebac211d02b44aa3",
+    "src/services/lotes-vivero.service.ts": "99a6d8f102b729349c0c402938951b46cad3f6e41391faff055c6c46fbb747e6",
+    "src/services/plantacion.service.ts": "0091e9e734698d8e0ab9adb17d973db0f5f3ebc53775f8284b937cd20db7c49a",
+    "src/services/recolecciones.service.ts": "9a794358d934631602f63352c9fa261a6ec4c3e20f35d9a370fd98fc37ddfa02",
+    "src/modules/recolecciones/RecoleccionesScreen.test.tsx": "1dac18769d26162cb90fe4c2e42d4e2e821f1ab675533cab73efb81d012b8d10",
+    "src/modules/vivero/screens/ViveroMaterialScreen.test.tsx": "c3a6c8e47f79a6da733e8ab1f073980fcb47faf1725307ffa6ea7f78832f2ff7"
+  },
+  "sha256_fuentes_t3_backend": {
+    "src/lotes-vivero/application/vivero-consultas.service.ts": "9625cf9bbb9b2953a711396c5b8b3cec93626ceb7997c859146eda88840ceec4",
+    "src/lotes-vivero/tests/vivero-consultas.service.spec.ts": "7c7cd466d8d7e0636ad857dfa2001ff77293b29ef47cd7cbc361ab11b99180a0",
+    "src/subcampanias/application/subcampanias-equipo.service.ts": "99203b9f351f7ccde05691cbffcccb086bf1c0c21e89793c947a20168c92c2fa",
+    "src/subcampanias/tests/subcampanias-equipo.service.spec.ts": "1d17a369a8b8a4c20ec2d42d66cea84d789e84ba81f1e086a4fd542cc9617900",
+    "src/viveros/viveros.service.spec.ts": "3355fd4ff0e8e7737d4c3e5f8f73ec396ce254ea470f3a9641ff9cdb8e5f28e2",
+    "src/viveros/viveros.service.ts": "dfb9a638fd317f49bfc99e0d4e19a952f8fb0283e0a2f5591587b6bd852b35c5"
+  },
+  "estado_canonico": {
+    "ruta": "../r3foresta-docs/ESTADO.md",
+    "sha256_antes": "50e99184e75ed96ec2a77c181e40994c352f6c057c104625236f3816484dfe3d",
+    "sha256_despues": "d6fda2dd0534ee897f607740f7aac8082faff1149b48bc0403b368e32c809bcf",
+    "alcance": "Sólo entrada T3: revisión cerrada, correcciones y pruebas vigentes; resto preservado."
+  },
+  "cierre_documental": {
+    "alcance": "Guías y estado reflejan cierre local T3. Se conserva el corte externo pendiente, sin modificar fuentes de código ni manifests históricos.",
+    "sha256": {
+      "documentacion/tareas/t3-administracion-accesos.md": "8f77ef33733de83cba84dcb5b8937544d1dc774da2964199122a38a8cfcd08ef",
+      "documentacion/tareas/README.md": "9689cfe929e9a2cb83f1a95f1b9e3a2ad2c07d56a540980bbd60254e05e909df",
+      "documentacion/tareas/encargos-accesos-recoleccion-vivero.md": "383d7e38500204d4ee77c0c615de330767e294d371486ff2b6ea5c1e8c03627c",
+      "documentacion/tareas/propuesta-permisos-por-vivero.md": "8f12e7375da7f4b1cd74858794a045f737bcf3af31ec27523c4ed02b00188a46",
+      "docs/t3-proyecciones-compatibilidad.md": "085f64f59fbd7652eb38fad4ea4e4d68c05fc5a5441fee1d64363feadf4f4963",
+      "../pwa-r3foresta/docs/QA_T3_CORRECCION_2026-11-06.md": "0b0ea133fb92468754fb28f816ab540e01162a34e7d14732fc9f638991faad33",
+      "../pwa-r3foresta/docs/README.md": "0f8fd622c7652939bcca09dd0503f43021e7d164d7f8f161d9af077e915d64f1",
+      "../pwa-r3foresta/FRONTEND_AUDIT.md": "18ba45bf68883684c2d1af9c91b369cf83e5bf3f9c2ce5a7d986b24c824c88a5",
+      "../pwa-r3foresta/README.md": "e1a4216e39c83b5996336d41fbd0a2baca09079521917fe7b93025fe9824a12a"
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { exactId } from '../../common/dto/bigint-id';
 import {
   BadRequestException,
   Injectable,
@@ -40,7 +41,7 @@ export class SubcampaniasEquipoService {
     const { data, error } = await supabase
       .from('subcampania_equipo')
       .select(
-        'id, usuario_id, rol, agregado_at, usuario!subcampania_equipo_usuario_fk(id, nombre, foto_perfil_url)',
+        'id, usuario_id::text, rol, agregado_at, usuario!subcampania_equipo_usuario_fk(id, nombre, foto_perfil_url)',
       )
       .eq('subcampania_id', subcampaniaId)
       .order('agregado_at', { ascending: true });
@@ -113,7 +114,7 @@ export class SubcampaniasEquipoService {
 
     return {
       id: Number(e.id),
-      usuario_id: Number(e.usuario_id),
+      usuario_id: exactId(e.usuario_id),
       rol: e.rol,
       agregado_at: e.agregado_at ?? null,
       nombre_usuario: usuario?.nombre ?? null,

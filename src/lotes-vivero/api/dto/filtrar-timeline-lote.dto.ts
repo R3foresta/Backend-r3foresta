@@ -1,5 +1,5 @@
-import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, Min } from 'class-validator';
+import { BigintId } from '../../../common/dto/bigint-id';
+import { IsDateString, IsEnum, IsOptional } from 'class-validator';
 import { TipoEventoVivero } from '../../domain/enums/tipo-evento-vivero.enum';
 
 export class FiltrarTimelineLoteDto {
@@ -8,10 +8,8 @@ export class FiltrarTimelineLoteDto {
   tipo_evento?: TipoEventoVivero;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  responsable_id?: number;
+  @BigintId()
+  responsable_id?: number | string;
 
   @IsOptional()
   @IsDateString()

@@ -98,6 +98,13 @@ describe('ViveroConsultasService', () => {
     service = new ViveroConsultasService(supabaseService, timelineService);
   });
 
+  it.each(['9007199254740992', '9007199254740993'])('preserva el vivero BIGINT %s en la proyección M2', async (vivero) => {
+    query.then = (resolve: (value: unknown) => unknown, reject: (error: unknown) => unknown) => Promise.resolve({ data: [{ id: 101, recoleccion_id: 10, planta_id: 5, vivero_id: vivero, responsable_id: 77 }], count: 1, error: null }).then(resolve, reject);
+    const result = await service.listarLotes({});
+    expect(result.data[0].vivero_id).toBe(vivero);
+    expect(query.select).toHaveBeenCalledWith(expect.stringContaining('vivero_id::text'), { count: 'exact' });
+  });
+
   it('lista lotes con paginacion por defecto y mapea el resumen para frontend', async () => {
     const result = await service.listarLotes({});
 
@@ -123,7 +130,7 @@ describe('ViveroConsultasService', () => {
           estado_lote: 'ACTIVO',
           recoleccion_id: 10,
           planta_id: 5,
-          vivero_id: 2,
+          vivero_id: '2',
           responsable_id: 77,
           cantidad_inicial_en_proceso: 8,
           unidad_medida_inicial: 'UNIDAD',

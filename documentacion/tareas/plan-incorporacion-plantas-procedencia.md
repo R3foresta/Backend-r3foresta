@@ -348,3 +348,86 @@ Quedan fuera: contabilidad y pagos, órdenes de compra, proveedores como módulo
 También se evita una API pública universal de «ajustar stock». Cada aumento o disminución debe tener un motivo operativo concreto. Esta restricción mantiene el historial explicable sin construir un sistema general de contabilidad de inventarios.
 
 Las decisiones de negocio que quedan para revisar son acotadas: quién confirma aptitud, qué evidencia mínima se acepta cuando faltan comprobantes antiguos y cómo coordinar el conteo inicial. Para este plan se asume confirmación por responsable operativo autorizado, evidencia actual de recepción/conteo y explicación de antecedentes faltantes. Ninguna de esas decisiones requiere duplicar el flujo de Plantación.
+
+## 16. Revisión técnica del 4 de noviembre de 2026
+
+Inspección estática del backend `be62df0`, PWA `dbcedc5` y documentación
+`947361e` con cambios locales preexistentes en el repositorio documental.
+No se consultó Supabase ni se ejecutaron operaciones, migraciones o pruebas
+de integración. Esta sección amplía la evidencia del plan; no acepta sus
+propuestas ni acredita implementación. Las referencias de septiembre se
+conservan como antecedente; para asignación, devolución y cancelación, la
+última redefinición local revisada es **077**, no 052/054.
+
+### 16.1 Dependencias comprobadas
+
+| Área | Hallazgo en el código local | Consecuencia para la incorporación |
+|---|---|---|
+| Alta del lote | [007](../../migrations/007_vivero_base_tables.sql), [DTO](../../src/lotes-vivero/api/dto/crear-lote-vivero.dto.ts) y [RPC018](../../migrations/018_fix_vivero_inicio_lote_rpc_trazabilidad_evidencia.sql) exigen Recolección; el alta consume M1 y concatena su código. | Crear una operación específica de incorporación; conservar el contrato del alta desde M1. |
+| Material recibido | 007 también exige `tipo_material_snapshot`, `cantidad_inicial_en_proceso` y `unidad_medida_inicial`. | Resolver estos campos por modalidad. Un plantín vivo no debe convertirse en una semilla ficticia ni rellenar material en proceso con cero. |
+| Incremento de saldo | [056](../../migrations/056_fix_devolucion_saldo_constraint.sql) permite incrementos con saldos no nulos solo en `EMBOLSADO` y `DEVOLUCION_PLANTACION`. [008](../../migrations/008_vivero_indexes.sql) impide dos embolsados, pero no protege una nueva incorporación. | Ampliar constraints y unicidad para una única base inicial válida por lote; impedir incorporación más embolsado que duplique saldo. No usar saldos nulos para eludir el control. |
+| Operaciones posteriores | Adaptabilidad [021](../../migrations/021_vivero_adaptabilidad_rpc.sql), despacho [026](../../migrations/026_vivero_despacho_rpc.sql), merma [055](../../migrations/055_vivero_merma_fisica.sql) y asignación [077](../../migrations/077_pa_int02d_operaciones_compartidas.sql) consultan un evento `EMBOLSADO` y su fecha. | Reconocer el hecho real que inaugura plantas vivas y su fecha; modificar únicamente el formulario de alta dejaría el lote sin continuidad operativa. |
+| Lectura de nulos | [Consultas](../../src/lotes-vivero/application/vivero-consultas.service.ts) usa `Number(row.recoleccion_id)` y `Number(row.cantidad_inicial_en_proceso)`. | Con el contrato ampliado, `null` se convertiría en `0`. Preservar nulos en API y tipos; no generar referencias `REC-0`. |
+| Identidad vegetal | [Snapshots M1](../../src/recolecciones/application/recoleccion-snapshots.service.ts) resuelve nombre comercial desde `nombre_comun_principal`, con respaldo `especie`; 018 hereda los snapshots de M1. | Reutilizar la convención de nombres para la nueva captura desde catálogo, manteniendo la herencia histórica en el camino M1. |
+| Lectura histórica | El [mapeador PWA](../../../pwa-r3foresta/src/modules/vivero/mappers/lote.mapper.ts) prioriza `planta.variedad` y el nombre actual del responsable sobre sus snapshots. El [timeline backend](../../src/lotes-vivero/application/vivero-timeline.service.ts) resuelve el nombre de cada responsable desde `usuario`. | Distinguir identidad histórica de presentación actual. El snapshot del responsable del lote no sustituye al responsable histórico de cada evento. |
+| Continuidad de variedad en M3 | El registro participante [075](../../migrations/075_pa_int03a_registro.sql) y el interno [077](../../migrations/077_pa_int02d_operaciones_compartidas.sql) copian nombres del lote, pero toman `variedad_snapshot` de `planta.variedad`. | Revisar la herencia de variedad al plantar: un cambio de catálogo entre ingreso y plantación puede producir snapshots distintos para el mismo material. |
+| Visibilidad del historial | El mapeador PWA devuelve `null` para eventos fuera de `VALID_KINDS`; esa lista también omite actualmente `DEVOLUCION_PLANTACION`. [OrigenCard](../../../pwa-r3foresta/src/modules/vivero/components/OrigenCard.tsx) siempre enlaza a Recolección y muestra «Cantidad consumida». | Incorporación debe llegar a enum, payload, filtros, tarjetas y ficha de origen. Cubrir devolución para poder reconstruir todo el recorrido. |
+| Clasificación de etapas | [Filtros PWA](../../../pwa-r3foresta/src/modules/vivero/utils/stageFilters.ts) clasifica como embolsado un lote con `plantas_vivas_iniciales` no nulo y sin subetapa. La [pantalla de eventos](../../../pwa-r3foresta/src/modules/vivero/screens/ViveroEventScreen.tsx) también infiere embolsado desde esa cantidad. | Separar «ya tiene plantas vivas» de «ocurrió un embolsado»; evitar etiquetas o requisitos que inventen ese hecho. |
+| Indicadores | [ViveroLotCard](../../../pwa-r3foresta/src/modules/vivero/components/ViveroLotCard.tsx) entrega saldo físico e inicial a una barra «Supervivencia». | Una entrega reduce disponibilidad sin demostrar mortalidad. Presentar existencias, mermas y salidas por separado; no contar compras o saldo inicial como producción del período. |
+| Fechas | [010](../../migrations/010_vivero_operational_rules.sql) limita la fecha operativa a diez días; [015](../../migrations/015_temporal_granularity_day_only.sql) convierte auditoría M2 a `DATE`. | Separar corte/conteo actual y antecedente histórico conocido. La edad biológica y una hora histórica exacta no se deducen del ingreso. |
+
+### 16.2 Qué puede conservarse y qué requiere un alcance adicional
+
+Para recepción **en vivero**, pueden conservarse el lote, su saldo físico,
+las asignaciones y el consumo por Plantación. La nueva operación debe guardar
+lote, base de saldo, snapshots, evento, vínculo de evidencias y resultado
+recuperable en una transacción, sin movimiento M1. La nueva clave de operación
+debe evitar duplicados incluso ante reintentos concurrentes; la factura no es
+esa clave. La conciliación del inventario inicial también debe detectar plantas
+que ya estén representadas en otro lote: la idempotencia técnica no lo resuelve.
+
+La recepción **directa en campo**, ya contemplada en este plan, conserva el
+consumo desde asignaciones, pero exige revisar sus devoluciones y cierre.
+077 repone automáticamente al lote los remanentes al cancelar una subcampaña;
+el helper no selecciona un vivero receptor. No se puede extender ese mecanismo
+a un lote sin custodia previa en vivero sin definir la recepción física real.
+También se debe conservar el orden de locks de 077:
+cuenta → campaña → subcampaña → asignaciones → lote → evidencias.
+No implementar esta variante como una llamada encadenada a ingreso en vivero
+y despacho ficticios.
+
+Las fotos ya cuentan con [servicio de evidencias](../../src/lotes-vivero/application/vivero-evidencias.service.ts)
+y vínculo a `EVENTO_LOTE_VIVERO`; no requieren otra tabla solo por ser de
+incorporación. Actualmente se almacenan en `recoleccion_fotos`, bajo rutas de
+Vivero, y varias lecturas fijan ese bucket. Un bucket nuevo, si se decide,
+es una decisión de almacenamiento y acceso, independiente de dónde persistir
+la procedencia. No asumir que los comprobantes administrativos deban exponerse
+con las mismas URLs públicas que las fotos; definir su audiencia si se adjuntan.
+
+### 16.3 Decisiones que siguen abiertas y ubicación documental
+
+Pendiente de respuesta del usuario: si el inventario inicial contiene solo
+plantines vivos o también material todavía en proceso; qué antecedentes reales
+existen; y si se exigirá condición «en cuidado/listo para entregar», con qué
+responsable. Esta última sigue siendo una propuesta, no una regla vigente.
+
+Mantener como propuesta un lote nuevo por ingreso homogéneo y campos
+estructurados de modalidad y procedencia, además del evento. Una tabla de
+recepción merece evaluarse si una entrega/documento debe agrupar varios lotes;
+un booleano de incorporación no expresa por sí solo compra, donación, saldo
+inicial ni sus antecedentes. Los nombres de campos/enums aún no son contrato.
+
+Al acordarlo, actualizar las fuentes existentes, sin abrir otro plan general:
+
+- [Reglas M2](../../../r3foresta-docs/02-vivero-module/01_reglas_de_negocio_vivero_core.md): RN-VIV-01/02, 08/10/11, cantidades/material y evidencia; alinear requerimientos RF-VIV-01/02/07/09 y flujo operativo.
+- [ADR M2](../../../r3foresta-docs/decisiones/00_decisiones_vivero.md): ampliar ADR-VIV-03/07 conservando antecedentes y delimitar ADR-VIV-09/10 al camino desde M1.
+- [Contrato M1→M2](../../../r3foresta-docs/90-contratos-integracion/01_contrato_recoleccion_a_vivero.md): conservar el consumo y la herencia para ese camino; [M2→M3](../../../r3foresta-docs/90-contratos-integracion/02_contrato_vivero_a_plantacion.md): revisar RN-VIV-61 y, para directo, remanentes y devoluciones.
+- [Esquema](../../../r3foresta-docs/database/00_database_schema.md), DTO/Swagger y guías consumibles: reflejar las decisiones aceptadas; [ESTADO](../../../r3foresta-docs/ESTADO.md) distinguirá diseño, implementación, pruebas y aplicación remota.
+
+La verificación futura debe cubrir los casos de §14 y específicamente:
+reintento concurrente sin doble ingreso; rechazo de segunda base de saldo;
+continuidad de merma/adaptabilidad/asignación sin embolsado ficticio;
+nulos conservados; snapshots estables después de editar catálogo; visibilidad
+de incorporación y devolución; y regresión del camino M1. Si se incluye directo,
+añadir carreras con cancelación, devolución, consumo y revisión del plan.
+Estas son comprobaciones pendientes, no pruebas ejecutadas en esta revisión.

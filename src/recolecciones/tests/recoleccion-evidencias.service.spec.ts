@@ -65,7 +65,10 @@ describe('RecoleccionEvidenciasService', () => {
       storage: { from: publicStorageFrom },
     };
     getAdminClient = jest.fn().mockReturnValue({
-      from,
+      from: (table: string) =>
+        table === 'tipos_entidad_evidencia'
+          ? createQueryBuilder({ data: { id: 42, activo: true }, error: null })
+          : from(table),
       storage: { from: jest.fn().mockReturnValue({ upload, remove }) },
     });
 

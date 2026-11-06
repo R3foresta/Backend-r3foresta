@@ -3,12 +3,10 @@ import {
   ApiBody,
   ApiConsumes,
   ApiExtraModels,
-  ApiHeader,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiResponse,
-  ApiSecurity,
   getSchemaPath,
 } from '@nestjs/swagger';
 import { TIPOS_MATERIAL_RECOLECCION_INPUT } from '../dto/create-recoleccion.dto';
@@ -18,33 +16,24 @@ import {
 } from '../dto/create-ubicacion.dto';
 import { RejectValidationDto } from '../dto/reject-validation.dto';
 
-const AUTH_ID_HEADER = {
-  name: 'x-auth-id',
-  description: 'ID de autenticación del usuario de Supabase',
-  required: true,
-};
-
-const USER_ROLE_HEADER = {
-  name: 'x-user-role',
-  description: 'Rol del usuario (ADMIN, GENERAL, VALIDADOR, VOLUNTARIO)',
-  required: true,
-};
-
-const VALIDATOR_ROLE_HEADER = {
-  name: 'x-user-role',
-  description: 'Rol del usuario (VALIDADOR o ADMIN)',
-  required: true,
-};
-
 const ELEGIBILIDAD_QUERY_DESCRIPTION =
   'Cantidad a evaluar contra el saldo materializado para determinar elegibilidad hacia vivero.';
+
+const VIVERO_ID_SCHEMA = {
+  oneOf: [
+    { type: 'string', pattern: '^[1-9][0-9]*$', maxLength: 19 },
+    { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  ],
+  description: 'ID exacto del vivero hasta BIGINT; usar cadena decimal.',
+  example: '3',
+};
 
 export function ApiDeleteDraftRecoleccion() {
   return applyDecorators(
     ApiOperation({
       summary: 'Eliminar borrador de recolección (soft delete)',
       description:
-        'RN-REC-09A: solo el creador o un ADMIN con cuenta interna activa puede eliminar una recolección en BORRADOR. Sin body. Conserva la ficha, fotos, ubicación, snapshots e historial; marca usuario/fecha y registra BORRADOR_ELIMINADO en una transacción. Los eliminados dejan de aparecer en las consultas. Repetir la eliminación devuelve 404.',
+        'RN-REC-09A: solo el creador con acceso M1 efectivo o un ADMIN activo puede eliminar una recolección en BORRADOR. Sin body. Conserva la ficha, fotos, ubicación, snapshots e historial; marca usuario/fecha y registra BORRADOR_ELIMINADO en una transacción. Los eliminados dejan de aparecer en las consultas. Repetir la eliminación devuelve 404.',
     }),
     ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
     ApiResponse({
@@ -120,10 +109,8 @@ export function ApiCreateRecoleccion() {
     ApiOperation({
       summary: 'Crear nueva recolección (Canónica)',
       description:
-        'Crea una recolección bajo la verdad canónica del módulo (sin campos legacy). Se crea en estado BORRADOR.',
+        'Requiere ADMIN o cuenta activa GENERAL/VALIDADOR con acceso M1 explícito. Crea BORRADOR, fotos e historial en una transacción RPC.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiConsumes('multipart/form-data'),
     ApiBody({
       description: 'Datos canónicos de la recolección (FormData)',
@@ -155,7 +142,7 @@ export function ApiCreateRecoleccion() {
           },
           planta_id: { type: 'number', example: 10 },
           metodo_id: { type: 'number', example: 1 },
-          vivero_id: { type: 'number', example: 3 },
+          vivero_id: VIVERO_ID_SCHEMA,
           observaciones: {
             type: 'string',
             example: 'Registro canónico de recolección',
@@ -191,7 +178,7 @@ export function ApiCreateRecoleccion() {
     }),
     ApiResponse({
       status: 401,
-      description: 'No autorizado - falta header x-auth-id',
+      description: 'Bearer ausente o inválido',
     }),
     ApiResponse({
       status: 403,
@@ -208,14 +195,8 @@ export function ApiUpdateDraftRecoleccion() {
     ApiOperation({
       summary: 'Editar borrador de recolección',
       description:
-        'Permite editar una recolección en BORRADOR o RECHAZADO. Si estaba RECHAZADO, vuelve a BORRADOR. La ubicación es opcional: omitirla conserva la actual; si se envía debe incluir latitud y longitud. Una ubicación distinta se guarda sin modificar la anterior.',
+        'Requiere creador con M1 efectivo o ADMIN. Permite editar una recolección en BORRADOR o RECHAZADO; datos y fotos se confirman juntos. Si estaba RECHAZADO, vuelve a BORRADOR. La ubicación es opcional: omitirla conserva la actual; si se envía debe incluir latitud y longitud. Una ubicación distinta se guarda sin modificar la anterior.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader({
-      ...AUTH_ID_HEADER,
-      description: 'ID de autenticación del usuario',
-    }),
-    ApiHeader(USER_ROLE_HEADER),
     ApiConsumes('application/json', 'multipart/form-data'),
     ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
     ApiBody({
@@ -235,7 +216,7 @@ export function ApiUpdateDraftRecoleccion() {
             example: 'SEMILLA',
           },
           observaciones: { type: 'string', example: 'Actualización de datos' },
-          vivero_id: { type: 'number', example: 3 },
+          vivero_id: VIVERO_ID_SCHEMA,
           metodo_id: { type: 'number', example: 1 },
           planta_id: { type: 'number', example: 10 },
           ubicacion: {
@@ -286,17 +267,7 @@ export function ApiSubmitRecoleccionValidation() {
     ApiOperation({
       summary: 'Enviar recolección a validación',
       description:
-        'Cambia el estado de BORRADOR a PENDIENTE_VALIDACION. Solo el creador o ADMIN.',
-    }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader({
-      ...AUTH_ID_HEADER,
-      description: 'ID de autenticación del usuario',
-    }),
-    ApiHeader({
-      name: 'x-user-role',
-      description: 'Rol del usuario',
-      required: true,
+        'Cambia el estado de BORRADOR a PENDIENTE_VALIDACION. Solo el creador con acceso M1 efectivo o ADMIN.',
     }),
     ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
     ApiResponse({
@@ -317,14 +288,8 @@ export function ApiApproveRecoleccionValidation() {
     ApiOperation({
       summary: 'Aprobar validación de recolección',
       description:
-        'Cambia PENDIENTE_VALIDACION -> VALIDADO. Solo VALIDADOR o ADMIN. Conserva la ventana de fecha de recolección de hasta 45 días, sin fechas futuras. Ejecuta Pinata + Blockchain.',
+        'Cambia PENDIENTE_VALIDACION -> VALIDADO. ADMIN o VALIDADOR asignado al vivero de almacenamiento, distintos del recolector incluso si este es ADMIN. Revisión documental T2; no acredita recepción física. Conserva la ventana de fecha de recolección de hasta 45 días, sin fechas futuras. Ejecuta Pinata + Blockchain.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader({
-      ...AUTH_ID_HEADER,
-      description: 'ID de autenticación del usuario',
-    }),
-    ApiHeader(VALIDATOR_ROLE_HEADER),
     ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
     ApiResponse({
       status: 200,
@@ -341,14 +306,8 @@ export function ApiRejectRecoleccionValidation() {
     ApiOperation({
       summary: 'Rechazar validación de recolección',
       description:
-        'Cambia PENDIENTE_VALIDACION -> RECHAZADO sin límite por fecha de recolección. Solo VALIDADOR o ADMIN. Requiere motivo de 10 a 500 caracteres; estado, motivo e historial se guardan juntos.',
+        'Cambia PENDIENTE_VALIDACION -> RECHAZADO sin límite por fecha de recolección. ADMIN o VALIDADOR asignado al almacenamiento. Requiere motivo de 10 a 500 caracteres; estado, motivo e historial se guardan juntos.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader({
-      ...AUTH_ID_HEADER,
-      description: 'ID de autenticación del usuario',
-    }),
-    ApiHeader(VALIDATOR_ROLE_HEADER),
     ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
     ApiBody({ type: RejectValidationDto }),
     ApiResponse({ status: 200, description: 'Recolección rechazada' }),
@@ -367,10 +326,8 @@ export function ApiRegistrarDesecho() {
     ApiOperation({
       summary: 'Registrar descarte parcial o total de una recoleccion',
       description:
-        'Registra un movimiento DESECHO sobre el saldo disponible de una recoleccion VALIDADO. Solo puede hacerlo el creador o un ADMIN. No requiere fotos ni motivo en el body; el backend usa DESECHO_OTRO.',
+        'Registra un movimiento DESECHO sobre el saldo disponible de una recoleccion VALIDADO. ADMIN activo u operario vigente del vivero de almacenamiento; M1 y autoría no bastan. No requiere fotos ni motivo en el body; el backend usa DESECHO_OTRO.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiParam({ name: 'id', type: Number, description: 'ID de la recoleccion' }),
     ApiBody({
       schema: {
@@ -400,7 +357,7 @@ export function ApiRegistrarDesecho() {
     ApiResponse({
       status: 403,
       description:
-        'Solo el creador de la recoleccion o ADMIN pueden descartar.',
+        'Sin autoridad ADMIN ni acceso operativo al vivero de almacenamiento.',
     }),
     ApiResponse({ status: 404, description: 'Recoleccion no encontrada' }),
   );
@@ -411,15 +368,10 @@ export function ApiFindPendingValidationRecolecciones() {
     ApiOperation({
       summary: 'Listar recolecciones pendientes de validación',
       description:
-        'Devuelve recolecciones en estado PENDIENTE_VALIDACION con filtros y paginación. Usuarios con rol VALIDADOR o ADMIN ven TODAS las recolecciones pendientes, otros roles solo ven las suyas.',
+        'Devuelve recolecciones en estado PENDIENTE_VALIDACION con filtros y paginación. ADMIN conserva alcance global; VALIDADOR combina la cola de sus viveros asignados con las propias si tiene M1 efectivo, incluso sin M2; GENERAL con M1 ve propias. La unión se filtra antes de contar y paginar y nunca permite aprobación propia. No acredita recepción física.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader({
-      ...AUTH_ID_HEADER,
-      description: 'ID de autenticación del usuario',
-    }),
-    ApiHeader(USER_ROLE_HEADER),
     ...commonListQueries,
+    ApiQuery({ name: 'vivero_id', required: false, schema: VIVERO_ID_SCHEMA }),
     cantidadSolicitadaViveroQuery,
     ApiResponse({
       status: 200,
@@ -427,9 +379,9 @@ export function ApiFindPendingValidationRecolecciones() {
     }),
     ApiResponse({
       status: 400,
-      description: 'Header x-user-role es requerido',
+      description: 'Filtros inválidos',
     }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id es requerido' }),
+    ApiResponse({ status: 401, description: 'Bearer ausente o inválido' }),
   );
 }
 
@@ -438,13 +390,7 @@ export function ApiFindAllRecolecciones() {
     ApiOperation({
       summary: 'Listar recolecciones del usuario',
       description:
-        'Obtiene las recolecciones propias de la cuenta autenticada por Bearer JWT, incluso para ADMIN, con filtros opcionales y paginación. Requiere cuenta activa con rol interno.',
-    }),
-    ApiHeader({
-      name: 'x-auth-id',
-      required: false,
-      description:
-        'Opcional: debe coincidir con sub del JWT. No sustituye Authorization: Bearer.',
+        'Obtiene las recolecciones propias de la cuenta autenticada por Bearer JWT, incluso para ADMIN, con filtros opcionales y paginación. Requiere acceso M1 efectivo o ADMIN.',
     }),
     ApiResponse({ status: 401, description: 'Bearer ausente o inválido' }),
     ApiResponse({
@@ -453,7 +399,7 @@ export function ApiFindAllRecolecciones() {
     }),
     ...commonListQueries,
     tipoMaterialQuery,
-    ApiQuery({ name: 'vivero_id', required: false, type: Number }),
+    ApiQuery({ name: 'vivero_id', required: false, schema: VIVERO_ID_SCHEMA }),
     cantidadSolicitadaViveroQuery,
   );
 }
@@ -465,15 +411,13 @@ export function ApiFindStockSummaryRecolecciones() {
       description:
         'Dashboard global exclusivo para ADMIN. Devuelve todas las plantas activas del catálogo, incluyendo las que tienen saldo cero, suma el saldo actual de todas las recolecciones de semillas validadas por unidad canónica (G y UNIDAD) y cuenta pendientes de validación.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
     ApiResponse({
       status: 200,
       description: 'Resumen de stock obtenido correctamente',
     }),
     ApiResponse({
       status: 401,
-      description: 'No autorizado - falta header x-auth-id',
+      description: 'Bearer ausente o inválido',
     }),
     ApiResponse({
       status: 403,
@@ -519,9 +463,13 @@ export function ApiFindByViveroRecolecciones() {
     ApiOperation({
       summary: 'Listar recolecciones por vivero',
       description:
-        'Devuelve recolecciones del vivero con saldo materializado, estado operativo y elegibilidad para inicio de lote de vivero.',
+        'M1 efectivo filtra por autor antes de contar y paginar. ADMIN conserva alcance global y VALIDADOR revisión documental solo del almacenamiento asignado. Devuelve saldo y elegibilidad; no acredita recepción física.',
     }),
-    ApiParam({ name: 'viveroId', type: Number, description: 'ID del vivero' }),
+    ApiParam({
+      name: 'viveroId',
+      schema: { type: 'string', pattern: '^[1-9][0-9]*$', maxLength: 19 },
+      description: 'ID exacto del vivero hasta BIGINT',
+    }),
     ...commonListQueries,
     tipoMaterialQuery,
     cantidadSolicitadaViveroQuery,
@@ -533,7 +481,7 @@ export function ApiFindOneRecoleccion() {
     ApiOperation({
       summary: 'Obtener detalle de recolección',
       description:
-        'Devuelve saldo actual, estado operativo y elegibilidad para uso como origen de vivero.',
+        'Requiere M1 efectivo y autoría o autoridad de revisión legada ADMIN/VALIDADOR. Autoriza el objeto antes de cargar fotos. Devuelve saldo y elegibilidad; no acredita recepción física.',
     }),
     ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
     cantidadSolicitadaViveroQuery,

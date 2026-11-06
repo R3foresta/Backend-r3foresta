@@ -12,14 +12,25 @@ todavía no está implementada.
 [Accesos de Recolección y Vivero](propuesta-permisos-por-vivero.md): opción elegida
 de accesos fijos combinables y asignación por vivero. Incluye tablas propuestas,
 matriz de permisos, una cuenta con ambos accesos y la continuidad de `VALIDADOR`.
-Un único operario recibe y maneja su vivero. Diseño documental; no implementado.
+Un único operario recibe y maneja su vivero en el modelo elegido. M1/T1, operación
+M2/T2 y administración visual T3 implementadas y revisadas localmente; recepción
+física y plantas externas continúan pendientes en T4/T5.
 
 [Encargos para implementar los accesos](encargos-accesos-recoleccion-vivero.md):
 T1 Recolección, T2 Vivero y T3 administración en el módulo existente; recepción de
-semillas e incorporación externa quedan como siguientes entregas. Tareas preparadas.
+semillas e incorporación externa quedan como siguientes entregas. T1 revisada localmente;
+T2 implementada y revisada localmente ([contrato](../../docs/t2-acceso-viveros.md)); T3 revisada, T4/T5 pendientes.
 
-[T1 · Acceso explícito de Recolección](t1-acceso-recoleccion.md): borrador para
-revisión del usuario; no iniciar investigación ni implementación antes de autorizarla.
+[T1 · Acceso explícito de Recolección](t1-acceso-recoleccion.md): autorizado el 5 de noviembre
+e implementado/verificado localmente. [Contrato y evidencia](../../docs/t1-acceso-recoleccion.md).
+Revisión local realizada; SQL remoto y corte coordinado pendientes.
+
+[T2 · Acceso operativo por vivero](t2-acceso-viveros.md): encargo en GPT-6.1 Sol,
+esfuerzo máximo, sobre T1 revisada. Aviso recibido y [revisión coordinadora cerrada](../../docs/evidencia/t2-revision-coordinadora-2026-11-05.json), sin hallazgos pendientes.
+
+[T3 · Administración de accesos](t3-administracion-accesos.md): implementación local
+en la PWA con GPT-6.1 Sol y esfuerzo máximo, revisada el 6 de noviembre.
+[Cierre y evidencia independiente](../../docs/evidencia/t3-revision-coordinadora-2026-11-06.json).
 
 ## Decisiones y verificaciones conservadas
 

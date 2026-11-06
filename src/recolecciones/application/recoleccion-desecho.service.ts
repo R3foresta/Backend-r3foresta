@@ -2,9 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
-  InternalServerErrorException,
   Logger,
-  NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { RegistrarDesechoDto } from '../api/dto/registrar-desecho.dto';
@@ -37,35 +35,6 @@ export class RecoleccionDesechoService {
     const usuario = await this.authService.getUserByAuthId(authId);
     const supabase = this.supabaseService.getAdminClient();
 
-    const { data: recoleccion, error: recoleccionError } = await supabase
-      .from('recoleccion')
-      .select('id, usuario_id')
-      .eq('id', recoleccionId)
-      .maybeSingle();
-
-    if (recoleccionError) {
-      this.logger.error(
-        'Error al verificar propietario de recoleccion para descarte:',
-        recoleccionError,
-      );
-      throw new InternalServerErrorException(
-        'No se pudo verificar la recoleccion.',
-      );
-    }
-
-    if (!recoleccion) {
-      throw new NotFoundException(
-        `Recoleccion con id ${recoleccionId} no encontrada`,
-      );
-    }
-
-    const esAdmin = String(usuario.rol ?? '').toUpperCase() === 'ADMIN';
-    if (!esAdmin && Number(recoleccion.usuario_id) !== Number(usuario.id)) {
-      throw new ForbiddenException(
-        'Solo el creador de la recoleccion o un ADMIN pueden registrar descartes.',
-      );
-    }
-
     const { data, error } = await supabase
       .rpc('fn_recoleccion_registrar_desecho', {
         p_recoleccion_id: recoleccionId,
@@ -75,6 +44,10 @@ export class RecoleccionDesechoService {
       .single();
 
     if (error) {
+      if (error.code === '42501')
+        throw new ForbiddenException(
+          'DESECHO requiere ADMIN u operario activo del vivero de almacenamiento.',
+        );
       this.logger.error('Error al registrar descarte de recoleccion:', error);
       throw new BadRequestException(
         error.message || 'No se pudo registrar el descarte.',

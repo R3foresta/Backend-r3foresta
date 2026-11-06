@@ -134,9 +134,11 @@ describe('ubicación al corregir una recolección', () => {
     adminFrom = jest.fn((table: string) => {
       if (table === 'usuario')
         return query(() => ({
-          data: { id: 7, nombre: 'Fixture', rol: 'GENERAL' },
+          data: { id: 7, nombre: 'Fixture', rol: 'GENERAL', activo: true },
           error: null,
         }));
+      if (table === 'pais' || table === 'division_administrativa')
+        return publicFrom(table);
       if (table !== 'ubicacion') throw new Error('Tabla privada inesperada');
       let inserted: Record<string, unknown> | undefined;
       let selectedId = 0;
@@ -171,7 +173,18 @@ describe('ubicación al corregir una recolección', () => {
     });
     const supabase = {
       getClient: () => ({ from: publicFrom }),
-      getAdminClient: () => ({ from: adminFrom }),
+      getAdminClient: () => ({
+        from: adminFrom,
+        rpc: async (name: string, args: any) => {
+          if (name === 'm1_acceso_efectivo') return { data: true, error: null };
+          const payload = { ...args.p_payload, estado_registro: 'BORRADOR' };
+          updates(payload);
+          Object.assign(registro, payload);
+          return falloUpdate === 'respuesta-perdida'
+            ? { data: null, error: { code: '' } }
+            : { data: { id: 99, evidencia_ids: [] }, error: null };
+        },
+      }),
     } as unknown as SupabaseService;
     service = new RecoleccionDraftService(
       supabase,
@@ -317,7 +330,7 @@ describe('ubicación al corregir una recolección', () => {
         'actor-verificado',
         'GENERAL',
       ),
-    ).rejects.toThrow('Error al actualizar borrador');
+    ).rejects.toThrow('No se pudo determinar el resultado');
     expect(registro.ubicacion_id).toBe(9);
     expect(ubicaciones.has(9)).toBe(true);
     expect(ubicacionDeletes).not.toHaveBeenCalled();

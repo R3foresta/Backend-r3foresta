@@ -1,4 +1,4 @@
-import { throwSharedMutationFailure } from '../../common/db/pa-shared-rpc-error';
+import { throwViveroMutationFailure } from './vivero-rpc-error';
 import {
   BadRequestException,
   ConflictException,
@@ -85,14 +85,14 @@ export class ViveroAsignacionesService {
    * ASIGNACION_VIVERO en la linea de tiempo de M3 — todo en una transaccion.
    */
   async crearAsignacion(
-    loteId: number,
+    loteId: number | string,
     dto: CrearAsignacionDto,
     authId: string,
   ) {
     const supabase = this.supabaseService.getAdminClient();
 
     const usuario = await this.authService.getUserByAuthId(authId);
-    this.authService.assertCanWrite(usuario.rol);
+    await this.authService.assertLote(usuario, loteId);
 
     const { data: loteData, error: loteError } = await supabase
       .from('lote_vivero')
@@ -184,7 +184,7 @@ export class ViveroAsignacionesService {
     const rpcError = rpcResult.error;
 
     if (rpcError) {
-      throwSharedMutationFailure(rpcError);
+      throwViveroMutationFailure(rpcError);
       this.logger.error('Error al asignar stock a subcampania:', rpcError);
       if (this.esErrorNoEncontradoRpc(rpcError)) {
         throw new NotFoundException(rpcError.message);
@@ -234,7 +234,7 @@ export class ViveroAsignacionesService {
     };
   }
 
-  async listarAsignaciones(loteId: number) {
+  async listarAsignaciones(loteId: number | string) {
     const supabase = this.supabaseService.getAdminClient();
 
     // Verificar que el lote existe
@@ -333,15 +333,15 @@ export class ViveroAsignacionesService {
    * estaba FINALIZADO — todo en una transaccion. Sin evidencia en MVP.
    */
   async devolverAsignacion(
-    loteId: number,
-    asignacionId: number,
+    loteId: number | string,
+    asignacionId: number | string,
     dto: DevolverAsignacionDto,
     authId: string,
   ) {
     const supabase = this.supabaseService.getAdminClient();
 
     const usuario = await this.authService.getUserByAuthId(authId);
-    this.authService.assertCanWrite(usuario.rol);
+    await this.authService.assertLote(usuario, loteId);
 
     const { data: asignacionData, error: fetchError } = await supabase
       .from('asignacion_vivero_subcampania')
@@ -361,7 +361,7 @@ export class ViveroAsignacionesService {
     if (!asignacion) {
       throw new NotFoundException(`Asignación ${asignacionId} no encontrada`);
     }
-    if (asignacion.lote_vivero_id !== loteId) {
+    if (String(asignacion.lote_vivero_id) !== String(loteId)) {
       throw new NotFoundException(
         `Asignación ${asignacionId} no pertenece al lote ${loteId}`,
       );
@@ -385,7 +385,7 @@ export class ViveroAsignacionesService {
 
     if (rpcResult.error) {
       const rpcError = rpcResult.error;
-      throwSharedMutationFailure(rpcError);
+      throwViveroMutationFailure(rpcError);
       this.logger.error('Error al devolver asignacion:', rpcError);
       if (this.esErrorNoEncontradoRpc(rpcError)) {
         throw new NotFoundException(rpcError.message);

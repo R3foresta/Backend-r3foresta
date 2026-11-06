@@ -1,23 +1,22 @@
 import { InternalActorGuard } from '../../auth/internal-actor.guard';
 import type { ActorRequest } from '../../auth/verified-actor.guard';
+import { BigintIdPipe } from '../../common/dto/bigint-id';
 import {
   BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
-  Headers,
   Param,
   ParseIntPipe,
   Patch,
   Post,
   Query,
   Req,
-  UnauthorizedException,
   UploadedFiles,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { UseGuards } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RecoleccionesService } from '../application/recolecciones.service';
@@ -49,228 +48,146 @@ import { RecoleccionFormDataParser } from './parsers/recoleccion-formdata.parser
 @Controller('recolecciones')
 export class RecoleccionesController {
   constructor(
-    private readonly recoleccionesService: RecoleccionesService,
-    private readonly formDataParser: RecoleccionFormDataParser,
+    private readonly service: RecoleccionesService,
+    private readonly parser: RecoleccionFormDataParser,
   ) {}
-
   @Post()
   @ApiCreateRecoleccion()
   @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 10 }]))
   async create(
-    @Body() bodyRaw: any,
-    @Headers('x-auth-id') authId?: string,
+    @Body() body: unknown,
+    @Req() req: ActorRequest,
     @UploadedFiles() files?: { fotos?: any[] },
   ) {
-    const dto = await this.formDataParser.parseCreateBody(bodyRaw);
-
-    if (!authId) {
-      throw new UnauthorizedException('Header x-auth-id es requerido');
-    }
-
-    return this.recoleccionesService.create(
-      dto,
-      authId,
+    return this.service.create(
+      await this.parser.parseCreateBody(body),
+      req.actor.auth_id,
       undefined,
       files?.fotos,
     );
   }
-
   @Patch(':id/draft')
   @ApiUpdateDraftRecoleccion()
   @UseInterceptors(FileFieldsInterceptor([{ name: 'fotos', maxCount: 10 }]))
   async updateDraft(
     @Param('id', ParseIntPipe) id: number,
-    @Body() bodyRaw: any,
-    @Headers('x-auth-id') authId?: string,
-    @Headers('x-user-role') userRole?: string,
+    @Body() body: unknown,
+    @Req() req: ActorRequest,
     @UploadedFiles() files?: { fotos?: any[] },
   ) {
-    if (!authId) {
-      throw new UnauthorizedException('Header x-auth-id es requerido');
-    }
-
-    const dto = await this.formDataParser.parseUpdateDraftBody(bodyRaw);
-
-    return this.recoleccionesService.updateDraft(
+    return this.service.updateDraft(
       id,
-      dto,
-      authId,
-      userRole || 'GENERAL',
+      await this.parser.parseUpdateDraftBody(body),
+      req.actor.auth_id,
+      req.actor.rol,
       files?.fotos,
     );
   }
-
   @Delete(':id')
   @ApiDeleteDraftRecoleccion()
-  async eliminarBorrador(
+  eliminarBorrador(
     @Param('id', ParseIntPipe) id: number,
-    @Req() request: ActorRequest,
+    @Req() req: ActorRequest,
   ) {
-    return this.recoleccionesService.eliminarBorrador(
-      id,
-      request.actor.usuario_id,
-    );
+    return this.service.eliminarBorrador(id, req.actor.usuario_id);
   }
-
   @Patch(':id/submit')
   @ApiSubmitRecoleccionValidation()
-  async submitForValidation(
+  submitForValidation(
     @Param('id', ParseIntPipe) id: number,
-    @Headers('x-auth-id') authId?: string,
-    @Headers('x-user-role') userRole?: string,
+    @Req() req: ActorRequest,
   ) {
-    if (!authId) {
-      throw new UnauthorizedException('Header x-auth-id es requerido');
-    }
-
-    return this.recoleccionesService.submitForValidation(
+    return this.service.submitForValidation(
       id,
-      authId,
-      userRole || 'GENERAL',
+      req.actor.auth_id,
+      req.actor.rol,
     );
   }
-
   @Patch(':id/approve')
   @ApiApproveRecoleccionValidation()
-  async approveValidation(
+  approveValidation(
     @Param('id', ParseIntPipe) id: number,
-    @Headers('x-auth-id') authId?: string,
-    @Headers('x-user-role') userRole?: string,
+    @Req() req: ActorRequest,
   ) {
-    if (!authId) {
-      throw new UnauthorizedException('Header x-auth-id es requerido');
-    }
-
-    if (!userRole) {
-      throw new BadRequestException(
-        'Header x-user-role es requerido para validar',
-      );
-    }
-
-    return this.recoleccionesService.approveValidation(id, authId, userRole);
+    return this.service.approveValidation(id, req.actor.auth_id, req.actor.rol);
   }
-
   @Patch(':id/reject')
   @ApiRejectRecoleccionValidation()
-  async rejectValidation(
+  rejectValidation(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: RejectValidationDto,
-    @Headers('x-auth-id') authId?: string,
-    @Headers('x-user-role') userRole?: string,
+    @Body() body: RejectValidationDto,
+    @Req() req: ActorRequest,
   ) {
-    if (!authId) {
-      throw new UnauthorizedException('Header x-auth-id es requerido');
-    }
-
-    if (!userRole) {
-      throw new BadRequestException(
-        'Header x-user-role es requerido para rechazar',
-      );
-    }
-
-    return this.recoleccionesService.rejectValidation(
+    return this.service.rejectValidation(
       id,
-      authId,
-      userRole,
-      dto,
+      req.actor.auth_id,
+      req.actor.rol,
+      body,
     );
   }
-
   @Post(':id/desecho')
   @ApiRegistrarDesecho()
-  async registrarDesecho(
+  registrarDesecho(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: RegistrarDesechoDto,
-    @Headers('x-auth-id') authId?: string,
+    @Body() body: RegistrarDesechoDto,
+    @Req() req: ActorRequest,
   ) {
-    if (!authId) {
-      throw new UnauthorizedException('Header x-auth-id es requerido');
-    }
-
-    return this.recoleccionesService.registrarDesecho(id, dto, authId);
+    return this.service.registrarDesecho(id, body, req.actor.auth_id);
   }
-
   @Get('pending-validation')
   @ApiFindPendingValidationRecolecciones()
-  async findPendingValidation(
+  findPendingValidation(
     @Query() filters: FiltersRecoleccionDto,
-    @Headers('x-auth-id') authId?: string,
-    @Headers('x-user-role') userRole?: string,
+    @Req() req: ActorRequest,
   ) {
-    if (!authId) {
-      throw new UnauthorizedException('Header x-auth-id es requerido');
-    }
-
-    if (!userRole) {
-      throw new BadRequestException('Header x-user-role es requerido');
-    }
-
-    return this.recoleccionesService.findPendingValidation(
+    return this.service.findPendingValidation(
       filters,
-      authId,
-      userRole,
+      req.actor.auth_id,
+      req.actor.rol,
     );
   }
-
   @Get('stock-summary')
   @ApiFindStockSummaryRecolecciones()
-  async findStockSummary(@Headers('x-auth-id') authId?: string) {
-    if (!authId) {
-      throw new UnauthorizedException('Header x-auth-id es requerido');
-    }
-
-    return this.recoleccionesService.findStockSummary(authId);
+  findStockSummary(@Req() req: ActorRequest) {
+    return this.service.findStockSummary(req.actor.auth_id);
   }
-
   @Get('stock-summary/:plantaId/historial')
   @ApiFindHistorialSemillas()
-  async findHistorialSemillas(
+  findHistorialSemillas(
     @Param('plantaId', ParseIntPipe) plantaId: number,
     @Query() query: HistorialSemillasQueryDto,
-    @Req() request: ActorRequest,
+    @Req() req: ActorRequest,
   ) {
-    if (!Number.isSafeInteger(plantaId) || plantaId <= 0) {
+    if (!Number.isSafeInteger(plantaId) || plantaId <= 0)
       throw new BadRequestException(
         'plantaId debe ser un entero positivo válido',
       );
-    }
-    return this.recoleccionesService.findHistorialSemillas(
-      plantaId,
-      query,
-      request.actor,
-    );
+    return this.service.findHistorialSemillas(plantaId, query, req.actor);
   }
-
   @Get()
   @ApiFindAllRecolecciones()
-  async findAll(
-    @Query() filters: FiltersRecoleccionDto,
-    @Headers('x-auth-id') authId?: string,
-  ) {
-    if (!authId) {
-      throw new UnauthorizedException('Header x-auth-id es requerido');
-    }
-
-    return this.recoleccionesService.findAll(authId, filters);
+  findAll(@Query() filters: FiltersRecoleccionDto, @Req() req: ActorRequest) {
+    return this.service.findAll(req.actor.auth_id, filters);
   }
-
   @Get('vivero/:viveroId')
   @ApiFindByViveroRecolecciones()
-  async findByVivero(
-    @Param('viveroId', ParseIntPipe) viveroId: number,
+  findByVivero(
+    @Param('viveroId', BigintIdPipe) viveroId: string,
     @Query() filters: FiltersRecoleccionDto,
+    @Req() req: ActorRequest,
   ) {
-    return this.recoleccionesService.findByVivero(viveroId, filters);
+    return this.service.findByVivero(viveroId, filters, req.actor);
   }
-
   @Get(':id')
   @ApiFindOneRecoleccion()
-  async findOne(
+  findOne(
     @Param('id', ParseIntPipe) id: number,
     @Query() query: RecoleccionElegibilidadViveroQueryDto,
+    @Req() req: ActorRequest,
   ) {
-    return this.recoleccionesService.findOne(
+    return this.service.findOne(
       id,
+      req.actor,
       query.cantidad_solicitada_vivero,
     );
   }

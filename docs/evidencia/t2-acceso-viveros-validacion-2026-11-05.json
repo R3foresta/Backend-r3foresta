@@ -1,0 +1,231 @@
+{
+  "tarea": "T2_ACCESO_VIVEROS",
+  "fecha": "2026-11-05",
+  "estado": "VERIFICADO_LOCAL_PENDIENTE_REVISION_COORDINADORA",
+  "base": {
+    "head": "6f59263c349c664c15893528df1c129a7d25ef0d",
+    "arbol": "6f59263 más T1 local no comprometida; sin reset ni limpieza",
+    "huellas_antes": "docs/evidencia/t2-acceso-viveros-base-2026-11-05.json",
+    "migraciones_t1_y_evidencias_historicas_preservadas": true,
+    "plan_incorporacion_preservado": true
+  },
+  "versiones": {
+    "node": "v24.19.0",
+    "npm": "12.0.2",
+    "postgres_t2": "14.24 (Postgres.app)",
+    "postgis_t2": "POSTGIS=\"3.2.10 7762352\" [EXTENSION] PGSQL=\"140\" GEOS=\"3.10.7-CAPI-1.16.7\" PROJ=\"8.1.1\" LIBXML=\"2.9.14\" LIBJSON=\"0.15\" LIBPROTOBUF=\"1.4.1\" WAGYU=\"0.5.0 (Internal)\"",
+    "postgres_regresion_t1": "14.17 (Homebrew)"
+  },
+  "comprobaciones": [
+    {
+      "comando": "npm run build",
+      "resultado": "CORRECTO"
+    },
+    {
+      "comando": "npm run test:unit -- --runInBand",
+      "resultado": "CORRECTO",
+      "suites": 87,
+      "pruebas": 1251
+    },
+    {
+      "comando": "npm run test:db:vivero:acceso -- --postgis --pg-bin /private/tmp/pa-postgis-runtime.ukgFKP/14/bin --evidence docs/evidencia/t2-acceso-viveros-local-2026-11-05.json",
+      "resultado": "CORRECTO",
+      "grupos_sql": 40,
+      "carreras": 22,
+      "grupos_http": 10,
+      "evidencia": "docs/evidencia/t2-acceso-viveros-local-2026-11-05.json"
+    },
+    {
+      "comando": "npm run test:db:recoleccion:acceso -- --evidence docs/evidencia/t2-regresion-t1-2026-11-05.json",
+      "resultado": "CORRECTO",
+      "grupos_sql": 32,
+      "carreras": 12,
+      "casos_http": 9,
+      "evidencia": "docs/evidencia/t2-regresion-t1-2026-11-05.json"
+    },
+    {
+      "comando": "node scripts/qa/vivero-acceso-openapi.cjs --check",
+      "resultado": "CORRECTO",
+      "paths": 25
+    },
+    {
+      "comando": "node scripts/qa/recoleccion-acceso-openapi.cjs --check",
+      "resultado": "CORRECTO",
+      "paths": 5
+    },
+    {
+      "comando": "node scripts/qa/pa-int02c-openapi.cjs --check",
+      "resultado": "CORRECTO",
+      "paths": 41,
+      "schemas": 86
+    },
+    {
+      "comando": "git diff --check; git -C ../r3foresta-docs diff --check",
+      "resultado": "CORRECTO"
+    },
+    {
+      "comando": "eslint sin --fix sobre 13 archivos del núcleo de acceso/IDs y DTO finales",
+      "resultado": "CORRECTO",
+      "errores": 0,
+      "avisos": 0,
+      "archivos": [
+        "src/common/dto/bigint-id.ts",
+        "src/lotes-vivero/api/docs/vivero-accesos.swagger.ts",
+        "src/lotes-vivero/api/dto/acceso-viveros.dto.ts",
+        "src/lotes-vivero/api/dto/registrar-adaptabilidad.dto.ts",
+        "src/lotes-vivero/api/dto/registrar-despacho.dto.ts",
+        "src/lotes-vivero/api/dto/registrar-merma.dto.ts",
+        "src/lotes-vivero/api/vivero-accesos.controller.ts",
+        "src/lotes-vivero/application/vivero-accesos.service.ts",
+        "src/lotes-vivero/application/vivero-auth.service.ts",
+        "src/lotes-vivero/application/vivero-rpc-error.ts",
+        "src/lotes-vivero/domain/policies/acceso-vivero.policy.ts",
+        "src/lotes-vivero/tests/vivero-accesos.spec.ts",
+        "src/lotes-vivero/vivero-acceso.module.ts"
+      ]
+    }
+  ],
+  "lint_informativo_amplio": {
+    "resultado": "NO_VERDE",
+    "errores_observados_en_corte_previo": 410,
+    "avisos_observados_en_corte_previo": 24,
+    "limite": "Mezcla archivos legados y cambios; no hay baseline para atribuir todos los hallazgos a deuda previa. No acredita lint global. No se ejecutó npm run lint ni --fix."
+  },
+  "entorno": {
+    "sin_env": true,
+    "postgres_sin_tcp": true,
+    "http": "127.0.0.1 y puertos efímeros; JWT/RPC reales",
+    "storage": "SINTETICO",
+    "cluster_t2_detenido": true,
+    "fixture_t2_eliminado": true,
+    "cluster_t1_detenido": true,
+    "fixture_t1_eliminado": true,
+    "runtime_postgis_para_revision": "/private/tmp/pa-postgis-runtime.ukgFKP/14/bin",
+    "runtime_fuente": "scripts/qa/pa-int03a-postgis-preparar.sh",
+    "runtime_artefacto_sha256": "a73a5d7c78c1fdce15ff1cc31b55d670c0b68070e0c436add53d3b053ef6567a"
+  },
+  "estado_externo": {
+    "success_hasta_095": "REPORTADO_POR_USUARIO",
+    "registro": "docs/evidencia/t2-migraciones-095-aplicacion-reportada-2026-11-05.json",
+    "094_095_sin_cambios_desde_reporte": true,
+    "catalogo_cuerpos_remotos": "NO_COTEJADOS_EN_ESTA_TAREA",
+    "sql_remoto_ejecutado_por_agente": false,
+    "commit_entrega": false,
+    "push": false,
+    "despliegue": false
+  },
+  "limites": [
+    "Sin replay integral 001–095 ni QA Supabase/Storage/WebAuthn/Pinata/blockchain remotos",
+    "El consumo M3 prueba reposición real sobre grupo inicial sintético; no acredita alta inicial nueva por075",
+    "URLs públicas y nuevas cargas del bucket legado mantienen audiencia; no se declaran privadas",
+    "SQL privilegiado fuera del protocolo de locks conserva su límite",
+    "Sin T3, recepción física T4 ni plantas externas T5"
+  ],
+  "estado_canonico": {
+    "repositorio": "/Users/pabloandresfernandezcari/Projects/R3foresta/r3foresta-docs",
+    "head_base": "1dffbbf94355b1263b64ea25befa38513f1fe22a",
+    "archivos": {
+      "ESTADO.md": "e558ce4bb7ecc91847bff9c7ab45a4dbb2481912c83f9cebfe97beeb5ac4a533",
+      "90-contratos-integracion/01_contrato_recoleccion_a_vivero.md": "9e56cf1deb0b5492e340b0ceb8eade0b427c6b0ba78ec24e25c98a3e584ae696",
+      "90-contratos-integracion/02_contrato_vivero_a_plantacion.md": "d78fbce7af01ec51c1837bc5c3f9829f17df965f915d9fd6562984e8f3bac39d"
+    }
+  },
+  "sha256_cambios_t2": {
+    "ARCHITECTURE.md": "dc1ebfc39a5017bd9f1685de9edc4aa589f62bf8ed24adc47dabb66ca091c1c0",
+    "README.md": "9c8e43dd8b332a43cadf68b1174a49feb9a336aad1404464f767b0386df4d708",
+    "docs/README.md": "8a08cac51496c8f9972e8559d829b31fa1233f79a47ae0a5d7600fb51fb68181",
+    "docs/evidencia/t2-acceso-viveros-base-2026-11-05.json": "db907ce6e22cac3aca342618188b9ae596a45ee6662464d5502efb1e1bd25721",
+    "docs/evidencia/t2-acceso-viveros-local-2026-11-05.json": "307fc4787ea561261ca204bb9b7e4a69c1e348e3a093cfda156b852f94a79540",
+    "docs/evidencia/t2-estado-canonico-base-2026-11-05.json": "9a71ca6a281a8d8a27fef5731eabc58b6d92b5f4af6a4be056fe150b7000ed38",
+    "docs/evidencia/t2-migraciones-095-aplicacion-reportada-2026-11-05.json": "23c5abc144791cd35744b09a957b0ae990208df36bd6a3397f0e0710e95ee159",
+    "docs/evidencia/t2-regresion-t1-2026-11-05.json": "2433bc2c4ec170cee92e188cadde63816fb0e42992e32204f4641504141ea5d8",
+    "docs/t1-acceso-recoleccion.md": "4f141d5785eabfa889f6cdf15f3d66e7e179c18874f56ee90c65850ab3c0532f",
+    "docs/t2-acceso-viveros.md": "dff5f85c1d95b1d5be8f99c0522bce84a6fa5274c3fe816e7939fc28a740c328",
+    "docs/vivero-acceso-openapi.json": "80a7e30cc1a7888c8e45bb6d5676924ad28ba73fa7a6665d8fd8499ae1d63aed",
+    "documentacion/frontend/recolecciones.md": "f1d99db543d766b989aeafb418556ba4d89241a626936fc4f429933464b0fa99",
+    "documentacion/modulos/lotes-vivero.md": "88492f572bbafe3eb14d36acf071dd19bd4ea52b59b958f9204e80794f828093",
+    "documentacion/modulos/recolecciones.md": "a2e44ae6aa9cf030c3d9be8f76c39c87ed3ba240d7afa43452a5d9732a80475e",
+    "documentacion/tareas/README.md": "dfa6766f7ccb54577557932eb4615a33e82399e813d0184ab6d7a674bb0c822c",
+    "documentacion/tareas/encargos-accesos-recoleccion-vivero.md": "2a5c6e3af0c24cea8b0f88828baac6289aea89b488dadc9ebb7d9c49e5b9df48",
+    "documentacion/tareas/propuesta-permisos-por-vivero.md": "06f456688f37af478cf76623c0e0fcd090c6a24d9fa1c4f0ea1275aa697ba8f8",
+    "documentacion/tareas/t2-acceso-viveros.md": "6ba292a27d14171ede71a25755a675e496c3eba7d777fc4cd5a3b36268f9449a",
+    "migrations/094_usuario_vivero.sql": "7b18997966852c51a7a1baf55b8ac6209da2b37961cd5f61432f224b6387693d",
+    "migrations/095_vivero_operacion_por_ambito.sql": "ec4ffc511d67ad80fcb042886470c0cd2cb92643b2e25d97e5af3e91490b0d96",
+    "package.json": "6d4336c53f0b7554bd45f9fe72d7cad9c759e42ed00533c03eae1d3e81b61161",
+    "scripts/qa/vivero-acceso-openapi.cjs": "0e0b5359c2a14d0a45f166e60f5508d75e51b6f3a1bb5e0af84964ea9961c36c",
+    "scripts/qa/vivero-acceso-test.py": "e72af1454d55bdecbfe6b8f7d75adc460ba48d1ba093ee3a991645fdd4c580e0",
+    "src/common/dto/bigint-id.ts": "665843f593bb5fdd2ca7a22340270b38a7847dbdcf48e8bef2b9b193af07a850",
+    "src/evidencias-trazabilidad/dto/list-evidencias-trazabilidad.dto.ts": "8a888ea285aca6f7a3c46ef6b3fe7f37af0ee601f12ee4fc11993a95613b2b8e",
+    "src/evidencias-trazabilidad/evidencias-trazabilidad.controller.ts": "530451dad1428aa1ac0e3ee4056abf7bf870a5491d50803e7e4277a19244d1c0",
+    "src/evidencias-trazabilidad/evidencias-trazabilidad.module.ts": "76d2f808d3c4b81cf5fb8a1bc3df20b8e67172481cc382fb39b90262d1e7cf1f",
+    "src/evidencias-trazabilidad/evidencias-trazabilidad.service.ts": "eaed713ef19bbffafa8d85869c7d4c90863571ed07c3624f594795b7bd4db4d0",
+    "src/lotes-vivero/api/docs/lotes-vivero.swagger.ts": "fbd2f6a83c665e203746c961bd3609aa1f98ccb310688552d75887d2bec01b69",
+    "src/lotes-vivero/api/docs/vivero-accesos.swagger.ts": "1d03cee7a782c84dbd42a7c6dfedeee6dbda628ab849f7f58f66c01d475c1eb4",
+    "src/lotes-vivero/api/dto/acceso-viveros.dto.ts": "e22b233522a402da4f359a8de29f9620518ac036554b6ec8eb984bbc8a6a7bdd",
+    "src/lotes-vivero/api/dto/crear-asignacion.dto.ts": "56aaa2baf1ceb2ffd020fce29f1275b61f901255acd13b4f48f32c3adb071e2a",
+    "src/lotes-vivero/api/dto/crear-evidencia-pendiente-vivero.dto.ts": "c3b03b1bc6e900a5534bca4206221c6a13b7dad2bc6a1f67292cf659498f3762",
+    "src/lotes-vivero/api/dto/crear-lote-vivero.dto.ts": "5a87edcffbd5a324d362e622ee559f0ed6584857ed71f146a6c855835853cdb6",
+    "src/lotes-vivero/api/dto/filtrar-lotes-vivero.dto.ts": "1b7d094a5d2019f2d7ec666a98d521692a60d3ea81c1ac89a2e6ccb75dc19b38",
+    "src/lotes-vivero/api/dto/filtrar-timeline-lote.dto.ts": "fee4e170736d2179ae1a09650c1f8d50cb94ffca644bee7544b4d61d2639a2cb",
+    "src/lotes-vivero/api/dto/registrar-adaptabilidad.dto.ts": "879cb3ad884cc5967e44d66dbff4a5493a8d87824d33a23ff80a5ccc8df98bcc",
+    "src/lotes-vivero/api/dto/registrar-descarte-pre-embolsado.dto.ts": "c62a8b7bb21b200f8c78134fb1feb7ca4b74fc858352af3d34f655760233af8c",
+    "src/lotes-vivero/api/dto/registrar-despacho.dto.ts": "1f28d9960886c4668d2db6dcc6b83e13eac6f1f1f65d1790e6814a0e38213067",
+    "src/lotes-vivero/api/dto/registrar-embolsado.dto.ts": "bff82b62a090f6b1bf05b23c43a757b6983e004d6fd5ee45a880233dd1a4fa8c",
+    "src/lotes-vivero/api/dto/registrar-merma.dto.ts": "3895d3a233e0c19aea8d98f041455d3abc2897b935a701dfe1af9464aab488c9",
+    "src/lotes-vivero/api/lotes-vivero.controller.ts": "0e70168614e377ecbe927135e2a7fbdafed22de7891c89ada453380cdad829ea",
+    "src/lotes-vivero/api/vivero-accesos.controller.ts": "db40b7aa52a27f125649cefe3d130c85bc2165b3f179df8c4439696ba252581b",
+    "src/lotes-vivero/application/lotes-vivero.service.ts": "3aa60fd0a246ea6f4afc43fe0cc6ded16e478f83a70c2d58b26ffee58d6abba0",
+    "src/lotes-vivero/application/vivero-accesos.service.ts": "9f75decbb5441bf159d54ed48bca13d705e201bc9a020e73a5cb658ec14d1a06",
+    "src/lotes-vivero/application/vivero-adaptabilidad.service.ts": "b9fde89b923d7e2d6218c04c26c89b2c34301c639f55159d902d1650a7be4929",
+    "src/lotes-vivero/application/vivero-asignaciones.service.ts": "298708c05d32f215c6badf0ddaebc4e8db979776163915d6540464c2ec80c144",
+    "src/lotes-vivero/application/vivero-auth.service.ts": "0691a474de5a72809c50f07899c8f1cbb0397adb83d13348311b14ac8a933e67",
+    "src/lotes-vivero/application/vivero-consultas.service.ts": "a32b9c18d4a96a99f1e119f87eb663d781cb377d1e5e8bd7c38e5134961e6921",
+    "src/lotes-vivero/application/vivero-descarte-pre-embolsado.service.ts": "cf3db241f270e2f84880fabe098c88a256beda077ba2f26a27326f33da634256",
+    "src/lotes-vivero/application/vivero-despacho.service.ts": "28f46936f849ce1a9bc00c3f6b768ed49ffffb9a390519ce703c3af9fb8b3864",
+    "src/lotes-vivero/application/vivero-embolsado.service.ts": "22d52ef8f0310868af873c892b5998d0ec59c1d874910afedbb5c90da37bdb54",
+    "src/lotes-vivero/application/vivero-eventos.service.ts": "652f763544330c69a58154e241fd5b2093af5c9c94bfe309c2d289be91abe5f4",
+    "src/lotes-vivero/application/vivero-evidencias.service.ts": "f8d55474351cc670c36e77be65ebaea7f75098cfefa6b0032ed119d4dc15c42f",
+    "src/lotes-vivero/application/vivero-inicio.service.ts": "657b25b88037492d09476294b46df482d63e08226dd2f4cbb9753bcdbbf5d434",
+    "src/lotes-vivero/application/vivero-merma.service.ts": "76561dc0b63bd1fad69eb9d07887a1ec4c6d14dcbd0a9e2a6719bb9282a1195f",
+    "src/lotes-vivero/application/vivero-rpc-error.ts": "e6df5f0f979e2bfe43b004b5f25fecae2b826a29a47aefd1be7a802aa106640d",
+    "src/lotes-vivero/application/vivero-saldos.service.ts": "42d87ba33d3a69642c13b643b322958963b0c4eb82eff26dc11ac94e01db1a57",
+    "src/lotes-vivero/application/vivero-timeline.service.ts": "3ab7d6a5e2202d876abfd05aab341bddc23058a183d6725281c551d671d0724b",
+    "src/lotes-vivero/domain/policies/acceso-vivero.policy.ts": "af5546d61d938d1121e3d9b95bb8d5408c814f928b47e32f8648b28b9216a8cb",
+    "src/lotes-vivero/lotes-vivero.module.ts": "fe8e0c7fea37a75728acb8a94583fc2f7ab7949b401f14b947c43bc8b700276e",
+    "src/lotes-vivero/tests/lotes-vivero.swagger.spec.ts": "be190fbf65757a284a04555c5d3eb29642d7d893275e7ab1c1f9609c4a3c4b27",
+    "src/lotes-vivero/tests/registrar-embolsado.dto.spec.ts": "e486b5271c48ad0323040e2a7895dea5f32a803402d91c5c53837598d84e5993",
+    "src/lotes-vivero/tests/vivero-accesos.spec.ts": "76beea9bfaac44895eeb4a369dcc0ab1fb5ad6753721298f4f0d9ade01f8958c",
+    "src/lotes-vivero/tests/vivero-asignaciones.service.spec.ts": "182a259ed7457dea5f242aa6aba301ef72ddb50adfb1b8a102e3f4d0fc908d16",
+    "src/lotes-vivero/tests/vivero-descarte-pre-embolsado.service.spec.ts": "e46118860545525d797d84185381927acdc02671f85802b0be0840610db549b2",
+    "src/lotes-vivero/tests/vivero-despacho.service.spec.ts": "96aed4f5053f8d455728bddf1fc9776b4369d4c81a247a661f8012dd7238c978",
+    "src/lotes-vivero/tests/vivero-embolsado.service.spec.ts": "6ca23293fb9450151c143020116af1858b3d0e3e6b1a5835953588a351914410",
+    "src/lotes-vivero/tests/vivero-evidencias.service.spec.ts": "a1a829115916df65c49ec5f83a7fdd51d565ca61c03ac4d7c9f54f57c06949eb",
+    "src/lotes-vivero/tests/vivero-inicio.service.spec.ts": "8a9f96dcb7526a55c0f9ea83695f782308d47c3f3c1899294fb3996f3d77f16f",
+    "src/lotes-vivero/vivero-acceso.module.ts": "ad3f2c522d503b07e41309f06a654d2a4ee5b0f2e236b8febf49497704b85b0e",
+    "src/recolecciones/api/docs/recolecciones.swagger.ts": "41764172ecafb18854f6e03c05ecb1fb77eae0ab4e05b4ab73878961fe531e14",
+    "src/recolecciones/application/recoleccion-auth.service.ts": "3a8009fa73e97d155705369e24d7d3e80b67eaf99d65919f4c97bbdd9787586c",
+    "src/recolecciones/application/recoleccion-consultas.service.ts": "e0156970dde1640f80e362f78e8d52c515284a8f1c9b2680af4bdadca0046ddd",
+    "src/recolecciones/application/recoleccion-desecho.service.ts": "3bb76363d90f7dc55b3ded4806a330c4fef00b7922410a17625456051229aced",
+    "src/recolecciones/application/recoleccion-draft.service.ts": "0b9755776d7f9281d48d80fb50b176fac9488b707f65e7a6fc7197a6cd181fbf",
+    "src/recolecciones/application/recoleccion-rpc.ts": "288cdfc440cc8c831883180bc5ba2c038a1d4ae9f085973d168bc50714d13bd9",
+    "src/recolecciones/application/recoleccion-validacion.service.ts": "ccf7a7c4b7eba096f3cac7ae8411c25d6e1620d3553a1a1568274677f18c0e41",
+    "src/recolecciones/tests/recoleccion-desecho.service.spec.ts": "948e1b5b60320a98d07d21177ec0f09df2d15ef24647aeb6e107eb21ba1b09a4",
+    "src/recolecciones/tests/recoleccion-fotos-privadas.spec.ts": "2d4d67e4add866c39301c8cf2adf85376f4b216dc0c6d5cdff6c229673d13391",
+    "src/recolecciones/tests/recolecciones.service.spec.ts": "afdba8cbd457e33afcbc17326992841f59ace35702104533149a4cdb10a2ff44",
+    "test/README.md": "8fa9db84cea5703e5f68437eae23d3b0432cb33961af69fafcbdd1e5637700d9",
+    "test/db/recoleccion-acceso-http.spec.ts": "479fb781520943f26b1ba4ebae3564e54f2b523d723c405f2bceeac5b1a6734b",
+    "test/db/vivero-acceso-fixture.sql": "47a36d874a6b646c595ea3105fc61797142931d126d13ea249cd2397a4c86436",
+    "test/db/vivero-acceso-http.spec.ts": "73f0da30d88f620142bd8af38e5605bc7e7fe690fcf88d4b705763104b24a6a0",
+    "test/db/vivero-acceso-postgis-fixture.sql": "4590d8498e69c0340ecb1df680fb9749bc8fd49994199a62ec349d6b0454ebe4",
+    "test/jest-vivero-acceso-db.json": "77d52be2f9876547367717b49e9c3917345e95607eddc9c5ba94f1eff4f70411"
+  },
+  "aviso_coordinador": {
+    "estado": "ENVIADO",
+    "host": "local",
+    "chat": "01a18a33-5969-7261-b845-25979ea63c2f",
+    "titulo_verificado": "Revisar actores y casos de uso",
+    "destino_verificado_en_mismo_proyecto": true,
+    "contenido": "Resumen con alcance, base, pruebas, entradas a evidencia y límites; solicitud de revisión antes de entrega",
+    "limite_previo": "La revisión automática rechazó un primer payload extenso con rutas internas; tras verificar el chat de origen se aceptó un aviso resumido."
+  }
+}

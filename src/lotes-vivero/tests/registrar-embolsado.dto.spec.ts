@@ -16,7 +16,7 @@ describe('RegistrarEmbolsadoDto', () => {
 
     expect(errors).toHaveLength(0);
     expect(dto.plantas_vivas_iniciales).toBe(100);
-    expect(dto.evidencia_ids).toEqual([137, 138]);
+    expect(dto.evidencia_ids).toEqual(['137', '138']);
   });
 
   it('rechaza evidencia_ids vacios, duplicados o menores a 1', async () => {
@@ -35,7 +35,7 @@ describe('RegistrarEmbolsadoDto', () => {
     expect(evidenciaIdsError?.constraints).toEqual(
       expect.objectContaining({
         arrayUnique: 'evidencia_ids no debe contener IDs duplicados',
-        min: 'each value in evidencia_ids must not be less than 1',
+        bigintId: 'El ID debe ser decimal positivo exacto hasta BIGINT.',
       }),
     );
   });

@@ -1,0 +1,3946 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/me/acceso-recoleccion": {
+      "get": {
+        "operationId": "RecoleccionAccesosController_propio",
+        "parameters": [
+          {
+            "name": "limite",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "name": "antes_de_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Acceso observado e historial ID DESC. El rol y la revisión M1 son independientes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data",
+                    "observado_en"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "usuario_id",
+                        "rol_global",
+                        "activo",
+                        "revision_acceso",
+                        "revision_autoridad",
+                        "acceso_explicito",
+                        "acceso_efectivo",
+                        "origen",
+                        "capacidades",
+                        "vigencia_actual",
+                        "historial",
+                        "siguiente_antes_de_id"
+                      ],
+                      "properties": {
+                        "usuario_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "example": "42"
+                        },
+                        "rol_global": {
+                          "type": "string",
+                          "enum": [
+                            "ADMIN",
+                            "GENERAL",
+                            "VALIDADOR",
+                            "VOLUNTARIO"
+                          ]
+                        },
+                        "activo": {
+                          "type": "boolean"
+                        },
+                        "revision_acceso": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19,
+                          "example": "0"
+                        },
+                        "revision_autoridad": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19,
+                          "example": "0"
+                        },
+                        "acceso_explicito": {
+                          "type": "boolean"
+                        },
+                        "acceso_efectivo": {
+                          "type": "boolean"
+                        },
+                        "origen": {
+                          "type": "string",
+                          "enum": [
+                            "ADMIN",
+                            "EXPLICITO",
+                            "SIN_ACCESO"
+                          ]
+                        },
+                        "capacidades": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "crear",
+                            "mantener_propias",
+                            "confirmar_propias",
+                            "desechar"
+                          ],
+                          "properties": {
+                            "crear": {
+                              "type": "boolean"
+                            },
+                            "mantener_propias": {
+                              "type": "boolean"
+                            },
+                            "confirmar_propias": {
+                              "type": "boolean",
+                              "enum": [
+                                false
+                              ]
+                            },
+                            "desechar": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "vigencia_actual": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "id",
+                            "otorgado_en",
+                            "otorgado_por"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$",
+                              "maxLength": 19,
+                              "example": "42"
+                            },
+                            "otorgado_en": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "otorgado_por": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$",
+                              "maxLength": 19,
+                              "example": "42"
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "historial": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "evento",
+                              "acceso_id",
+                              "actor_id",
+                              "revision_anterior",
+                              "revision_nueva",
+                              "motivo",
+                              "creado_en",
+                              "comando_id",
+                              "otorgado_en",
+                              "revocado_en"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              },
+                              "evento": {
+                                "type": "string",
+                                "enum": [
+                                  "ACCESO_OTORGADO",
+                                  "ACCESO_RETIRADO"
+                                ]
+                              },
+                              "acceso_id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              },
+                              "actor_id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              },
+                              "revision_anterior": {
+                                "type": "string",
+                                "pattern": "^(0|[1-9][0-9]*)$",
+                                "maxLength": 19,
+                                "example": "0"
+                              },
+                              "revision_nueva": {
+                                "type": "string",
+                                "pattern": "^(0|[1-9][0-9]*)$",
+                                "maxLength": 19,
+                                "example": "0"
+                              },
+                              "motivo": {
+                                "type": "string"
+                              },
+                              "creado_en": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "comando_id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "otorgado_en": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "revocado_en": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                              }
+                            }
+                          },
+                          "maxItems": 50
+                        },
+                        "siguiente_antes_de_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "example": "42",
+                          "nullable": true
+                        }
+                      }
+                    },
+                    "observado_en": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Resultado no determinado. Recuperar con la misma clave; para lectura repetir consulta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Acceso M1 efectivo propio, revisión independiente e historial paginado.",
+        "tags": [
+          "acceso-recoleccion-v1"
+        ]
+      }
+    },
+    "/api/v1/usuarios/{usuario_id}/acceso-recoleccion": {
+      "get": {
+        "operationId": "RecoleccionAccesosController_administrativo",
+        "parameters": [
+          {
+            "name": "usuario_id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "name": "antes_de_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Acceso observado e historial ID DESC. El rol y la revisión M1 son independientes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data",
+                    "observado_en"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "usuario_id",
+                        "rol_global",
+                        "activo",
+                        "revision_acceso",
+                        "revision_autoridad",
+                        "acceso_explicito",
+                        "acceso_efectivo",
+                        "origen",
+                        "capacidades",
+                        "vigencia_actual",
+                        "historial",
+                        "siguiente_antes_de_id"
+                      ],
+                      "properties": {
+                        "usuario_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "example": "42"
+                        },
+                        "rol_global": {
+                          "type": "string",
+                          "enum": [
+                            "ADMIN",
+                            "GENERAL",
+                            "VALIDADOR",
+                            "VOLUNTARIO"
+                          ]
+                        },
+                        "activo": {
+                          "type": "boolean"
+                        },
+                        "revision_acceso": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19,
+                          "example": "0"
+                        },
+                        "revision_autoridad": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19,
+                          "example": "0"
+                        },
+                        "acceso_explicito": {
+                          "type": "boolean"
+                        },
+                        "acceso_efectivo": {
+                          "type": "boolean"
+                        },
+                        "origen": {
+                          "type": "string",
+                          "enum": [
+                            "ADMIN",
+                            "EXPLICITO",
+                            "SIN_ACCESO"
+                          ]
+                        },
+                        "capacidades": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "crear",
+                            "mantener_propias",
+                            "confirmar_propias",
+                            "desechar"
+                          ],
+                          "properties": {
+                            "crear": {
+                              "type": "boolean"
+                            },
+                            "mantener_propias": {
+                              "type": "boolean"
+                            },
+                            "confirmar_propias": {
+                              "type": "boolean",
+                              "enum": [
+                                false
+                              ]
+                            },
+                            "desechar": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "vigencia_actual": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "id",
+                            "otorgado_en",
+                            "otorgado_por"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$",
+                              "maxLength": 19,
+                              "example": "42"
+                            },
+                            "otorgado_en": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "otorgado_por": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$",
+                              "maxLength": 19,
+                              "example": "42"
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "historial": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "evento",
+                              "acceso_id",
+                              "actor_id",
+                              "revision_anterior",
+                              "revision_nueva",
+                              "motivo",
+                              "creado_en",
+                              "comando_id",
+                              "otorgado_en",
+                              "revocado_en"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              },
+                              "evento": {
+                                "type": "string",
+                                "enum": [
+                                  "ACCESO_OTORGADO",
+                                  "ACCESO_RETIRADO"
+                                ]
+                              },
+                              "acceso_id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              },
+                              "actor_id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              },
+                              "revision_anterior": {
+                                "type": "string",
+                                "pattern": "^(0|[1-9][0-9]*)$",
+                                "maxLength": 19,
+                                "example": "0"
+                              },
+                              "revision_nueva": {
+                                "type": "string",
+                                "pattern": "^(0|[1-9][0-9]*)$",
+                                "maxLength": 19,
+                                "example": "0"
+                              },
+                              "motivo": {
+                                "type": "string"
+                              },
+                              "creado_en": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "comando_id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "otorgado_en": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "revocado_en": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                              }
+                            }
+                          },
+                          "maxItems": 50
+                        },
+                        "siguiente_antes_de_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "example": "42",
+                          "nullable": true
+                        }
+                      }
+                    },
+                    "observado_en": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Resultado no determinado. Recuperar con la misma clave; para lectura repetir consulta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "ADMIN: consultar acceso M1 e historial de una cuenta.",
+        "tags": [
+          "acceso-recoleccion-v1"
+        ]
+      }
+    },
+    "/api/v1/usuarios/{usuario_id}/acceso-recoleccion/otorgamientos": {
+      "post": {
+        "operationId": "RecoleccionAccesosController_otorgar",
+        "parameters": [
+          {
+            "name": "usuario_id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "comando_id",
+                  "revision_esperada",
+                  "motivo"
+                ],
+                "properties": {
+                  "comando_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                    "description": "Conservar ante timeout y recuperación."
+                  },
+                  "revision_esperada": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$",
+                    "maxLength": 19,
+                    "example": "0",
+                    "description": "Revisión M1 independiente del rol; máximo BIGINT."
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 1000,
+                    "description": "Trim y normalización NFC antes de registrar la intención."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recibo terminal propio. No concede autoridad actual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "comando_id",
+                    "operacion",
+                    "estado",
+                    "resultado",
+                    "error",
+                    "finalizado_en"
+                  ],
+                  "properties": {
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "operacion": {
+                      "type": "string",
+                      "enum": [
+                        "OTORGAR_ACCESO_RECOLECCION",
+                        "RETIRAR_ACCESO_RECOLECCION"
+                      ]
+                    },
+                    "estado": {
+                      "type": "string",
+                      "enum": [
+                        "CONFIRMADO",
+                        "RECHAZADO"
+                      ]
+                    },
+                    "resultado": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "tipo",
+                        "usuario_id",
+                        "acceso_explicito_anterior",
+                        "acceso_explicito_nuevo",
+                        "revision_anterior",
+                        "revision_nueva",
+                        "cambio"
+                      ],
+                      "properties": {
+                        "tipo": {
+                          "type": "string",
+                          "enum": [
+                            "ACCESO_RECOLECCION"
+                          ]
+                        },
+                        "usuario_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "example": "42"
+                        },
+                        "acceso_explicito_anterior": {
+                          "type": "boolean"
+                        },
+                        "acceso_explicito_nuevo": {
+                          "type": "boolean"
+                        },
+                        "revision_anterior": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19,
+                          "example": "0"
+                        },
+                        "revision_nueva": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19,
+                          "example": "0"
+                        },
+                        "cambio": {
+                          "type": "string",
+                          "enum": [
+                            "CAMBIO_APLICADO",
+                            "SIN_CAMBIOS"
+                          ]
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "finalizado_en": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rechazo durable o error fuera de recibo; consultar estado y conservar clave.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "comando_id",
+                        "operacion",
+                        "estado",
+                        "resultado",
+                        "error",
+                        "finalizado_en"
+                      ],
+                      "properties": {
+                        "comando_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "operacion": {
+                          "type": "string",
+                          "enum": [
+                            "OTORGAR_ACCESO_RECOLECCION",
+                            "RETIRAR_ACCESO_RECOLECCION"
+                          ]
+                        },
+                        "estado": {
+                          "type": "string",
+                          "enum": [
+                            "CONFIRMADO",
+                            "RECHAZADO"
+                          ]
+                        },
+                        "resultado": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "tipo",
+                            "usuario_id",
+                            "acceso_explicito_anterior",
+                            "acceso_explicito_nuevo",
+                            "revision_anterior",
+                            "revision_nueva",
+                            "cambio"
+                          ],
+                          "properties": {
+                            "tipo": {
+                              "type": "string",
+                              "enum": [
+                                "ACCESO_RECOLECCION"
+                              ]
+                            },
+                            "usuario_id": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$",
+                              "maxLength": 19,
+                              "example": "42"
+                            },
+                            "acceso_explicito_anterior": {
+                              "type": "boolean"
+                            },
+                            "acceso_explicito_nuevo": {
+                              "type": "boolean"
+                            },
+                            "revision_anterior": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]*)$",
+                              "maxLength": 19,
+                              "example": "0"
+                            },
+                            "revision_nueva": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]*)$",
+                              "maxLength": 19,
+                              "example": "0"
+                            },
+                            "cambio": {
+                              "type": "string",
+                              "enum": [
+                                "CAMBIO_APLICADO",
+                                "SIN_CAMBIOS"
+                              ]
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "codigo",
+                            "mensaje",
+                            "campos",
+                            "ambitos",
+                            "reintento"
+                          ],
+                          "properties": {
+                            "codigo": {
+                              "type": "string"
+                            },
+                            "mensaje": {
+                              "type": "string"
+                            },
+                            "campos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "ambitos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              }
+                            },
+                            "reintento": {
+                              "type": "string",
+                              "enum": [
+                                "MISMA_CLAVE",
+                                "NUEVA_CONFIRMACION",
+                                "RECUPERAR_SESION",
+                                "NO_APLICA"
+                              ]
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "finalizado_en": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error",
+                        "comando_id",
+                        "resultado_concluyente"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "codigo",
+                            "mensaje",
+                            "campos",
+                            "ambitos",
+                            "reintento"
+                          ],
+                          "properties": {
+                            "codigo": {
+                              "type": "string"
+                            },
+                            "mensaje": {
+                              "type": "string"
+                            },
+                            "campos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "ambitos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              }
+                            },
+                            "reintento": {
+                              "type": "string",
+                              "enum": [
+                                "MISMA_CLAVE",
+                                "NUEVA_CONFIRMACION",
+                                "RECUPERAR_SESION",
+                                "NO_APLICA"
+                              ]
+                            }
+                          }
+                        },
+                        "comando_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "nullable": true
+                        },
+                        "resultado_concluyente": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rechazo durable o error fuera de recibo; consultar estado y conservar clave.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "comando_id",
+                        "operacion",
+                        "estado",
+                        "resultado",
+                        "error",
+                        "finalizado_en"
+                      ],
+                      "properties": {
+                        "comando_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "operacion": {
+                          "type": "string",
+                          "enum": [
+                            "OTORGAR_ACCESO_RECOLECCION",
+                            "RETIRAR_ACCESO_RECOLECCION"
+                          ]
+                        },
+                        "estado": {
+                          "type": "string",
+                          "enum": [
+                            "CONFIRMADO",
+                            "RECHAZADO"
+                          ]
+                        },
+                        "resultado": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "tipo",
+                            "usuario_id",
+                            "acceso_explicito_anterior",
+                            "acceso_explicito_nuevo",
+                            "revision_anterior",
+                            "revision_nueva",
+                            "cambio"
+                          ],
+                          "properties": {
+                            "tipo": {
+                              "type": "string",
+                              "enum": [
+                                "ACCESO_RECOLECCION"
+                              ]
+                            },
+                            "usuario_id": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$",
+                              "maxLength": 19,
+                              "example": "42"
+                            },
+                            "acceso_explicito_anterior": {
+                              "type": "boolean"
+                            },
+                            "acceso_explicito_nuevo": {
+                              "type": "boolean"
+                            },
+                            "revision_anterior": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]*)$",
+                              "maxLength": 19,
+                              "example": "0"
+                            },
+                            "revision_nueva": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]*)$",
+                              "maxLength": 19,
+                              "example": "0"
+                            },
+                            "cambio": {
+                              "type": "string",
+                              "enum": [
+                                "CAMBIO_APLICADO",
+                                "SIN_CAMBIOS"
+                              ]
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "codigo",
+                            "mensaje",
+                            "campos",
+                            "ambitos",
+                            "reintento"
+                          ],
+                          "properties": {
+                            "codigo": {
+                              "type": "string"
+                            },
+                            "mensaje": {
+                              "type": "string"
+                            },
+                            "campos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "ambitos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              }
+                            },
+                            "reintento": {
+                              "type": "string",
+                              "enum": [
+                                "MISMA_CLAVE",
+                                "NUEVA_CONFIRMACION",
+                                "RECUPERAR_SESION",
+                                "NO_APLICA"
+                              ]
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "finalizado_en": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error",
+                        "comando_id",
+                        "resultado_concluyente"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "codigo",
+                            "mensaje",
+                            "campos",
+                            "ambitos",
+                            "reintento"
+                          ],
+                          "properties": {
+                            "codigo": {
+                              "type": "string"
+                            },
+                            "mensaje": {
+                              "type": "string"
+                            },
+                            "campos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "ambitos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              }
+                            },
+                            "reintento": {
+                              "type": "string",
+                              "enum": [
+                                "MISMA_CLAVE",
+                                "NUEVA_CONFIRMACION",
+                                "RECUPERAR_SESION",
+                                "NO_APLICA"
+                              ]
+                            }
+                          }
+                        },
+                        "comando_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "nullable": true
+                        },
+                        "resultado_concluyente": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rechazo durable o error fuera de recibo; consultar estado y conservar clave.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "comando_id",
+                        "operacion",
+                        "estado",
+                        "resultado",
+                        "error",
+                        "finalizado_en"
+                      ],
+                      "properties": {
+                        "comando_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "operacion": {
+                          "type": "string",
+                          "enum": [
+                            "OTORGAR_ACCESO_RECOLECCION",
+                            "RETIRAR_ACCESO_RECOLECCION"
+                          ]
+                        },
+                        "estado": {
+                          "type": "string",
+                          "enum": [
+                            "CONFIRMADO",
+                            "RECHAZADO"
+                          ]
+                        },
+                        "resultado": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "tipo",
+                            "usuario_id",
+                            "acceso_explicito_anterior",
+                            "acceso_explicito_nuevo",
+                            "revision_anterior",
+                            "revision_nueva",
+                            "cambio"
+                          ],
+                          "properties": {
+                            "tipo": {
+                              "type": "string",
+                              "enum": [
+                                "ACCESO_RECOLECCION"
+                              ]
+                            },
+                            "usuario_id": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$",
+                              "maxLength": 19,
+                              "example": "42"
+                            },
+                            "acceso_explicito_anterior": {
+                              "type": "boolean"
+                            },
+                            "acceso_explicito_nuevo": {
+                              "type": "boolean"
+                            },
+                            "revision_anterior": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]*)$",
+                              "maxLength": 19,
+                              "example": "0"
+                            },
+                            "revision_nueva": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]*)$",
+                              "maxLength": 19,
+                              "example": "0"
+                            },
+                            "cambio": {
+                              "type": "string",
+                              "enum": [
+                                "CAMBIO_APLICADO",
+                                "SIN_CAMBIOS"
+                              ]
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "codigo",
+                            "mensaje",
+                            "campos",
+                            "ambitos",
+                            "reintento"
+                          ],
+                          "properties": {
+                            "codigo": {
+                              "type": "string"
+                            },
+                            "mensaje": {
+                              "type": "string"
+                            },
+                            "campos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "ambitos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              }
+                            },
+                            "reintento": {
+                              "type": "string",
+                              "enum": [
+                                "MISMA_CLAVE",
+                                "NUEVA_CONFIRMACION",
+                                "RECUPERAR_SESION",
+                                "NO_APLICA"
+                              ]
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "finalizado_en": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error",
+                        "comando_id",
+                        "resultado_concluyente"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "codigo",
+                            "mensaje",
+                            "campos",
+                            "ambitos",
+                            "reintento"
+                          ],
+                          "properties": {
+                            "codigo": {
+                              "type": "string"
+                            },
+                            "mensaje": {
+                              "type": "string"
+                            },
+                            "campos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "ambitos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              }
+                            },
+                            "reintento": {
+                              "type": "string",
+                              "enum": [
+                                "MISMA_CLAVE",
+                                "NUEVA_CONFIRMACION",
+                                "RECUPERAR_SESION",
+                                "NO_APLICA"
+                              ]
+                            }
+                          }
+                        },
+                        "comando_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "nullable": true
+                        },
+                        "resultado_concluyente": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Resultado no determinado. Recuperar con la misma clave; para lectura repetir consulta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "ADMIN: otorgar M1 a cuenta activa GENERAL/VALIDADOR sin cambiar su rol.",
+        "tags": [
+          "acceso-recoleccion-v1"
+        ]
+      }
+    },
+    "/api/v1/usuarios/{usuario_id}/acceso-recoleccion/retiros": {
+      "post": {
+        "operationId": "RecoleccionAccesosController_retirar",
+        "parameters": [
+          {
+            "name": "usuario_id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "comando_id",
+                  "revision_esperada",
+                  "motivo"
+                ],
+                "properties": {
+                  "comando_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                    "description": "Conservar ante timeout y recuperación."
+                  },
+                  "revision_esperada": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$",
+                    "maxLength": 19,
+                    "example": "0",
+                    "description": "Revisión M1 independiente del rol; máximo BIGINT."
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 1000,
+                    "description": "Trim y normalización NFC antes de registrar la intención."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recibo terminal propio. No concede autoridad actual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "comando_id",
+                    "operacion",
+                    "estado",
+                    "resultado",
+                    "error",
+                    "finalizado_en"
+                  ],
+                  "properties": {
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "operacion": {
+                      "type": "string",
+                      "enum": [
+                        "OTORGAR_ACCESO_RECOLECCION",
+                        "RETIRAR_ACCESO_RECOLECCION"
+                      ]
+                    },
+                    "estado": {
+                      "type": "string",
+                      "enum": [
+                        "CONFIRMADO",
+                        "RECHAZADO"
+                      ]
+                    },
+                    "resultado": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "tipo",
+                        "usuario_id",
+                        "acceso_explicito_anterior",
+                        "acceso_explicito_nuevo",
+                        "revision_anterior",
+                        "revision_nueva",
+                        "cambio"
+                      ],
+                      "properties": {
+                        "tipo": {
+                          "type": "string",
+                          "enum": [
+                            "ACCESO_RECOLECCION"
+                          ]
+                        },
+                        "usuario_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "example": "42"
+                        },
+                        "acceso_explicito_anterior": {
+                          "type": "boolean"
+                        },
+                        "acceso_explicito_nuevo": {
+                          "type": "boolean"
+                        },
+                        "revision_anterior": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19,
+                          "example": "0"
+                        },
+                        "revision_nueva": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19,
+                          "example": "0"
+                        },
+                        "cambio": {
+                          "type": "string",
+                          "enum": [
+                            "CAMBIO_APLICADO",
+                            "SIN_CAMBIOS"
+                          ]
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "finalizado_en": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rechazo durable o error fuera de recibo; consultar estado y conservar clave.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "comando_id",
+                        "operacion",
+                        "estado",
+                        "resultado",
+                        "error",
+                        "finalizado_en"
+                      ],
+                      "properties": {
+                        "comando_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "operacion": {
+                          "type": "string",
+                          "enum": [
+                            "OTORGAR_ACCESO_RECOLECCION",
+                            "RETIRAR_ACCESO_RECOLECCION"
+                          ]
+                        },
+                        "estado": {
+                          "type": "string",
+                          "enum": [
+                            "CONFIRMADO",
+                            "RECHAZADO"
+                          ]
+                        },
+                        "resultado": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "tipo",
+                            "usuario_id",
+                            "acceso_explicito_anterior",
+                            "acceso_explicito_nuevo",
+                            "revision_anterior",
+                            "revision_nueva",
+                            "cambio"
+                          ],
+                          "properties": {
+                            "tipo": {
+                              "type": "string",
+                              "enum": [
+                                "ACCESO_RECOLECCION"
+                              ]
+                            },
+                            "usuario_id": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$",
+                              "maxLength": 19,
+                              "example": "42"
+                            },
+                            "acceso_explicito_anterior": {
+                              "type": "boolean"
+                            },
+                            "acceso_explicito_nuevo": {
+                              "type": "boolean"
+                            },
+                            "revision_anterior": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]*)$",
+                              "maxLength": 19,
+                              "example": "0"
+                            },
+                            "revision_nueva": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]*)$",
+                              "maxLength": 19,
+                              "example": "0"
+                            },
+                            "cambio": {
+                              "type": "string",
+                              "enum": [
+                                "CAMBIO_APLICADO",
+                                "SIN_CAMBIOS"
+                              ]
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "codigo",
+                            "mensaje",
+                            "campos",
+                            "ambitos",
+                            "reintento"
+                          ],
+                          "properties": {
+                            "codigo": {
+                              "type": "string"
+                            },
+                            "mensaje": {
+                              "type": "string"
+                            },
+                            "campos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "ambitos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              }
+                            },
+                            "reintento": {
+                              "type": "string",
+                              "enum": [
+                                "MISMA_CLAVE",
+                                "NUEVA_CONFIRMACION",
+                                "RECUPERAR_SESION",
+                                "NO_APLICA"
+                              ]
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "finalizado_en": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error",
+                        "comando_id",
+                        "resultado_concluyente"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "codigo",
+                            "mensaje",
+                            "campos",
+                            "ambitos",
+                            "reintento"
+                          ],
+                          "properties": {
+                            "codigo": {
+                              "type": "string"
+                            },
+                            "mensaje": {
+                              "type": "string"
+                            },
+                            "campos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "ambitos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              }
+                            },
+                            "reintento": {
+                              "type": "string",
+                              "enum": [
+                                "MISMA_CLAVE",
+                                "NUEVA_CONFIRMACION",
+                                "RECUPERAR_SESION",
+                                "NO_APLICA"
+                              ]
+                            }
+                          }
+                        },
+                        "comando_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "nullable": true
+                        },
+                        "resultado_concluyente": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rechazo durable o error fuera de recibo; consultar estado y conservar clave.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "comando_id",
+                        "operacion",
+                        "estado",
+                        "resultado",
+                        "error",
+                        "finalizado_en"
+                      ],
+                      "properties": {
+                        "comando_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "operacion": {
+                          "type": "string",
+                          "enum": [
+                            "OTORGAR_ACCESO_RECOLECCION",
+                            "RETIRAR_ACCESO_RECOLECCION"
+                          ]
+                        },
+                        "estado": {
+                          "type": "string",
+                          "enum": [
+                            "CONFIRMADO",
+                            "RECHAZADO"
+                          ]
+                        },
+                        "resultado": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "tipo",
+                            "usuario_id",
+                            "acceso_explicito_anterior",
+                            "acceso_explicito_nuevo",
+                            "revision_anterior",
+                            "revision_nueva",
+                            "cambio"
+                          ],
+                          "properties": {
+                            "tipo": {
+                              "type": "string",
+                              "enum": [
+                                "ACCESO_RECOLECCION"
+                              ]
+                            },
+                            "usuario_id": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$",
+                              "maxLength": 19,
+                              "example": "42"
+                            },
+                            "acceso_explicito_anterior": {
+                              "type": "boolean"
+                            },
+                            "acceso_explicito_nuevo": {
+                              "type": "boolean"
+                            },
+                            "revision_anterior": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]*)$",
+                              "maxLength": 19,
+                              "example": "0"
+                            },
+                            "revision_nueva": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]*)$",
+                              "maxLength": 19,
+                              "example": "0"
+                            },
+                            "cambio": {
+                              "type": "string",
+                              "enum": [
+                                "CAMBIO_APLICADO",
+                                "SIN_CAMBIOS"
+                              ]
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "codigo",
+                            "mensaje",
+                            "campos",
+                            "ambitos",
+                            "reintento"
+                          ],
+                          "properties": {
+                            "codigo": {
+                              "type": "string"
+                            },
+                            "mensaje": {
+                              "type": "string"
+                            },
+                            "campos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "ambitos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              }
+                            },
+                            "reintento": {
+                              "type": "string",
+                              "enum": [
+                                "MISMA_CLAVE",
+                                "NUEVA_CONFIRMACION",
+                                "RECUPERAR_SESION",
+                                "NO_APLICA"
+                              ]
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "finalizado_en": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error",
+                        "comando_id",
+                        "resultado_concluyente"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "codigo",
+                            "mensaje",
+                            "campos",
+                            "ambitos",
+                            "reintento"
+                          ],
+                          "properties": {
+                            "codigo": {
+                              "type": "string"
+                            },
+                            "mensaje": {
+                              "type": "string"
+                            },
+                            "campos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "ambitos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              }
+                            },
+                            "reintento": {
+                              "type": "string",
+                              "enum": [
+                                "MISMA_CLAVE",
+                                "NUEVA_CONFIRMACION",
+                                "RECUPERAR_SESION",
+                                "NO_APLICA"
+                              ]
+                            }
+                          }
+                        },
+                        "comando_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "nullable": true
+                        },
+                        "resultado_concluyente": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rechazo durable o error fuera de recibo; consultar estado y conservar clave.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "comando_id",
+                        "operacion",
+                        "estado",
+                        "resultado",
+                        "error",
+                        "finalizado_en"
+                      ],
+                      "properties": {
+                        "comando_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "operacion": {
+                          "type": "string",
+                          "enum": [
+                            "OTORGAR_ACCESO_RECOLECCION",
+                            "RETIRAR_ACCESO_RECOLECCION"
+                          ]
+                        },
+                        "estado": {
+                          "type": "string",
+                          "enum": [
+                            "CONFIRMADO",
+                            "RECHAZADO"
+                          ]
+                        },
+                        "resultado": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "tipo",
+                            "usuario_id",
+                            "acceso_explicito_anterior",
+                            "acceso_explicito_nuevo",
+                            "revision_anterior",
+                            "revision_nueva",
+                            "cambio"
+                          ],
+                          "properties": {
+                            "tipo": {
+                              "type": "string",
+                              "enum": [
+                                "ACCESO_RECOLECCION"
+                              ]
+                            },
+                            "usuario_id": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$",
+                              "maxLength": 19,
+                              "example": "42"
+                            },
+                            "acceso_explicito_anterior": {
+                              "type": "boolean"
+                            },
+                            "acceso_explicito_nuevo": {
+                              "type": "boolean"
+                            },
+                            "revision_anterior": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]*)$",
+                              "maxLength": 19,
+                              "example": "0"
+                            },
+                            "revision_nueva": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]*)$",
+                              "maxLength": 19,
+                              "example": "0"
+                            },
+                            "cambio": {
+                              "type": "string",
+                              "enum": [
+                                "CAMBIO_APLICADO",
+                                "SIN_CAMBIOS"
+                              ]
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "codigo",
+                            "mensaje",
+                            "campos",
+                            "ambitos",
+                            "reintento"
+                          ],
+                          "properties": {
+                            "codigo": {
+                              "type": "string"
+                            },
+                            "mensaje": {
+                              "type": "string"
+                            },
+                            "campos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "ambitos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              }
+                            },
+                            "reintento": {
+                              "type": "string",
+                              "enum": [
+                                "MISMA_CLAVE",
+                                "NUEVA_CONFIRMACION",
+                                "RECUPERAR_SESION",
+                                "NO_APLICA"
+                              ]
+                            }
+                          },
+                          "nullable": true
+                        },
+                        "finalizado_en": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error",
+                        "comando_id",
+                        "resultado_concluyente"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "codigo",
+                            "mensaje",
+                            "campos",
+                            "ambitos",
+                            "reintento"
+                          ],
+                          "properties": {
+                            "codigo": {
+                              "type": "string"
+                            },
+                            "mensaje": {
+                              "type": "string"
+                            },
+                            "campos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "ambitos": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$",
+                                "maxLength": 19,
+                                "example": "42"
+                              }
+                            },
+                            "reintento": {
+                              "type": "string",
+                              "enum": [
+                                "MISMA_CLAVE",
+                                "NUEVA_CONFIRMACION",
+                                "RECUPERAR_SESION",
+                                "NO_APLICA"
+                              ]
+                            }
+                          }
+                        },
+                        "comando_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "nullable": true
+                        },
+                        "resultado_concluyente": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Resultado no determinado. Recuperar con la misma clave; para lectura repetir consulta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "ADMIN: retirar vigencia explícita M1 conservando historia; ADMIN mantiene acceso derivado.",
+        "tags": [
+          "acceso-recoleccion-v1"
+        ]
+      }
+    },
+    "/api/v1/recoleccion/accesos/comandos/{comando_id}": {
+      "get": {
+        "operationId": "RecoleccionAccesosController_recuperar",
+        "parameters": [
+          {
+            "name": "comando_id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recibo terminal propio, incluso si fue RECHAZADO.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "comando_id",
+                    "operacion",
+                    "estado",
+                    "resultado",
+                    "error",
+                    "finalizado_en"
+                  ],
+                  "properties": {
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "operacion": {
+                      "type": "string",
+                      "enum": [
+                        "OTORGAR_ACCESO_RECOLECCION",
+                        "RETIRAR_ACCESO_RECOLECCION"
+                      ]
+                    },
+                    "estado": {
+                      "type": "string",
+                      "enum": [
+                        "CONFIRMADO",
+                        "RECHAZADO"
+                      ]
+                    },
+                    "resultado": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "tipo",
+                        "usuario_id",
+                        "acceso_explicito_anterior",
+                        "acceso_explicito_nuevo",
+                        "revision_anterior",
+                        "revision_nueva",
+                        "cambio"
+                      ],
+                      "properties": {
+                        "tipo": {
+                          "type": "string",
+                          "enum": [
+                            "ACCESO_RECOLECCION"
+                          ]
+                        },
+                        "usuario_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "example": "42"
+                        },
+                        "acceso_explicito_anterior": {
+                          "type": "boolean"
+                        },
+                        "acceso_explicito_nuevo": {
+                          "type": "boolean"
+                        },
+                        "revision_anterior": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19,
+                          "example": "0"
+                        },
+                        "revision_nueva": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19,
+                          "example": "0"
+                        },
+                        "cambio": {
+                          "type": "string",
+                          "enum": [
+                            "CAMBIO_APLICADO",
+                            "SIN_CAMBIOS"
+                          ]
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "finalizado_en": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "SIN_RESULTADO es inconcluso. Conservar clave e intención.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "2"
+                  ]
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "comando_id",
+                    "estado",
+                    "resultado",
+                    "error",
+                    "finalizado_en"
+                  ],
+                  "properties": {
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "estado": {
+                      "type": "string",
+                      "enum": [
+                        "SIN_RESULTADO"
+                      ]
+                    },
+                    "resultado": {
+                      "nullable": true
+                    },
+                    "error": {
+                      "nullable": true
+                    },
+                    "finalizado_en": {
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Resultado no determinado. Recuperar con la misma clave; para lectura repetir consulta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "error",
+                    "comando_id",
+                    "resultado_concluyente"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo",
+                        "mensaje",
+                        "campos",
+                        "ambitos",
+                        "reintento"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        },
+                        "mensaje": {
+                          "type": "string"
+                        },
+                        "campos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ambitos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[1-9][0-9]*$",
+                            "maxLength": 19,
+                            "example": "42"
+                          }
+                        },
+                        "reintento": {
+                          "type": "string",
+                          "enum": [
+                            "MISMA_CLAVE",
+                            "NUEVA_CONFIRMACION",
+                            "RECUPERAR_SESION",
+                            "NO_APLICA"
+                          ]
+                        }
+                      }
+                    },
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "resultado_concluyente": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Recuperar recibo propio M1 incluso tras perder ADMIN; no requiere M1. SIN_RESULTADO no prueba fallo.",
+        "tags": [
+          "acceso-recoleccion-v1"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "R3Foresta · Acceso explícito de Recolección T1",
+    "description": "Contrato local 092/093. M1 independiente del rol y de Plantación; T2–T5 y despliegue pendientes. Recuperación propia con la misma clave.",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {}
+  }
+}

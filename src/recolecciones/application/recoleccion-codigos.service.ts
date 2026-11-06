@@ -13,7 +13,7 @@ export class RecoleccionCodigosService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   async generateCodigoTrazabilidad(fechaISO: string): Promise<string> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const fechaNormalizada = FechaRecoleccionPolicy.normalizeIsoDateString(
       fechaISO,
       'fecha',
@@ -83,7 +83,7 @@ export class RecoleccionCodigosService {
   }
 
   private async codigoTrazabilidadExists(codigo: string): Promise<boolean> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('recoleccion')
       .select('id')

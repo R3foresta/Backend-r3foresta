@@ -1,3 +1,4 @@
+import { BigintId } from '../../common/dto/bigint-id';
 import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -49,14 +50,13 @@ export class ListEvidenciasTrazabilidadDto {
   tipo_entidad_codigo?: string;
 
   @ApiPropertyOptional({
-    description: 'ID de la entidad relacionada',
-    example: 123,
-    type: Number,
+    description: 'ID BIGINT exacto de la entidad relacionada',
+    example: '123',
+    type: String,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'entidad_id debe ser numérico' })
-  entidad_id?: number;
+  @BigintId()
+  entidad_id?: number | string;
 
   @ApiPropertyOptional({
     description: 'Filtrar por código de trazabilidad',

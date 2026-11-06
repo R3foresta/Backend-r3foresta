@@ -1,5 +1,7 @@
 # Módulo: Recolecciones
 
+> T2 local acota revisión documental a ADMIN/VALIDADOR asignado al almacenamiento y DESECHO a ADMIN u operario vigente de ese vivero, sin M1/autoría como permiso. No registra recepción física. [Contrato actual y límites](../../docs/t2-acceso-viveros.md).
+
 Gestión del registro de recolecciones de material vegetal (semillas/esquejes) desde el campo. Es el **primer paso** del flujo de trazabilidad; las recolecciones validadas alimentan el módulo [Lotes de Vivero](./lotes-vivero.md) y disparan el minting NFT vía [Pinata + Blockchain](./pinata-integracion.md).
 
 Código fuente: [src/recolecciones/](../../src/recolecciones/).
@@ -10,7 +12,7 @@ Código fuente: [src/recolecciones/](../../src/recolecciones/).
 recolecciones.module.ts
 ├── RecoleccionesController            (api/recolecciones.controller.ts)
 └── RecoleccionesService               (orquestador en application/)
-    ├── RecoleccionAuthService         resuelve x-auth-id + permisos
+    ├── RecoleccionAuthService         identidad verificada + M1/objeto
     ├── RecoleccionCreationService     creación de borrador
     ├── RecoleccionDraftService        edición de borrador
     ├── RecoleccionEliminacionService  soft delete + historial atómico (089)
@@ -62,23 +64,28 @@ Saldo operativo: ver [ADR 001](../arquitectura/adr/001-saldo-operativo-recolecci
 
 ## Endpoints
 
-Todas las rutas requieren Bearer JWT y cuenta interna activa mediante
-`InternalActorGuard`. El guard adapta los headers legados desde la identidad
-verificada; los marcados con `*` consumen además el rol derivado del servidor.
-`x-auth-id` es opcional y debe coincidir con `sub`; no autentica por sí solo.
+Las rutas operativas requieren Bearer JWT y cuenta interna activa mediante
+`InternalActorGuard`; el controller consume `request.actor`. M1 explícito habilita
+captura/mantenimiento propios para GENERAL/VALIDADOR. ADMIN deriva autoridad global.
+[Contrato T1, recuperación y límites](../../docs/t1-acceso-recoleccion.md).
+`x-auth-id` opcional solo se coteja con `sub`; `x-user-role` no concede autoridad.
 
 | HTTP | Ruta | DTO | Rol | Notas |
 |---|---|---|---|---|
-| POST | `/api/recolecciones` | `CreateRecoleccionDto` (multipart) | GENERAL+ | Crea en `BORRADOR`. Acepta `fotos` (2-10 archivos JPG/JPEG/PNG/WEBP/HEIC/HEIF) |
-| PATCH | `/api/recolecciones/:id/draft` * | `UpdateDraftDto` (JSON/multipart) | dueño / ADMIN | `BORRADOR` o `RECHAZADO`; al corregir rechazado vuelve a `BORRADOR` |
-| DELETE | `/api/recolecciones/:id` | — | dueño / ADMIN | Solo `BORRADOR`; soft delete + `BORRADOR_ELIMINADO` en RPC atómica 089; repetir devuelve 404 |
-| PATCH | `/api/recolecciones/:id/submit` * | — | dueño | `BORRADOR` → `PENDIENTE_VALIDACION` |
-| PATCH | `/api/recolecciones/:id/approve` * | — | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `VALIDADO`. Ejecuta Pinata + mint |
-| PATCH | `/api/recolecciones/:id/reject` * | `RejectValidationDto` | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `RECHAZADO` sin límite por fecha; estado/motivo/historial atómicos (090). `motivo_rechazo` 10–500 chars |
-| GET | `/api/recolecciones/pending-validation` * | `FiltersRecoleccionDto` (query) | cuenta interna | VALIDADOR / ADMIN ven pendientes globales; las demás cuentas internas, propios |
-| GET | `/api/recolecciones` | `FiltersRecoleccionDto` (query) | cuenta interna | Lista propia de la identidad verificada, incluso para ADMIN |
-| GET | `/api/recolecciones/vivero/:viveroId` | `FiltersRecoleccionDto` (query) | cuenta interna | Requiere Bearer |
-| GET | `/api/recolecciones/:id` | `RecoleccionElegibilidadViveroQueryDto` | cuenta interna | Devuelve detalle + flag de elegibilidad para vivero si se pasa `cantidad_solicitada_vivero` |
+| POST | `/api/recolecciones` | `CreateRecoleccionDto` (multipart) | M1 / ADMIN | Crea en `BORRADOR`. Acepta `fotos` (2-10 archivos JPG/JPEG/PNG/WEBP/HEIC/HEIF) |
+| PATCH | `/api/recolecciones/:id/draft` | `UpdateDraftDto` (JSON/multipart) | dueño con M1 / ADMIN | `BORRADOR` o `RECHAZADO`; al corregir rechazado vuelve a `BORRADOR` |
+| DELETE | `/api/recolecciones/:id` | — | dueño con M1 / ADMIN | Solo `BORRADOR`; soft delete + `BORRADOR_ELIMINADO` en RPC 089 redefinida por 093; repetir devuelve 404 |
+| PATCH | `/api/recolecciones/:id/submit` | — | dueño con M1 / ADMIN | `BORRADOR` → `PENDIENTE_VALIDACION` |
+| PATCH | `/api/recolecciones/:id/approve` | — | VALIDADOR / ADMIN | ADMIN o VALIDADOR asignado al almacenamiento; distinto del autor, incluso ADMIN. `PENDIENTE_VALIDACION` → `VALIDADO`; no acredita recepción física |
+| PATCH | `/api/recolecciones/:id/reject` | `RejectValidationDto` | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `RECHAZADO` sin límite por fecha; estado/motivo/historial atómicos (090/093). `motivo_rechazo` 10–500 chars |
+| GET | `/api/recolecciones/pending-validation` | `FiltersRecoleccionDto` (query) | cuenta interna | ADMIN ve pendientes globales; VALIDADOR combina su cola por vivero con propios si tiene M1 (incluso sin M2); GENERAL con M1 ve propios. Unión antes de filtros, total y paginación |
+| GET | `/api/recolecciones` | `FiltersRecoleccionDto` (query) | cuenta interna | M1 efectivo; lista propia incluso para ADMIN |
+| GET | `/api/recolecciones/vivero/:viveroId` | `FiltersRecoleccionDto` (query) | M1 / revisor legado | M1 filtra propios antes de contar/paginar; revisión ADMIN global o VALIDADOR asignado al almacenamiento |
+| GET | `/api/recolecciones/:id` | `RecoleccionElegibilidadViveroQueryDto` | M1 / revisor legado | Autoriza objeto antes de fotos; devuelve detalle + flag de elegibilidad para vivero si se pasa `cantidad_solicitada_vivero` |
+
+`POST /api/recolecciones/:id/desecho` exige ADMIN activo u operario vigente del vivero de almacenamiento, sin M1 ni autoría como permiso.
+La API de evidencias equivalente exige M1/autoría o ADMIN y estado editable;
+los listados/IDs no permiten abrir fotos ajenas por esa vía. El usuario reportó aplicación hasta095; catálogo/cuerpos y despliegue requieren su propio cotejo antes del corte coordinado con T3.
 
 El rechazo usa `fn_recoleccion_rechazar_validacion(bigint,bigint,text)` vía
 `getAdminClient()`, con actor resuelto desde la identidad verificada. Revalida
@@ -86,11 +93,11 @@ cuenta activa y rol `VALIDADOR`/`ADMIN`, toma locks cuenta → recolección y co
 estado, motivo e historial juntos. Acepta cualquier fecha de una ficha pendiente;
 la aprobación conserva la ventana de 45 días y la prohibición de fechas futuras.
 Captura, edición, corrección y reenvío conservan sus restricciones temporales.
-Instalar/cotejar 090 antes de publicar este backend; [alcance y evidencia local](../../docs/recoleccion-rechazo-fecha.md).
+Instalar/cotejar 090 y su redefinición 093 antes del corte; [alcance y evidencia local](../../docs/recoleccion-rechazo-fecha.md).
 
 RN-REC-09A usa `fn_recoleccion_eliminar_borrador(bigint,bigint)` vía cliente
 administrativo privado y el actor de `InternalActorGuard`. La RPC toma locks en
-orden cuenta → recolección y revalida cuenta activa, rol interno, propiedad y
+orden cuenta → recolección y revalida cuenta activa, acceso M1/ADMIN, propiedad y
 estado. Conserva la fila, snapshots, fotos, ubicación, códigos y saldo; marca
 usuario/fecha y agrega el historial append-only en una sola transacción.
 El trigger de 089 impide modificar una ficha ya eliminada, incluso con un
@@ -113,8 +120,7 @@ La lectura, inserción, conteo y limpieza de `evidencias_trazabilidad` usan
 `getAdminClient()`, igual que las subidas y eliminaciones en Storage. La tabla
 es privada tras el cierre de superficie 080/083; se requiere configuración privada
 sin fallback público. El rol ADMIN de la cuenta no convierte al cliente público
-de Supabase en cliente privado. El catálogo `tipos_entidad_evidencia` conserva
-su consulta pública. La identidad verificada y los permisos por objeto siguen
+de Supabase en cliente privado. Los helpers M1 consultan también `tipos_entidad_evidencia` mediante cliente privado. La identidad verificada y los permisos por objeto siguen
 siendo obligatorios.
 La [regresión HTTP](../../src/recolecciones/tests/recolecciones-lectura.http.spec.ts)
 simula SELECT público denegado y comprueba listado con fotos, filtro propio,
@@ -155,7 +161,7 @@ en el destino; esta corrección no aplica SQL ni acredita push o despliegue.
 | `tipo_material` | `SEMILLA \| ESQUEJE` | sí | |
 | `planta_id` | int | sí | Debe existir en catálogo `planta` |
 | `metodo_id` | int | sí | Debe existir en `metodo_recoleccion` |
-| `vivero_id` | int | no | Opcional |
+| `vivero_id` | string decimal | no | ID exacto hasta BIGINT; compatibilidad con números JSON seguros |
 | `observaciones` | string ≤ 1000 | no | |
 | `ubicacion` | `CreateUbicacionDto` | sí | Anidado |
 | `fotos` | File[] 2–10 | sí (multipart) | JPG/JPEG/PNG/WEBP/HEIC/HEIF |
@@ -170,7 +176,7 @@ conserva el ID actual. Una ubicación distinta crea otra fila y cambia únicamen
 la referencia de esta recolección, conservando la anterior y refrescando snapshots
 desde la ubicación efectiva. Ante un resultado incierto del cambio de referencia,
 se conserva la nueva ubicación para evitar referencias rotas; puede requerir
-conciliación. Las compensaciones de este flujo siguen siendo de mejor esfuerzo.
+conciliación. 093 confirma campos y fotos juntos; Storage y la preparación de ubicación conservan limpieza de mejor esfuerzo.
 Omitir `fotos` conserva las evidencias existentes. La secuencia de corrección es
 `RECHAZADO` → edición `BORRADOR` → submit `PENDIENTE_VALIDACION`.
 
@@ -183,6 +189,11 @@ El recorrido con navegador y DB/Storage reales conserva su comprobación separad
 ## Filtros (`FiltersRecoleccionDto`)
 
 `fecha_inicio`, `fecha_fin`, `vivero_id`, `tipo_material`, `page` (default 1), `limit` (default 10, max 50), `q` o `search` (búsqueda libre sobre `codigo_trazabilidad`, `observaciones`, snapshots de planta/comunidad/recolector, y por `planta_id` vía catálogo).
+
+`vivero_id` en filtros/captura/edición y `viveroId` en la ruta conservan cadenas
+decimales exactas hasta BIGINT; no convertirlos a Number. La lectura de almacenamiento
+para autorización y la respuesta de `usuario_id`/`vivero_id` usan casts a texto en
+PostgreSQL. Captura/edición aceptan números legados solo si son enteros seguros.
 
 ## Respuesta de detalle (campos persistidos)
 

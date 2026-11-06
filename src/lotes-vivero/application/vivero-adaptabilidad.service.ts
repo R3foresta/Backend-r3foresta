@@ -1,3 +1,4 @@
+import { throwViveroMutationFailure } from './vivero-rpc-error';
 import {
   BadRequestException,
   Injectable,
@@ -71,11 +72,13 @@ export class ViveroAdaptabilidadService {
   // Sube fotos al storage antes de confirmar la adaptabilidad (paso opcional).
   // ---------------------------------------------------------------------------
   async crearEvidenciasPendientes(
-    loteId: number,
+    loteId: number | string,
     dto: CrearEvidenciaPendienteViveroDto,
     authId: string,
     files: ViveroEvidenceFileInput[],
   ) {
+    const usuario = await this.authService.getUserByAuthId(authId);
+    await this.authService.assertLote(usuario, loteId);
     const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase
@@ -106,7 +109,7 @@ export class ViveroAdaptabilidadService {
       dto,
       authId,
       files,
-      { eventoTipo: TipoEventoVivero.ADAPTABILIDAD },
+      { eventoTipo: TipoEventoVivero.ADAPTABILIDAD, loteId },
     );
 
     const evidenciaIds: number[] = resultado.evidencia_ids;
@@ -159,12 +162,12 @@ export class ViveroAdaptabilidadService {
   //   `SOMBRA → MEDIA_SOMBRA → SOL_DIRECTO`. Contradicción con el spec — corregir
   //   los docs (no el código). Confirmar con equipo de producto.
   async registrar(
-    loteId: number,
+    loteId: number | string,
     dto: RegistrarAdaptabilidadDto,
     authId: string,
   ) {
     const usuario = await this.authService.getUserByAuthId(authId);
-    this.authService.assertCanWrite(usuario.rol);
+    await this.authService.assertLote(usuario, loteId);
 
     const supabase = this.supabaseService.getAdminClient();
 
@@ -180,6 +183,7 @@ export class ViveroAdaptabilidadService {
       .single();
 
     if (error) {
+      throwViveroMutationFailure(error);
       this.logger.error('Error al registrar adaptabilidad:', error);
       throw new BadRequestException(
         error.message || 'No se pudo registrar la adaptabilidad.',
@@ -208,7 +212,7 @@ export class ViveroAdaptabilidadService {
   // GET :id/adaptabilidad
   // Devuelve todos los eventos ADAPTABILIDAD del lote con sus evidencias.
   // ---------------------------------------------------------------------------
-  async obtenerAdaptabilidades(loteId: number) {
+  async obtenerAdaptabilidades(loteId: number | string) {
     const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase

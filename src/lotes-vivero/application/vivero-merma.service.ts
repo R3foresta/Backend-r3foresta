@@ -1,3 +1,4 @@
+import { throwViveroMutationFailure } from './vivero-rpc-error';
 import {
   BadRequestException,
   Injectable,
@@ -75,11 +76,13 @@ export class ViveroMermaService {
   // Sube fotos al storage antes de confirmar la merma.
   // ---------------------------------------------------------------------------
   async crearEvidenciasPendientes(
-    loteId: number,
+    loteId: number | string,
     dto: CrearEvidenciaPendienteViveroDto,
     authId: string,
     files: ViveroEvidenceFileInput[],
   ) {
+    const usuario = await this.authService.getUserByAuthId(authId);
+    await this.authService.assertLote(usuario, loteId);
     const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase
@@ -110,7 +113,7 @@ export class ViveroMermaService {
       dto,
       authId,
       files,
-      { eventoTipo: TipoEventoVivero.MERMA },
+      { eventoTipo: TipoEventoVivero.MERMA, loteId },
     );
 
     const evidenciaIds: number[] = resultado.evidencia_ids;
@@ -152,9 +155,13 @@ export class ViveroMermaService {
   // POST :id/merma
   // Llama la RPC fn_vivero_registrar_merma en una sola transaccion.
   // ---------------------------------------------------------------------------
-  async registrar(loteId: number, dto: RegistrarMermaDto, authId: string) {
+  async registrar(
+    loteId: number | string,
+    dto: RegistrarMermaDto,
+    authId: string,
+  ) {
     const usuario = await this.authService.getUserByAuthId(authId);
-    this.authService.assertCanWrite(usuario.rol);
+    await this.authService.assertLote(usuario, loteId);
 
     const supabase = this.supabaseService.getAdminClient();
 
@@ -171,6 +178,7 @@ export class ViveroMermaService {
       .single();
 
     if (error) {
+      throwViveroMutationFailure(error);
       this.logger.error('Error al registrar merma:', error);
       throw new BadRequestException(
         error.message || 'No se pudo registrar la merma.',
@@ -207,7 +215,7 @@ export class ViveroMermaService {
   // GET :id/merma
   // Devuelve todos los eventos MERMA del lote con sus evidencias.
   // ---------------------------------------------------------------------------
-  async obtenerMermas(loteId: number) {
+  async obtenerMermas(loteId: number | string) {
     const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase

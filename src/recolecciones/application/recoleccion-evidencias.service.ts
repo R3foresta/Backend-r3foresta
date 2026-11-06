@@ -60,7 +60,7 @@ export class RecoleccionEvidenciasService {
       return this.tipoEntidadEvidenciaIdCache;
     }
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('tipos_entidad_evidencia')
       .select('id, activo')

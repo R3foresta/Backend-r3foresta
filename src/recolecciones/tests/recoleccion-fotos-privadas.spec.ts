@@ -54,7 +54,7 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
   let recoleccion: ReturnType<typeof query>;
   let ubicacion: ReturnType<typeof query>;
   let evidencias: ReturnType<typeof query>;
-  let usuario: { id: number; rol: string };
+  let usuario: { id: number; rol: string; activo: boolean };
   let registro: Record<string, unknown>;
   let publicFrom: jest.Mock;
   let upload: jest.Mock;
@@ -65,7 +65,7 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
 
   beforeEach(async () => {
     jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
-    usuario = { id: 7, rol: 'GENERAL' };
+    usuario = { id: 7, rol: 'GENERAL', activo: true };
     registro = {
       id: 99,
       usuario_id: 7,
@@ -108,7 +108,17 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
       fotos: [{ id: 501 }, { id: 502 }],
     }));
     historial = jest.fn(async () => undefined);
-    rpc = jest.fn(async () => ({ data: { compensado: true }, error: null }));
+    rpc = jest.fn(async (name: string) => ({
+      data:
+        name === 'm2_ambitos'
+          ? { global: false, viveros: ['1', '2', '3'] }
+          : name === 'm1_acceso_efectivo'
+            ? true
+            : name === 'fn_recoleccion_compensar_creacion'
+              ? { compensado: false }
+              : { id: 99, evidencia_ids: [501, 502], revision_captura: '1' },
+      error: null,
+    }));
     const module = await Test.createTestingModule({
       providers: [
         RecoleccionCreationService,
@@ -132,6 +142,8 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
             getAdminClient: () => ({
               from: (table: string) => {
                 if (table === 'usuario') return query(usuario);
+                if (table === 'tipos_entidad_evidencia')
+                  return query({ id: 42, activo: true });
                 if (table === 'evidencias_trazabilidad') return evidencias;
                 if (table === 'ubicacion') return ubicacion;
                 if (table === 'recoleccion') return recoleccion;
@@ -204,54 +216,38 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
     );
   }
 
-  it('crea el borrador con sus dos fotos sin INSERT público de evidencias', async () => {
+  it('crea ficha, fotos e historial por una sola RPC privada', async () => {
     await expect(crear()).resolves.toMatchObject({
       id: 99,
       fotos: [{ id: 501 }, { id: 502 }],
     });
     expect(upload).toHaveBeenCalledTimes(2);
-    expect(evidencias.insert).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({
-          entidad_id: 99,
-          creado_por_usuario_id: 7,
-          orden: 0,
-        }),
-        expect.objectContaining({
-          entidad_id: 99,
-          creado_por_usuario_id: 7,
-          orden: 1,
-        }),
-      ]),
+    expect(rpc).toHaveBeenCalledWith(
+      'm1_recoleccion_guardar',
+      expect.objectContaining({
+        p_actor_id: 7,
+        p_accion: 'CREAR',
+        p_fotos: expect.arrayContaining([
+          expect.objectContaining({ mime_type: 'image/jpeg' }),
+        ]),
+      }),
     );
-    expect(historial).toHaveBeenCalledWith(
-      expect.objectContaining({ actorUserId: 7 }),
-    );
+    expect(evidencias.insert).not.toHaveBeenCalled();
+    expect(recoleccion.insert).not.toHaveBeenCalled();
+    expect(historial).not.toHaveBeenCalled();
     expect(remove).not.toHaveBeenCalled();
   });
-
-  it.each(['insert', 'respuesta'])(
-    'compensa creación si falla %s tras subir las fotos',
-    async (fallo) => {
-      if (fallo === 'insert') evidencias.result.error = { code: '42501' };
-      else findOne.mockRejectedValueOnce(new Error('Lectura fallida'));
-      await expect(crear()).rejects.toThrow(
-        fallo === 'insert' ? 'Error al guardar evidencias' : 'Lectura fallida',
-      );
-      expect(rpc).toHaveBeenCalledWith('fn_recoleccion_compensar_creacion', {
-        p_recoleccion_id: 99,
-        p_actor_id: 7,
-      });
-      expect(evidencias.delete).not.toHaveBeenCalled();
-      expect(recoleccion.delete).not.toHaveBeenCalled();
-      expect(ubicacion.delete).toHaveBeenCalled();
-      expect(remove).toHaveBeenCalledWith(
-        upload.mock.calls.map(([path]) => path),
-      );
-    },
-  );
-
-  it('edita el borrador agregando fotos con el cliente privado', async () => {
+  it('conserva los recursos confirmados si falla la lectura posterior', async () => {
+    findOne.mockRejectedValueOnce(new Error('Lectura fallida'));
+    await expect(crear()).rejects.toThrow('Lectura fallida');
+    expect(rpc).toHaveBeenCalledWith('fn_recoleccion_compensar_creacion', {
+      p_recoleccion_id: 99,
+      p_actor_id: 7,
+    });
+    expect(remove).not.toHaveBeenCalled();
+    expect(ubicacion.delete).not.toHaveBeenCalled();
+  });
+  it('edita campos y fotos juntos en la RPC, sin compensar cambios ya confirmados', async () => {
     await draft.updateDraft(
       99,
       { observaciones: 'Nueva' },
@@ -259,25 +255,26 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
       'GENERAL',
       fotos,
     );
-    expect(recoleccion.update).toHaveBeenCalledWith({ observaciones: 'Nueva' });
-    expect(evidencias.insert).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({
-          entidad_id: 99,
-          creado_por_usuario_id: 7,
-          orden: 2,
-        }),
-      ]),
+    expect(rpc).toHaveBeenCalledWith(
+      'm1_recoleccion_guardar',
+      expect.objectContaining({
+        p_accion: 'EDITAR',
+        p_payload: { observaciones: 'Nueva' },
+        p_fotos: expect.any(Array),
+      }),
     );
+    expect(recoleccion.update).not.toHaveBeenCalled();
+    expect(evidencias.insert).not.toHaveBeenCalled();
     expect(remove).not.toHaveBeenCalled();
   });
-
-  it('revierte la edición y limpia las subidas cuando falla el INSERT privado', async () => {
-    evidencias.insert.mockImplementationOnce(() => {
-      evidencias.result.error = { code: '42501' };
-      evidencias.result.status = 403;
-      return evidencias;
-    });
+  it('limpia subidas cuando la RPC rechaza por retiro de acceso durante upload', async () => {
+    rpc.mockImplementation(async (name: string) =>
+      name === 'm2_ambitos'
+        ? { global: false, viveros: ['1', '2', '3'] }
+        : name === 'm1_acceso_efectivo'
+          ? { data: true, error: null }
+          : { data: null, error: { code: '42501' } },
+    );
     await expect(
       draft.updateDraft(
         99,
@@ -286,16 +283,12 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
         'GENERAL',
         fotos,
       ),
-    ).rejects.toThrow('Error al guardar fotos del borrador');
-    expect(recoleccion.update.mock.calls).toEqual([
-      [{ observaciones: 'Nueva' }],
-      [{ observaciones: 'Original' }],
-    ]);
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(recoleccion.update).not.toHaveBeenCalled();
     expect(remove).toHaveBeenCalledWith(
       upload.mock.calls.map(([path]) => path),
     );
   });
-
   it('envía a validación contando únicamente evidencias activas de la entidad', async () => {
     await validacion.submitForValidation(99, 'actor-verificado', 'GENERAL');
     expect(evidencias.select).toHaveBeenCalledWith('id', {
@@ -307,9 +300,11 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
       ['entidad_id', 99],
     ]);
     expect(evidencias.is).toHaveBeenCalledWith('eliminado_en', null);
-    expect(recoleccion.update).toHaveBeenCalledWith({
-      estado_registro: 'PENDIENTE_VALIDACION',
-    });
+    expect(rpc).toHaveBeenCalledWith(
+      'm1_recoleccion_guardar',
+      expect.objectContaining({ p_accion: 'ENVIAR' }),
+    );
+    expect(recoleccion.update).not.toHaveBeenCalled();
   });
 
   it.each([1, 0])(
@@ -333,6 +328,7 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
 
   it('approve también comprueba el mínimo de fotos mediante completitud privada', async () => {
     usuario.rol = 'VALIDADOR';
+    usuario.id = 8;
     registro.estado_registro = 'PENDIENTE_VALIDACION';
     evidencias.result.count = 1;
     await expect(

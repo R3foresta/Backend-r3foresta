@@ -19,7 +19,7 @@ export class RecoleccionBlockchainService {
     recoleccionId: number,
     codigoTrazabilidad: string,
   ): Promise<void> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
 
     try {
       this.logger.log(

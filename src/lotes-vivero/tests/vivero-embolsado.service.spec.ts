@@ -33,7 +33,7 @@ describe('ViveroEmbolsadoService', () => {
   let rpcMock: jest.Mock;
   let fromMock: jest.Mock;
   let authService: jest.Mocked<
-    Pick<ViveroAuthService, 'getUserByAuthId' | 'assertCanWrite'>
+    Pick<ViveroAuthService, 'getUserByAuthId' | 'assertLote'>
   >;
   let evidenciasService: jest.Mocked<
     Pick<ViveroEvidenciasService, 'crearPendienteParaEvento'>
@@ -104,7 +104,7 @@ describe('ViveroEmbolsadoService', () => {
         nombre: 'Responsable',
         rol: 'GENERAL',
       }),
-      assertCanWrite: jest.fn(),
+      assertLote: jest.fn(),
     };
 
     evidenciasService = {
@@ -280,7 +280,10 @@ describe('ViveroEmbolsadoService', () => {
 
       // Test 10: responsable_id viene del usuario autenticado, no del body
       expect(authService.getUserByAuthId).toHaveBeenCalledWith(AUTH_ID);
-      expect(authService.assertCanWrite).toHaveBeenCalledWith('GENERAL');
+      expect(authService.assertLote).toHaveBeenCalledWith(
+        expect.objectContaining({ id: USUARIO_ID }),
+        LOTE_ID,
+      );
       expect(rpcMock).toHaveBeenCalledWith('fn_vivero_registrar_embolsado', {
         p_lote_id: LOTE_ID,
         p_fecha_evento: dto.fecha_evento,

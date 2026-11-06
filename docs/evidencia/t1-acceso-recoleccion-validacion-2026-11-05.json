@@ -1,0 +1,73 @@
+{
+  "fecha": "2026-11-05",
+  "estado": "CORRECTO",
+  "base": "6f59263c349c664c15893528df1c129a7d25ef0d",
+  "corte": "árbol local sin commit de entrega",
+  "versiones": {
+    "node": "v24.19.0",
+    "npm": "12.0.2",
+    "postgres": "14.17 (Homebrew)"
+  },
+  "verificacion": {
+    "build": {
+      "comando": "npm run build",
+      "exit_code": 0
+    },
+    "unitarios": {
+      "comando": "npm run test:unit -- --runInBand --cacheDirectory=/private/tmp/r3-jest",
+      "exit_code": 0,
+      "suites": 86,
+      "pruebas": 1229
+    },
+    "sql_http": {
+      "comando": "python3 scripts/qa/recoleccion-acceso-test.py --evidence <archivo nuevo>",
+      "exit_code": 0,
+      "grupos_sql": 32,
+      "carreras": 12,
+      "casos_http": 9,
+      "evidencia": "docs/evidencia/t1-acceso-recoleccion-local-2026-11-05.json"
+    },
+    "openapi_m1": {
+      "comando": "node scripts/qa/recoleccion-acceso-openapi.cjs --check",
+      "exit_code": 0,
+      "rutas": 5
+    },
+    "openapi_participacion": {
+      "comando": "node scripts/qa/pa-int02c-openapi.cjs --check",
+      "exit_code": 0,
+      "rutas": 41,
+      "schemas": 86
+    },
+    "eslint_focal": {
+      "exit_code": 0,
+      "archivos": 7,
+      "alcance": "Nuevos service/RPC/controller/DTO/Swagger/policy y unitario M1; sin lint global."
+    },
+    "diff_check": {
+      "comando": "git diff --check",
+      "exit_code": 0
+    },
+    "huellas": {
+      "archivos": 70,
+      "coincidentes": true
+    }
+  },
+  "limites": [
+    "PostgreSQL/HTTP sintéticos aislados; sin TCP de DB ni .env",
+    "Storage, snapshots y adaptación geográfica del harness HTTP sustituidos",
+    "Sin PostGIS, WebAuthn, Supabase, Pinata o blockchain remotos acreditados",
+    "SQL 092/093 no aplicado ni cotejado en destino",
+    "Sin commit, push ni despliegue de esta entrega",
+    "T2–T5 y revisión del usuario/chat revisor pendientes"
+  ],
+  "migraciones": [
+    {
+      "archivo": "migrations/092_usuario_acceso_recoleccion.sql",
+      "sha256": "74c2c01468f130c5ca072b17727f9d7b37470cddd4c21033315d509aa5d91fcc"
+    },
+    {
+      "archivo": "migrations/093_recoleccion_acceso_explicito.sql",
+      "sha256": "005ec3a7ec41f3aa81474d0af171f82163405e8a6c8852bd7a740d073bac56ca"
+    }
+  ]
+}

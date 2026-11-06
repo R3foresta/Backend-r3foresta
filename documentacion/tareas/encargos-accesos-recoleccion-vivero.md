@@ -1,6 +1,6 @@
 # Encargos de implementación: accesos de Recolección y Vivero
 
-Fecha: 5 de noviembre de 2026. Estado: **tareas preparadas; no implementadas**.
+Actualización: 6 de noviembre de 2026. Estado: **T1–T3 revisadas localmente; T4/T5 pendientes**.
 Fuente de diseño: [propuesta elegida](propuesta-permisos-por-vivero.md).
 Este archivo divide la ejecución; no crea otro modelo de permisos.
 Inspección de referencia: backend `be62df0`. Cada agente debe comprobar el estado
@@ -19,7 +19,7 @@ Fuentes: [contrato de usuarios](../frontend/modulos/usuarios.md#administración-
 [listado administrativo](../../src/users/usuarios-administracion.controller.ts),
 [comandos existentes](../../src/participacion/participacion-comandos.controller.ts) y
 [gestión contextual](../../../pwa-r3foresta/src/modules/participacion/pages/GestionAccesosScreen.tsx).
-**Hoy no existe administración de los nuevos accesos M1/M2.** Se amplía la gestión
+**T1 aporta la API administrativa M1; T2 añade localmente [la API M2](../../docs/t2-acceso-viveros.md), revisada. La UI conjunta T3 ya está revisada localmente.** Se amplía la gestión
 existente; no se crea un constructor genérico de permisos.
 
 ## Reglas de negocio confirmadas
@@ -72,87 +72,26 @@ Estos incrementos locales no autorizan un corte real parcial ni su despliegue.
 
 ## T1. Acceso M1
 
-La [ficha T1 para revisión del usuario](t1-acceso-recoleccion.md) concentra alcance,
-reglas y aceptación. Configuración solicitada: GPT-6.1 Sol, esfuerzo máximo.
-**No iniciar investigación ni implementación hasta autorización del usuario.**
-T2–T5 no quedan incluidos en esa autorización futura.
+La [ficha T1 autorizada por el usuario](t1-acceso-recoleccion.md) conserva alcance,
+reglas y aceptación. [Implementación, contrato y evidencia local](../../docs/t1-acceso-recoleccion.md).
+Configuración solicitada: GPT-6.1 Sol, esfuerzo máximo. Revisión local realizada;
+SQL/corte remoto pendientes. T2–T5 no quedan incluidos en la autorización de T1.
 
 ## T2. Acceso M2 por vivero
 
-**Encargo para pasar al agente:** implementar el acceso por establecimiento y
-su gestión por API, sobre los contratos de T1; no incorporar plantas externas ni
-crear todavía la recepción física de semillas.
-
-Alcance:
-
-1. Concretar `usuario_vivero` con vigencias por persona/establecimiento. Lecturas
-   propias y administrativas, y comandos ADMIN de asignación/retiro por vivero.
-   Varios viveros por usuario y varios operarios con las mismas facultades.
-2. Proteger lotes, inicio, contextos, saldos, agregados, eventos, despacho, evidencias
-   y accesos directos por ID. Filtrar antes de agregar/paginar; una selección de
-   vivero del cliente no demuestra autoridad. Las cargas previas al alta también
-   necesitan un ámbito autorizado que se revalida al vincularse.
-3. Añadir la lectura mínima de material M1 del vivero para orígenes de otros
-   recolectores, sin exigir M1 ni dar edición/revisión global del origen.
-4. Delimitar la revisión legada M1 por vivero: ADMIN o revisor legado autorizado
-   y asignado al establecimiento. No dejar a `VALIDADOR` como vía global de respaldo.
-   Impedir la aprobación propia, también para una cuenta con ambos accesos.
-   Esta transición no acredita recepción; la capacidad común de «Recibir y validar»
-   de GENERAL/VALIDADOR y sus datos físicos se completa en T4.
-5. Autorizar `DESECHO` de semillas por asignación al vivero de almacenamiento,
-   sin exigir autoría ni M1; eliminar la vía anterior «creador o ADMIN». Conservar
-   el movimiento de saldo en M1 y verificar actor, actividad, ámbito y saldo dentro
-   de la RPC, no solo en el service. La recepción conforme se exige con el corte T4.
-6. Entrega/devolución explícitas: ADMIN o intersección de operario del vivero y
-   COORDINADOR de la subcampaña. Revisar todas las rutas equivalentes y las últimas
-   RPC, incluida la compatibilidad con cancelación/devoluciones administrativas.
-   Plantar conserva su autorización y no vuelve a descontar Vivero.
-
-**Salida verificable:** operario de A opera A y es rechazado en B, incluso por ID;
-una persona asignada a A/B opera ambos; retirar A conserva B y M1; un usuario solo
-M1 no opera M2, y uno solo M2 no captura recolecciones. Retiro/baja concurrentes,
-evidencias, agregados y frontera M2–M3 quedan verificados. No presentar este cierre
-como recepción física ni como incorporación externa implementadas.
-Probar además que ser creador no autoriza desecho, que el operario de A puede
-desechar semillas de otro recolector en A y que la misma acción se rechaza en B.
-
-Fuentes de inicio: [M2](../../src/lotes-vivero/application/vivero-auth.service.ts),
-[controller](../../src/lotes-vivero/api/lotes-vivero.controller.ts),
-[inicio 018](../../migrations/018_fix_vivero_inicio_lote_rpc_trazabilidad_evidencia.sql),
-[desecho 059](../../migrations/059_recoleccion_desecho_rpc.sql),
-[operaciones compartidas 077](../../migrations/077_pa_int02d_operaciones_compartidas.sql)
-y [evidencias 079](../../migrations/079_pa_int02d_evidencias.sql).
+La [ficha T2](t2-acceso-viveros.md) concentra el encargo autorizado sobre T1 revisada:
+asignaciones por vivero, administración por API, operación M2, desecho de semillas
+y revisión legada M1 acotados al establecimiento. GPT-6.1 Sol, esfuerzo máximo.
+Al terminar debe avisar al chat coordinador para revisión, antes de publicar.
+Recepción física, pantalla conjunta y plantas externas no se implementan en T2.
 
 ## T3. Administración e integración visual
 
-**Encargo para pasar al agente:** ampliar el módulo existente «Usuarios y permisos»
-con las APIs verificadas de T1/T2; no crear otra aplicación de administración.
-
-Alcance:
-
-1. Reutilizar el selector administrativo de cuentas. Mostrar por separado rol
-   global, acceso de Recolección y viveros asignados; cambiar uno no cambia los otros.
-2. Permitir a ADMIN otorgar/retirar M1 y agregar/retirar un vivero por operación.
-   Mostrar revisión y resultado real; no guardar una colección de cambios en el
-   endpoint de rol ni asignar un rol global por marcar un acceso.
-3. Conservar confirmación/recuperación de comandos y aislamiento entre cuentas;
-   tras un retiro refrescar capacidades. Una sesión que pierde ADMIN puede recuperar
-   su resultado propio, sin seguir administrando a otros.
-4. Navegación de M1/M2 basada en capacidades del servidor. Verificar solo M1,
-   solo M2, ambos y ninguno; abrir una URL directa no elude autorización backend.
-5. Conservar la gestión de Plantación en su ámbito. No usar el buscador contextual
-   de participantes como directorio administrativo ni presentar la afiliación
-   como un acceso. No exponer una recepción física o externa aún no implementada.
-
-**Salida verificable:** ADMIN administra M1 y viveros sin alterar el rol ni los
-permisos de subcampaña; no ADMIN es rechazado también por API; la cuenta combinada
-ve ambos módulos; timeout conserva intención y clave, y cambio de cuenta no filtra
-datos/pendientes. Probar también la regresión del cambio de rol existente.
-
-Fuentes de inicio: [módulo de usuarios PWA](../../../pwa-r3foresta/src/modules/usuarios/README.md),
-[pantalla actual](../../../pwa-r3foresta/src/modules/usuarios/pages/GestionUsuariosScreen.tsx),
-[cliente administrativo](../../../pwa-r3foresta/src/modules/usuarios/api/usuarios.api.ts)
-y [contrato de usuarios](../frontend/modulos/usuarios.md#administración-de-roles-globales).
+La [ficha T3](t3-administracion-accesos.md) concentra el encargo autorizado en
+GPT-6.1 Sol, esfuerzo máximo, dentro del proyecto PWA. Amplía «Usuarios y permisos»
+para administrar M1 y viveros M2 con las APIs revisadas, conservar el rol separado,
+recuperar comandos y adaptar navegación/compatibilidad mínima de los flujos afectados.
+Aviso recibido y [revisión coordinadora cerrada el 6 de noviembre](../../docs/evidencia/t3-revision-coordinadora-2026-11-06.json), sin hallazgos pendientes. T4/T5 quedan fuera.
 
 ## T4 y T5: siguientes encargos, fuera de los tres primeros
 

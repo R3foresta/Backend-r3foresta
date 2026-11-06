@@ -20,7 +20,7 @@ export class ViverosService {
       .from('vivero')
       .select(
         `
-        id,
+        id::text,
         codigo,
         nombre,
         ubicacion_id

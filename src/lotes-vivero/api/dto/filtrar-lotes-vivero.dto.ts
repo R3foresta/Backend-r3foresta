@@ -1,3 +1,4 @@
+import { BigintId } from '../../../common/dto/bigint-id';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
@@ -30,22 +31,16 @@ export class FiltrarLotesViveroDto {
   estado_lote?: EstadoLoteVivero;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  vivero_id?: number;
+  @BigintId()
+  vivero_id?: number | string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  recoleccion_id?: number;
+  @BigintId()
+  recoleccion_id?: number | string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  lote_vivero_id?: number;
+  @BigintId()
+  lote_vivero_id?: number | string;
 
   @IsOptional()
   @IsEnum(MotivoCierreLote)
@@ -64,8 +59,6 @@ export class FiltrarLotesViveroDto {
   q?: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  subcampania_id?: number;
+  @BigintId()
+  subcampania_id?: number | string;
 }

@@ -24,6 +24,7 @@
     "test:e2e:db": "jest --config ./test/jest-e2e.json test/e2e/db",
     "test:db:plan": "jest --config ./test/jest-db-isolated.json --runInBand",
     "test:db:recoleccion:soft-delete": "python3 scripts/qa/recoleccion-soft-delete-test.py",
+    "test:db:recoleccion:acceso": "python3 scripts/qa/recoleccion-acceso-test.py",
     "test:db:recoleccion:rechazo": "python3 scripts/qa/recoleccion-rechazo-fecha-test.py",
     "test:db:participacion": "python3 scripts/qa/pa-int02b-db-test.py",
     "test:db:acceso": "python3 scripts/qa/pa-int02c-db-test.py",
@@ -37,7 +38,9 @@
     "test:db:impacto": "python3 scripts/qa/pa-int05-db-test.py",
     "test:db:correcciones": "python3 scripts/qa/pa-int07-motor-test.py",
     "test:db:participantes": "python3 scripts/qa/pa-int07-participantes-test.py",
-    "preview:impacto": "python3 scripts/qa/pa-int05-db-test.py --serve"
+    "preview:impacto": "python3 scripts/qa/pa-int05-db-test.py --serve",
+    "test:db:vivero:acceso": "python3 scripts/qa/vivero-acceso-test.py",
+    "docs:vivero:acceso": "node scripts/qa/vivero-acceso-openapi.cjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

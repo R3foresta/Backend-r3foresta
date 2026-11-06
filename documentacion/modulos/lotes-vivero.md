@@ -1,5 +1,8 @@
 # 📚 Documentación de Endpoints — Módulo Lotes de Vivero
 
+> **Contrato vigente local T2 (5 de noviembre de2026):** [API, ámbitos, errores, recuperación y límites](../../docs/t2-acceso-viveros.md), [OpenAPI real](../../docs/vivero-acceso-openapi.json). Todas las rutas operativas requieren Bearer JWT verificado y ámbito de vivero; ADMIN deriva alcance global. La carga multipart previa a INICIO exige `vivero_id`; las demás usan el lote de la ruta. Entrega/devolución explícitas requieren ADMIN o M2 + COORDINADOR. Los ejemplos numéricos seguros siguen admitidos; usar cadenas para BIGINT. Aplicación hasta095 reportada por el usuario; cotejo de catálogo y despliegue pendientes.
+
+
 ## 📋 Índice
 
 1. [Descripción General](#descripción-general)
@@ -88,7 +91,7 @@ Todos los endpoints de **escritura** (`POST`) requieren:
 
 | Header | Descripción | Ejemplo |
 |--------|-------------|---------|
-| `x-auth-id` | UUID del usuario autenticado en Supabase | `3e4f5a6b-...` |
+| `Authorization` | JWT de sesión verificado por el servidor | `Bearer {{token}}` |
 
 **Roles con permiso de escritura**: `ADMIN`, `GENERAL`
 
@@ -166,7 +169,7 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 
 **Descripción**: Sube fotos como evidencias pendientes de asociar al evento de inicio de un lote. Se deben subir **antes** de crear el lote y los IDs retornados se pasan en el campo `evidencia_ids` del siguiente endpoint.
 
-**Autenticación**: Header `x-auth-id` requerido.
+**Autenticación**: Bearer JWT verificado, cuenta activa y ámbito operativo del vivero; ADMIN deriva alcance global.
 
 **Content-Type**: `multipart/form-data`
 
@@ -174,7 +177,8 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `fotos` | File[] | No | Hasta 5 imágenes (jpg, jpeg, png, webp, heic, heif) |
+| `vivero_id` | string BIGINT | Sí | Vivero autorizado del INICIO, revalidado al vincular |
+| `fotos` | File[] | Sí | De1 a5 imágenes (jpg, jpeg, png, webp, heic, heif) |
 | `titulo` | string | No | Título descriptivo (máx. 120 chars) |
 | `descripcion` | string | No | Descripción de las fotos (máx. 1000 chars) |
 | `tomado_en` | string (ISO 8601) | No | Fecha y hora en que se tomaron las fotos |
@@ -215,7 +219,7 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 - Descuenta la cantidad del saldo de la recolección
 - Asocia las evidencias indicadas al evento
 
-**Autenticación**: Header `x-auth-id` requerido. Solo roles `ADMIN` y `GENERAL`.
+**Autenticación**: Bearer JWT verificado, cuenta activa y ámbito operativo del vivero; ADMIN deriva alcance global.
 
 **Content-Type**: `application/json`
 
@@ -252,7 +256,7 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 | Código | Causa |
 |--------|-------|
 | `400` | Saldo insuficiente en la recolección, datos inválidos |
-| `401` | Falta header `x-auth-id` |
+| `401` | Bearer JWT ausente o inválido |
 | `403` | El usuario no tiene rol `ADMIN` o `GENERAL` |
 | `404` | Recolección o vivero no encontrados |
 | `500` | No se pudo generar código de trazabilidad único tras 5 reintentos |
@@ -263,7 +267,7 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 
 **Descripción**: Registra el embolsado de plántulas del lote. Marca la transición del material a bolsas individuales e inicia el conteo de plantas vivas.
 
-**Autenticación**: Header `x-auth-id` requerido. Solo roles `ADMIN` y `GENERAL`.
+**Autenticación**: Bearer JWT verificado, cuenta activa y ámbito operativo del vivero; ADMIN deriva alcance global.
 
 **Path Parameter**:
 | Parámetro | Tipo | Descripción |
@@ -299,7 +303,7 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 
 **Descripción**: Avanza la subetapa de adaptabilidad al sol del lote. El orden permitido es: `SOMBRA` → `MEDIA_SOMBRA` → `SOL_DIRECTO`. No se puede retroceder.
 
-**Autenticación**: Header `x-auth-id` requerido. Solo roles `ADMIN` y `GENERAL`.
+**Autenticación**: Bearer JWT verificado, cuenta activa y ámbito operativo del vivero; ADMIN deriva alcance global.
 
 **Path Parameter**:
 | Parámetro | Tipo | Descripción |
@@ -335,7 +339,7 @@ Los endpoints de **lectura** (`GET`) no requieren autenticación.
 
 **Descripción**: Registra la pérdida de plantas en el lote. El stock vivo se reduce en la `cantidad_afectada`. Si el stock llega a cero, el lote se cierra automáticamente con motivo `PERDIDA_TOTAL`.
 
-**Autenticación**: Header `x-auth-id` requerido. Solo roles `ADMIN` y `GENERAL`.
+**Autenticación**: Bearer JWT verificado, cuenta activa y ámbito operativo del vivero; ADMIN deriva alcance global.
 
 **Path Parameter**:
 | Parámetro | Tipo | Descripción |
@@ -380,7 +384,7 @@ cero, el lote se cierra automáticamente. El contrato canónico exige
 actual del DTO/RPC está registrada en `ARCHITECTURE.md` y debe corregirse en
 conjunto.
 
-**Autenticación**: Header `x-auth-id` requerido. Solo roles `ADMIN` y `GENERAL`.
+**Autenticación**: Bearer JWT verificado, cuenta activa y ámbito operativo del vivero; ADMIN deriva alcance global.
 
 **Path Parameter**:
 | Parámetro | Tipo | Descripción |
@@ -423,7 +427,7 @@ conjunto.
 
 **Descripción**: Lista lotes de vivero con filtros opcionales y paginación.
 
-**Autenticación**: No requerida.
+**Autenticación**: Bearer JWT verificado, cuenta activa y ámbito operativo del vivero del recurso; ver contrato T2.
 
 **Query Parameters**:
 
@@ -483,7 +487,7 @@ GET /api/lotes-vivero?q=ceibo&motivo_cierre=DESPACHO_TOTAL
 
 **Descripción**: Devuelve el historial cronológico de eventos del lote (inicio, embolsado, adaptabilidad, mermas, despachos). Permite filtrar por tipo de evento, responsable y rango de fechas.
 
-**Autenticación**: No requerida.
+**Autenticación**: Bearer JWT verificado, cuenta activa y ámbito operativo del vivero del recurso; ver contrato T2.
 
 **Path Parameter**:
 | Parámetro | Tipo | Descripción |
@@ -560,7 +564,7 @@ Reglas de fecha relevantes a las que sirve este endpoint:
 - `ADAPTABILIDAD`, `MERMA` y `DESPACHO` requieren `EMBOLSADO` previo y `fecha_evento` ≥ `fecha_evento` del `EMBOLSADO` (RN-VIV-10, validado en `fn_vivero_assert_fecha_operativa`).
 - Todos los eventos respetan la ventana retroactiva de 10 días (RN-VIV-33).
 
-**Autenticación**: No requerida. Ver TODO en el controller sobre alinear los GET con `RF-VIV-07` (control de acceso por rol).
+**Autenticación**: Bearer JWT verificado, cuenta activa y ámbito operativo del vivero del recurso; ver contrato T2.
 
 **Path Parameter**:
 | Parámetro | Tipo | Descripción |
@@ -669,10 +673,12 @@ Crea un entorno en Postman con las siguientes variables:
 | Variable | Valor de ejemplo |
 |----------|-----------------|
 | `base_url` | `http://localhost:3000` |
-| `auth_id` | `3e4f5a6b-7c8d-9e0f-a1b2-c3d4e5f60001` |
+| `token` | JWT de la sesión actual; no guardar un token real en este documento |
 | `lote_id` | `101` |
 
 ---
+
+Las fechas de los ejemplos son ilustrativas: usar fechas operativas válidas para la ventana actual de10 días.
 
 ### Ejemplo 1 — Subir evidencias pendientes
 
@@ -682,7 +688,7 @@ POST {{base_url}}/lotes-vivero/evidencias-pendientes
 
 **Headers**:
 ```
-x-auth-id: {{auth_id}}
+Authorization: Bearer {{token}}
 ```
 
 > ⚠️ En Postman selecciona **Body → form-data**. No agregues `Content-Type` manualmente; Postman lo asigna automáticamente con el boundary correcto al usar form-data.
@@ -691,6 +697,7 @@ x-auth-id: {{auth_id}}
 
 | Key | Type | Value |
 |-----|------|-------|
+| `vivero_id` | Text | `2` |
 | `titulo` | Text | `Foto inicio lote primavera 2026` |
 | `descripcion` | Text | `Semillas en cama de germinación, primera semana` |
 | `tomado_en` | Text | `2026-04-20T08:30:00Z` |
@@ -701,6 +708,7 @@ x-auth-id: {{auth_id}}
 > 📋 **Representación equivalente en JSON** (solo referencia; el envío real debe ser form-data por las imágenes):
 ```json
 {
+  "vivero_id": "2",
   "titulo": "Foto inicio lote primavera 2026",
   "descripcion": "Semillas en cama de germinación, primera semana",
   "tomado_en": "2026-04-20T08:30:00Z",
@@ -746,7 +754,7 @@ POST {{base_url}}/lotes-vivero
 
 **Headers**:
 ```
-x-auth-id: {{auth_id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 ```
 
@@ -794,7 +802,7 @@ POST {{base_url}}/lotes-vivero/{{lote_id}}/embolsado
 
 **Headers**:
 ```
-x-auth-id: {{auth_id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 ```
 
@@ -833,7 +841,7 @@ POST {{base_url}}/lotes-vivero/{{lote_id}}/adaptabilidad
 
 **Headers**:
 ```
-x-auth-id: {{auth_id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 ```
 
@@ -872,7 +880,7 @@ POST {{base_url}}/lotes-vivero/{{lote_id}}/adaptabilidad
 
 **Headers**:
 ```
-x-auth-id: {{auth_id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 ```
 
@@ -897,7 +905,7 @@ POST {{base_url}}/lotes-vivero/{{lote_id}}/merma
 
 **Headers**:
 ```
-x-auth-id: {{auth_id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 ```
 
@@ -949,7 +957,7 @@ POST {{base_url}}/lotes-vivero/{{lote_id}}/despacho
 
 **Headers**:
 ```
-x-auth-id: {{auth_id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 ```
 
@@ -995,7 +1003,7 @@ POST {{base_url}}/lotes-vivero/{{lote_id}}/despacho
 
 **Headers**:
 ```
-x-auth-id: {{auth_id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 ```
 
@@ -1183,8 +1191,8 @@ Todos los errores siguen el formato estándar de NestJS:
 | `400` | Saldo insuficiente en la recolección | Verificar `saldo_recoleccion_despues` antes de crear el lote |
 | `400` | Cantidad de merma/despacho supera el stock vivo | Consultar el stock actual del lote |
 | `400` | Transición de subetapa no permitida | Las subetapas solo avanzan; no se puede retroceder |
-| `401` | Falta el header `x-auth-id` | Incluir el header con el UUID del usuario |
-| `401` | Header `x-auth-id` vacío | El valor del header no puede ser un string vacío |
+| `401` | Bearer ausente o inválido | Recuperar sesión y enviar Authorization |
+| `403` | Sin ámbito operativo vigente | Consultar asignaciones por vivero; x-auth-id no reemplaza al JWT |
 | `403` | Rol sin permisos de escritura | Solo `ADMIN` y `GENERAL` pueden registrar eventos |
 | `404` | Lote de vivero no encontrado | Verificar el `:id` en la URL |
 | `404` | Recolección o vivero no encontrado | Verificar los IDs en el body |
@@ -1193,8 +1201,8 @@ Todos los errores siguen el formato estándar de NestJS:
 
 ### Nota sobre endpoints en desarrollo
 
-Endpoint pendiente de implementación (la RPC `fn_vivero_registrar_despacho` ya existe en migración 020 pero el servicio aún lanza `NotImplementedException`):
+El despacho manual está implementado con autorización y transacción RPC; ver contrato T2.
 
-- `POST /lotes-vivero/:id/despacho` → hoy retorna `501 Not Implemented`.
+- `POST /lotes-vivero/:id/despacho` confirma el evento o devuelve el error de autoridad/estado/saldo correspondiente.
 
 El resto del ciclo (INICIO, EMBOLSADO, ADAPTABILIDAD, MERMA, listado, detalle por `:id`, timeline, sub-GET por evento) está implementado y operativo.

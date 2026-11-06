@@ -1,0 +1,187 @@
+{
+  "tarea": "T2_ACCESO_VIVEROS_CORRECCION_COORDINADORA",
+  "fecha": "2026-11-05",
+  "estado": "VERIFICADO_LOCAL_PENDIENTE_NUEVA_REVISION_COORDINADORA",
+  "base": {
+    "head": "6f59263c349c664c15893528df1c129a7d25ef0d",
+    "arbol": "6f59263 más T1 y T2 locales sin commit de entrega; cambios ajenos conservados",
+    "corte_inicial_t2": "docs/evidencia/t2-acceso-viveros-validacion-2026-11-05.json"
+  },
+  "correcciones": [
+    "getRawRecoleccion proyecta vivero_id::text con alias exacto antes de assertCanRead/assertReviewerVivero. Un Number inseguro no concede ámbito aunque String coincida con un ID asignado.",
+    "Captura/edición multipart o JSON, filtros y ruta por vivero preservan el almacenamiento BIGINT. Se rechazan números JSON inseguros antes de reconstruir campos con corchetes. Detalle/listas devuelven vivero_id y usuario_id como cadenas.",
+    "VALIDADOR combina pendientes propios con M1 efectivo y cola de viveros M2 asignados, antes de filtros/búsqueda/total/paginación, sin duplicados, aprobación propia ni respaldo global.",
+    "Generador OpenAPI T2 incorpora las 11 rutas M1 afectadas junto a las 25 de gestión/M2; DTO, Swagger y guías alineados."
+  ],
+  "regresiones_nuevas_http": [
+    "Viveros vecinos 9007199254740992/9007199254740993 con JWT real y consultas SQL: acceso legítimo, detalle/fotos ajenas denegadas, filtro/ruta exactos, aprobación legítima y veto fuera de ámbito.",
+    "Captura multipart, edición JSON/multipart y lectura por filtro conservan 9007199254740993; Number inseguro también rechazado con notación de corchetes.",
+    "VALIDADOR con M1 sin M2 ve propios; con M2 combina propios fuera y ajenos locales. Búsqueda, conteo y páginas mantienen el ámbito. Retirar M1 conserva M2; retirar ambos deja lista vacía. Aprobación propia vetada."
+  ],
+  "versiones": {
+    "node": "v24.19.0",
+    "npm": "12.0.2",
+    "t2": {
+      "tipo": "SINTETICO_LOCAL",
+      "postgres": "14.24 (Postgres.app)",
+      "tcp": false,
+      "sin_env": true,
+      "postgis": "POSTGIS=\"3.2.10 7762352\" [EXTENSION] PGSQL=\"140\" GEOS=\"3.10.7-CAPI-1.16.7\" PROJ=\"8.1.1\" LIBXML=\"2.9.14\" LIBJSON=\"0.15\" LIBPROTOBUF=\"1.4.1\" WAGYU=\"0.5.0 (Internal)\"",
+      "cluster_detenido": true,
+      "directorio_eliminado": true
+    },
+    "regresion_t1": {
+      "tipo": "SINTETICO_LOCAL",
+      "postgres": "14.17 (Homebrew)",
+      "tcp": false,
+      "sin_env": true,
+      "cluster_detenido": true,
+      "directorio_eliminado": true
+    }
+  },
+  "comprobaciones": [
+    {
+      "comando": "npm run build",
+      "resultado": "CORRECTO",
+      "exit_code": 0
+    },
+    {
+      "comando": "npm run test:unit -- --runInBand",
+      "resultado": "CORRECTO",
+      "exit_code": 0,
+      "suites": 87,
+      "pruebas": 1252
+    },
+    {
+      "comando": "python3 scripts/qa/vivero-acceso-test.py --postgis --pg-bin /private/tmp/pa-postgis-runtime.ukgFKP/14/bin --evidence docs/evidencia/t2-correccion-bigint-cola-local-2026-11-05.json",
+      "resultado": "CORRECTO",
+      "exit_code": 0,
+      "grupos_sql": 40,
+      "carreras": 22,
+      "grupos_http": 13
+    },
+    {
+      "comando": "python3 scripts/qa/recoleccion-acceso-test.py --evidence docs/evidencia/t2-correccion-regresion-t1-2026-11-05.json",
+      "resultado": "CORRECTO",
+      "exit_code": 0,
+      "grupos_sql": 32,
+      "carreras": 12,
+      "grupos_http": 9
+    },
+    {
+      "comando": "node scripts/qa/vivero-acceso-openapi.cjs --check",
+      "resultado": "CORRECTO",
+      "paths": 36
+    },
+    {
+      "comando": "node scripts/qa/recoleccion-acceso-openapi.cjs --check",
+      "resultado": "CORRECTO",
+      "paths": 5
+    },
+    {
+      "comando": "node scripts/qa/pa-int02c-openapi.cjs --check",
+      "resultado": "CORRECTO",
+      "paths": 41,
+      "schemas": 86
+    },
+    {
+      "comando": "git diff --check y git -C ../r3foresta-docs diff --check",
+      "resultado": "CORRECTO"
+    }
+  ],
+  "logs": {
+    "build": {
+      "ruta": "/private/tmp/t2-correccion-build-entrega-2026-11-05.log",
+      "sha256": "79f35a6b81e344a3571d2f37ddc9c60aded055877d2758c5aed61990f6a28ccc"
+    },
+    "unitarios": {
+      "ruta": "/private/tmp/t2-correccion-unitarios-entrega-2026-11-05.log",
+      "sha256": "0eccaf79784092af764b46d1686eb88a7de98682daea073310b7bc0f95daf98a"
+    },
+    "t2_postgis_http": {
+      "ruta": "/private/tmp/t2-correccion-db-entrega-2026-11-05.log",
+      "sha256": "dc5fd2b3da1cba7bf1f786ae09770e4b856a1958c11f8ec7efbf367c09b8cf67"
+    },
+    "regresion_t1": {
+      "ruta": "/private/tmp/t2-correccion-t1-final-2026-11-05.log",
+      "sha256": "b74c339303608c5976957b1cb5268f4520e7447d9786bf1eacb9b85ac62cef91"
+    }
+  },
+  "migraciones": {
+    "094_095_sin_modificacion": true,
+    "sha256_congelados": {
+      "migrations/094_usuario_vivero.sql": "7b18997966852c51a7a1baf55b8ac6209da2b37961cd5f61432f224b6387693d",
+      "migrations/095_vivero_operacion_por_ambito.sql": "ec4ffc511d67ad80fcb042886470c0cd2cb92643b2e25d97e5af3e91490b0d96"
+    },
+    "aplicacion": "Success hasta095 reportado por el usuario; no implica catálogo/cuerpos/HTTP remoto cotejados"
+  },
+  "preservados_desde_base_t2": {
+    "documentacion/tareas/plan-incorporacion-plantas-procedencia.md": "89413c039b02b321ce3fb115bd158866f3bac93df292cf6e16f7fea1bfc5e63e",
+    "docs/evidencia/t1-acceso-recoleccion-local-2026-11-05.json": "eded8b0934233591bbd68dcf149f754b01165ee618639ca100c4622b344255fb",
+    "docs/evidencia/t1-acceso-recoleccion-validacion-2026-11-05.json": "5f23b0f640bcf3e8efebb3c8e49e766b0abe37f0952d7bee95bbfe53b02b25e4",
+    "migrations/092_usuario_acceso_recoleccion.sql": "74c2c01468f130c5ca072b17727f9d7b37470cddd4c21033315d509aa5d91fcc",
+    "migrations/093_recoleccion_acceso_explicito.sql": "27ece38fb0860ce87dba5e30338fed63ae3d0d09ec7b49c8588385531e3b0b27"
+  },
+  "sha256_antes_de_la_correccion": {
+    "src/recolecciones/application/recoleccion-auth.service.ts": "3a8009fa73e97d155705369e24d7d3e80b67eaf99d65919f4c97bbdd9787586c",
+    "src/recolecciones/application/recoleccion-consultas.service.ts": "e0156970dde1640f80e362f78e8d52c515284a8f1c9b2680af4bdadca0046ddd",
+    "src/recolecciones/application/recolecciones.service.ts": "d6d6ae136d79ed357ebcecc649dc3d42cd60aac45c7a54fb10f60f4331e524fa",
+    "src/recolecciones/api/recolecciones.controller.ts": "542cfefa8c07a1ccf9b88f56ccbcddc35a1efb8bae0856b9e62b199982aaa1cf",
+    "src/recolecciones/api/dto/create-recoleccion.dto.ts": "923b8618fc7aefe59673c6cdb9a5b25f711fea6ea5f132bb6e0557c0c262c936",
+    "src/recolecciones/api/dto/update-draft.dto.ts": "4ecf3dc684b883735d8e0a0c2aafce14fa6a13385b2b5b7b471f4c8a50a73ef9",
+    "src/recolecciones/api/dto/filters-recoleccion.dto.ts": "f2be10690576fa8ddbb5c36e78c34fe99c484b3479fa4c6342132947b962cea1",
+    "src/recolecciones/api/parsers/recoleccion-formdata.parser.ts": "07356d17d8710b052a2d10fb247199bb664609fda2962486f71dd2615ef27c1e",
+    "src/recolecciones/api/docs/recolecciones.swagger.ts": "41764172ecafb18854f6e03c05ecb1fb77eae0ab4e05b4ab73878961fe531e14",
+    "scripts/qa/vivero-acceso-openapi.cjs": "0e0b5359c2a14d0a45f166e60f5508d75e51b6f3a1bb5e0af84964ea9961c36c",
+    "docs/vivero-acceso-openapi.json": "80a7e30cc1a7888c8e45bb6d5676924ad28ba73fa7a6665d8fd8499ae1d63aed",
+    "test/db/vivero-acceso-http.spec.ts": "73f0da30d88f620142bd8af38e5605bc7e7fe690fcf88d4b705763104b24a6a0",
+    "test/db/recoleccion-acceso-http.spec.ts": "479fb781520943f26b1ba4ebae3564e54f2b523d723c405f2bceeac5b1a6734b",
+    "migrations/094_usuario_vivero.sql": "7b18997966852c51a7a1baf55b8ac6209da2b37961cd5f61432f224b6387693d",
+    "migrations/095_vivero_operacion_por_ambito.sql": "ec4ffc511d67ad80fcb042886470c0cd2cb92643b2e25d97e5af3e91490b0d96"
+  },
+  "sha256_cambios_correccion": {
+    "../r3foresta-docs/ESTADO.md": "eee937d053676444ecee0dde68c73c8d0fd62f9103c1833ea4f2ca274bf23877",
+    "docs/README.md": "3fdb4987b00a247ab8246fe3cd0675c13ae7c295a6dc0c046efeb50130ce654f",
+    "docs/evidencia/t2-correccion-bigint-cola-local-2026-11-05.json": "ec6d745921b97066731bc6a130c96c9cbec214aeebe485db9185cd0a035e6121",
+    "docs/evidencia/t2-correccion-regresion-t1-2026-11-05.json": "9acf0bfd90dd1c3a3ba86c4ae877cbf84e02c2c68ed8f8949f9a10f02b3d941d",
+    "docs/t2-acceso-viveros.md": "eea59a6c599bfa74af632019d5e1ca2884a5ca9a742befbc1125dd21a47315ed",
+    "docs/vivero-acceso-openapi.json": "f0f60e7698b7ce9a4b3b8f95a4b466ad07f354c0d38285af5d6683a2a063e7c4",
+    "documentacion/frontend/recolecciones.md": "15d9711230d9f105507d99a3f870a41bf99f1fdb018d3f85eb44894e35206995",
+    "documentacion/modulos/recolecciones.md": "0b19248b98e6f814140ca0e266e4c1647861d16c0b946a21ed2529e5a0c418b1",
+    "documentacion/tareas/t2-acceso-viveros.md": "ced89acb6389fc9e4e9390df8c213dfbbf29f4463aaf83903c64734e2a2603c1",
+    "scripts/qa/vivero-acceso-openapi.cjs": "184311189244e43d94bb7103346ed02e530dc951b87d6743bb6a3cf6f7aa5ffc",
+    "src/recolecciones/api/docs/recolecciones.swagger.ts": "5d13907b9b54113bbdf83843fd3388f78b99b4aae6ef7b34bdf7766e02e20806",
+    "src/recolecciones/api/dto/create-recoleccion.dto.ts": "76a3de730f086beabb94876703aa0638c0e0220c6a12c2774567d1768c7c9f2a",
+    "src/recolecciones/api/dto/filters-recoleccion.dto.ts": "afbf309a06f62785226e24b5bc6a0d10606a4c9fabc3263e4d8a7e9cced86766",
+    "src/recolecciones/api/dto/update-draft.dto.ts": "29b80b30dd2f048db8f98a94a7e8b274ed02cd73b1f201978b00425793df184e",
+    "src/recolecciones/api/parsers/recoleccion-formdata.parser.ts": "b59d293a9e2220eb898a5c0f94a0372f346b9b720bcb61c6c5fcc1cb8167cbe3",
+    "src/recolecciones/api/recolecciones.controller.ts": "0feefcbcf4c28ee6cbe6d872c531a91d7f79840cdc8f845cd2deece69e52d161",
+    "src/recolecciones/application/recoleccion-auth.service.ts": "9ee3649b99163e9dd30db2e523fa009935b89f66f1d4a8c40757d9eab4fabfa8",
+    "src/recolecciones/application/recoleccion-consultas.service.ts": "48befe360634472958a38364d14f5a534d0b17c286da26f6711897f4781c6a8a",
+    "src/recolecciones/application/recolecciones.service.ts": "47c31dab03f6450ddff566719fa4de874c18bb222725cba7606b9b2c0bb5fc7d",
+    "src/recolecciones/tests/recoleccion-accesos.spec.ts": "2f3e8d8016586e537ecb95529bda35ecac83f0569c37dd6caa1bd3117564ccd6",
+    "src/recolecciones/tests/recoleccion-draft-contrato.http.spec.ts": "76881cddcf138cfb0cfee77f92f75971c623e690b09be72529b46b1efedf9d01",
+    "test/README.md": "e7ea30246ebb22552d8a72f1bcc8df14f0a0dfdb905ac302c3966579ad204ff2",
+    "test/db/recoleccion-acceso-http.spec.ts": "1180c788f01e43ece6dc3b9e8066f7b8d4d7b1b7407aef724ad568b37dffdf1e",
+    "test/db/vivero-acceso-http.spec.ts": "beabc947ecf1d06eb5b046f9913d15082b7e61666b3f6f41960241316ad20161"
+  },
+  "estado_canonico": {
+    "ruta": "../r3foresta-docs/ESTADO.md",
+    "sha256_antes": "e558ce4bb7ecc91847bff9c7ab45a4dbb2481912c83f9cebfe97beeb5ac4a533",
+    "sha256_despues": "eee937d053676444ecee0dde68c73c8d0fd62f9103c1833ea4f2ca274bf23877",
+    "alcance": "Solo entrada T2 y enlace a esta evidencia; otros cambios conservados"
+  },
+  "cortes_anteriores": "Evidencias históricas T1/T2 preservadas. El primer ensayo correctivo falló por contrato esperado 400/422 y fixture sin cantidad; se corrigieron las pruebas. El ensayo previo a metadatos Swagger definitivos está conservado en /private/tmp/t2-correccion-ensayo-previo-swagger-2026-11-05.json. La evidencia final vuelve a verificar las fuentes actuales.",
+  "limites": [
+    "SQL y HTTP locales desechables, sin .env ni servicios reales. Transporte PostgREST y Storage sintéticos; JWT, RPC y PostgreSQL/PostGIS reales. No acredita PostgREST/Storage/URLs remotos, WebAuthn, Pinata o blockchain.",
+    "No se modificaron transacciones/locks SQL ni 094/095 aplicadas. No hubo SQL remoto, commit de entrega, push ni despliegue. T3–T5 conservadas fuera de alcance.",
+    "Lint global no acreditado; se conserva el límite documentado del corte T2 inicial."
+  ],
+  "aviso_coordinador": {
+    "estado": "ENVIADO",
+    "thread_id": "01a18a33-5969-7261-b845-25979ea63c2f",
+    "host": "local",
+    "autorizacion": "Usuario solicitó avisar al chat coordinador para revisión al terminar T2.",
+    "resultado": "Aceptado por send_message_to_thread; nueva revisión pendiente."
+  }
+}

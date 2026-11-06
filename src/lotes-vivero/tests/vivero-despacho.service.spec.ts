@@ -12,7 +12,7 @@ describe('ViveroDespachoService', () => {
   let rpcMock: jest.Mock;
   let supabaseService: jest.Mocked<Pick<SupabaseService, 'getClient'>>;
   let authService: jest.Mocked<
-    Pick<ViveroAuthService, 'getUserByAuthId' | 'assertCanWrite'>
+    Pick<ViveroAuthService, 'getUserByAuthId' | 'assertLote'>
   >;
   let saldosService: jest.Mocked<
     Pick<
@@ -48,7 +48,7 @@ describe('ViveroDespachoService', () => {
         nombre: 'Operador Vivero',
         rol: 'GENERAL',
       }),
-      assertCanWrite: jest.fn(),
+      assertLote: jest.fn(),
     };
 
     saldosService = {

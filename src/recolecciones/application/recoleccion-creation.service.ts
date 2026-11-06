@@ -1,12 +1,13 @@
 import {
   Injectable,
+  HttpException,
   InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { recoleccionRpcError } from './recoleccion-rpc';
 import { CreateRecoleccionDto } from '../api/dto/create-recoleccion.dto';
-import { EstadoRegistro } from '../domain/enums/estado-registro.enum';
 import { CantidadUnidadPolicy } from '../domain/policies/cantidad-unidad.policy';
 import { FechaRecoleccionPolicy } from '../domain/policies/fecha-recoleccion.policy';
 import type { RecoleccionFotoInput } from '../domain/policies/evidencia-completitud.policy';
@@ -17,10 +18,6 @@ import {
   RecoleccionEvidenciasService,
   type FotoSubidaRecoleccion,
 } from './recoleccion-evidencias.service';
-import {
-  RecoleccionHistorialService,
-  TipoHistorialRecoleccion,
-} from './recoleccion-historial.service';
 import { RecoleccionSnapshotsService } from './recoleccion-snapshots.service';
 import { RecoleccionUbicacionService } from './recoleccion-ubicacion.service';
 
@@ -34,7 +31,6 @@ export class RecoleccionCreationService {
     private readonly codigosService: RecoleccionCodigosService,
     private readonly consultasService: RecoleccionConsultasService,
     private readonly evidenciasService: RecoleccionEvidenciasService,
-    private readonly historialService: RecoleccionHistorialService,
     private readonly snapshotsService: RecoleccionSnapshotsService,
     private readonly ubicacionService: RecoleccionUbicacionService,
   ) {}
@@ -47,7 +43,7 @@ export class RecoleccionCreationService {
   ) {
     const supabase = this.supabaseService.getAdminClient();
     const usuario = await this.authService.getUserByAuthId(authId);
-    this.authService.assertCanCreate(usuario.rol);
+    await this.authService.assertCanCreate(usuario.rol, usuario.id);
 
     const fechaRecoleccion =
       FechaRecoleccionPolicy.assertFechaRecoleccionPermitida(
@@ -116,7 +112,7 @@ export class RecoleccionCreationService {
         .single();
 
       if (ubicacionError || !ubicacionCreada) {
-        this.logger.error('❌ Error al crear ubicación:', ubicacionError);
+        this.logger.error('❌ Error al crear ubicación:');
         throw new InternalServerErrorException('Error al crear ubicación');
       }
 
@@ -140,29 +136,29 @@ export class RecoleccionCreationService {
 
         // Desde el envío, una respuesta perdida puede ocultar una fila confirmada.
         insertRecoleccionIntentado = true;
-        const result = await supabase
-          .from('recoleccion')
-          .insert({
+        const result = await supabase.rpc('m1_recoleccion_guardar', {
+          p_actor_id: usuario.id,
+          p_accion: 'CREAR',
+          p_recoleccion_id: null,
+          p_revision_esperada: null,
+          p_payload: {
             fecha: fechaRecoleccion,
             tipo_material: tipoMaterialCanonico,
-            especie_nueva: false,
             observaciones: createRecoleccionDto.observaciones,
-            usuario_id: usuario.id,
             ubicacion_id: ubicacionId,
             vivero_id: createRecoleccionDto.vivero_id,
             metodo_id: createRecoleccionDto.metodo_id,
             planta_id: createRecoleccionDto.planta_id,
             ...snapshotPayload,
             codigo_trazabilidad: codigoTrazabilidad,
-            estado_registro: EstadoRegistro.BORRADOR,
             unidad_canonica: canonicalInput.unidad_canonica,
             cantidad_inicial_canonica: canonicalInput.cantidad_canonica,
-            saldo_actual: canonicalInput.cantidad_canonica,
-            estado_operativo: 'ABIERTO',
-          })
-          .select('id')
-          .single();
-
+          },
+          p_fotos: fotosSubidas.map((foto) => ({
+            ...foto,
+            metadata: { ...foto.metadata, origen: 'CREATE_RECOLECCION' },
+          })),
+        });
         recoleccionCreada = result.data;
         recoleccionError = result.error;
 
@@ -185,38 +181,24 @@ export class RecoleccionCreationService {
       }
 
       if (recoleccionError || !recoleccionCreada) {
-        this.logger.error('❌ Error al crear recolección:', recoleccionError);
+        this.logger.error('❌ Error al crear recolección:');
+        if (recoleccionError) recoleccionRpcError(recoleccionError);
         throw new InternalServerErrorException('Error al crear recolección');
       }
 
       recoleccionId = Number(recoleccionCreada.id);
 
-      await this.evidenciasService.insertEvidenciasCreacion({
-        recoleccionId,
-        codigoTrazabilidad,
-        userId: usuario.id,
-        fotosSubidas,
-      });
-
       const response = await this.consultasService.findOne(recoleccionId);
-
-      await this.historialService.registrarEvento({
-        recoleccionId,
-        tipoHistorial: TipoHistorialRecoleccion.BORRADOR_CREADO,
-        estadoOrigen: null,
-        estadoDestino: EstadoRegistro.BORRADOR,
-        actorUserId: usuario.id,
-        metadata: {
-          codigo_trazabilidad: codigoTrazabilidad,
-          origen: 'CREATE_RECOLECCION',
-        },
-      });
 
       return response;
     } catch (error) {
-      this.logger.error('❌ Error en create de recolección:', error);
+      this.logger.error('❌ Error en create de recolección:');
 
-      let puedeLimpiarRecursos = !insertRecoleccionIntentado;
+      const rechazo =
+        error instanceof HttpException &&
+        [400, 403, 404, 409].includes(error.getStatus());
+      let puedeLimpiarRecursos =
+        !insertRecoleccionIntentado || (recoleccionId === null && rechazo);
       if (recoleccionId !== null) {
         try {
           const { data, error: compensacionError } = await supabase.rpc(

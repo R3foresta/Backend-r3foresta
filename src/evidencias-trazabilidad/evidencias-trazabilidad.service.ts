@@ -1,6 +1,12 @@
+import { ViveroAuthService } from '../lotes-vivero/application/vivero-auth.service';
+import type { VerifiedActor } from '../auth/verified-actor.guard';
+import { RecoleccionAuthService } from '../recolecciones/application/recoleccion-auth.service';
+import { guardarRecoleccion } from '../recolecciones/application/recoleccion-rpc';
 import {
   BadRequestException,
   Injectable,
+  HttpException,
+  ForbiddenException,
   InternalServerErrorException,
   Logger,
   NotFoundException,
@@ -19,7 +25,7 @@ type TipoEntidadEvidencia = {
 type EvidenciaRow = {
   id: number;
   tipo_entidad_id: number;
-  entidad_id: number;
+  entidad_id: number | string;
   codigo_trazabilidad: string | null;
   bucket: string;
   ruta_archivo: string;
@@ -101,10 +107,12 @@ export class EvidenciasTrazabilidadService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly evidenceFileService: EvidenceFileService,
+    private readonly recoleccionAuth: RecoleccionAuthService,
+    private readonly viveroAuth: ViveroAuthService,
   ) {}
 
   async createForRecoleccion(
-    recoleccionId: number,
+    recoleccionId: number | string,
     payload: CreateEvidenciaRecoleccionDto,
     authId: string,
     files?: any[],
@@ -126,23 +134,14 @@ export class EvidenciasTrazabilidadService {
     const metadataPayload = this.parseMetadata(payload.metadata);
     const bucketFotos = 'recoleccion_fotos';
 
-    const { data: usuarioData, error: usuarioError } = await supabase
-      .from('usuario')
-      .select('id')
-      .eq('auth_id', authId)
-      .single();
-
-    if (usuarioError || !usuarioData) {
-      throw new NotFoundException(
-        `Usuario con auth_id ${authId} no encontrado`,
-      );
-    }
-
-    const userId = Number(usuarioData.id);
+    const usuario = await this.recoleccionAuth.getUserByAuthId(authId);
+    const userId = usuario.id;
 
     const { data: recoleccionData, error: recoleccionError } = await supabase
       .from('recoleccion')
-      .select('id, codigo_trazabilidad')
+      .select(
+        'id, codigo_trazabilidad, usuario_id::text, estado_registro, revision_captura',
+      )
       .is('eliminado_en', null)
       .eq('id', recoleccionId)
       .single();
@@ -150,6 +149,21 @@ export class EvidenciasTrazabilidadService {
     if (recoleccionError || !recoleccionData) {
       throw new NotFoundException(
         `Recolección con id ${recoleccionId} no encontrada`,
+      );
+    }
+
+    await this.recoleccionAuth.assertOwnerOrAdmin(
+      recoleccionData,
+      userId,
+      usuario.rol,
+    );
+    if (
+      !['BORRADOR', 'RECHAZADO'].includes(
+        String(recoleccionData.estado_registro),
+      )
+    ) {
+      throw new BadRequestException(
+        'Solo se agregan fotos a BORRADOR o RECHAZADO.',
       );
     }
 
@@ -212,6 +226,7 @@ export class EvidenciasTrazabilidadService {
       metadata: Record<string, unknown>;
     }> = [];
     let puedeCompensarSubidas = true;
+    let escrituraConfirmada = false;
 
     try {
       for (const [index, prepared] of preparedFiles.entries()) {
@@ -296,62 +311,24 @@ export class EvidenciasTrazabilidadService {
       });
 
       puedeCompensarSubidas = false;
-      const {
-        data: inserted,
-        error: insertError,
-        status,
-      } = await supabase
+      const guardado = await guardarRecoleccion(
+        supabase,
+        userId,
+        'FOTOS',
+        recoleccionId,
+        recoleccionData.revision_captura,
+        {},
+        evidenciasInsert,
+      );
+      escrituraConfirmada = true;
+      const { data: inserted, error: lecturaError } = await supabase
         .from('evidencias_trazabilidad')
-        .insert(evidenciasInsert)
-        .select(
-          `
-          id,
-          tipo_entidad_id,
-          entidad_id,
-          codigo_trazabilidad,
-          bucket,
-          ruta_archivo,
-          storage_object_id,
-          tipo_archivo,
-          mime_type,
-          tamano_bytes,
-          hash_sha256,
-          titulo,
-          descripcion,
-          metadata,
-          es_principal,
-          orden,
-          tomado_en,
-          creado_en,
-          actualizado_en,
-          eliminado_en,
-          creado_por_usuario_id,
-          actualizado_por_usuario_id,
-          eliminado_por_usuario_id,
-          tipo_entidad:tipo_entidad_id (id, codigo, descripcion),
-          creado_por:creado_por_usuario_id (id, nombre),
-          actualizado_por:actualizado_por_usuario_id (id, nombre),
-          eliminado_por:eliminado_por_usuario_id (id, nombre)
-        `,
-        );
-
-      if (insertError) {
-        puedeCompensarSubidas =
-          status >= 400 &&
-          status < 500 &&
-          (/^(22|23|42)[0-9A-Z]{3}$/.test(insertError.code) ||
-            insertError.code === 'P0002');
-        if (puedeCompensarSubidas && insertError.code === 'P0002') {
-          throw new NotFoundException('Recolección no encontrada.');
-        }
-        this.logger.error(
-          '❌ Error al insertar evidencias_trazabilidad:',
-          insertError,
-        );
+        .select('*')
+        .in('id', guardado.evidencia_ids);
+      if (lecturaError)
         throw new InternalServerErrorException(
-          'Error al registrar evidencias de trazabilidad',
+          'Fotos guardadas; no se pudo recuperar su detalle.',
         );
-      }
 
       return {
         success: true,
@@ -360,7 +337,14 @@ export class EvidenciasTrazabilidadService {
         ),
       };
     } catch (error) {
-      if (puedeCompensarSubidas && fotosSubidas.length > 0) {
+      const rechazo =
+        error instanceof HttpException &&
+        [400, 403, 404, 409].includes(error.getStatus());
+      if (
+        !escrituraConfirmada &&
+        (puedeCompensarSubidas || rechazo) &&
+        fotosSubidas.length > 0
+      ) {
         await supabase.storage
           .from(bucketFotos)
           .remove(fotosSubidas.map((foto) => foto.ruta_archivo));
@@ -370,7 +354,7 @@ export class EvidenciasTrazabilidadService {
     }
   }
 
-  async list(filters: ListEvidenciasTrazabilidadDto) {
+  async list(filters: ListEvidenciasTrazabilidadDto, actor: VerifiedActor) {
     const supabase = this.supabaseService.getAdminClient();
 
     const tipoEntidadId = await this.resolveTipoEntidadId(
@@ -378,6 +362,34 @@ export class EvidenciasTrazabilidadService {
       filters.tipo_entidad_codigo,
     );
 
+    const m1Tipo = await this.resolveTipoEntidadId(undefined, 'RECOLECCION');
+    const eventoTipo = await this.resolveTipoEntidadId(
+      undefined,
+      'EVENTO_LOTE_VIVERO',
+    );
+    const loteTipo = await this.resolveTipoEntidadId(undefined, 'LOTE_VIVERO');
+    const usuario = await this.recoleccionAuth.getUserByAuthId(actor.auth_id);
+    const revisor = this.recoleccionAuth.isGlobalReviewer(usuario.rol);
+    if (tipoEntidadId === m1Tipo && !revisor) {
+      if (!filters.entidad_id)
+        throw new ForbiddenException(
+          'Para consultar fotos M1 indique la recolección propia.',
+        );
+      await this.assertM1Read(filters.entidad_id, actor);
+    }
+    if (tipoEntidadId && [eventoTipo, loteTipo].includes(tipoEntidadId)) {
+      if (!filters.entidad_id) {
+        if (!revisor)
+          throw new ForbiddenException(
+            'Indique el evento o lote autorizado para consultar fotos M2.',
+          );
+      } else {
+        const user = await this.viveroAuth.getUserByAuthId(actor.auth_id);
+        if (tipoEntidadId === eventoTipo)
+          await this.viveroAuth.assertEvento(user, filters.entidad_id);
+        else await this.viveroAuth.assertLote(user, filters.entidad_id);
+      }
+    }
     const page = filters.page ?? 1;
     const limit = Math.min(filters.limit ?? 20, 100);
     const offset = (page - 1) * limit;
@@ -388,7 +400,7 @@ export class EvidenciasTrazabilidadService {
         `
         id,
         tipo_entidad_id,
-        entidad_id,
+        entidad_id::text,
         codigo_trazabilidad,
         bucket,
         ruta_archivo,
@@ -424,6 +436,15 @@ export class EvidenciasTrazabilidadService {
       .order('orden', { ascending: true })
       .order('creado_en', { ascending: false });
 
+    // La búsqueda genérica no concede lectura global M1; filtrar antes de contar/paginar.
+    if (!revisor && tipoEntidadId !== m1Tipo)
+      query = query.neq('tipo_entidad_id', m1Tipo);
+    if (!revisor) {
+      if (eventoTipo && tipoEntidadId !== eventoTipo)
+        query = query.neq('tipo_entidad_id', eventoTipo);
+      if (loteTipo && tipoEntidadId !== loteTipo)
+        query = query.neq('tipo_entidad_id', loteTipo);
+    }
     if (!filters.incluir_eliminadas) {
       query = query.is('eliminado_en', null);
     }
@@ -494,7 +515,7 @@ export class EvidenciasTrazabilidadService {
     };
   }
 
-  async findOne(id: number) {
+  async findOne(id: number | string, actor: VerifiedActor) {
     const supabase = this.supabaseService.getAdminClient();
 
     const { data, error } = await supabase
@@ -503,7 +524,7 @@ export class EvidenciasTrazabilidadService {
         `
         id,
         tipo_entidad_id,
-        entidad_id,
+        entidad_id::text,
         codigo_trazabilidad,
         bucket,
         ruta_archivo,
@@ -540,9 +561,27 @@ export class EvidenciasTrazabilidadService {
       (data as EvidenciaRow).ruta_archivo?.startsWith(
         'plantaciones/registros/pendientes/',
       ) ||
-      !(data as EvidenciaRow).entidad_id
+      BigInt((data as EvidenciaRow).entidad_id ?? 0) <= 0n
     ) {
       throw new NotFoundException('Evidencia de trazabilidad no encontrada');
+    }
+
+    const row = data as EvidenciaRow;
+    const tipo = await this.resolveTipoEntidadId(undefined, 'RECOLECCION');
+    if (row.tipo_entidad_id === tipo)
+      await this.assertM1Read(row.entidad_id, actor);
+    const relation = Array.isArray(row.tipo_entidad)
+      ? row.tipo_entidad[0]
+      : row.tipo_entidad;
+    if (
+      ['EVENTO_LOTE_VIVERO', 'LOTE_VIVERO'].includes(
+        String(relation?.codigo).toUpperCase(),
+      )
+    ) {
+      const user = await this.viveroAuth.getUserByAuthId(actor.auth_id);
+      if (String(relation?.codigo).toUpperCase() === 'EVENTO_LOTE_VIVERO')
+        await this.viveroAuth.assertEvento(user, row.entidad_id);
+      else await this.viveroAuth.assertLote(user, row.entidad_id);
     }
 
     return {
@@ -553,8 +592,9 @@ export class EvidenciasTrazabilidadService {
 
   async findByEntidad(
     tipoEntidadCodigo: string,
-    entidadId: number,
+    entidadId: number | string,
     includeDeleted = false,
+    actor: VerifiedActor,
   ) {
     const baseFilters = new ListEvidenciasTrazabilidadDto();
     baseFilters.tipo_entidad_codigo = tipoEntidadCodigo;
@@ -563,11 +603,38 @@ export class EvidenciasTrazabilidadService {
     baseFilters.limit = 100;
     baseFilters.page = 1;
 
-    return this.list(baseFilters);
+    return this.list(baseFilters, actor);
   }
 
-  async findByRecoleccion(recoleccionId: number, includeDeleted = false) {
-    return this.findByEntidad('RECOLECCION', recoleccionId, includeDeleted);
+  async findByRecoleccion(
+    recoleccionId: number | string,
+    includeDeleted = false,
+    actor: VerifiedActor,
+  ) {
+    await this.assertM1Read(recoleccionId, actor);
+    return this.findByEntidad(
+      'RECOLECCION',
+      recoleccionId,
+      includeDeleted,
+      actor,
+    );
+  }
+
+  private async assertM1Read(
+    recoleccionId: number | string,
+    actor: VerifiedActor,
+  ) {
+    const usuario = await this.recoleccionAuth.getUserByAuthId(actor.auth_id);
+    const { data, error } = await this.supabaseService
+      .getAdminClient()
+      .from('recoleccion')
+      .select('id,usuario_id::text,vivero_id::text')
+      .eq('id', recoleccionId)
+      .is('eliminado_en', null)
+      .maybeSingle();
+    if (error || !data)
+      throw new NotFoundException('Recolección no encontrada.');
+    await this.recoleccionAuth.assertCanRead(data, usuario.id, usuario.rol);
   }
 
   private async resolveTipoEntidadId(

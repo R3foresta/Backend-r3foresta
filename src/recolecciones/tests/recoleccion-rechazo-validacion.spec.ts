@@ -34,7 +34,10 @@ describe('Rechazo de validación (RPC privada 090)', () => {
       from: jest.fn(() => ({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        single: jest.fn(async () => ({ data: { id: 7, rol }, error: null })),
+        single: jest.fn(async () => ({
+          data: { id: 7, rol, activo: true },
+          error: null,
+        })),
       })),
     };
     const supabase = {
@@ -45,7 +48,6 @@ describe('Rechazo de validación (RPC privada 090)', () => {
       supabase,
       new RecoleccionAuthService(supabase),
       { findOne } as unknown as RecoleccionConsultasService,
-      undefined!,
       undefined!,
       undefined!,
       undefined!,

@@ -2,6 +2,8 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CreateRecoleccionDto } from '../api/dto/create-recoleccion.dto';
@@ -62,8 +64,15 @@ describe('Creación de Recolección: compensación segura ante soft delete', () 
       locationExists = false;
       return { error: null };
     });
-    rpc = jest.fn(async () => {
-      if (deleted) return { data: { compensado: false }, error: null };
+    rpc = jest.fn(async (name: string) => {
+      if (name === 'm1_recoleccion_guardar') {
+        const result = await insertParent();
+        evidenceExists = true;
+        return result;
+      }
+
+      if (deleted || evidenceExists)
+        return { data: { compensado: false }, error: null };
       rowExists = false;
       evidenceExists = false;
       return { data: { compensado: true }, error: null };
@@ -121,9 +130,6 @@ describe('Creación de Recolección: compensación segura ante soft delete', () 
         insertEvidenciasCreacion: insertEvidence,
         removeStoragePaths: removeStorage,
       } as unknown as RecoleccionEvidenciasService,
-      {
-        registrarEvento: createHistory,
-      } as unknown as RecoleccionHistorialService,
       { resolve: snapshotResolve } as unknown as RecoleccionSnapshotsService,
       {
         validateAndNormalizeUbicacionPayload: async () => dto().ubicacion,
@@ -135,87 +141,62 @@ describe('Creación de Recolección: compensación segura ante soft delete', () 
     jest.restoreAllMocks();
   });
 
-  it('compensa en RPC y solo después limpia ubicación y Storage si no existe historia', async () => {
+  it('conserva ficha, historia y fotos si falla la proyección posterior al commit', async () => {
     await expect(service.create(dto(), 'fixture')).rejects.toBe(failure);
-    expect(rpc).toHaveBeenCalledWith('fn_recoleccion_compensar_creacion', {
-      p_recoleccion_id: 292,
-      p_actor_id: 7,
-    });
-    expect(rowExists).toBe(false);
-    expect(evidenceExists).toBe(false);
-    expect(locationExists).toBe(false);
-    expect(filesExist).toBe(false);
-    expect(rpc.mock.invocationCallOrder[0]).toBeLessThan(
-      deleteLocation.mock.invocationCallOrder[0],
-    );
-    expect(rpc.mock.invocationCallOrder[0]).toBeLessThan(
-      removeStorage.mock.invocationCallOrder[0],
-    );
-  });
-
-  it('conserva ficha, evidencia, ubicación y fotos si DELETE confirmó antes del findOne final', async () => {
-    const notFound = new NotFoundException('Recolección eliminada');
-    insertEvidence.mockImplementation(async () => {
-      evidenceExists = true;
-      deleted = true;
-    });
-    findOne.mockRejectedValue(notFound);
-    await expect(service.create(dto(), 'fixture')).rejects.toBe(notFound);
-    expect(rpc).toHaveBeenCalledTimes(1);
     expect(rowExists).toBe(true);
     expect(evidenceExists).toBe(true);
     expect(locationExists).toBe(true);
     expect(filesExist).toBe(true);
-    expect(deleteLocation).not.toHaveBeenCalled();
     expect(removeStorage).not.toHaveBeenCalled();
+    expect(deleteLocation).not.toHaveBeenCalled();
+    expect(insertEvidence).not.toHaveBeenCalled();
     expect(createHistory).not.toHaveBeenCalled();
   });
-
   it.each(['error SQL', 'respuesta perdida'])(
-    'conserva recursos si la RPC de compensación falla: %s',
+    'conserva recursos si falla la compensación: %s',
     async (kind) => {
-      if (kind === 'error SQL')
-        rpc.mockResolvedValue({ data: null, error: { code: '42501' } });
-      else rpc.mockRejectedValue(new Error('Transporte perdido'));
+      const original = rpc.getMockImplementation()!;
+      rpc.mockImplementation((name: string) =>
+        name === 'm1_recoleccion_guardar'
+          ? original(name)
+          : kind === 'error SQL'
+            ? Promise.resolve({ data: null, error: { code: '42501' } })
+            : Promise.reject(new Error('Transporte perdido')),
+      );
       await expect(service.create(dto(), 'fixture')).rejects.toBe(failure);
-      expect(rowExists).toBe(true);
-      expect(evidenceExists).toBe(true);
-      expect(locationExists).toBe(true);
-      expect(filesExist).toBe(true);
-      expect(deleteLocation).not.toHaveBeenCalled();
+      expect(rowExists && evidenceExists && locationExists && filesExist).toBe(
+        true,
+      );
       expect(removeStorage).not.toHaveBeenCalled();
     },
   );
-
-  it('conserva ubicación y fotos si el INSERT padre confirmó pero su respuesta se perdió antes de conocer el id', async () => {
+  it('conserva recursos si la respuesta de creación se pierde después del commit', async () => {
     insertParent.mockImplementation(async () => {
       rowExists = true;
       throw failure;
     });
     await expect(service.create(dto(), 'fixture')).rejects.toBe(failure);
-    expect(rowExists).toBe(true);
-    expect(locationExists).toBe(true);
-    expect(filesExist).toBe(true);
-    expect(rpc).not.toHaveBeenCalled();
+    expect(rowExists && locationExists && filesExist).toBe(true);
+    expect(rpc).toHaveBeenCalledTimes(1);
     expect(removeStorage).not.toHaveBeenCalled();
-    expect(deleteLocation).not.toHaveBeenCalled();
   });
-
-  it('conserva recursos cuando el INSERT padre retorna error sin un id confirmado', async () => {
-    insertParent.mockResolvedValue({
-      data: null,
-      error: { code: '', message: 'Respuesta incierta' },
-    });
+  it('conserva recursos cuando la RPC retorna un resultado incierto sin id', async () => {
+    insertParent.mockResolvedValue({ data: null, error: { code: '' } });
     await expect(service.create(dto(), 'fixture')).rejects.toBeInstanceOf(
-      InternalServerErrorException,
+      ServiceUnavailableException,
     );
-    expect(locationExists).toBe(true);
-    expect(filesExist).toBe(true);
-    expect(rpc).not.toHaveBeenCalled();
+    expect(locationExists && filesExist).toBe(true);
     expect(removeStorage).not.toHaveBeenCalled();
-    expect(deleteLocation).not.toHaveBeenCalled();
   });
-
+  it('limpia subidas cuando el retiro gana antes de la creación RPC', async () => {
+    insertParent.mockResolvedValue({ data: null, error: { code: '42501' } });
+    await expect(service.create(dto(), 'fixture')).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(rowExists).toBe(false);
+    expect(locationExists).toBe(false);
+    expect(filesExist).toBe(false);
+  });
   it('limpia una ubicación sin vínculo cuando falla antes de enviar el INSERT padre', async () => {
     snapshotResolve.mockRejectedValue(failure);
     await expect(service.create(dto(), 'fixture')).rejects.toBe(failure);
@@ -225,15 +206,10 @@ describe('Creación de Recolección: compensación segura ante soft delete', () 
     expect(deleteLocation).toHaveBeenCalledWith('id', 8);
   });
 
-  it('conserva todos los recursos si hay historia y el historial de creación falla', async () => {
+  it('historial y evidencias no se escriben en llamadas posteriores a la RPC', async () => {
     findOne.mockResolvedValue({ success: true, data: { id: 292 } });
-    createHistory.mockRejectedValue(failure);
-    rpc.mockResolvedValue({ data: { compensado: false }, error: null });
-    await expect(service.create(dto(), 'fixture')).rejects.toBe(failure);
-    expect(rowExists).toBe(true);
-    expect(evidenceExists).toBe(true);
-    expect(locationExists).toBe(true);
-    expect(filesExist).toBe(true);
-    expect(removeStorage).not.toHaveBeenCalled();
+    await service.create(dto(), 'fixture');
+    expect(createHistory).not.toHaveBeenCalled();
+    expect(insertEvidence).not.toHaveBeenCalled();
   });
 });

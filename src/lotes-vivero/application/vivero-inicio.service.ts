@@ -1,3 +1,4 @@
+import { throwViveroMutationFailure } from './vivero-rpc-error';
 import {
   BadRequestException,
   Injectable,
@@ -29,7 +30,7 @@ export class ViveroInicioService {
 
   async crearDesdeRecoleccion(dto: CrearLoteViveroDto, authId: string) {
     const usuario = await this.authService.getUserByAuthId(authId);
-    this.authService.assertCanWrite(usuario.rol);
+    await this.authService.assertVivero(usuario, dto.vivero_id);
 
     const supabase = this.supabaseService.getAdminClient();
     let lastError: any = null;
@@ -57,6 +58,7 @@ export class ViveroInicioService {
         };
       }
 
+      throwViveroMutationFailure(error);
       lastError = error;
       if (this.isCodigoTrazabilidadDuplicateError(error)) {
         this.logger.warn(

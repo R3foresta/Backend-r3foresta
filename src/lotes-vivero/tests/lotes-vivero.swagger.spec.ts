@@ -148,12 +148,12 @@ describe('ApiCrearEvidenciaPendiente', () => {
     );
   });
 
-  it('incluye el header x-auth-id en los parametros', () => {
+  it('no presenta x-auth-id como autenticación en los parametros', () => {
     const params = getParameters(fn);
     const header = params.find(
       (p) => p.in === 'header' && p.name === 'x-auth-id',
     );
-    expect(header).toBeDefined();
+    expect(header).toBeUndefined();
   });
 
   it('declara consumo multipart/form-data', () => {
@@ -184,12 +184,12 @@ describe('ApiCrearLoteDesdeRecoleccion', () => {
     expect(op?.summary).toBe('Crear lote de vivero desde recoleccion validada');
   });
 
-  it('incluye el header x-auth-id', () => {
+  it('no presenta x-auth-id como autenticación', () => {
     const params = getParameters(fn);
     const header = params.find(
       (p) => p.in === 'header' && p.name === 'x-auth-id',
     );
-    expect(header).toBeDefined();
+    expect(header).toBeUndefined();
   });
 
   it('expone los codigos de respuesta 201, 400, 401, 404 y 500', () => {
@@ -225,11 +225,11 @@ describe('ApiRegistrarEmbolsado', () => {
     expect(op?.summary).toBe('Registrar evento de embolsado');
   });
 
-  it('incluye el header x-auth-id', () => {
+  it('no presenta x-auth-id como autenticación', () => {
     const params = getParameters(fn);
     expect(
       params.find((p) => p.in === 'header' && p.name === 'x-auth-id'),
-    ).toBeDefined();
+    ).toBeUndefined();
   });
 
   it('declara el parametro de ruta :id', () => {

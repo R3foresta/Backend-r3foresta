@@ -27,7 +27,7 @@ export class RecoleccionSnapshotsService {
 
   async resolve(params: {
     plantaId: number;
-    usuarioId: number;
+    usuarioId: number | string;
     ubicacionId: number;
   }): Promise<RecoleccionSnapshotPayload> {
     const [plantaSnapshot, nombreRecolector, nombreComunidad] =
@@ -89,7 +89,9 @@ export class RecoleccionSnapshotsService {
     };
   }
 
-  private async getUsuarioDisplayNameById(usuarioId: number): Promise<string> {
+  private async getUsuarioDisplayNameById(
+    usuarioId: number | string,
+  ): Promise<string> {
     const supabase = this.supabaseService.getAdminClient();
 
     const { data, error } = await supabase

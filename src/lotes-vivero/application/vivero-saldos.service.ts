@@ -70,7 +70,7 @@ export class ViveroSaldosService {
 
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  async obtenerSaldos(loteId: number) {
+  async obtenerSaldos(loteId: number | string) {
     const supabase = this.supabaseService.getAdminClient();
     const saldos = await this.cargarSaldosBase(loteId);
 
@@ -139,10 +139,10 @@ export class ViveroSaldosService {
     };
   }
 
-  async listarStockDisponiblePorEspecie() {
+  async listarStockDisponiblePorEspecie(ambitos: string[] | null = null) {
     const supabase = this.supabaseService.getAdminClient();
 
-    const { data: lotes, error: lotesError } = await supabase
+    let query = supabase
       .from('lote_vivero')
       .select(
         'id, codigo_trazabilidad, planta_id, saldo_vivo_actual, estado_lote, planta:planta_id(id, especie, nombre_cientifico, nombre_comun_principal)',
@@ -151,6 +151,9 @@ export class ViveroSaldosService {
       .not('saldo_vivo_actual', 'is', null)
       .gt('saldo_vivo_actual', 0)
       .order('id', { ascending: true });
+    if (ambitos !== null)
+      query = query.in('vivero_id', ambitos.length ? ambitos : ['-1']);
+    const { data: lotes, error: lotesError } = await query;
 
     if (lotesError) {
       this.logger.error(
@@ -215,7 +218,7 @@ export class ViveroSaldosService {
   }
 
   // Lectura ligera del saldo FISICO para validacion pre-despacho (RN-VIV-56).
-  async leerSaldoFisico(loteId: number): Promise<number> {
+  async leerSaldoFisico(loteId: number | string): Promise<number> {
     const saldos = await this.cargarSaldosBase(loteId);
     return saldos.saldo_vivo_actual !== null
       ? Number(saldos.saldo_vivo_actual)
@@ -225,7 +228,7 @@ export class ViveroSaldosService {
   assertCantidadNoExcedeSaldoFisico(
     cantidad: number,
     saldoFisico: number,
-    loteId: number,
+    loteId: number | string,
   ): void {
     if (cantidad > saldoFisico) {
       throw new UnprocessableEntityException(
@@ -234,7 +237,9 @@ export class ViveroSaldosService {
     }
   }
 
-  private async cargarSaldosBase(loteId: number): Promise<SaldosVistaRow> {
+  private async cargarSaldosBase(
+    loteId: number | string,
+  ): Promise<SaldosVistaRow> {
     const desdeVista = await this.intentarLeerDesdeVista(loteId);
     if (desdeVista) {
       return desdeVista;
@@ -244,7 +249,7 @@ export class ViveroSaldosService {
   }
 
   private async intentarLeerDesdeVista(
-    loteId: number,
+    loteId: number | string,
   ): Promise<SaldosVistaRow | null> {
     const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
@@ -275,7 +280,7 @@ export class ViveroSaldosService {
   }
 
   private async calcularSaldosDesdeTablas(
-    loteId: number,
+    loteId: number | string,
   ): Promise<SaldosVistaRow> {
     const supabase = this.supabaseService.getAdminClient();
 

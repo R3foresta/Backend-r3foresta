@@ -1,12 +1,13 @@
 # T1 · Acceso explícito de Recolección
 
-Fecha: 5 de noviembre de 2026. **BORRADOR PARA REVISIÓN DEL USUARIO.**
+Fecha: 5 de noviembre de 2026. **Implementada y verificada localmente; pendiente de revisión.**
 Configuración solicitada: **GPT-6.1 Sol · esfuerzo máximo**.
-**No iniciar investigación, herramientas ni implementación hasta que el usuario
-revise esta ficha y autorice expresamente continuar.** Crear o asignar esta tarea
-no constituye autorización para ejecutarla.
+El usuario autorizó expresamente ejecutar T1 en este chat y pidió avisar al chat
+«Revisar actores y casos de uso» al terminar. [Contrato, evidencia y límites de la
+entrega local](../../docs/t1-acceso-recoleccion.md). SQL remoto, push y despliegue
+siguen pendientes; T2–T5 no están incluidos.
 
-## Objetivo de la futura implementación
+## Objetivo autorizado
 
 Permitir a ADMIN conceder o retirar el acceso de Recolección sin cambiar el rol
 global de la cuenta. Una cuenta interna con M1 registra y mantiene sus recolecciones
@@ -26,7 +27,7 @@ Dependencias y tareas posteriores: [encargos generales](encargos-accesos-recolec
 - El recolector no obtiene `DESECHO` por ser autor. Esa facultad corresponde a
   Vivero según el establecimiento y el saldo, o a ADMIN. El movimiento sigue en M1.
 
-## Alcance, solo después de la autorización
+## Alcance autorizado
 
 1. Definir el contrato técnico de `usuario_acceso_recoleccion`: vigencia, revisión,
    auditoría y otorgamiento/retiro, con migración aditiva tras leer antecedentes.
@@ -57,7 +58,7 @@ física/validación conjunta, plantas externas y cambios de autorización en Pla
 No ejecutar T2–T5 ni atribuir recepción a los `VALIDADO` históricos.
 El aislamiento completo «solo M1» requiere T2; no se acredita por cerrar esta ficha.
 
-## Aceptación para cuando se implemente
+## Criterios de aceptación
 
 - ADMIN concede, consulta y retira M1; otro usuario es rechazado por API/RPC.
 - Cuenta interna sin M1 no captura; habilitada mantiene solo lo propio y según estado.
@@ -67,11 +68,11 @@ El aislamiento completo «solo M1» requiere T2; no se acredita por cerrar esta 
   coherente frente a escritura/baja concurrentes. Recibos no conceden autoridad vigente.
 - Regresión de roles globales, Plantación y consultas públicas sin cambios indebidos.
 
-Después de autorizar: build, unitarios y pruebas SQL/HTTP aisladas proporcionales,
+Verificación local: build, unitarios y pruebas SQL/HTTP aisladas proporcionales,
 según [test/README](../../test/README.md). No aplicar SQL en Supabase, desplegar,
 hacer push ni modificar permisos reales como parte de esta tarea local.
 
-## Fuentes para leer después de autorizar
+## Fuentes del encargo
 
 - README, ARCHITECTURE y AGENTS del checkout; conservar cambios locales preexistentes.
 - [Autorización M1](../../src/recolecciones/application/recoleccion-auth.service.ts),
@@ -83,5 +84,5 @@ hacer push ni modificar permisos reales como parte de esta tarea local.
   [eliminación089](../../migrations/089_recoleccion_eliminar_borrador.sql) y
   [rechazo090](../../migrations/090_recoleccion_rechazo_sin_limite_fecha.sql).
 
-La ficha prepara una implementación futura. Por ahora el agente debe limitarse
-a confirmar que recibió el encargo y esperar al usuario, sin usar herramientas.
+Esta ficha conserva el alcance aprobado. El informe enlazado registra la implementación
+y su verificación local, sin acreditar aplicación en un entorno real.

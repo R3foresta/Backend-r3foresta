@@ -1,3 +1,4 @@
+import { ViveroAccesoModule } from './vivero-acceso.module';
 import { ActorModule } from '../auth/actor.module';
 import { Module } from '@nestjs/common';
 import { EvidenceFileService } from '../common/files/evidence-file.service';
@@ -6,7 +7,6 @@ import { LotesViveroController } from './api/lotes-vivero.controller';
 import { LotesViveroService } from './application/lotes-vivero.service';
 import { ViveroAdaptabilidadService } from './application/vivero-adaptabilidad.service';
 import { ViveroAsignacionesService } from './application/vivero-asignaciones.service';
-import { ViveroAuthService } from './application/vivero-auth.service';
 import { ViveroCodigosService } from './application/vivero-codigos.service';
 import { ViveroConsultasService } from './application/vivero-consultas.service';
 import { ViveroDescartePreEmbolsadoService } from './application/vivero-descarte-pre-embolsado.service';
@@ -21,14 +21,13 @@ import { ViveroSnapshotsService } from './application/vivero-snapshots.service';
 import { ViveroTimelineService } from './application/vivero-timeline.service';
 
 @Module({
-  imports: [ActorModule, SupabaseModule],
+  imports: [ActorModule, SupabaseModule, ViveroAccesoModule],
   controllers: [LotesViveroController],
   providers: [
     LotesViveroService,
     EvidenceFileService,
     ViveroAdaptabilidadService,
     ViveroAsignacionesService,
-    ViveroAuthService,
     ViveroCodigosService,
     ViveroConsultasService,
     ViveroDescartePreEmbolsadoService,

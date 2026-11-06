@@ -1,3 +1,4 @@
+import { throwViveroMutationFailure } from './vivero-rpc-error';
 import {
   BadRequestException,
   Injectable,
@@ -72,7 +73,7 @@ export class ViveroEmbolsadoService {
   // GET :id/embolsado/context
   // Carga los datos del lote para la pantalla de embolsado. Solo lectura.
   // ---------------------------------------------------------------------------
-  async obtenerContexto(loteId: number) {
+  async obtenerContexto(loteId: number | string) {
     const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase
@@ -177,11 +178,13 @@ export class ViveroEmbolsadoService {
   // Reutiliza ViveroEvidenciasService y asocia el codigo_trazabilidad del lote.
   // ---------------------------------------------------------------------------
   async crearEvidenciasPendientes(
-    loteId: number,
+    loteId: number | string,
     dto: CrearEvidenciaPendienteViveroDto,
     authId: string,
     files: ViveroEvidenceFileInput[],
   ) {
+    const usuario = await this.authService.getUserByAuthId(authId);
+    await this.authService.assertLote(usuario, loteId);
     const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase
@@ -213,7 +216,7 @@ export class ViveroEmbolsadoService {
       dto,
       authId,
       files,
-      { eventoTipo: TipoEventoVivero.EMBOLSADO },
+      { eventoTipo: TipoEventoVivero.EMBOLSADO, loteId },
     );
 
     const evidenciaIds: number[] = resultado.evidencia_ids;
@@ -259,9 +262,13 @@ export class ViveroEmbolsadoService {
   // Registra el embolsado llamando la RPC fn_vivero_registrar_embolsado.
   // El responsable_id sale del usuario autenticado, nunca del body.
   // ---------------------------------------------------------------------------
-  async registrar(loteId: number, dto: RegistrarEmbolsadoDto, authId: string) {
+  async registrar(
+    loteId: number | string,
+    dto: RegistrarEmbolsadoDto,
+    authId: string,
+  ) {
     const usuario = await this.authService.getUserByAuthId(authId);
-    this.authService.assertCanWrite(usuario.rol);
+    await this.authService.assertLote(usuario, loteId);
 
     const supabase = this.supabaseService.getAdminClient();
 
@@ -301,6 +308,7 @@ export class ViveroEmbolsadoService {
       .single();
 
     if (error) {
+      throwViveroMutationFailure(error);
       this.logger.error('Error al registrar embolsado:', error);
       throw new BadRequestException(
         error.message || 'No se pudo registrar el embolsado.',
@@ -331,7 +339,7 @@ export class ViveroEmbolsadoService {
   // GET :id/embolsado
   // Consulta el resultado del embolsado ya registrado.
   // ---------------------------------------------------------------------------
-  async obtenerResultado(loteId: number) {
+  async obtenerResultado(loteId: number | string) {
     const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase

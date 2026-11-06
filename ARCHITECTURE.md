@@ -5,6 +5,10 @@
 Describe implementación; el contrato de producto y el estado de cada entorno
 viven en [r3foresta-docs](https://github.com/R3foresta/r3foresta-docs).
 
+Actualización transversal del 5 de noviembre de 2026: [T1 M1 local](docs/t1-acceso-recoleccion.md)
+añade 092/093, acceso explícito independiente del rol y gestión ADMIN recuperable.
+T2 incorpora [asignaciones por vivero](docs/t2-acceso-viveros.md) con 094/095; revisión y aplicación/corte remoto conservan estado separado. T3 añade administración visual y proyecciones exactas, [revisadas localmente el 6 de noviembre](docs/evidencia/t3-revision-coordinadora-2026-11-06.json). T4/T5 pendientes.
+
 ## Fuentes y mapa de código
 
 Producto/ADRs → controller/DTO/Swagger → última migración/RPC → guía de consumo.
@@ -39,6 +43,11 @@ ADMIN/GENERAL/VALIDADOR y adapta los headers legados desde la identidad verifica
 Perfil/v1 y participación usan el guard de cuenta activa; cada operación valida su autoridad.
 GET del plan conserva la lectura para cuentas activas y su escritura requiere ADMIN.
 
+En M1, GENERAL/VALIDADOR activos necesitan vigencia explícita para capturar y
+mantener lo propio; ADMIN deriva acceso. La aprobación propia está prohibida incluso
+para ADMIN. T2 limita revisión documental a ADMIN/VALIDADOR asignado al almacenamiento; GENERAL no obtiene todavía la recepción conjunta de T4. DESECHO exige ADMIN u operario vigente del almacenamiento, sin M1 ni autoridad por autoría. Las capacidades M1 tienen contrato propio, separado
+del DTO de participación.
+
 Los controllers de campañas, subcampañas, recolecciones, vivero, plantaciones,
 organizaciones y evidencias usan guard interno. Usuarios/perfil y participación
 usan guard verificado. **No existe guard global**: revisar cada ruta restante.
@@ -65,9 +74,9 @@ sin fallback, en los módulos de autenticación/usuario.
   Polígono/GPS autoritativos se validan con PostGIS.
 
 Saldo y escrituras relacionadas usan RPC: asignación, plantación, devolución,
-cancelación y revisión de plan, entre otras. Algunas operaciones legadas de M1
-siguen usando llamadas separadas y compensaciones TypeScript; no equivalen a una
-transacción única ante caída de proceso/red.
+cancelación y revisión de plan, entre otras. T1 confirma captura, edición/fotos y transiciones M1 en RPC privadas, coordinadas
+con retiro/rol/baja por locks de cuenta. Preparación de ubicación, Storage y
+Pinata/mint siguen fuera de esa transacción y conservan sus límites ante red/proceso.
 
 B/C añaden vigencias, revisión estable, auditoría y comandos durables. Cambio real,
 revisión, historial y terminal se confirman juntos; un rechazo de negocio revierte
@@ -79,6 +88,8 @@ consumible y sus límites, incluido el orden cooperativo de locks.
 SECURITY INVOKER. Los grants públicos están cerrados en las superficies verificadas;
 RLS no sustituye autorización. La continuidad probada entre RPC no cubre
 importaciones/SQL privilegiado que omitan la disciplina de cuentas → ámbitos.
+
+T2 mantiene cuenta SHARE en operación y destino UPDATE en retiro, compartido con rol/baja072; campañas → hijas → asignaciones → lote/origen → fotos conservan el orden de077. Vigencias/revisión/historial/terminal M2 se confirman juntos. Las evidencias pendientes guardan contexto inmutable y se revalidan al vincular; el bucket legado conserva URLs públicas.
 
 La validación de una Recolección precede a Pinata/mint; errores externos no revierten
 el hecho validado. No hay outbox/reintento durable para esos efectos. PostgreSQL

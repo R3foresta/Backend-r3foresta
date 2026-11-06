@@ -59,6 +59,17 @@ export class RecoleccionFormDataParser {
     }
 
     if (typeof bodyRaw === 'object') {
+      // La reconstrucción de campos con corchetes serializa escalares. Rechazar
+      // antes un Number inseguro para no convertir el redondeo en una cadena válida.
+      for (const field of ['vivero_id', 'viveroId']) {
+        if (
+          typeof bodyRaw[field] === 'number' &&
+          !Number.isSafeInteger(bodyRaw[field])
+        )
+          throw new BadRequestException(
+            'vivero_id debe ser un ID decimal exacto.',
+          );
+      }
       const entries = Object.entries(bodyRaw);
       const hasBracketNotation = entries.some(([key]) => key.includes('['));
 
@@ -204,9 +215,6 @@ export class RecoleccionFormDataParser {
       parsedBody.cantidad_inicial_canonica = Number(
         parsedBody.cantidad_inicial_canonica,
       );
-    }
-    if (parsedBody.vivero_id !== undefined) {
-      parsedBody.vivero_id = Number(parsedBody.vivero_id);
     }
     if (parsedBody.metodo_id !== undefined) {
       parsedBody.metodo_id = Number(parsedBody.metodo_id);

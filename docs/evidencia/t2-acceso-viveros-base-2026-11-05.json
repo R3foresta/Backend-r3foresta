@@ -1,0 +1,303 @@
+{
+  "fecha": "2026-11-05",
+  "entorno": "local; antes de editar T2; sin .env ni conexion remota",
+  "head": "6f59263c349c664c15893528df1c129a7d25ef0d",
+  "diff_tracked_sha256": "8a6b2bf0d00b401ec7d8bf3a488991cb1318f0586625596339408dc2db181ae3",
+  "archivos_preexistentes": [
+    {
+      "status": " M",
+      "path": "ARCHITECTURE.md",
+      "sha256": "0bd423fff3ae61668924f32f1c19ef7a1cb1d21b127e78c97812f8bc1d48ce1c"
+    },
+    {
+      "status": " M",
+      "path": "README.md",
+      "sha256": "b1a77950d8b26f6ab338152e89184b0b0bebed0f22aa017a1c195c20f9ea3dfd"
+    },
+    {
+      "status": " M",
+      "path": "docs/README.md",
+      "sha256": "fca6370d2f5f26be9a1b2c1d6aa375e74df90fce1d1ce1e4cda10e269d71fd87"
+    },
+    {
+      "status": " M",
+      "path": "documentacion/frontend/recolecciones.md",
+      "sha256": "acd2d476c3ac1c622e138092391c4100e32754514fba1ed036fa3b0a49d33c4c"
+    },
+    {
+      "status": " M",
+      "path": "documentacion/modulos/recolecciones.md",
+      "sha256": "597b03a635f096efee1ee5875ff89bcfbf2dd549e2914453537327ffc5dd6ed1"
+    },
+    {
+      "status": " M",
+      "path": "documentacion/tareas/README.md",
+      "sha256": "f581e591ec68b4f85e60128c2304ca865a7adc9d88a7baa5b893479057f0f939"
+    },
+    {
+      "status": " M",
+      "path": "documentacion/tareas/encargos-accesos-recoleccion-vivero.md",
+      "sha256": "c82136fcffa4a28234a952c37d3895fe58384b084a677b9eb73eb5fb7761c3cc"
+    },
+    {
+      "status": " M",
+      "path": "documentacion/tareas/plan-incorporacion-plantas-procedencia.md",
+      "sha256": "89413c039b02b321ce3fb115bd158866f3bac93df292cf6e16f7fea1bfc5e63e"
+    },
+    {
+      "status": " M",
+      "path": "documentacion/tareas/propuesta-permisos-por-vivero.md",
+      "sha256": "8a5fbb613f1b6b4d980005ae3787207d127ef335fcee53e06eb1ec329651c425"
+    },
+    {
+      "status": " M",
+      "path": "documentacion/tareas/t1-acceso-recoleccion.md",
+      "sha256": "391487b743480839d89301d2c89eef3619268d74c1f11f264fa28ec1db93f574"
+    },
+    {
+      "status": " M",
+      "path": "package.json",
+      "sha256": "3cf39d144b30ac38743a47b049814283f2c4e36da2f012d65ae1bbb9917a62d2"
+    },
+    {
+      "status": " M",
+      "path": "src/evidencias-trazabilidad/evidencias-trazabilidad.controller.ts",
+      "sha256": "fa3001f381df8f88cace72132b51d07d68a7d3699f8f909a9f380ecf6b350f79"
+    },
+    {
+      "status": " M",
+      "path": "src/evidencias-trazabilidad/evidencias-trazabilidad.module.ts",
+      "sha256": "3a496f3a7680451497c7778670ebfbd093d5d78169b07179c8f64b84cf385079"
+    },
+    {
+      "status": " M",
+      "path": "src/evidencias-trazabilidad/evidencias-trazabilidad.service.spec.ts",
+      "sha256": "260d82e73be287b413f0c2ad64b56051990414a8e3f69fff8445c3ae80e8e88c"
+    },
+    {
+      "status": " M",
+      "path": "src/evidencias-trazabilidad/evidencias-trazabilidad.service.ts",
+      "sha256": "eefc7451a9b60ced93cd97ddcd78feead25378373af358d496467f28ca934424"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/api/docs/recolecciones.swagger.ts",
+      "sha256": "51a38826ae0450cecff5fa822f270a746dd2ce310403ef72fcb22cb93d8648c1"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/api/recolecciones.controller.ts",
+      "sha256": "542cfefa8c07a1ccf9b88f56ccbcddc35a1efb8bae0856b9e62b199982aaa1cf"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/application/recoleccion-auth.service.ts",
+      "sha256": "f6e4a862624f5f0ae347f7ac6003268d27ae842984116e8e5ec9faa1b9c57ee8"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/application/recoleccion-blockchain.service.ts",
+      "sha256": "b9424799f81b60cd43c6ecf7b72ed7c736c1f9906f132848261391d4e13ecc0f"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/application/recoleccion-codigos.service.ts",
+      "sha256": "dc9a4bc17c8f47aa2bc97b72fd086a7ecf88bc94da5c0d2c6ba4c824f4c89b30"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/application/recoleccion-consultas.service.ts",
+      "sha256": "26e4e1d4c63df3dcd6be3db3c46e6f7ff2d4f49470e12fd6b644d6a4681cdd6b"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/application/recoleccion-creation.service.ts",
+      "sha256": "ddf535162876ff992ae1d5a43b1df0676f5c13eb8907eb8bf5cc7510e9e1c738"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/application/recoleccion-desecho.service.ts",
+      "sha256": "f10ca6eda59517cb8e6e8f16df21b62892fb8bb8d7ab4c7c13e2e10150a5b94e"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/application/recoleccion-draft.service.ts",
+      "sha256": "d4c7d19f8dd90686fd05cd0569e046554fdc7f765de7e6ea3f43b0bfba0a2538"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/application/recoleccion-evidencias.service.ts",
+      "sha256": "b2ab032b30a2e898726795de1cd351cf492d48008d0e5b9cd54a90e1160c753d"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/application/recoleccion-snapshots.service.ts",
+      "sha256": "3fab272ae10c4c3a4b2fb1626e99490f96d438e276749eaf62398ee49fb3147f"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/application/recoleccion-ubicacion.service.ts",
+      "sha256": "05adb27370da087d3aeb1372e326ef7db04526b1642a05a3d5ead4f971b051a6"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/application/recoleccion-validacion.service.ts",
+      "sha256": "6260e1e8da1d9bda871f5397415439961b925dfc169d62b48dac4b9c5face274"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/application/recolecciones.service.ts",
+      "sha256": "d6d6ae136d79ed357ebcecc649dc3d42cd60aac45c7a54fb10f60f4331e524fa"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/recolecciones.module.ts",
+      "sha256": "472627b43db1b5152979f209ea35ebe6db1653b0ca1a7c0f96bca7b355bd87b2"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/tests/recoleccion-creation-soft-delete.spec.ts",
+      "sha256": "efacf43596ee47c3f268210015f35f44207aacefad596ea39f052159184059d7"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/tests/recoleccion-desecho.service.spec.ts",
+      "sha256": "601cbe9b64d98f22452d01f40f744eba7b5654c10504175ae16f887c247b890a"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/tests/recoleccion-draft-ubicacion.service.spec.ts",
+      "sha256": "890d75c0ad22168bf3636b3822583e10f056a4b70f1bce3c96e278334e806ff5"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/tests/recoleccion-evidencias.service.spec.ts",
+      "sha256": "eb79dfbb73e9d6d3b6ef25efb3ebb698a2e5523910e8e15c7a0f848a0d47204d"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/tests/recoleccion-fotos-privadas.spec.ts",
+      "sha256": "e8cf1639eda99ed87f5843e4af821bbecc685d84c60dfbd526215361117e8a4b"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/tests/recoleccion-fotos-soft-delete.spec.ts",
+      "sha256": "23873cee4073f98e4fea0b370a4bb05c6cf0ebc3dee1171e1de346fac502fb08"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/tests/recoleccion-rechazo-validacion.spec.ts",
+      "sha256": "faf0759ff3a0badd6e2c273aa075e0d3380331aaa259c7710576755752b1e36e"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/tests/recolecciones-lectura.http.spec.ts",
+      "sha256": "ad5366c2be992f84a8a3d57acb55d1b1bae05a63ba0ef3504fd6908cf7588f61"
+    },
+    {
+      "status": " M",
+      "path": "src/recolecciones/tests/recolecciones.service.spec.ts",
+      "sha256": "e58e67d0d6c940aa657557b97ecd2b2d5f8ce453d8e5e9788900ac640476fb0e"
+    },
+    {
+      "status": " M",
+      "path": "test/README.md",
+      "sha256": "4cb7eb648a8e1debd799cb3a0efb628de399430fe6e87165dba58058cd930957"
+    },
+    {
+      "status": "??",
+      "path": "docs/evidencia/t1-acceso-recoleccion-local-2026-11-05.json",
+      "sha256": "eded8b0934233591bbd68dcf149f754b01165ee618639ca100c4622b344255fb"
+    },
+    {
+      "status": "??",
+      "path": "docs/evidencia/t1-acceso-recoleccion-validacion-2026-11-05.json",
+      "sha256": "5f23b0f640bcf3e8efebb3c8e49e766b0abe37f0952d7bee95bbfe53b02b25e4"
+    },
+    {
+      "status": "??",
+      "path": "docs/recoleccion-acceso-openapi.json",
+      "sha256": "745f66e82e5208207a71fa40053c38f9190f91c4606acb2300d9c66b8a0edf9d"
+    },
+    {
+      "status": "??",
+      "path": "docs/t1-acceso-recoleccion.md",
+      "sha256": "e25cc174e29179afbe29de44caf5a87ad88c1b3f6880db1c598c7455081a6113"
+    },
+    {
+      "status": "??",
+      "path": "documentacion/tareas/t2-acceso-viveros.md",
+      "sha256": "6d2ff5756662aa46ed478249c1a3ef6c7bf480f80a0b3835fda01481c3c11293"
+    },
+    {
+      "status": "??",
+      "path": "migrations/092_usuario_acceso_recoleccion.sql",
+      "sha256": "74c2c01468f130c5ca072b17727f9d7b37470cddd4c21033315d509aa5d91fcc"
+    },
+    {
+      "status": "??",
+      "path": "migrations/093_recoleccion_acceso_explicito.sql",
+      "sha256": "27ece38fb0860ce87dba5e30338fed63ae3d0d09ec7b49c8588385531e3b0b27"
+    },
+    {
+      "status": "??",
+      "path": "scripts/qa/recoleccion-acceso-openapi.cjs",
+      "sha256": "730d99e2dd6a172871925675dd1e384121f32dd1b4d237ef39078cbca5d81f01"
+    },
+    {
+      "status": "??",
+      "path": "scripts/qa/recoleccion-acceso-test.py",
+      "sha256": "1d70a99f66e15674c99a26fdd0e026aec2bbfe5cf8e7a36d17beaaa29638e7da"
+    },
+    {
+      "status": "??",
+      "path": "src/recolecciones/api/docs/recoleccion-accesos.swagger.ts",
+      "sha256": "f764dc14b5b8f8e5e38a97a3a5c1e8d0836a74762e68e31f4dcbae272aa5be4f"
+    },
+    {
+      "status": "??",
+      "path": "src/recolecciones/api/dto/acceso-recoleccion.dto.ts",
+      "sha256": "328f9d0ed272bef58b2c37232957bd587b4bbb33ee40a8be769f83967d5da591"
+    },
+    {
+      "status": "??",
+      "path": "src/recolecciones/api/recoleccion-accesos.controller.ts",
+      "sha256": "ac2def7aa6581338eff664677d5ab71b763b1837acf15b2c9606cd860f43cd4a"
+    },
+    {
+      "status": "??",
+      "path": "src/recolecciones/application/recoleccion-accesos.service.ts",
+      "sha256": "9173fcb8cfaa7b3f6d6ba32e2aa69cf493621f50217710b514f1e3756ae89772"
+    },
+    {
+      "status": "??",
+      "path": "src/recolecciones/application/recoleccion-rpc.ts",
+      "sha256": "4522b31e22909e1dca0974121ba568cec5e101f406b552c7991a2688029bec52"
+    },
+    {
+      "status": "??",
+      "path": "src/recolecciones/domain/policies/acceso-recoleccion.policy.ts",
+      "sha256": "3b3dea5f94c0c3a2fc73344505970adee9c5b37adaea4f76d074e73de2b68a30"
+    },
+    {
+      "status": "??",
+      "path": "src/recolecciones/tests/recoleccion-accesos.spec.ts",
+      "sha256": "7e1a20cb9512136703f0fef2f00d703f8eb0dd62d3b07cbc8654becfa8a28c4b"
+    },
+    {
+      "status": "??",
+      "path": "test/db/recoleccion-acceso-fixture.sql",
+      "sha256": "f6c05174b25abb920f88596d94684c2c2d4c6aad5c649747650282aa12a4943e"
+    },
+    {
+      "status": "??",
+      "path": "test/db/recoleccion-acceso-http.spec.ts",
+      "sha256": "bf63326847fe14d2c0671deab9d718b9b06e4e7eee9f56376277fe590576cd9e"
+    },
+    {
+      "status": "??",
+      "path": "test/jest-recoleccion-acceso-db.json",
+      "sha256": "ca464c65b25e4f0ae3d0ca060bd47f05f9f55b3e48fcd5fde956f55c4438d606"
+    }
+  ]
+}

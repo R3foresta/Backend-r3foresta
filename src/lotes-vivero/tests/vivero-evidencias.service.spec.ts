@@ -12,6 +12,7 @@ function createQueryBuilder(result: { data: any; error: any }) {
     ilike: jest.fn().mockReturnThis(),
     maybeSingle: jest.fn().mockResolvedValue(result),
     insert: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
     then: (resolve: any, reject: any) =>
       Promise.resolve(result).then(resolve, reject),
   };
@@ -22,10 +23,11 @@ function createQueryBuilder(result: { data: any; error: any }) {
 describe('ViveroEvidenciasService', () => {
   let service: ViveroEvidenciasService;
   let authService: jest.Mocked<
-    Pick<ViveroAuthService, 'getUserByAuthId' | 'assertCanWrite'>
+    Pick<ViveroAuthService, 'getUserByAuthId' | 'assertVivero' | 'assertLote'>
   >;
   let from: jest.Mock;
   let upload: jest.Mock;
+  let rpc: jest.Mock;
   let remove: jest.Mock;
   const tipoEntidadEventoViveroId = 9;
 
@@ -37,6 +39,7 @@ describe('ViveroEvidenciasService', () => {
   };
 
   beforeEach(() => {
+    rpc = jest.fn().mockResolvedValue({ data: ['501'], error: null });
     upload = jest.fn().mockResolvedValue({
       data: { id: 'storage-object-1' },
       error: null,
@@ -97,6 +100,7 @@ describe('ViveroEvidenciasService', () => {
     const supabaseService = {
       getClient: jest.fn().mockReturnValue({
         from,
+        rpc,
         storage: {
           from: jest.fn().mockReturnValue(storageBucket),
         },
@@ -109,7 +113,8 @@ describe('ViveroEvidenciasService', () => {
         nombre: 'Responsable Vivero',
         rol: 'GENERAL',
       }),
-      assertCanWrite: jest.fn(),
+      assertVivero: jest.fn(),
+      assertLote: jest.fn().mockResolvedValue('1'),
     };
 
     (supabaseService as any).getAdminClient = (
@@ -126,6 +131,7 @@ describe('ViveroEvidenciasService', () => {
   it('crea evidencia pendiente de evento vivero sin marcar principal mientras entidad_id es 0', async () => {
     const result = await service.crearPendienteParaEvento(
       {
+        vivero_id: '1',
         titulo: 'Inicio',
         descripcion: 'Foto inicio',
         metadata: '{"fuente":"app"}',
@@ -135,7 +141,10 @@ describe('ViveroEvidenciasService', () => {
     );
 
     expect(authService.getUserByAuthId).toHaveBeenCalledWith('auth-1');
-    expect(authService.assertCanWrite).toHaveBeenCalledWith('GENERAL');
+    expect(authService.assertVivero).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 77 }),
+      '1',
+    );
     expect(upload).toHaveBeenCalledTimes(1);
     expect(upload.mock.calls[0][1]).toBe(foto.buffer);
     expect(upload.mock.calls[0][2]).toMatchObject({
@@ -143,12 +152,7 @@ describe('ViveroEvidenciasService', () => {
       upsert: false,
     });
 
-    const evidenciasQuery = from.mock.results.find(
-      (resultItem) =>
-        resultItem.type === 'return' &&
-        resultItem.value.insert?.mock?.calls.length > 0,
-    )?.value;
-    const payload = evidenciasQuery.insert.mock.calls[0][0][0];
+    const payload = rpc.mock.calls[0][1].p_fotos[0];
 
     expect(payload).toMatchObject({
       tipo_entidad_id: tipoEntidadEventoViveroId,
@@ -192,9 +196,15 @@ describe('ViveroEvidenciasService', () => {
       buffer: heicBuffer,
     };
 
-    await service.crearPendienteParaEvento({}, 'auth-1', [heic], {
-      eventoTipo: TipoEventoVivero.DESPACHO,
-    });
+    await service.crearPendienteParaEvento(
+      { vivero_id: '1' },
+      'auth-1',
+      [heic],
+      {
+        eventoTipo: TipoEventoVivero.DESPACHO,
+        loteId: 1,
+      },
+    );
 
     expect(upload).toHaveBeenCalledWith(
       expect.any(String),
@@ -205,12 +215,7 @@ describe('ViveroEvidenciasService', () => {
       }),
     );
 
-    const evidenciasQuery = from.mock.results.find(
-      (resultItem) =>
-        resultItem.type === 'return' &&
-        resultItem.value.insert?.mock?.calls.length > 0,
-    )?.value;
-    const payload = evidenciasQuery.insert.mock.calls[0][0][0];
+    const payload = rpc.mock.calls[0][1].p_fotos[0];
 
     expect(payload).toMatchObject({
       mime_type: 'image/heic',
@@ -231,7 +236,7 @@ describe('ViveroEvidenciasService', () => {
 
   it('rechaza la solicitud sin fotos', async () => {
     await expect(
-      service.crearPendienteParaEvento({}, 'auth-1', []),
+      service.crearPendienteParaEvento({ vivero_id: '1' }, 'auth-1', []),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -239,6 +244,7 @@ describe('ViveroEvidenciasService', () => {
     await expect(
       service.crearPendienteParaEvento(
         {
+          vivero_id: '1',
           metadata: '{no-json}',
         },
         'auth-1',
@@ -260,7 +266,7 @@ describe('ViveroEvidenciasService', () => {
     });
 
     await expect(
-      service.crearPendienteParaEvento({}, 'auth-1', [foto]),
+      service.crearPendienteParaEvento({ vivero_id: '1' }, 'auth-1', [foto]),
     ).rejects.toThrow(NotFoundException);
   });
 });

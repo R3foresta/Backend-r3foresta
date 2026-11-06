@@ -19,7 +19,7 @@ describe('ViveroInicioService', () => {
   let rpc: jest.Mock;
   let service: ViveroInicioService;
   let authService: jest.Mocked<
-    Pick<ViveroAuthService, 'getUserByAuthId' | 'assertCanWrite'>
+    Pick<ViveroAuthService, 'getUserByAuthId' | 'assertVivero'>
   >;
 
   beforeEach(() => {
@@ -39,7 +39,7 @@ describe('ViveroInicioService', () => {
         nombre: 'Responsable Vivero',
         rol: 'GENERAL',
       }),
-      assertCanWrite: jest.fn(),
+      assertVivero: jest.fn(),
     };
 
     service = new ViveroInicioService(
@@ -72,7 +72,10 @@ describe('ViveroInicioService', () => {
     // Assert: primero se valida que el servicio autentica y autoriza antes de
     // llamar la RPC con todos los parametros normalizados.
     expect(authService.getUserByAuthId).toHaveBeenCalledWith('auth-1');
-    expect(authService.assertCanWrite).toHaveBeenCalledWith('GENERAL');
+    expect(authService.assertVivero).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 77 }),
+      dto.vivero_id,
+    );
     expect(rpc).toHaveBeenCalledWith('fn_vivero_crear_lote_desde_recoleccion', {
       p_recoleccion_id: 10,
       p_vivero_id: 2,

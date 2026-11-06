@@ -7,18 +7,15 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { AccesoRecoleccionPolicy } from '../domain/policies/acceso-recoleccion.policy';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { guardarRecoleccion } from './recoleccion-rpc';
 import { RejectValidationDto } from '../api/dto/reject-validation.dto';
 import { EstadoRegistro } from '../domain/enums/estado-registro.enum';
-import { FechaRecoleccionPolicy } from '../domain/policies/fecha-recoleccion.policy';
 import { RecoleccionAuthService } from './recoleccion-auth.service';
 import { RecoleccionBlockchainService } from './recoleccion-blockchain.service';
 import { RecoleccionCompletitudService } from './recoleccion-completitud.service';
 import { RecoleccionConsultasService } from './recoleccion-consultas.service';
-import {
-  RecoleccionHistorialService,
-  TipoHistorialRecoleccion,
-} from './recoleccion-historial.service';
 import { RecoleccionSnapshotsService } from './recoleccion-snapshots.service';
 
 @Injectable()
@@ -30,15 +27,20 @@ export class RecoleccionValidacionService {
     private readonly authService: RecoleccionAuthService,
     private readonly consultasService: RecoleccionConsultasService,
     private readonly completitudService: RecoleccionCompletitudService,
-    private readonly historialService: RecoleccionHistorialService,
     private readonly snapshotsService: RecoleccionSnapshotsService,
     private readonly blockchainService: RecoleccionBlockchainService,
   ) {}
 
   async submitForValidation(id: number, authId: string, userRole: string) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const usuario = await this.authService.getUserByAuthId(authId);
     const recoleccion = await this.consultasService.getRawRecoleccion(id);
+    await this.authService.assertOwnerOrAdmin(
+      { usuario_id: recoleccion.usuario_id as number },
+      usuario.id,
+      usuario.rol,
+    );
+
     const estadoActual = String(
       recoleccion.estado_registro ?? '',
     ).toUpperCase();
@@ -49,51 +51,25 @@ export class RecoleccionValidacionService {
       );
     }
 
-    this.authService.assertOwnerOrAdmin(
-      { usuario_id: recoleccion.usuario_id as number },
-      usuario.id,
-      usuario.rol,
-    );
     await this.completitudService.assertRecoleccionCompletaParaValidacion(
       recoleccion,
     );
 
-    const { error: updateError } = await supabase
-      .from('recoleccion')
-      .update({ estado_registro: EstadoRegistro.PENDIENTE_VALIDACION })
-      .eq('id', id);
-
-    if (updateError) {
-      this.logger.error('❌ Error al enviar a validación:', updateError);
-      throw new InternalServerErrorException('Error al enviar a validación');
-    }
-
-    try {
-      await this.historialService.registrarEvento({
-        recoleccionId: id,
-        tipoHistorial: TipoHistorialRecoleccion.SOLICITUD_VALIDACION,
-        estadoOrigen: EstadoRegistro.BORRADOR,
-        estadoDestino: EstadoRegistro.PENDIENTE_VALIDACION,
-        actorUserId: usuario.id,
-        metadata: {
-          codigo_trazabilidad: recoleccion.codigo_trazabilidad ?? null,
-        },
-      });
-    } catch (error) {
-      await this.rollbackRecoleccionUpdate(
-        id,
-        { estado_registro: EstadoRegistro.BORRADOR },
-        'historial de solicitud de validación',
-      );
-      throw error;
-    }
+    await guardarRecoleccion(
+      supabase,
+      usuario.id,
+      'ENVIAR',
+      id,
+      recoleccion.revision_captura,
+      {},
+    );
 
     this.logger.log(`✅ Recolección ${id}: BORRADOR → PENDIENTE_VALIDACION`);
     return this.consultasService.findOne(id);
   }
 
   async approveValidation(id: number, authId: string, userRole: string) {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const usuario = await this.authService.getUserByAuthId(authId);
 
     this.authService.assertReviewerRole(usuario.rol);
@@ -109,6 +85,18 @@ export class RecoleccionValidacionService {
       );
     }
 
+    if (
+      !AccesoRecoleccionPolicy.puedeConfirmar(
+        usuario.id,
+        recoleccion.usuario_id,
+      )
+    ) {
+      throw new ForbiddenException(
+        'El recolector no puede confirmar su propia recolección, tampoco como ADMIN.',
+      );
+    }
+
+    await this.authService.assertReviewerVivero(usuario, recoleccion.vivero_id);
     await this.completitudService.assertRecoleccionCompletaParaValidacion(
       recoleccion,
     );
@@ -118,47 +106,14 @@ export class RecoleccionValidacionService {
       usuarioId: recoleccion.usuario_id,
       ubicacionId: recoleccion.ubicacion_id,
     });
-    const fechaValidacion = FechaRecoleccionPolicy.getCurrentBusinessDate();
-
-    const { error: updateError } = await supabase
-      .from('recoleccion')
-      .update({
-        estado_registro: EstadoRegistro.VALIDADO,
-        usuario_validacion_id: usuario.id,
-        fecha_validacion: fechaValidacion,
-        ...snapshotPayload,
-      })
-      .eq('id', id);
-
-    if (updateError) {
-      this.logger.error('❌ Error al aprobar validación:', updateError);
-      throw new InternalServerErrorException('Error al aprobar validación');
-    }
-
-    try {
-      await this.historialService.registrarEvento({
-        recoleccionId: id,
-        tipoHistorial: TipoHistorialRecoleccion.VALIDACION_APROBADA,
-        estadoOrigen: EstadoRegistro.PENDIENTE_VALIDACION,
-        estadoDestino: EstadoRegistro.VALIDADO,
-        actorUserId: usuario.id,
-        metadata: {
-          codigo_trazabilidad: recoleccion.codigo_trazabilidad ?? null,
-          fecha_validacion: fechaValidacion,
-        },
-      });
-    } catch (error) {
-      await this.rollbackRecoleccionUpdate(
-        id,
-        {
-          estado_registro: recoleccion.estado_registro ?? null,
-          usuario_validacion_id: recoleccion.usuario_validacion_id ?? null,
-          fecha_validacion: recoleccion.fecha_validacion ?? null,
-        },
-        'historial de validación aprobada',
-      );
-      throw error;
-    }
+    await guardarRecoleccion(
+      supabase,
+      usuario.id,
+      'APROBAR',
+      id,
+      recoleccion.revision_captura,
+      snapshotPayload,
+    );
 
     this.logger.log(
       `✅ Recolección ${id}: PENDIENTE_VALIDACION → VALIDADO (por usuario ${usuario.id})`,
@@ -219,28 +174,5 @@ export class RecoleccionValidacionService {
 
     this.logger.log(`✅ Recolección ${id}: PENDIENTE_VALIDACION → RECHAZADO`);
     return this.consultasService.findOne(id);
-  }
-
-  private async rollbackRecoleccionUpdate(
-    id: number,
-    rollbackPayload: Record<string, unknown>,
-    context: string,
-  ): Promise<void> {
-    if (Object.keys(rollbackPayload).length === 0) {
-      return;
-    }
-
-    const { error } = await this.supabaseService
-      .getClient()
-      .from('recoleccion')
-      .update(rollbackPayload)
-      .eq('id', id);
-
-    if (error) {
-      this.logger.error(
-        `⚠️ No se pudo revertir recolección ${id} después de error en ${context}:`,
-        error,
-      );
-    }
   }
 }

@@ -26,7 +26,7 @@ function createSupabaseMock(recoleccion: unknown, rpcResult: unknown) {
 }
 
 describe('RecoleccionDesechoService', () => {
-  it('permite al creador registrar el descarte y devuelve los saldos', async () => {
+  it('permite a ADMIN registrar el descarte y devuelve los saldos', async () => {
     const supabase = createSupabaseMock(
       { id: 31, usuario_id: 7 },
       {
@@ -46,7 +46,7 @@ describe('RecoleccionDesechoService', () => {
     const authService = {
       getUserByAuthId: jest
         .fn()
-        .mockResolvedValue({ id: 7, nombre: 'Recolector', rol: 'GENERAL' }),
+        .mockResolvedValue({ id: 7, nombre: 'Recolector', rol: 'ADMIN' }),
     };
     const service = new RecoleccionDesechoService(
       supabaseService as unknown as SupabaseService,
@@ -98,8 +98,12 @@ describe('RecoleccionDesechoService', () => {
     expect(supabase.client.rpc).toHaveBeenCalled();
   });
 
-  it('rechaza que otro usuario que no es ADMIN registre el descarte', async () => {
+  it('propaga el rechazo de ámbito de la RPC aun con autoría o M1', async () => {
     const supabase = createSupabaseMock({ id: 31, usuario_id: 7 }, null);
+    supabase.rpcSingle.mockResolvedValue({
+      data: null,
+      error: { code: '42501' },
+    });
     const service = new RecoleccionDesechoService(
       {
         getAdminClient: jest.fn().mockReturnValue(supabase.client),
@@ -115,6 +119,6 @@ describe('RecoleccionDesechoService', () => {
     await expect(
       service.registrar(31, { cantidad: 10 }, 'auth-9'),
     ).rejects.toBeInstanceOf(ForbiddenException);
-    expect(supabase.client.rpc).not.toHaveBeenCalled();
+    expect(supabase.client.rpc).toHaveBeenCalled();
   });
 });

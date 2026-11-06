@@ -1,3 +1,4 @@
+import { BigintId } from '../../../common/dto/bigint-id';
 import {
   IsDateString,
   IsIn,
@@ -81,12 +82,17 @@ export class UpdateDraftDto {
   observaciones?: string;
 
   @ApiPropertyOptional({
-    description: 'ID del vivero',
-    example: 3,
+    description: 'ID exacto del vivero hasta BIGINT; usar cadena decimal.',
+    type: String,
+    example: '3',
+    oneOf: [
+      { type: 'string', pattern: '^[1-9][0-9]*$', maxLength: 19 },
+      { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+    ],
   })
   @IsOptional()
-  @IsNumber({}, { message: 'vivero_id debe ser numérico' })
-  vivero_id?: number;
+  @BigintId()
+  vivero_id?: number | string;
 
   @ApiPropertyOptional({
     description: 'ID del método de recolección',

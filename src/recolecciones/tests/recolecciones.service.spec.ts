@@ -44,6 +44,8 @@ function createQueryBuilder(result: {
   error: any;
   count?: number | null;
 }) {
+  if (result.data?.rol)
+    result = { ...result, data: { activo: true, ...result.data } };
   const builder: any = {
     // Métodos que devuelven 'this' (permitir encadenamiento)
     select: jest.fn().mockReturnThis(), // .select('*')
@@ -91,6 +93,8 @@ function createTipoEntidadRecoleccionQuery(id = 7) {
 describe('RecoleccionesService', () => {
   // Variables que usaremos en los tests
   let service: RecoleccionesService;
+  let authService: RecoleccionAuthService;
+  let rpc: jest.Mock;
   let evidenciasService: RecoleccionEvidenciasService;
   let supabaseService: { getClient: jest.Mock; getAdminClient: jest.Mock };
   let ubicacionesReadService: { getUbicacionesByIds: jest.Mock };
@@ -103,10 +107,23 @@ describe('RecoleccionesService', () => {
     // 1. CREAR MOCKS de las dependencias
     // Un mock es un doble de una clase real que controlas en los tests
 
+    rpc = jest.fn(async (name: string, args: any) => ({
+      data:
+        name === 'm2_ambitos'
+          ? { global: false, viveros: ['1', '2', '3'] }
+          : name === 'm1_acceso_efectivo'
+            ? true
+            : {
+                id: args.p_recoleccion_id,
+                evidencia_ids: [],
+                revision_captura: '1',
+              },
+      error: null,
+    }));
     supabaseService = {
       // jest.fn() crea una función que puedes monitorear
       // .mockReturnValue() establece qué devuelve cuando se llama
-      getAdminClient: jest.fn(() => supabaseService.getClient() as unknown),
+      getAdminClient: jest.fn(() => ({ ...supabaseService.getClient(), rpc })),
       getClient: jest.fn(),
     };
 
@@ -174,6 +191,7 @@ describe('RecoleccionesService', () => {
 
     // 3. OBTENER la instancia del servicio que queremos probar
     service = module.get(RecoleccionesService);
+    authService = module.get(RecoleccionAuthService);
     evidenciasService = module.get(RecoleccionEvidenciasService);
   });
 
@@ -370,6 +388,9 @@ describe('RecoleccionesService', () => {
    * PATRÓN: Test CON mocks de Supabase (integración con BD)
    */
   it('incluye elegibilidad y prioriza snapshots en el detalle de recoleccion', async () => {
+    jest
+      .spyOn(authService, 'getUserByAuthId')
+      .mockResolvedValue({ id: 7, nombre: 'Admin', rol: 'ADMIN' });
     // 1. PREPARAR MOCKS (Arrange)
 
     // Mock del query a la tabla 'recoleccion'
@@ -475,7 +496,11 @@ describe('RecoleccionesService', () => {
 
     // 3. EJECUTAR (Act)
     // Llamar findOne con id=9 y cantidad solicitada=45 unidades (pero solo hay 40)
-    const response = await service.findOne(9, 45);
+    const response = await service.findOne(
+      9,
+      { auth_id: 'fixture', usuario_id: '7', rol: 'ADMIN' },
+      45,
+    );
 
     // 4. VERIFICAR (Assert)
 
@@ -510,6 +535,9 @@ describe('RecoleccionesService', () => {
    * PATRÓN: Test con paginación y múltiples resultados
    */
   it('lista recolecciones por vivero sin depender de token_id y expone elegibilidad operativa', async () => {
+    jest
+      .spyOn(authService, 'getUserByAuthId')
+      .mockResolvedValue({ id: 7, nombre: 'Admin', rol: 'ADMIN' });
     // 1. PREPARAR MOCKS (Arrange)
 
     // Mock del query a 'vivero' (para verificar que existe)
@@ -656,11 +684,15 @@ describe('RecoleccionesService', () => {
     // 3. EJECUTAR (Act)
     // Listar recolecciones del vivero 3, página 1, 10 por página
     // Evaluando elegibilidad para una solicitud de 10 unidades
-    const response = await service.findByVivero(3, {
-      page: 1,
-      limit: 10,
-      cantidad_solicitada_vivero: 10,
-    });
+    const response = await service.findByVivero(
+      3,
+      {
+        page: 1,
+        limit: 10,
+        cantidad_solicitada_vivero: 10,
+      },
+      { auth_id: 'fixture', usuario_id: '7', rol: 'ADMIN' },
+    );
 
     // 4. VERIFICAR (Assert)
 
@@ -782,7 +814,7 @@ describe('RecoleccionesService', () => {
       ],
       error: null,
     });
-    const recoleccionQueries = [rawQuery, updateQuery, findOneQuery];
+    const recoleccionQueries = [rawQuery, findOneQuery];
     const client = {
       from: jest.fn((table: string) => {
         if (table === 'tipos_entidad_evidencia') {
@@ -827,11 +859,14 @@ describe('RecoleccionesService', () => {
       'ADMIN',
     );
 
-    expect(updateQuery.update).toHaveBeenCalledWith(
+    expect(rpc).toHaveBeenCalledWith(
+      'm1_recoleccion_guardar',
       expect.objectContaining({
-        tipo_material: 'SEMILLA',
-        cantidad_inicial_canonica: 500,
-        unidad_canonica: 'G',
+        p_payload: expect.objectContaining({
+          tipo_material: 'SEMILLA',
+          cantidad_inicial_canonica: 500,
+          unidad_canonica: 'G',
+        }),
       }),
     );
   });

@@ -13,7 +13,7 @@ describe('ViveroDescartePreEmbolsadoService', () => {
   let rpcMock: jest.Mock;
   let supabaseService: jest.Mocked<Pick<SupabaseService, 'getClient'>>;
   let authService: jest.Mocked<
-    Pick<ViveroAuthService, 'getUserByAuthId' | 'assertCanWrite'>
+    Pick<ViveroAuthService, 'getUserByAuthId' | 'assertLote'>
   >;
 
   const LOTE_ID = 101;
@@ -42,7 +42,7 @@ describe('ViveroDescartePreEmbolsadoService', () => {
         nombre: 'Operador Vivero',
         rol: 'GENERAL',
       }),
-      assertCanWrite: jest.fn(),
+      assertLote: jest.fn(),
     };
 
     service = new ViveroDescartePreEmbolsadoService(
@@ -74,7 +74,10 @@ describe('ViveroDescartePreEmbolsadoService', () => {
     const response = await service.registrar(LOTE_ID, dto, AUTH_ID);
 
     expect(authService.getUserByAuthId).toHaveBeenCalledWith(AUTH_ID);
-    expect(authService.assertCanWrite).toHaveBeenCalledWith('GENERAL');
+    expect(authService.assertLote).toHaveBeenCalledWith(
+      expect.objectContaining({ id: USUARIO_ID }),
+      LOTE_ID,
+    );
     expect(rpcMock).toHaveBeenCalledWith(
       'fn_vivero_registrar_descarte_pre_embolsado',
       {

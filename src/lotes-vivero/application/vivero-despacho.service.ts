@@ -1,3 +1,4 @@
+import { throwViveroMutationFailure } from './vivero-rpc-error';
 import {
   BadRequestException,
   Injectable,
@@ -82,11 +83,13 @@ export class ViveroDespachoService {
   // Sube fotos al storage antes de confirmar el despacho.
   // ---------------------------------------------------------------------------
   async crearEvidenciasPendientes(
-    loteId: number,
+    loteId: number | string,
     dto: CrearEvidenciaPendienteViveroDto,
     authId: string,
     files: ViveroEvidenceFileInput[],
   ) {
+    const usuario = await this.authService.getUserByAuthId(authId);
+    await this.authService.assertLote(usuario, loteId);
     const supabase = this.supabaseService.getAdminClient();
 
     const { data: lote, error: loteError } = await supabase
@@ -117,7 +120,7 @@ export class ViveroDespachoService {
       dto,
       authId,
       files,
-      { eventoTipo: TipoEventoVivero.DESPACHO },
+      { eventoTipo: TipoEventoVivero.DESPACHO, loteId },
     );
 
     const evidenciaIds: number[] = resultado.evidencia_ids;
@@ -163,9 +166,13 @@ export class ViveroDespachoService {
   // DestinoTipoVivero no lo expone, asi que la validacion del DTO lo deberia
   // haber filtrado antes de llegar aca).
   // ---------------------------------------------------------------------------
-  async registrar(loteId: number, dto: RegistrarDespachoDto, authId: string) {
+  async registrar(
+    loteId: number | string,
+    dto: RegistrarDespachoDto,
+    authId: string,
+  ) {
     const usuario = await this.authService.getUserByAuthId(authId);
-    this.authService.assertCanWrite(usuario.rol);
+    await this.authService.assertLote(usuario, loteId);
 
     if ((dto.destino_tipo as string) === 'PLANTACION_CAMPANIA') {
       throw new BadRequestException(
@@ -200,6 +207,7 @@ export class ViveroDespachoService {
       .single();
 
     if (error) {
+      throwViveroMutationFailure(error);
       this.logger.error('Error al registrar despacho:', error);
       throw new BadRequestException(
         error.message || 'No se pudo registrar el despacho.',
@@ -241,7 +249,7 @@ export class ViveroDespachoService {
   // GET :id/despacho
   // Devuelve todos los eventos DESPACHO del lote con sus evidencias.
   // ---------------------------------------------------------------------------
-  async obtenerDespachos(loteId: number) {
+  async obtenerDespachos(loteId: number | string) {
     const supabase = this.supabaseService.getAdminClient();
 
     const { data: loteData, error: loteError } = await supabase
