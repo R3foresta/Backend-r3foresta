@@ -1,0 +1,15 @@
+npm notice run pwa-r3foresta@0.0.0 test
+npm notice run vitest run
+
+ RUN  v5.0.2 /Users/pabloandresfernandezcari/Projects/R3foresta/pwa-r3foresta
+
+
+ Test Files  92 passed (92)
+      Tests  1273 passed (1273)
+   Start at  13:45:48
+   Duration  77.36s (tests 47%, environment 37%, transform 8%, setup 5%, import 3%)
+
+Environment  jsdom was created 92 times · 186.54s total, 37% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+

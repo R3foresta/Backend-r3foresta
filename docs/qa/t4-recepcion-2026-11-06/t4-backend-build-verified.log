@@ -1,0 +1,3 @@
+{"node":"v24.19.0","node_path":"/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/node","npm":"12.0.2","command":["npm","run","build"]}
+npm notice run backend@0.0.1 build
+npm notice run nest build

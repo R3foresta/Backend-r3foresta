@@ -1,0 +1,30 @@
+{"node":"v24.19.0","node_path":"/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/node","npm":"12.0.2","command":["node","scripts/qa/t4-recepcion-browser.cjs"]}
+OK: entrada real desde Vivero para GENERAL solo M2
+OK: sin desborde cola-390
+OK: sin desborde cola-320
+OK: sin desborde cola-1280
+OK: cancelar no envía ni confirma recepción
+OK: sin desborde confirmacion-1280
+OK: evidencia multipart sin actor/vivero concedidos por cliente
+OK: confirmación conserva IDs y revisión BIGINT exactos
+OK: recepción no duplica saldo M1
+OK: sin desborde conforme-1280
+OK: evidencia multipart sin actor/vivero concedidos por cliente
+OK: sin desborde incidencia-390
+OK: diferencia no valida ni consume
+OK: evidencia multipart sin actor/vivero concedidos por cliente
+OK: sin desborde resolucion-390
+OK: resolución conserva observado y nueva comprobación
+OK: autorrecepción bloqueada
+OK: sin desborde historico-390
+OK: histórico conserva saldo remanente sin recepción ficticia
+OK: URL directa de otro vivero denegada
+OK: evidencia multipart sin actor/vivero concedidos por cliente
+OK: sin desborde incierto-390
+OK: 503/202 conserva intención sin reenvío automático
+OK: sin desborde recuperacion-sin-m2-390
+OK: recuperación propia tras perder M2 y rol interno no duplica comandos
+OK: solo M1 o VOLUNTARIO no recibe 9
+OK: solo M1 o VOLUNTARIO no recibe 11
+OK: sin errores de página/API sintética
+T4 navegador: 28 comprobaciones.

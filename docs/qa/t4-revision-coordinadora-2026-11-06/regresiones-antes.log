@@ -1,0 +1,66 @@
+npm notice run pwa-r3foresta@0.0.0 test
+npm notice run vitest run src/modules/vivero/recepcion/recepcion.test.tsx
+
+ RUN  v5.0.2 /Users/pabloandresfernandezcari/Projects/R3foresta/pwa-r3foresta
+
+ ❯ src/modules/vivero/recepcion/recepcion.test.tsx (14 tests | 2 failed) 860ms
+   ❯ recepción operativa solo M2 (10)
+     × resuelve una incidencia de 1001 G con 1.001 KG sin confundirla con un faltante 189ms
+     × retira el detalle y sus fotos al perder ese vivero aunque conserve otro 11ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/modules/vivero/recepcion/recepcion.test.tsx > recepción operativa solo M2 > resuelve una incidencia de 1001 G con 1.001 KG sin confundirla con un faltante
+AssertionError: expected <p role="alert" …(1)></p> to be null
+
+- Expected:
+null
+
++ Received:
+<p
+  class="text-danger-700"
+  role="alert"
+>
+  La incidencia solo se resuelve con comprobación total conforme y motivo de al menos 10 caracteres.
+</p>
+
+ ❯ src/modules/vivero/recepcion/recepcion.test.tsx:91:40
+     89|    await u.upload(screen.getByLabelText('Fotos de la comprobación'),ne…
+     90|    await u.click(screen.getByRole('button',{name:'Resolver con recepci…
+     91|    expect(screen.queryByRole('alert')).toBeNull()
+       |                                        ^
+     92|    expect(screen.getByRole('dialog',{name:'Confirmar recepción conform…
+     93|    await u.click(within(screen.getByRole('dialog')).getByRole('button'…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/modules/vivero/recepcion/recepcion.test.tsx > recepción operativa solo M2 > retira el detalle y sus fotos al perder ese vivero aunque conserve otro
+AssertionError: expected <img …(4)></img> to be null
+
+- Expected:
+null
+
++ Received:
+<img
+  alt="Foto del vivero retirado"
+  class="aspect-square w-full rounded-xl object-cover"
+  loading="lazy"
+  src="https://example.invalid/origen.jpg"
+/>
+
+ ❯ src/modules/vivero/recepcion/recepcion.test.tsx:103:62
+    101|    const firstSignal=vi.mocked(RecepcionService.detalle).mock.calls[0]…
+    102|    v.rerender(page(false))
+    103|    expect(screen.queryByAltText('Foto del vivero retirado')).toBeNull()
+       |                                                              ^
+    104|    expect(screen.queryByText('REC-T4-SINTETICA')).toBeNull()
+    105|    await waitFor(()=>expect(firstSignal?.aborted).toBe(true))
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  13:43:51
+   Duration  2.66s (environment 41%, tests 34%, transform 16%, setup 5%, import 4%)
+

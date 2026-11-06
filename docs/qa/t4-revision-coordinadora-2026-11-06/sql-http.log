@@ -1,0 +1,16 @@
+T4 PostgreSQL aislado 14.24 (Postgres.app)
+PASS test/db/recepcion-semillas-http.spec.ts
+  ✓ JWT real y cuenta activa; headers no conceden identidad/rol (80 ms)
+  ✓ solo M2 accede cola/detalle/fotos; solo M1/otro vivero no accede por URL directa (231 ms)
+  ✓ multipart contextual y recibir/validar con replay sin otra carga ni anclaje externo (168 ms)
+  ✓ incidencia y resolución conforme con evidencia nueva preservan historia (240 ms)
+  ✓ commit con respuesta incierta se recupera por misma clave tras perder acceso (208 ms)
+  ✓ parser cerrado rechaza actor/custodia/base64 y BIGINT inseguro antes de efectos (84 ms)
+  ✓ diagnóstico es solo ADMIN y nunca acredita una recepción legada (51 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       7 passed, 7 total
+Snapshots:   0 total
+Time:        1.981 s, estimated 6 s
+Ran all test suites.
+T4: 69 grupos SQL y 8 carreras aprobados.

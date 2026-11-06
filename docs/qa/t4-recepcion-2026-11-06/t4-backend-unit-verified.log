@@ -1,0 +1,326 @@
+{"node":"v24.19.0","node_path":"/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/node","npm":"12.0.2","command":["npm","run","test:unit","--","--runInBand"]}
+npm notice run backend@0.0.1 test:unit
+npm notice run jest --config ./test/jest-unit.json --runInBand
+PASS src/auth/pa-int02d-superficie.http.spec.ts (5.27 s)
+PASS src/participacion/cargas/participacion-imagen.service.spec.ts
+PASS src/auth/internal-actor.http.spec.ts
+PASS src/participacion/cargas/participacion-imagen-publica.service.spec.ts
+PASS src/impact/seed-bank/tests/seed-bank.http.spec.ts
+PASS src/subcampanias/tests/subcampanias-plan.http.spec.ts
+PASS src/impact/impact.service.spec.ts
+PASS src/auth/actor.module.spec.ts
+PASS src/recolecciones/tests/recoleccion-draft-contrato.http.spec.ts
+PASS src/recolecciones/tests/recoleccion-eliminacion.http.spec.ts
+PASS src/participacion/tests/participacion-openapi.spec.ts
+PASS src/users/perfil-v1.http.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:29 PM   ERROR [RecoleccionConsultasService] Error al obtener la planta del historial
+[Nest] 92531  - 11/06/2026, 1:29:29 PM   ERROR [RecoleccionConsultasService] Object(1) {
+  message: 'fallo sintético'
+}
+[Nest] 92531  - 11/06/2026, 1:29:29 PM   ERROR [RecoleccionConsultasService] Error al obtener el historial de semillas
+[Nest] 92531  - 11/06/2026, 1:29:29 PM   ERROR [RecoleccionConsultasService] Object(1) {
+  message: 'fallo sintético'
+}
+PASS src/recolecciones/tests/recoleccion-historial-semillas.http.spec.ts
+PASS src/recolecciones/tests/recolecciones-lectura.http.spec.ts
+PASS src/recolecciones/tests/recolecciones.service.spec.ts
+PASS src/users/usuarios-administracion.http.spec.ts
+PASS src/recolecciones/tests/recoleccion-fotos-privadas.spec.ts
+PASS src/participacion/tests/correcciones-participantes.spec.ts
+PASS src/recolecciones/tests/recoleccion-draft-ubicacion.service.spec.ts
+PASS src/evidencias-trazabilidad/evidencias-trazabilidad.service.spec.ts
+PASS src/recolecciones/tests/recoleccion-rechazo-validacion.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:33 PM     LOG [RecoleccionValidacionService] ✅ Recolección 9: PENDIENTE_VALIDACION → RECHAZADO
+[Nest] 92531  - 11/06/2026, 1:29:33 PM     LOG [RecoleccionValidacionService] ✅ Recolección 9: PENDIENTE_VALIDACION → RECHAZADO
+PASS src/recolecciones/tests/recoleccion-evidencias.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:34 PM   ERROR [ViveroConsultasService] Error al listar lotes de vivero:
+[Nest] 92531  - 11/06/2026, 1:29:34 PM   ERROR [ViveroConsultasService] Object(1) {
+  message: 'database unavailable'
+}
+[Nest] 92531  - 11/06/2026, 1:29:34 PM   ERROR [ViveroConsultasService] Error al obtener detalle del lote 101:
+[Nest] 92531  - 11/06/2026, 1:29:34 PM   ERROR [ViveroConsultasService] Object(1) {
+  message: 'database unavailable'
+}
+[Nest] 92531  - 11/06/2026, 1:29:34 PM   ERROR [ViveroConsultasService] Error al obtener eventos del lote 101:
+[Nest] 92531  - 11/06/2026, 1:29:34 PM   ERROR [ViveroConsultasService] Object(1) {
+  message: 'eventos boom'
+}
+PASS src/lotes-vivero/tests/vivero-consultas.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:34 PM   ERROR [SubcampaniasPlanService] Error en la operación atómica del plan:
+[Nest] 92531  - 11/06/2026, 1:29:34 PM   ERROR [SubcampaniasPlanService] Object(2) {
+  code: 'PGRST202',
+  message: 'RPC ausente'
+}
+[Nest] 92531  - 11/06/2026, 1:29:34 PM   ERROR [SubcampaniasPlanService] Error en la operación atómica del plan:
+[Nest] 92531  - 11/06/2026, 1:29:34 PM   ERROR [SubcampaniasPlanService] Object(2) {
+  code: 'P0001',
+  message: 'Fallo al insertar auditoría'
+}
+PASS src/subcampanias/tests/subcampanias-plan.service.spec.ts
+PASS src/lotes-vivero/tests/vivero-accesos.spec.ts
+PASS src/organizaciones/tests/organizaciones-auth.service.spec.ts
+PASS src/impact/seed-bank/tests/seed-bank.policy.spec.ts
+PASS src/participacion/tests/correcciones.spec.ts
+PASS src/lotes-vivero/tests/lotes-vivero.swagger.spec.ts
+PASS src/subcampanias/tests/subcampanias-equipo.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:37 PM   ERROR [RecoleccionConsultasService] ❌ Error al obtener saldos de recolecciones para el resumen de stock:
+[Nest] 92531  - 11/06/2026, 1:29:37 PM   ERROR [RecoleccionConsultasService] Error: database unavailable
+    at Object.<anonymous> (/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/src/recolecciones/tests/recoleccion-stock-summary.service.spec.ts:153:24)
+    at Promise.finally.completed (/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at _runTest (/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/node_modules/jest-runner/build/index.js:275:16)
+    at runTest (/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta/node_modules/jest-runner/build/index.js:343:7)
+PASS src/recolecciones/tests/recoleccion-stock-summary.service.spec.ts
+PASS src/app.controller.spec.ts
+PASS src/subcampanias/tests/subcampanias-cierre.service.spec.ts
+PASS src/plantaciones/tests/plantacion-auth.service.spec.ts
+PASS src/recolecciones/tests/recoleccion-creation-soft-delete.spec.ts
+PASS src/recolecciones/tests/recoleccion-fotos-soft-delete.spec.ts
+PASS src/campanias/tests/campanias-organizaciones.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:38 PM   ERROR [CampaniasDesactivacionService] Error al desactivar campania masivamente:
+[Nest] 92531  - 11/06/2026, 1:29:38 PM   ERROR [CampaniasDesactivacionService] Object(2) {
+  code: 'P0002',
+  message: 'Campania 15 ya desactivada.'
+}
+[Nest] 92531  - 11/06/2026, 1:29:38 PM   ERROR [CampaniasDesactivacionService] Error al desactivar campania masivamente:
+[Nest] 92531  - 11/06/2026, 1:29:38 PM   ERROR [CampaniasDesactivacionService] Object(2) {
+  code: 'P0003',
+  message: 'La campania no es elegible.'
+}
+[Nest] 92531  - 11/06/2026, 1:29:38 PM   ERROR [CampaniasDesactivacionService] Error al desactivar campania masivamente:
+[Nest] 92531  - 11/06/2026, 1:29:38 PM   ERROR [CampaniasDesactivacionService] Object(2) {
+  code: 'P0001',
+  message: 'El motivo es invalido.'
+}
+[Nest] 92531  - 11/06/2026, 1:29:38 PM   ERROR [CampaniasDesactivacionService] Error al desactivar campania masivamente:
+[Nest] 92531  - 11/06/2026, 1:29:38 PM   ERROR [CampaniasDesactivacionService] Object(2) {
+  code: 'PGRST202',
+  message: 'fn_campania_desactivar_sin_plantaciones not found'
+}
+[Nest] 92531  - 11/06/2026, 1:29:38 PM   ERROR [CampaniasDesactivacionService] Error al desactivar campania masivamente:
+[Nest] 92531  - 11/06/2026, 1:29:38 PM   ERROR [CampaniasDesactivacionService] Object(2) {
+  code: '42501',
+  message: 'permission denied for function'
+}
+PASS src/campanias/tests/campanias-desactivacion.service.spec.ts
+PASS src/impact/impacto-consulta.spec.ts
+PASS src/participacion/cargas/participacion-cargas.service.spec.ts
+PASS src/subcampanias/tests/subcampanias-consultas.service.spec.ts
+PASS src/participacion/tests/participacion-lecturas.spec.ts
+PASS src/health/health.controller.spec.ts
+PASS src/users/application/usuarios-administracion.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroEmbolsadoService] Error al registrar embolsado:
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroEmbolsadoService] Object(1) {
+  message: 'plantas_vivas_iniciales debe ser un entero mayor o igual a 1.'
+}
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroEmbolsadoService] Error al registrar embolsado:
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroEmbolsadoService] Object(1) {
+  message: 'EMBOLSADO requiere al menos una evidencia obligatoria (RN-VIV-26).'
+}
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroEmbolsadoService] Error al registrar embolsado:
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroEmbolsadoService] Object(1) {
+  message: 'El lote 6 no tiene un evento INICIO registrado. EMBOLSADO requiere INICIO previo (RN-VIV-10).'
+}
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroEmbolsadoService] Error al registrar embolsado:
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroEmbolsadoService] Object(1) {
+  message: 'El lote 6 ya tiene un evento EMBOLSADO registrado. No se puede registrar dos veces (RN-VIV-11).'
+}
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroEmbolsadoService] Error al registrar embolsado:
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroEmbolsadoService] Object(1) {
+  message: 'Todas las evidencias de EMBOLSADO deben existir, no estar eliminadas y no estar vinculadas a otra entidad.'
+}
+PASS src/lotes-vivero/tests/vivero-embolsado.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroAsignacionesService] Error al asignar stock a subcampania:
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroAsignacionesService] Object(2) {
+  code: 'P0001',
+  message: 'La especie del lote no esta en el plan de especies.'
+}
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroAsignacionesService] Error al asignar stock a subcampania:
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroAsignacionesService] Object(2) {
+  code: 'P0001',
+  message: 'La asignacion fisica requiere al menos una evidencia de entrega/salida (RN-VIV-54).'
+}
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroAsignacionesService] Error al asignar stock a subcampania:
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroAsignacionesService] Object(2) {
+  code: 'P0001',
+  message: 'La cantidad a asignar (600) excede el saldo vivo fisico del lote 55 (500).'
+}
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroAsignacionesService] Error al asignar stock a subcampania:
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroAsignacionesService] Object(2) {
+  code: 'P0001',
+  message: 'El lote 55 no tiene EMBOLSADO registrado. Antes de EMBOLSADO solo existe material en proceso, no plantas entregables (RN-VIV-61).'
+}
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroAsignacionesService] Error al devolver asignacion:
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroAsignacionesService] Object(2) {
+  code: 'P0001',
+  message: 'La devolucion (500) excede el saldo asignado disponible (100) de la asignacion 10.'
+}
+PASS src/lotes-vivero/tests/vivero-asignaciones.service.spec.ts
+PASS src/recolecciones/tests/recoleccion-accesos.spec.ts
+PASS src/participacion/tests/registro-service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroInicioService] Error al crear lote de vivero desde recoleccion:
+[Nest] 92531  - 11/06/2026, 1:29:40 PM   ERROR [ViveroInicioService] Object(2) {
+  code: 'P0001',
+  message: 'La recoleccion 10 no esta validada.'
+}
+PASS src/lotes-vivero/tests/vivero-inicio.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:40 PM    WARN [ViveroInicioService] Colision de codigo de lote vivero, reintentando (1/5).
+PASS src/organizaciones/tests/organizaciones.service.spec.ts
+PASS src/lotes-vivero/tests/registrar-embolsado.dto.spec.ts
+PASS src/participacion/tests/registro-dto.spec.ts
+PASS src/campanias/tests/campanias-edicion.service.spec.ts
+PASS src/campanias/tests/campanias-auth.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Error al registrar plantacion:
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Object(1) {
+  message: 'Saldo insuficiente'
+}
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Error al registrar plantacion:
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Object(1) {
+  message: 'La especie (planta_id 8) no esta en el plan de especies de la subcampania 10 (SUBCAMPANIA_META_ESPECIE).'
+}
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Error al registrar plantacion:
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Object(1) {
+  message: 'Saldo asignado insuficiente en alguna asignacion (pedido excede saldo_asignado_disponible).'
+}
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Error al registrar plantacion:
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Object(1) {
+  message: 'Proposito incoherente: para es_reposicion=false se requiere asignaciones con proposito PLANTACION_INICIAL.'
+}
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Error al registrar plantacion:
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Object(1) {
+  message: 'La subcampania 10 no esta ACTIVA (estado actual: COMPLETADA). La plantacion inicial solo se permite en ACTIVA.'
+}
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Error al registrar plantacion:
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Object(1) {
+  message: 'El responsable 99 no pertenece al equipo (COORDINADOR|OPERARIO) de la subcampania 10.'
+}
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Error al registrar plantacion:
+[Nest] 92531  - 11/06/2026, 1:29:42 PM   ERROR [PlantacionCreationService] Object(1) {
+  message: 'La reposicion (6) excede el pendiente de reposicion del grupo origen 400 (muertas acumuladas 7 - repuestas acumuladas 2 = pendiente 5).'
+}
+PASS src/plantaciones/tests/plantacion-creation.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:43 PM   ERROR [ViveroDescartePreEmbolsadoService] Error al registrar descarte pre-embolsado:
+[Nest] 92531  - 11/06/2026, 1:29:43 PM   ERROR [ViveroDescartePreEmbolsadoService] Object(1) {
+  message: 'DESCARTE_PRE_EMBOLSADO es total: cantidad_material_afectado debe coincidir.'
+}
+PASS src/lotes-vivero/tests/vivero-descarte-pre-embolsado.service.spec.ts
+PASS src/supabase/supabase.service.spec.ts
+  ● Console
+
+    console.log
+      ✅ Supabase client inicializado correctamente
+
+      at SupabaseService.onModuleInit (src/supabase/supabase.service.ts:37:13)
+
+    console.log
+      ✅ Supabase client inicializado correctamente
+
+      at SupabaseService.onModuleInit (src/supabase/supabase.service.ts:37:13)
+
+    console.log
+      ✅ Supabase client inicializado correctamente
+
+      at SupabaseService.onModuleInit (src/supabase/supabase.service.ts:37:13)
+
+    console.log
+      ✅ Supabase client inicializado correctamente
+
+      at SupabaseService.onModuleInit (src/supabase/supabase.service.ts:37:13)
+
+PASS src/subcampanias/tests/subcampanias-activacion.service.spec.ts
+PASS src/recolecciones/tests/recoleccion-recepcion.spec.ts
+PASS src/plantaciones/tests/plantacion-evidencias.service.spec.ts
+PASS src/plantas/plantas.service.spec.ts
+PASS src/lotes-vivero/tests/vivero-evidencias.service.spec.ts
+PASS src/lotes-vivero/tests/vivero-despacho.service.spec.ts
+PASS src/campanias/tests/campanias-activity.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:46 PM   ERROR [SubcampaniasCreationService] Error al crear subcampania:
+[Nest] 92531  - 11/06/2026, 1:29:46 PM   ERROR [SubcampaniasCreationService] Object(2) {
+  code: '23505',
+  message: 'duplicate'
+}
+[Nest] 92531  - 11/06/2026, 1:29:46 PM   ERROR [SubcampaniasCreationService] Error al crear subcampania:
+[Nest] 92531  - 11/06/2026, 1:29:46 PM   ERROR [SubcampaniasCreationService] Object(2) {
+  code: '42000',
+  message: 'oops'
+}
+PASS src/subcampanias/tests/subcampanias-creation.service.spec.ts
+PASS src/recolecciones/tests/recoleccion-elegibilidad.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:46 PM   ERROR [CampaniasCreationService] Error al crear campania:
+[Nest] 92531  - 11/06/2026, 1:29:46 PM   ERROR [CampaniasCreationService] Object(2) {
+  code: '23505',
+  message: 'duplicate key'
+}
+[Nest] 92531  - 11/06/2026, 1:29:46 PM   ERROR [CampaniasCreationService] Error al crear campania:
+[Nest] 92531  - 11/06/2026, 1:29:46 PM   ERROR [CampaniasCreationService] Object(2) {
+  code: '42000',
+  message: 'generic error'
+}
+PASS src/campanias/tests/campanias-creation.service.spec.ts
+PASS src/participacion/tests/participacion-comandos.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:47 PM   ERROR [SubcampaniasCancelacionService] Error al cancelar subcampania:
+[Nest] 92531  - 11/06/2026, 1:29:47 PM   ERROR [SubcampaniasCancelacionService] Object(2) {
+  code: 'P0001',
+  message: 'La subcampania ya tiene plantaciones registradas (total_plantado_inicial = 3). Usar cierre FINALIZADA_PARCIAL.'
+}
+[Nest] 92531  - 11/06/2026, 1:29:47 PM   ERROR [SubcampaniasCancelacionService] Error al cancelar subcampania:
+[Nest] 92531  - 11/06/2026, 1:29:47 PM   ERROR [SubcampaniasCancelacionService] Object(2) {
+  code: 'P0002',
+  message: 'Subcampania 99 no encontrada.'
+}
+[Nest] 92531  - 11/06/2026, 1:29:47 PM   ERROR [SubcampaniasCancelacionService] Error al cancelar subcampania:
+[Nest] 92531  - 11/06/2026, 1:29:47 PM   ERROR [SubcampaniasCancelacionService] Object(2) {
+  code: 'P0001',
+  message: 'Solo se puede cancelar una subcampania en BORRADOR o ACTIVA (estado actual: COMPLETADA).'
+}
+[Nest] 92531  - 11/06/2026, 1:29:47 PM   ERROR [SubcampaniasCancelacionService] Error al cancelar subcampania:
+[Nest] 92531  - 11/06/2026, 1:29:47 PM   ERROR [SubcampaniasCancelacionService] Object(2) {
+  code: 'PGRST202',
+  message: 'fn_subcampania_cancelar not found'
+}
+[Nest] 92531  - 11/06/2026, 1:29:47 PM   ERROR [SubcampaniasCancelacionService] Error al cancelar subcampania:
+[Nest] 92531  - 11/06/2026, 1:29:47 PM   ERROR [SubcampaniasCancelacionService] Object(2) {
+  code: '42501',
+  message: 'permission denied for function'
+}
+PASS src/subcampanias/tests/subcampanias-cancelacion.service.spec.ts
+PASS src/subcampanias/tests/subcampanias-auth.service.spec.ts
+PASS src/subcampanias/tests/subcampanias-lifecycle.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:48 PM   ERROR [OrganizacionesLogoService] Error al subir logo a Storage
+[Nest] 92531  - 11/06/2026, 1:29:48 PM   ERROR [OrganizacionesLogoService] Object(1) {
+  message: 'storage exploded'
+}
+PASS src/organizaciones/tests/organizaciones-logo.service.spec.ts
+[Nest] 92531  - 11/06/2026, 1:29:48 PM    WARN [OrganizacionesLogoService] logo_url no apunta al bucket organizaciones; no se borra del Storage: https://otro-host.com/imagen.png
+PASS src/common/files/evidence-file.policy.spec.ts
+PASS src/subcampanias/tests/subcampanias-edicion.service.spec.ts
+PASS src/impact/application/impacto-imagen-propia.service.spec.ts
+PASS src/participacion/cargas/participacion-cargas-cleanup-reinicio.spec.ts
+PASS src/campanias/tests/campanias-metrics.service.spec.ts
+PASS src/recolecciones/tests/recoleccion-desecho.service.spec.ts
+PASS src/users/perfil-v1.dto.spec.ts
+PASS src/participacion/tests/comando-canonical.spec.ts
+PASS src/viveros/viveros.service.spec.ts
+PASS src/subcampanias/tests/subcampanias-plantacion-context.service.spec.ts
+PASS src/users/users-alta.spec.ts
+PASS src/recolecciones/tests/cantidad-unidad.policy.spec.ts
+PASS src/common/files/image-file.policy.spec.ts
+PASS src/plantas/planta-presentacion.spec.ts
+PASS src/subcampanias/tests/policies.spec.ts
+PASS src/campanias/tests/policies.spec.ts
+PASS src/plantaciones/tests/policies.spec.ts
+
+Test Suites: 89 passed, 89 total
+Tests:       1268 passed, 1268 total
+Snapshots:   0 total
+Time:        44.879 s
+Ran all test suites.

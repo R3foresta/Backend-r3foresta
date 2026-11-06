@@ -1,0 +1,11 @@
+npm notice run pwa-r3foresta@0.0.0 test
+npm notice run vitest run src/modules/vivero/recepcion/recepcion.test.tsx
+
+ RUN  v5.0.2 /Users/pabloandresfernandezcari/Projects/R3foresta/pwa-r3foresta
+
+
+ Test Files  1 passed (1)
+      Tests  22 passed (22)
+   Start at  13:45:08
+   Duration  5.05s (environment 38%, tests 37%, transform 15%, setup 5%, import 4%)
+
