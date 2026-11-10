@@ -1,0 +1,132 @@
+{
+  "fecha": "2026-11-09",
+  "estado": "VERIFICADO_LOCALMENTE",
+  "bases": {
+    "backend": "21749347a5f7ef2e717deb991a4338f419d3192b",
+    "pwa": "8b9dae168943bee247e77d48c353b30491b1c686"
+  },
+  "entorno": {
+    "node": "24.19.0",
+    "npm": "12.0.2",
+    "pwa": "Copia aislada sin .env, src y lockfile comparados byte a byte con el árbol de trabajo",
+    "http": "JWT, NestJS y PostgreSQL/PostGIS reales, transporte PostgREST y Storage sintéticos"
+  },
+  "verificacion": {
+    "backend": {
+      "build": true,
+      "suites": 89,
+      "unitarios": 1271,
+      "eslint": "Núcleo nuevo de conciliación, sin --fix"
+    },
+    "pwa": {
+      "build": true,
+      "archivos_de_pruebas": 93,
+      "pruebas": 1280,
+      "pruebas_vivero": 49,
+      "lint": true,
+      "advertencia_build": "Chunk MapLibre mayor de 1000 kB"
+    },
+    "openapi": {
+      "m2": 42,
+      "t4": 6,
+      "participacion_rutas": 41,
+      "participacion_schemas": 86
+    },
+    "postgres": {
+      "grupos_sql": 134,
+      "carreras": 14,
+      "http_conciliacion": 3,
+      "http_t4": 7,
+      "evidencia": "vivero-conciliacion-local-2026-11-09.json"
+    },
+    "diff_check": true
+  },
+  "decisiones": [
+    "Padrón y comprobación se operan mediante API autenticada. La PWA incorpora ficha de consulta.",
+    "Las evidencias usan el bucket privado r3foresta-conciliacion, que requiere aprovisionamiento en el destino.",
+    "IDs de alta mantienen número seguro legado y cadenas decimales para BIGINT mayores."
+  ],
+  "limites": [
+    "Pruebas locales con fixtures sintéticos. PostgreSQL se detuvo y su directorio se eliminó.",
+    "No se verificó el flujo en navegador conectado al Backend real.",
+    "PostgREST/Storage del destino, inventario físico y piloto requieren comprobación independiente.",
+    "Las pantallas legadas PWA de detalle y eventos del lote admiten IDs hasta MAX_SAFE_INTEGER y rechazan los mayores para impedir alias.",
+    "SQL remoto, cambios de datos reales, publicación y despliegue pendientes."
+  ],
+  "trabajo_preexistente_pwa": {
+    "src/modules/recolecciones/RecoleccionFormDatosScreen.tsx": "20bad06257bf2685554d5cefe1316d0d31dba982b87cfaaf097435f520b6e166",
+    "src/modules/recolecciones/recoleccionFormTypes.ts": "a2a6f12398069236af22bb2aed1722c2280cc7640a0e870da88f3dcbbfcbac1f"
+  },
+  "sha256_fuentes": {
+    "backend": {
+      "src/evidencias-trazabilidad/evidencias-trazabilidad.service.spec.ts": "9eee4304d5108f4a2f4cec7c69cc3c77cb7e83ff386e5c1383db628ae9d2c763",
+      "src/evidencias-trazabilidad/evidencias-trazabilidad.service.ts": "9d6851c98c28b3292240927d17062dfaf51c77b198c7163ee2545e949f1aa581",
+      "src/lotes-vivero/api/docs/conciliacion-vivero.swagger.ts": "ff42f28324498bf4975a8452e95efc638d93f2c433ce0dc12d997ff520705001",
+      "src/lotes-vivero/api/docs/lotes-vivero.swagger.ts": "f35dcdd23809e46beea91446c85f26c3abe96a1f0c934d7231ed10f2e21060b5",
+      "src/lotes-vivero/api/dto/conciliacion-vivero.dto.ts": "ff3fa3a99f83d59b22cdc381113e4a0b115a4cfc5e85004103db40d4039aa1f3",
+      "src/lotes-vivero/api/vivero-accesos.controller.ts": "aba4d6bc17e5643a4fb3386bde61a5e7118810269c51bfcfc56a92c15ef508c6",
+      "src/lotes-vivero/api/vivero-conciliacion.controller.ts": "bc0b47ded67f5c14aeaadf5c6edaf134c059509a455b3021ea5ae70ee7b0f5af",
+      "src/lotes-vivero/application/vivero-accesos.service.ts": "5f8698c8053ff9bf83cf1bf778109f7fcc9de2781434d62b4b04482f733dc66a",
+      "src/lotes-vivero/application/vivero-conciliacion.service.ts": "38ade7b97f13d823503acd7a293239f91f79a53120f0a1774de0c83324b05fe1",
+      "src/lotes-vivero/application/vivero-inicio.service.ts": "61a784f8190ded706f5d97c1441ed5b4a9c39cdf6dd2d3aaf53831c9baccd9fd",
+      "src/lotes-vivero/domain/policies/conciliacion-recibo.policy.ts": "35d6165b3c867762f34edf7ab7add323915f13a16362e0608a3d5e3dd6359a28",
+      "src/lotes-vivero/tests/vivero-inicio.service.spec.ts": "0c4e27827b0e711efa6579bb51fb92ced35d8cf6e3873c8439f636b61bb033ba",
+      "src/lotes-vivero/vivero-acceso.module.ts": "3d899e0b7671173ec5e5aca3ddb7be69b00823c944cd12404c6216234b833ca2",
+      "src/recolecciones/application/recoleccion-consultas.service.ts": "4e6b191d2e32033473451abf72e70f2073e3a02e1ed4fb1b0c9894ccb886dcf5",
+      "src/recolecciones/domain/policies/elegibilidad-inicio-vivero.policy.ts": "7a918c9bf40939e208741d015bab42bfa7bc84c7d959e67422ad65d01ab510a3",
+      "src/recolecciones/tests/recoleccion-elegibilidad.service.spec.ts": "2951e562ad6da4207b2b2ef97614a475c4888315116debda3909cda85e555922"
+    },
+    "pwa": {
+      "src/App.tsx": "f472659bc8d0c4540da3f534b8a1e4480cfee82d07edf2301965c1a14d89fed9",
+      "src/modules/recolecciones/RecoleccionFormDatosScreen.tsx": "20bad06257bf2685554d5cefe1316d0d31dba982b87cfaaf097435f520b6e166",
+      "src/modules/recolecciones/recoleccionFormTypes.ts": "a2a6f12398069236af22bb2aed1722c2280cc7640a0e870da88f3dcbbfcbac1f",
+      "src/modules/vivero/README.md": "10ee16923b0d014fce78fa9e8c0740b15618f95f66d347ee8b320e2ef427eb45",
+      "src/modules/vivero/api/origenes.api.test.ts": "0ceac551ba9e578702184bba50d5d211067cf373a33aa3517a85787e00fba9d8",
+      "src/modules/vivero/api/origenes.api.ts": "84ae3c51707fc8baedc167adb7ed048efef79ee4d0564e8d87f86ac173a24301",
+      "src/modules/vivero/components/EstadoOrigenMaterial.tsx": "a9480db2908c6c64e6818a402362be80a3618f9cecf29ea5e053c37203243ce6",
+      "src/modules/vivero/conciliacion/ConciliacionScreen.test.tsx": "3bd9e81f11eba66a4648cfd942630f6d0034ad109466c82cba112b7c10d0c683",
+      "src/modules/vivero/conciliacion/ConciliacionScreen.tsx": "a2ff80441dda172b2687c027111740e1df3327050a6c939b2c0bd177738890ea",
+      "src/modules/vivero/conciliacion/conciliacion.api.ts": "6ef05521e9e4f8ddc8cdc3c25935c3eb4a101090e9913a002f2d05ff78127b22",
+      "src/modules/vivero/screens/ViveroDetailScreen.tsx": "df9908a4c000722802a9fcac91d4ef019b3533c33845d8395fc6e14b8ceeca6e",
+      "src/modules/vivero/screens/ViveroEmbolsadoScreen.tsx": "28f9fd1ab37bf95f21243fe4453e99153cbf98b76e4fda169c1eb418476a9161",
+      "src/modules/vivero/screens/ViveroEventScreen.tsx": "c5fc08449c0604dc09c3d573e60aa553e04abafc1fa60f783ea0531a829f9c88",
+      "src/modules/vivero/screens/ViveroMaterialScreen.test.tsx": "3b6c2d4a768f4ca251123962e1e81544ee72701cef5a664e88f8d82db7969089",
+      "src/modules/vivero/screens/ViveroMaterialScreen.tsx": "c055a0a383f33104c266f357dba0399be50a85083dbb557fcbed01a0cf86855f",
+      "src/modules/vivero/screens/ViveroNewScreen.test.tsx": "51752c2ef9711917d7eead59a3f782628c4a88ea6bfaced34e997cd8695f6de5",
+      "src/modules/vivero/screens/ViveroNewScreen.tsx": "89ceb39725af5e2aa3d9442e1fe8be7db03f36b19a7f7596899fc08e205ac0c8",
+      "src/modules/vivero/types/contracts.ts": "44da037225a968bc3a263e6d851231d000e4c7937b9d062bc17b85e8c3ab0cae"
+    }
+  },
+  "sha256_logs": {
+    "backend_unit": "0f7a36af52d95c86e6cc6cc6764b438dcde6437e5348955d8e88140595a67d7a",
+    "pwa_tests": "ebda296b192b127e27be9458574bb60ac945a218a6fefb7a407bb3feb56444c6",
+    "pwa_build": "b23abbed7e759654e2415ef5c656b627db0bb82450394360c80432b28cd2b58c",
+    "pwa_lint": "3e5263df4de72cea3f3923f6abc3ee1f7a970c46bc4cbec8843868cb28ee2054"
+  },
+  "documentacion_pwa": {
+    "FRONTEND_AUDIT.md": "6cfbd23a95f823b6fede04ffb26a7b58a702eef682cc6ead44b5158751b4ff0e"
+  },
+  "preflight_solo_lectura": {
+    "tarea": "SMOKE_PREFLIGHT_097_SOLO_LECTURA",
+    "fecha_utc": "2026-11-09T23:29:11.504996+00:00",
+    "resultado": "CORRECTO",
+    "entorno": "PostgreSQL14.24 temporal aislado, socket privado sin TCP, fixture focal hasta096",
+    "script_sha256": "8179e8271e0eeaec71300a4030ee3268ce446300ce33588f1cdaaf8b7ae5c125",
+    "migracion_097_sha256": "c2d41253036c8523d4c675f0011e5094da465437ed1e71fc664c275f0fa80606",
+    "script_ejecutado_antes_y_despues": true,
+    "transacciones_read_only": true,
+    "detecta_objetos_097_ausentes_antes": true,
+    "detecta_objetos_097_presentes_despues": true,
+    "detecta_cuerpos_cambiados_por097": true,
+    "limites": [
+      "Fixture deliberadamente incluye KG extra en unidad_medida, reportado por comprobación de enums.",
+      "No se ejecutó contra destino remoto ni acredita catálogo productivo.",
+      "Smoke focal, sin nueva batería de concurrencia."
+    ],
+    "cluster_detenido_y_directorio_eliminado": true,
+    "artefactos": [
+      "/private/tmp/vivero-preflight-antes-097.json",
+      "/private/tmp/vivero-preflight-despues-097.json"
+    ]
+  }
+}

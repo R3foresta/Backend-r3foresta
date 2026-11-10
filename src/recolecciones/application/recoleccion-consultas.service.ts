@@ -8,6 +8,7 @@ import {
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { VerifiedActor } from '../../auth/verified-actor.guard';
 import { exactId } from '../../common/dto/bigint-id';
+import { ESTADOS_HABILITACION_MATERIAL } from '../../lotes-vivero/domain/enums/estado-habilitacion-material.enum';
 import { HistorialSemillasQueryDto } from '../api/dto/historial-semillas-query.dto';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { FiltersRecoleccionDto } from '../api/dto/filters-recoleccion.dto';
@@ -570,10 +571,12 @@ export class RecoleccionConsultasService {
     evidencias: any[],
     cantidadSolicitadaVivero?: number,
   ) {
+    const { m2_estado_habilitacion, ...ficha } = recoleccion;
     const elegibilidadVivero =
       this.elegibilidadService.evaluarRecoleccionElegibleParaInicioVivero(
         {
-          ...recoleccion,
+          ...ficha,
+          m2_estado_habilitacion,
           recepcion_conforme: Array.isArray(recoleccion.recepcion)
             ? recoleccion.recepcion.length === 1
             : Boolean(recoleccion.recepcion?.id),
@@ -585,7 +588,13 @@ export class RecoleccionConsultasService {
       );
 
     return mapRecoleccionToCanonicalResponse(
-      recoleccion,
+      {
+        ...ficha,
+        m2_estado_habilitacion:
+          ESTADOS_HABILITACION_MATERIAL.find(
+            (estado) => estado === m2_estado_habilitacion,
+          ) ?? null,
+      },
       evidencias,
       elegibilidadVivero,
     );
@@ -622,6 +631,7 @@ export class RecoleccionConsultasService {
       usuario_validacion_id,
       fecha_validacion,
       revision_captura::text,
+      m2_estado_habilitacion,
       recepcion:recoleccion_recepcion(id::text,fecha_recepcion,recibido_por::text,registrado_en),
       usuario:usuario_id (id::text, nombre, apellido, username, correo),
       vivero:vivero_id (id::text, codigo, nombre, ubicacion_id),

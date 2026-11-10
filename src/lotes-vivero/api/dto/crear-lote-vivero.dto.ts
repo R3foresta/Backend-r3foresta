@@ -5,14 +5,27 @@ import {
   IsDateString,
   IsEnum,
   IsArray,
-  IsNumber,
   IsOptional,
   IsString,
   MaxLength,
-  Min,
+  ValidateBy,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { UnidadMedidaVivero } from '../../domain/enums/unidad-medida-vivero.enum';
+
+export const CANTIDAD_INICIO_DECIMAL = /^(0|[1-9][0-9]{0,23})(\.[0-9]{1,6})?$/;
+
+function esCantidadInicio(value: unknown): boolean {
+  if (typeof value === 'string') {
+    return CANTIDAD_INICIO_DECIMAL.test(value) && /[1-9]/.test(value);
+  }
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    value >= 0.000001 &&
+    (Number.isInteger(value) ||
+      CANTIDAD_INICIO_DECIMAL.test(String(value)))
+  );
+}
 
 export class CrearLoteViveroDto {
   @BigintId()
@@ -27,10 +40,15 @@ export class CrearLoteViveroDto {
   @IsDateString()
   fecha_evento: string;
 
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 6 })
-  @Min(0.000001)
-  cantidad_inicial_en_proceso: number;
+  @ValidateBy({
+    name: 'cantidadInicioVivero',
+    validator: {
+      validate: esCantidadInicio,
+      defaultMessage: () =>
+        'La cantidad inicial debe ser positiva y tener hasta 6 decimales.',
+    },
+  })
+  cantidad_inicial_en_proceso: number | string;
 
   @IsEnum(UnidadMedidaVivero)
   unidad_medida_inicial: UnidadMedidaVivero;

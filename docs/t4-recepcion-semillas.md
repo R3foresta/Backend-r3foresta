@@ -127,6 +127,9 @@ validada por actor; un error de almacenamiento local bloquea el envío antes del
 
 ## Conciliación antes del corte real
 
+Para versiones con 097, usar el [procedimiento de conciliación del remanente](vivero-conciliacion-historica.md#procedimiento-del-piloto).
+Los pasos siguientes documentan la transición prevista para 096.
+
 1. Exportar el diagnóstico ADMIN paginado y contrastar movimientos, lotes y
    asignaciones contra el catálogo/datos de destino, con versión y fecha.
 2. Hacer inventario físico de cada remanente. Conservar la cantidad original,

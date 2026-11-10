@@ -109,31 +109,31 @@ describe('EvidenciasTrazabilidadService', () => {
     );
   });
 
-  it('la ruta general no abre originales o pendientes de participación, incluso por ID', async () => {
-    from.mockReturnValue(
-      createQueryBuilder({
-        data: { id: 90, bucket: 'participacion_evidencias' },
-        error: null,
-      }),
-    );
-    await expect(
-      service.findOne(90, {
-        auth_id: 'fixture',
-        usuario_id: '7',
-        rol: 'ADMIN',
-      }),
-    ).rejects.toBeInstanceOf(NotFoundException);
-    const query = createQueryBuilder({ data: [], error: null, count: 0 });
-    from.mockReturnValue(query);
-    await service.list(
-      {},
-      { auth_id: 'fixture', usuario_id: '7', rol: 'ADMIN' },
-    );
-    expect(query.neq).toHaveBeenCalledWith(
-      'bucket',
-      'participacion_evidencias',
-    );
-  });
+  it.each(['participacion_evidencias', 'r3foresta-conciliacion'])(
+    'la ruta general excluye evidencias privadas de %s, incluso por ID',
+    async (bucket) => {
+      from.mockReturnValue(
+        createQueryBuilder({
+          data: { id: 90, bucket, entidad_id: '91' },
+          error: null,
+        }),
+      );
+      await expect(
+        service.findOne(90, {
+          auth_id: 'fixture',
+          usuario_id: '7',
+          rol: 'ADMIN',
+        }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      const query = createQueryBuilder({ data: [], error: null, count: 0 });
+      from.mockReturnValue(query);
+      await service.list(
+        {},
+        { auth_id: 'fixture', usuario_id: '7', rol: 'ADMIN' },
+      );
+      expect(query.neq).toHaveBeenCalledWith('bucket', bucket);
+    },
+  );
 
   it('sube HEIC octet-stream preservando original y persiste metadata auditable comun', async () => {
     const originalBuffer = Buffer.from('heic original bytes');

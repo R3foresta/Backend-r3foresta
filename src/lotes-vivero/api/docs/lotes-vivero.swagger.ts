@@ -15,6 +15,7 @@ import { MotivoCierreLote } from '../../domain/enums/motivo-cierre-lote.enum';
 import { SubetapaAdaptabilidad } from '../../domain/enums/subetapa-adaptabilidad.enum';
 import { TipoEventoVivero } from '../../domain/enums/tipo-evento-vivero.enum';
 import { UnidadMedidaVivero } from '../../domain/enums/unidad-medida-vivero.enum';
+import { CANTIDAD_INICIO_DECIMAL } from '../dto/crear-lote-vivero.dto';
 
 // Entradas operativas: cadenas exactas y compatibilidad con números legados seguros.
 const OPERATION_ID_SCHEMA = {
@@ -103,7 +104,7 @@ export function ApiCrearLoteDesdeRecoleccion() {
     ApiOperation({
       summary: 'Crear lote de vivero desde recoleccion validada',
       description:
-        'Inicia un lote de vivero usando la RPC fn_vivero_crear_lote_desde_recoleccion. Crea lote, evento INICIO, movimiento CONSUMO_A_VIVERO, descuenta saldo y vincula evidencias en una sola transaccion. El codigo de trazabilidad queda en formato VIV-000001-REC-000001.',
+        'Inicia un lote desde un origen con recepción T4 o conciliación histórica conforme y saldo habilitado en la misma custodia. Crea lote, evento INICIO y movimiento CONSUMO_A_VIVERO, descuenta saldo y vincula evidencias en una sola transacción.',
     }),
     ApiBody({
       description: 'Datos del inicio de lote de vivero',
@@ -142,10 +143,13 @@ export function ApiCrearLoteDesdeRecoleccion() {
             description: 'Fecha del evento de inicio (ISO 8601)',
           },
           cantidad_inicial_en_proceso: {
-            type: 'number',
-            minimum: 0.000001,
-            example: 10,
-            description: 'Cantidad de material tomado de la recoleccion',
+            oneOf: [
+              { type: 'string', pattern: CANTIDAD_INICIO_DECIMAL.source },
+              { type: 'number', minimum: 0.000001 },
+            ],
+            example: '0.0001',
+            description:
+              'Cantidad positiva de material. Usar texto decimal exacto. G admite hasta 6 decimales y UNIDAD requiere un entero.',
           },
           unidad_medida_inicial: {
             type: 'string',
@@ -170,7 +174,29 @@ export function ApiCrearLoteDesdeRecoleccion() {
     ApiResponse({
       status: 201,
       description:
-        'Lote iniciado. Devuelve lote_vivero_id, evento_inicio_id, movimiento, codigo, saldos y evidencia_inicio_ids.',
+        'Lote iniciado. Los IDs seguros siguen siendo números y los BIGINT mayores se devuelven como cadenas decimales.',
+      schema: {
+        type: 'object',
+        required: ['success', 'data'],
+        properties: {
+          success: { type: 'boolean', enum: [true] },
+          data: {
+            type: 'object',
+            properties: {
+              lote_vivero_id: OPERATION_ID_SCHEMA,
+              evento_inicio_id: OPERATION_ID_SCHEMA,
+              recoleccion_movimiento_id: OPERATION_ID_SCHEMA,
+              codigo_trazabilidad: { type: 'string' },
+              saldo_recoleccion_antes: { type: 'number' },
+              saldo_recoleccion_despues: { type: 'number' },
+              evidencia_inicio_ids: {
+                type: 'array',
+                items: OPERATION_ID_SCHEMA,
+              },
+            },
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 400,

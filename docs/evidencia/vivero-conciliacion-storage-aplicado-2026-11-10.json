@@ -1,0 +1,271 @@
+{
+  "tarea": "VIVERO_CONCILIACION_STORAGE_Y_APLICACIONES",
+  "fecha": "2026-11-10",
+  "estado": "STORAGE_CONFORME_LECTURAS_M2_Y_ADMIN_VERIFICADAS",
+  "proyecto_supabase": "vyrjlehkhabydkhjxagx",
+  "versiones": {
+    "backend_base": "21749347a5f7ef2e717deb991a4338f419d3192b",
+    "pwa_base": "8b9dae168943bee247e77d48c353b30491b1c686",
+    "cambios_locales_sin_commit": true
+  },
+  "aplicacion_098": {
+    "metodo": "Editor SQL de Supabase Studio en sesión existente del usuario",
+    "resultado_observado": "Success. No rows returned",
+    "postflight": "Exportación CSV de la consulta versionada de solo lectura, ejecutada después de crear el bucket",
+    "sha256_archivo_aplicado": "f2ef1e20451598b8c3b7aaea14d80ebbe123682be87ffd585067bec43a8f1eac",
+    "alcance": "Dos políticas restrictivas dedicadas a r3foresta-conciliacion en storage.buckets y storage.objects. Sin cambios de filas Storage, políticas ajenas ni grants globales."
+  },
+  "storage_postflight": {
+    "097": [
+      {
+        "firma": "public.fn_recoleccion_acotar_excepcion_fecha_rechazo()",
+        "coincide": true,
+        "sha256_efectivo": "326fcd23396c03ad3a9cae33afc327fe6fbf063eca41b66d5d97e530a9712959"
+      },
+      {
+        "firma": "public.m1_recepcion_proteger_movimiento()",
+        "coincide": true,
+        "sha256_efectivo": "1f66c8ec8e4b5e6206e2cd9219dbaccccdc0207551df7930aac85df0b1acfcbc"
+      },
+      {
+        "firma": "public.m2_conciliacion_acreditada(public.recoleccion,public.recoleccion_conciliacion_evento)",
+        "coincide": true,
+        "sha256_efectivo": "78824817089f6b5ed358da1b6f6aebae6d8fe44b3b820eef3ae20a59fca775e0"
+      }
+    ],
+    "roles": [
+      {
+        "nombre": "anon",
+        "rolsuper": false,
+        "rolbypassrls": false,
+        "puede_asumir_propietario": false,
+        "puede_asumir_rol_elevado": false
+      },
+      {
+        "nombre": "authenticated",
+        "rolsuper": false,
+        "rolbypassrls": false,
+        "puede_asumir_propietario": false,
+        "puede_asumir_rol_elevado": false
+      },
+      {
+        "nombre": "service_role",
+        "rolsuper": false,
+        "rolbypassrls": true,
+        "puede_asumir_propietario": false,
+        "puede_asumir_rol_elevado": true
+      }
+    ],
+    "bucket": {
+      "id": "r3foresta-conciliacion",
+      "name": "r3foresta-conciliacion",
+      "type": "STANDARD",
+      "public": false,
+      "file_size_limit": 15728640,
+      "allowed_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/heic",
+        "image/heif"
+      ]
+    },
+    "tablas": [
+      {
+        "rls": true,
+        "nombre": "buckets",
+        "relkind": "r",
+        "rls_forzada": false,
+        "servicio_crud": true,
+        "servicio_schema_usage": true
+      },
+      {
+        "rls": true,
+        "nombre": "objects",
+        "relkind": "r",
+        "rls_forzada": false,
+        "servicio_crud": true,
+        "servicio_schema_usage": true
+      }
+    ],
+    "alcance": "Cierre dedicado de políticas y metadatos. El bucket se administra por API; no acredita carga de archivos ni piloto.",
+    "entorno": {
+      "hora_utc": "2026-11-10T12:49:33Z",
+      "postgresql": "17.6",
+      "transaccion_solo_lectura": "on"
+    },
+    "informe": "ESTADO_STORAGE_CONCILIACION_098",
+    "comprobaciones": {
+      "storage_real_y_rls_activa": true,
+      "servicio_bypass_y_permisos": true,
+      "politicas_dedicadas_exactas": true,
+      "097_cuerpos_criticos_coinciden": true,
+      "roles_cliente_sin_bypass_ni_propiedad": true,
+      "bucket_ausente_o_configuracion_compatible": true
+    },
+    "bucket_presente": true,
+    "politicas_dedicadas": [
+      {
+        "roles": [
+          "0"
+        ],
+        "tabla": "buckets",
+        "nombre": "r3foresta_conciliacion_solo_servicio",
+        "comando": "*",
+        "coincide": true,
+        "condicion": "(id <> 'r3foresta-conciliacion'::text)",
+        "permisiva": false,
+        "comprobacion": "(id <> 'r3foresta-conciliacion'::text)"
+      },
+      {
+        "roles": [
+          "0"
+        ],
+        "tabla": "objects",
+        "nombre": "r3foresta_conciliacion_solo_servicio",
+        "comando": "*",
+        "coincide": true,
+        "condicion": "(bucket_id <> 'r3foresta-conciliacion'::text)",
+        "permisiva": false,
+        "comprobacion": "(bucket_id <> 'r3foresta-conciliacion'::text)"
+      }
+    ],
+    "migracion_097_sha256_referencia": "21eb5f5a52ed04e124891e764548e761483742545e2c1da83f074a0b90ea14c2",
+    "migracion_098_sha256_referencia": "f2ef1e20451598b8c3b7aaea14d80ebbe123682be87ffd585067bec43a8f1eac"
+  },
+  "bucket_api": {
+    "fecha": "2026-11-10",
+    "proyecto": "vyrjlehkhabydkhjxagx",
+    "operacion": "BUCKET_PRIVADO_CREADO",
+    "configuracion_conforme": true,
+    "bucket": {
+      "id": "r3foresta-conciliacion",
+      "name": "r3foresta-conciliacion",
+      "public": false,
+      "file_size_limit": 15728640,
+      "allowed_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/heic",
+        "image/heif"
+      ],
+      "created_at": "2026-11-10T12:47:56.119Z",
+      "updated_at": "2026-11-10T12:47:56.119Z"
+    }
+  },
+  "http_aplicaciones_locales": {
+    "fecha": "2026-11-10",
+    "backend": "http://127.0.0.1:3000",
+    "pwa": "http://localhost:5173",
+    "health": {
+      "http_status": 200,
+      "status": "ok",
+      "service": "r3foresta-backend"
+    },
+    "contrato": {
+      "http_status": 200,
+      "rutas_conciliacion": [
+        "/api/v1/vivero/conciliaciones",
+        "/api/v1/vivero/conciliaciones/comandos/{comando_id}",
+        "/api/v1/vivero/conciliaciones/{id}",
+        "/api/v1/vivero/conciliaciones/{id}/padron",
+        "/api/v1/vivero/conciliaciones/{id}/confirmaciones",
+        "/api/v1/vivero/conciliaciones/{id}/evidencias"
+      ],
+      "incluir_pendientes": true
+    },
+    "sin_sesion": {
+      "http_status": 401,
+      "cache_control": "private, no-store",
+      "vary": "Authorization"
+    },
+    "cors": {
+      "http_status": 204,
+      "allow_origin": "http://localhost:5173",
+      "allow_headers": "Content-Type,Authorization,x-auth-id,x-user-role,Accept"
+    },
+    "pwa_servida": {
+      "http_status": 200,
+      "html": true
+    }
+  },
+  "navegador": {
+    "browser": "Chrome",
+    "url": "http://localhost:5173/app/vivero/material",
+    "sesion_existente": true,
+    "resultado_observado": "Tu cuenta no tiene acceso a esta operación. Solicita la asignación al administrador.",
+    "recorrido_material_y_ficha_autorizado": "PENDIENTE_CUENTA_M2_O_ADMIN",
+    "permisos_modificados": false,
+    "reanudacion": {
+      "sesion_autorizada_reportada_por_usuario": true,
+      "control_del_navegador_local": "DESHABILITADO_EN_WORK",
+      "backend_health_http": 200,
+      "backend_openapi_con_conciliaciones": true,
+      "pwa_material_http": 200,
+      "lectura_autorizada_observada": false
+    },
+    "verificacion_material_m2": {
+      "fecha": "2026-11-10",
+      "url": "http://localhost:5173/app/vivero/material",
+      "sesion": "M2 con acceso a ambos viveros, iniciada por el usuario",
+      "incidencia_inicial": "La PWA rechazó el contrato de material en ambos viveros. La consulta respondió correctamente tras reiniciar Backend/PWA y recargar Chrome. No se aisló la causa del fallo inicial.",
+      "resultado": "LECTURA_AUTORIZADA_VERIFICADA_CON_ARCHIVO_PWA_ORIGINAL",
+      "viveros": [
+        {
+          "codigo": "VIV-001",
+          "pendientes_conciliacion": 16,
+          "pendientes_recepcion": 0,
+          "solicitan_revision_administracion": 16,
+          "enlaces_conciliacion": 0
+        },
+        {
+          "codigo": "VIV-002",
+          "pendientes_conciliacion": 1,
+          "pendientes_recepcion": 1,
+          "solicitan_revision_administracion": 1,
+          "enlaces_conciliacion": 0
+        }
+      ],
+      "paginas_completas": true,
+      "alertas_en_resultado_final": false,
+      "ficha_conciliacion": "PENDIENTE_FICHA_M2_CON_HISTORIAL_DE_PADRON"
+    },
+    "verificacion_ficha_admin": {
+      "fecha": "2026-11-10",
+      "sesion": "ADMIN autorizada iniciada por el usuario",
+      "vivero": "VIV-003",
+      "recorrido": [
+        "/app/vivero/material",
+        "/app/vivero/conciliaciones/:id"
+      ],
+      "estado_padron": "FUERA_PADRON",
+      "revision_inicial": true,
+      "trazabilidad_consistente": true,
+      "movimiento_vinculado_a_lote_y_evento": true,
+      "historial_conciliacion_vacio": true,
+      "evidencias_vacias": true,
+      "resultado": "FICHA_FUERA_PADRON_VERIFICADA"
+    }
+  },
+  "pruebas_098": {
+    "evidencia": "vivero-conciliacion-storage-final-local-2026-11-10.json",
+    "grupos_sql_rls": 39,
+    "postgresql": "14.17 (Homebrew)",
+    "sintetico_sin_http_storage": true
+  },
+  "limites": [
+    "El postflight de 098 coteja tres cuerpos críticos de 097. El informe completo de 097 aportado por el usuario conserva su alcance y procedencia originales.",
+    "No se cargaron archivos ni se verificó una carga multipart real o su descarga.",
+    "No se escribió padrón, comprobación física, incidencia, recibo o movimiento de stock en este paso.",
+    "Material se verificó en Chrome con M2 para VIV-001 y VIV-002 y la ficha fuera del padrón con ADMIN para un origen de VIV-003, sobre Backend/PWA locales y el proyecto real. Quedan pendientes la ficha M2 con historial de padrón, la carga real y el piloto.",
+    "Las políticas se verificaron en catálogo real y con roles/RLS en PostgreSQL sintético. No se probó una sesión HTTP Storage authenticated real.",
+    "El acceso privilegiado del servicio conserva BYPASSRLS. No se cierra en este incremento SQL privilegiado, TRUNCATE ni RPC ajenas que eviten estas políticas.",
+    "Sin commit de entrega, push ni despliegue de las aplicaciones."
+  ],
+  "sha256": {
+    "migrations/097_vivero_conciliacion_historica.sql": "21eb5f5a52ed04e124891e764548e761483742545e2c1da83f074a0b90ea14c2",
+    "migrations/098_vivero_conciliacion_storage_privado.sql": "f2ef1e20451598b8c3b7aaea14d80ebbe123682be87ffd585067bec43a8f1eac",
+    "scripts/qa/vivero-conciliacion-storage-estado.sql": "6c6c405266acf0aad26dbc1b229773f985b2874b1aaf203af8e9ce7b77827635"
+  }
+}

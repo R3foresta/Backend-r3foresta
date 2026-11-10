@@ -12,6 +12,12 @@ const {
 const {
   ViveroAccesosService,
 } = require('../../src/lotes-vivero/application/vivero-accesos.service');
+const {
+  ViveroConciliacionController,
+} = require('../../src/lotes-vivero/api/vivero-conciliacion.controller');
+const {
+  ViveroConciliacionService,
+} = require('../../src/lotes-vivero/application/vivero-conciliacion.service');
 const { InternalActorGuard } = require('../../src/auth/internal-actor.guard');
 const {
   LotesViveroController,
@@ -33,11 +39,13 @@ const {
   const module = await Test.createTestingModule({
     controllers: [
       ViveroAccesosController,
+      ViveroConciliacionController,
       LotesViveroController,
       RecoleccionesController,
     ],
     providers: [
       { provide: ViveroAccesosService, useValue: {} },
+      { provide: ViveroConciliacionService, useValue: {} },
       { provide: LotesViveroService, useValue: {} },
       { provide: RecoleccionesService, useValue: {} },
       { provide: RecoleccionFormDataParser, useValue: {} },
@@ -53,10 +61,10 @@ const {
     configureGlobalRoutes(app);
     await app.init();
     const config = new DocumentBuilder()
-      .setTitle('R3Foresta · Acceso por vivero T2')
-      .setVersion('1.0.0')
+      .setTitle('R3Foresta · Acceso y material por vivero')
+      .setVersion('1.1.0')
       .setDescription(
-        'Contrato local 094/095. M2 por establecimiento independiente de M1 y Plantación; T3–T5 y despliegue pendientes. Recuperación propia con la misma clave.',
+        'Contrato local 094/095, 097 y 099. M2 por establecimiento independiente de M1 y Plantación. Conciliación histórica del remanente, requisitos de INICIO y recuperación propia con la misma clave.',
       )
       .addBearerAuth()
       .build();

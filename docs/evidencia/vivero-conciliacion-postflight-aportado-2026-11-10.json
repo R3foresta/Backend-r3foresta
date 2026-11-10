@@ -1,0 +1,626 @@
+{
+  "fecha": "2026-11-10",
+  "estado": "POSTFLIGHT_097_CONFORME_APORTADO",
+  "procedencia": {
+    "tipo": "Resultado SQL aportado por el usuario",
+    "sha256_archivo": "34931aa47113958c1b824fc681bf56810f60a5d1a2d2bae1b95e0aadfa040801",
+    "proyecto_y_entorno": "Sin identificador de proyecto aportado. El resultado SQL no lo acredita por sí solo."
+  },
+  "migracion": {
+    "archivo": "migrations/097_vivero_conciliacion_historica.sql",
+    "sha256": "21eb5f5a52ed04e124891e764548e761483742545e2c1da83f074a0b90ea14c2"
+  },
+  "cotejo_local": {
+    "funciones_cotejadas": 13,
+    "campos": [
+      "sha256_cuerpo",
+      "security_definer",
+      "servicio_esperado",
+      "configuracion",
+      "presente",
+      "privadas",
+      "grant_servicio_coincide"
+    ],
+    "diferencias": [],
+    "referencia": "vivero-conciliacion-cotejo-local-2026-11-10.json"
+  },
+  "resultado": {
+    "tablas": [
+      {
+        "rls": true,
+        "nombre": "recoleccion_conciliacion_comando",
+        "presente": true,
+        "privadas": true,
+        "historial_inmutable": true
+      },
+      {
+        "rls": true,
+        "nombre": "recoleccion_conciliacion_evento",
+        "presente": true,
+        "privadas": true,
+        "historial_inmutable": true
+      },
+      {
+        "rls": true,
+        "nombre": "recoleccion_conciliacion_evidencia",
+        "presente": true,
+        "privadas": true,
+        "historial_inmutable": true
+      },
+      {
+        "rls": true,
+        "nombre": "recoleccion_conciliacion_evidencia_contexto",
+        "presente": true,
+        "privadas": true,
+        "historial_inmutable": true
+      }
+    ],
+    "alcance": "Catálogo y conteos posteriores a instalación. No acredita habilitación del piloto.",
+    "conteos": {
+      "eventos_totales": 0,
+      "origenes_en_padron": 0
+    },
+    "entorno": {
+      "hora_utc": "2026-11-10T11:09:18Z",
+      "version_postgresql": "17.6",
+      "transaccion_solo_lectura": "on"
+    },
+    "informe": "POSTFLIGHT_FOCAL_VIVERO_097",
+    "triggers": [
+      {
+        "tabla": "recoleccion",
+        "nombre": "trg_recoleccion_acotar_excepcion_fecha_rechazo",
+        "coincide": true
+      },
+      {
+        "tabla": "recoleccion_movimiento",
+        "nombre": "recepcion_exigida",
+        "coincide": true
+      },
+      {
+        "tabla": "recoleccion_movimiento",
+        "nombre": "trg_recoleccion_movimiento_sync_saldo_operativo",
+        "coincide": true
+      }
+    ],
+    "funciones": [
+      {
+        "firma": "public.fn_recoleccion_acotar_excepcion_fecha_rechazo()",
+        "presente": true,
+        "privadas": true,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "sha256_cuerpo": "326fcd23396c03ad3a9cae33afc327fe6fbf063eca41b66d5d97e530a9712959",
+        "security_definer": true,
+        "servicio_esperado": false,
+        "sha256_cuerpo_esperado": "326fcd23396c03ad3a9cae33afc327fe6fbf063eca41b66d5d97e530a9712959",
+        "grant_servicio_coincide": true
+      },
+      {
+        "firma": "public.fn_vivero_crear_lote_desde_recoleccion(bigint,bigint,bigint,date,date,numeric,public.unidad_medida,text,bigint[],text)",
+        "presente": true,
+        "privadas": true,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "sha256_cuerpo": "bc0e74d2aa17e62a9f7e94ca995f6d93e30c08428f4efa372008b91d3f2ff948",
+        "security_definer": true,
+        "servicio_esperado": true,
+        "sha256_cuerpo_esperado": null,
+        "grant_servicio_coincide": true
+      },
+      {
+        "firma": "public.m1_recepcion_proteger_movimiento()",
+        "presente": true,
+        "privadas": true,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "sha256_cuerpo": "1f66c8ec8e4b5e6206e2cd9219dbaccccdc0207551df7930aac85df0b1acfcbc",
+        "security_definer": true,
+        "servicio_esperado": false,
+        "sha256_cuerpo_esperado": "1f66c8ec8e4b5e6206e2cd9219dbaccccdc0207551df7930aac85df0b1acfcbc",
+        "grant_servicio_coincide": true
+      },
+      {
+        "firma": "public.m2_conciliacion_acreditada(public.recoleccion,public.recoleccion_conciliacion_evento)",
+        "presente": true,
+        "privadas": true,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "sha256_cuerpo": "78824817089f6b5ed358da1b6f6aebae6d8fe44b3b820eef3ae20a59fca775e0",
+        "security_definer": false,
+        "servicio_esperado": false,
+        "sha256_cuerpo_esperado": "78824817089f6b5ed358da1b6f6aebae6d8fe44b3b820eef3ae20a59fca775e0",
+        "grant_servicio_coincide": true
+      },
+      {
+        "firma": "public.m2_conciliacion_ejecutar(bigint,text,uuid,jsonb)",
+        "presente": true,
+        "privadas": true,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "sha256_cuerpo": "1cf798e64c0c2df24fe8fc2237aba16402a7d74a4b211fca9df3975422c5f35d",
+        "security_definer": true,
+        "servicio_esperado": true,
+        "sha256_cuerpo_esperado": null,
+        "grant_servicio_coincide": true
+      },
+      {
+        "firma": "public.m2_conciliacion_evidencias_preparar(bigint,bigint,jsonb)",
+        "presente": true,
+        "privadas": true,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "sha256_cuerpo": "09469fb822c3625cbe02f25b85ad6029118350f7923eb8521d8a75c332ecfbf6",
+        "security_definer": true,
+        "servicio_esperado": true,
+        "sha256_cuerpo_esperado": null,
+        "grant_servicio_coincide": true
+      },
+      {
+        "firma": "public.m2_conciliacion_leer(bigint,bigint,bigint,integer,bigint)",
+        "presente": true,
+        "privadas": true,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "sha256_cuerpo": "ee41d3be6ef59be20886149307fea2e8ed800e1b1bef9a0cff1780e9a21056f8",
+        "security_definer": true,
+        "servicio_esperado": true,
+        "sha256_cuerpo_esperado": null,
+        "grant_servicio_coincide": true
+      },
+      {
+        "firma": "public.m2_conciliacion_recuperar(bigint,text,uuid)",
+        "presente": true,
+        "privadas": true,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "sha256_cuerpo": "4195028186e569420ba6a4c2019e537fa0dfaa7005099a258c4fbc506f5c3c5c",
+        "security_definer": true,
+        "servicio_esperado": true,
+        "sha256_cuerpo_esperado": null,
+        "grant_servicio_coincide": true
+      },
+      {
+        "firma": "public.m2_estado_habilitacion(public.recoleccion)",
+        "presente": true,
+        "privadas": true,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "sha256_cuerpo": "ec3b62beaaf4a75b631e731d4da1bbd7dbdd4328fa5d6e6df705c730e21a1019",
+        "security_definer": true,
+        "servicio_esperado": true,
+        "sha256_cuerpo_esperado": null,
+        "grant_servicio_coincide": true
+      },
+      {
+        "firma": "public.m2_inicio_lote_exacto(bigint,bigint,bigint,date,date,numeric,public.unidad_medida,text,bigint[],text)",
+        "presente": true,
+        "privadas": true,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "sha256_cuerpo": "72b4db362e16d14205cfc207248288833af9c7e73005d30661478ff3e57df981",
+        "security_definer": true,
+        "servicio_esperado": true,
+        "sha256_cuerpo_esperado": null,
+        "grant_servicio_coincide": true
+      },
+      {
+        "firma": "public.m2_inicio_lote_impl(bigint,bigint,bigint,date,date,numeric,public.unidad_medida,text,bigint[],text)",
+        "presente": true,
+        "privadas": true,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "sha256_cuerpo": "54f9d82901d1d087ab5ba0f6a8bdf90bdd6fca28ccbc5d31ccaa54c015f445c2",
+        "security_definer": true,
+        "servicio_esperado": false,
+        "sha256_cuerpo_esperado": null,
+        "grant_servicio_coincide": true
+      },
+      {
+        "firma": "public.m2_origenes_leer(bigint,bigint,bigint,integer,integer,boolean)",
+        "presente": true,
+        "privadas": true,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "sha256_cuerpo": "42fe4e14a12f78ed9b55ba74aa7f3e9e7478cf0b402626c4eefee6017622bea0",
+        "security_definer": true,
+        "servicio_esperado": true,
+        "sha256_cuerpo_esperado": null,
+        "grant_servicio_coincide": true
+      },
+      {
+        "firma": "public.m2_origenes_leer(bigint,bigint,bigint,integer,integer)",
+        "presente": true,
+        "privadas": true,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "sha256_cuerpo": "fa3df71ac1ea7a6dc7bdd966e82c161b3db412b742fa8338838206559f9103c0",
+        "security_definer": true,
+        "servicio_esperado": true,
+        "sha256_cuerpo_esperado": null,
+        "grant_servicio_coincide": true
+      }
+    ],
+    "rls_raices": [
+      {
+        "nombre": "recoleccion",
+        "relrowsecurity": false,
+        "relforcerowsecurity": false
+      },
+      {
+        "nombre": "recoleccion_movimiento",
+        "relrowsecurity": false,
+        "relforcerowsecurity": false
+      }
+    ],
+    "comprobaciones": {
+      "raices_presentes": true,
+      "check_fecha_rango_retirado": true,
+      "roles_requeridos_presentes": true,
+      "triggers_efectivos_coinciden": true,
+      "cuerpos_criticos_097_coinciden": true,
+      "escritura_tabla_anon_auth_ausente": true,
+      "funciones_097_presentes_y_privadas": true,
+      "escritura_columna_anon_auth_ausente": true,
+      "tablas_097_presentes_privadas_inmutables": true
+    },
+    "privilegios_tabla": [
+      {
+        "rol": "anon",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "DELETE"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "INSERT"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "MAINTAIN"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "REFERENCES"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion",
+        "concedido": true,
+        "privilegio": "SELECT"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "TRIGGER"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "TRUNCATE"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "UPDATE"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "DELETE"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "INSERT"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "MAINTAIN"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "REFERENCES"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion",
+        "concedido": true,
+        "privilegio": "SELECT"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "TRIGGER"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "TRUNCATE"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion",
+        "concedido": false,
+        "privilegio": "UPDATE"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion",
+        "concedido": true,
+        "privilegio": "DELETE"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion",
+        "concedido": true,
+        "privilegio": "INSERT"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion",
+        "concedido": true,
+        "privilegio": "MAINTAIN"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion",
+        "concedido": true,
+        "privilegio": "REFERENCES"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion",
+        "concedido": true,
+        "privilegio": "SELECT"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion",
+        "concedido": true,
+        "privilegio": "TRIGGER"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion",
+        "concedido": true,
+        "privilegio": "TRUNCATE"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion",
+        "concedido": true,
+        "privilegio": "UPDATE"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "DELETE"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "INSERT"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "MAINTAIN"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "REFERENCES"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion_movimiento",
+        "concedido": true,
+        "privilegio": "SELECT"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "TRIGGER"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "TRUNCATE"
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "UPDATE"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "DELETE"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "INSERT"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "MAINTAIN"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "REFERENCES"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion_movimiento",
+        "concedido": true,
+        "privilegio": "SELECT"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "TRIGGER"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "TRUNCATE"
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion_movimiento",
+        "concedido": false,
+        "privilegio": "UPDATE"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion_movimiento",
+        "concedido": true,
+        "privilegio": "DELETE"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion_movimiento",
+        "concedido": true,
+        "privilegio": "INSERT"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion_movimiento",
+        "concedido": true,
+        "privilegio": "MAINTAIN"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion_movimiento",
+        "concedido": true,
+        "privilegio": "REFERENCES"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion_movimiento",
+        "concedido": true,
+        "privilegio": "SELECT"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion_movimiento",
+        "concedido": true,
+        "privilegio": "TRIGGER"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion_movimiento",
+        "concedido": true,
+        "privilegio": "TRUNCATE"
+      },
+      {
+        "rol": "service_role",
+        "tabla": "recoleccion_movimiento",
+        "concedido": true,
+        "privilegio": "UPDATE"
+      }
+    ],
+    "escritura_columnas": [
+      {
+        "rol": "anon",
+        "tabla": "recoleccion",
+        "escritura_efectiva": false
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion",
+        "escritura_efectiva": false
+      },
+      {
+        "rol": "anon",
+        "tabla": "recoleccion_movimiento",
+        "escritura_efectiva": false
+      },
+      {
+        "rol": "authenticated",
+        "tabla": "recoleccion_movimiento",
+        "escritura_efectiva": false
+      }
+    ],
+    "migracion_097_sha256_referencia": "21eb5f5a52ed04e124891e764548e761483742545e2c1da83f074a0b90ea14c2"
+  },
+  "limites": [
+    "No se estableció una conexión al destino desde este chat.",
+    "El informe coteja catálogo y conteos. No prueba conservación completa de datos, WebAuthn, HTTP, Storage o despliegue Backend/PWA de destino.",
+    "Los eventos y el padrón están vacíos. El piloto y la comprobación física siguen pendientes.",
+    "Las dos tablas raíz conservan RLS desactivado y SELECT para clientes. El cierre general de lectura legada sigue separado."
+  ]
+}

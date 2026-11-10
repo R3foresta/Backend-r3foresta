@@ -15,6 +15,7 @@ import {
   FUENTES_UBICACION,
 } from '../dto/create-ubicacion.dto';
 import { RejectValidationDto } from '../dto/reject-validation.dto';
+import { ESTADOS_HABILITACION_MATERIAL } from '../../../lotes-vivero/domain/enums/estado-habilitacion-material.enum';
 
 const ELEGIBILIDAD_QUERY_DESCRIPTION =
   'Cantidad a evaluar contra el saldo materializado para determinar elegibilidad hacia vivero.';
@@ -481,10 +482,37 @@ export function ApiFindOneRecoleccion() {
     ApiOperation({
       summary: 'Obtener detalle de recolección',
       description:
-        'Requiere M1 efectivo y autoría o autoridad de revisión legada ADMIN/VALIDADOR. Autoriza el objeto antes de cargar fotos. Devuelve saldo y elegibilidad; no acredita recepción física.',
+        'Requiere M1 efectivo y autoría o autoridad de revisión legada ADMIN/VALIDADOR. Autoriza el objeto antes de cargar fotos. Distingue la recepción total de la habilitación física del remanente.',
     }),
     ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
     cantidadSolicitadaViveroQuery,
+    ApiResponse({
+      status: 200,
+      description: 'Ficha canónica de recolección.',
+      schema: {
+        type: 'object',
+        required: ['success', 'data'],
+        properties: {
+          success: { type: 'boolean', example: true },
+          data: {
+            type: 'object',
+            required: ['recepcion_conforme', 'm2_estado_habilitacion'],
+            properties: {
+              recepcion_conforme: {
+                type: 'boolean',
+                description: 'Recepción física total conforme de T4.',
+              },
+              m2_estado_habilitacion: {
+                type: 'string',
+                enum: [...ESTADOS_HABILITACION_MATERIAL],
+                nullable: true,
+                description: 'Estado físico para operar el saldo en Vivero.',
+              },
+            },
+          },
+        },
+      },
+    }),
     ApiResponse({ status: 404, description: 'Recolección no encontrada' }),
   );
 }

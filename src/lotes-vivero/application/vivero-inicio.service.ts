@@ -8,15 +8,18 @@ import {
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CrearLoteViveroDto } from '../api/dto/crear-lote-vivero.dto';
 import { ViveroAuthService } from './vivero-auth.service';
+import { exactId } from '../../common/dto/bigint-id';
+
+type IdLote = number | string;
 
 export type CrearLoteViveroResult = {
-  lote_vivero_id: number;
-  evento_inicio_id: number;
-  recoleccion_movimiento_id: number;
+  lote_vivero_id: IdLote;
+  evento_inicio_id: IdLote;
+  recoleccion_movimiento_id: IdLote;
   codigo_trazabilidad: string;
   saldo_recoleccion_antes: number;
   saldo_recoleccion_despues: number;
-  evidencia_inicio_ids: number[];
+  evidencia_inicio_ids: IdLote[];
 };
 
 @Injectable()
@@ -36,20 +39,17 @@ export class ViveroInicioService {
     let lastError: any = null;
 
     for (let intento = 1; intento <= 5; intento++) {
-      const { data, error } = await supabase.rpc(
-        'fn_vivero_crear_lote_desde_recoleccion',
-        {
-          p_recoleccion_id: dto.recoleccion_id,
-          p_vivero_id: dto.vivero_id,
-          p_responsable_id: usuario.id,
-          p_fecha_inicio: dto.fecha_inicio,
-          p_fecha_evento: dto.fecha_evento,
-          p_cantidad_inicial_en_proceso: dto.cantidad_inicial_en_proceso,
-          p_unidad_medida_inicial: dto.unidad_medida_inicial,
-          p_observaciones: dto.observaciones ?? null,
-          p_evidencia_ids: dto.evidencia_ids,
-        },
-      );
+      const { data, error } = await supabase.rpc('m2_inicio_lote_exacto', {
+        p_recoleccion_id: dto.recoleccion_id,
+        p_vivero_id: dto.vivero_id,
+        p_responsable_id: usuario.id,
+        p_fecha_inicio: dto.fecha_inicio,
+        p_fecha_evento: dto.fecha_evento,
+        p_cantidad_inicial_en_proceso: dto.cantidad_inicial_en_proceso,
+        p_unidad_medida_inicial: dto.unidad_medida_inicial,
+        p_observaciones: dto.observaciones ?? null,
+        p_evidencia_ids: dto.evidencia_ids,
+      });
 
       if (!error) {
         return {
@@ -97,16 +97,31 @@ export class ViveroInicioService {
     const result = row as Record<string, unknown>;
 
     return {
-      lote_vivero_id: Number(result.lote_vivero_id),
-      evento_inicio_id: Number(result.evento_inicio_id),
-      recoleccion_movimiento_id: Number(result.recoleccion_movimiento_id),
+      lote_vivero_id: this.idCompatible(result.lote_vivero_id),
+      evento_inicio_id: this.idCompatible(result.evento_inicio_id),
+      recoleccion_movimiento_id: this.idCompatible(
+        result.recoleccion_movimiento_id,
+      ),
       codigo_trazabilidad: String(result.codigo_trazabilidad),
       saldo_recoleccion_antes: Number(result.saldo_recoleccion_antes),
       saldo_recoleccion_despues: Number(result.saldo_recoleccion_despues),
       evidencia_inicio_ids: Array.isArray(result.evidencia_inicio_ids)
-        ? result.evidencia_inicio_ids.map((id) => Number(id))
+        ? result.evidencia_inicio_ids.map((id) => this.idCompatible(id))
         : [],
     };
+  }
+
+  private idCompatible(value: unknown): IdLote {
+    try {
+      const exacto = exactId(value);
+      return BigInt(exacto) <= BigInt(Number.MAX_SAFE_INTEGER)
+        ? Number(exacto)
+        : exacto;
+    } catch {
+      throw new InternalServerErrorException(
+        'La RPC de inicio devolvió un ID inexacto.',
+      );
+    }
   }
 
   private isCodigoTrazabilidadDuplicateError(error: any): boolean {

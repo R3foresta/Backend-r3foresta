@@ -1,0 +1,68 @@
+{
+  "fecha": "2026-11-09",
+  "estado": "CATALOGO_APORTADO_CON_HALLAZGOS",
+  "procedencia": {
+    "tipo": "JSON aportado por el usuario",
+    "sha256_archivo": "a2df5ab3ab8212b135d4f364a82157a297a50ca8c951037771531a18c36113c8",
+    "proyecto_y_entorno": "No identificados por el resultado SQL"
+  },
+  "observado_en": {
+    "hora_utc": "2026-11-09T23:38:12Z",
+    "timezone_sesion": "UTC",
+    "version_completa": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit",
+    "version_postgresql": "17.6",
+    "transaccion_solo_lectura": "on"
+  },
+  "migracion_cotejada_sha256": "c2d41253036c8523d4c675f0011e5094da465437ed1e71fc664c275f0fa80606",
+  "comprobaciones": {
+    "objetos_097_ausentes": true,
+    "enums_requeridos_presentes": false,
+    "triggers_efectivos_coinciden": true,
+    "cuerpos_antecedentes_coinciden": true,
+    "check_fecha_presente_para_cotejo": true,
+    "funciones_antecedentes_presentes": true,
+    "columnas_minimas_presentes_y_tipos": true,
+    "funciones_privadas_y_grants_esperados": false,
+    "roles_anon_authenticated_service_presentes": true
+  },
+  "diferencias": [
+    {
+      "tipo": "ENUM_ADICIONAL",
+      "objeto": "tipo_movimiento_recoleccion",
+      "valores": [
+        "CORRECCION",
+        "AJUSTE_MIGRACION"
+      ],
+      "efecto": "No bloquean DDL. Los orígenes con esos tipos quedan en incidencia y requieren procedimiento específico."
+    },
+    {
+      "tipo": "EXECUTE_SERVICIO",
+      "objeto": "fn_recoleccion_acotar_excepcion_fecha_rechazo()",
+      "efecto": "Grant service_role adicional. 097 revoca y comprueba privilegios efectivos dentro de su transacción."
+    },
+    {
+      "tipo": "ESCRITURA_CLIENTE",
+      "objetos": [
+        "recoleccion",
+        "recoleccion_movimiento"
+      ],
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "rls": false,
+      "efecto": "Requiere cerrar la escritura de clientes antes de flexibilizar actualización de saldo histórico."
+    }
+  ],
+  "acciones_locales": [
+    "Revisar 097 aún no aplicada para cerrar escritura cliente en las dos tablas preservando SELECT y privilegios efectivos de servicio.",
+    "Invalidar una acreditación si aparecen movimientos fuera de los débitos admitidos.",
+    "Repetir regresión aislada con el enum y las ACL aportadas."
+  ],
+  "limites": [
+    "No se conectó al destino ni se modificaron sus datos o permisos.",
+    "El catálogo no acredita uso real de CORRECCION/AJUSTE_MIGRACION ni el origen de los grants heredados.",
+    "Los cuerpos de triggers legados adicionales no están incluidos en este preflight.",
+    "La consulta y sus hashes corresponden a la versión anterior de 097, previa a las correcciones motivadas por estos hallazgos."
+  ]
+}

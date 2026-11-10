@@ -14,6 +14,7 @@ export interface RecoleccionOperativaSnapshot {
   latitud?: number | string | null;
   longitud?: number | string | null;
   recepcion_conforme?: boolean;
+  m2_estado_habilitacion?: string | null;
 }
 
 export interface EvaluacionElegibilidadInicioVivero {
@@ -47,6 +48,18 @@ export class ElegibilidadInicioViveroPolicy {
       this.normalizarCantidadSolicitada(cantidadSolicitada);
     const tipoMaterial = String(recoleccion.tipo_material ?? '').trim();
     const fotosCount = Number(recoleccion.fotos_count ?? 0);
+    const habilitacion = recoleccion.m2_estado_habilitacion;
+    const habilitada =
+      habilitacion === undefined
+        ? recoleccion.recepcion_conforme === true
+        : habilitacion === 'RECEPCION_CONFORME' ||
+          habilitacion === 'CONCILIACION_CONFORME';
+    const motivoMaterial = habilitada
+      ? null
+      : habilitacion === 'PENDIENTE_CONCILIACION' ||
+          habilitacion === 'INCIDENCIA_CONCILIACION'
+        ? 'Se requiere conciliación histórica conforme del remanente.'
+        : 'Se requiere recepción física conforme.';
 
     if (estadoRegistro !== EstadoRegistro.VALIDADO) {
       return this.crearResultado(
@@ -135,10 +148,8 @@ export class ElegibilidadInicioViveroPolicy {
       }
 
       return this.crearResultado(
-        recoleccion.recepcion_conforme === true,
-        recoleccion.recepcion_conforme === true
-          ? null
-          : 'Se requiere recepción física conforme.',
+        habilitada,
+        motivoMaterial,
         cantidadEvaluada,
         saldoActual,
         estadoOperativo,
@@ -156,10 +167,8 @@ export class ElegibilidadInicioViveroPolicy {
     }
 
     return this.crearResultado(
-      recoleccion.recepcion_conforme === true,
-      recoleccion.recepcion_conforme === true
-        ? null
-        : 'Se requiere recepción física conforme.',
+      habilitada,
+      motivoMaterial,
       null,
       saldoActual,
       estadoOperativo,

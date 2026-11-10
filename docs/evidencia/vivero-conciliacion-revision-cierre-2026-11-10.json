@@ -1,0 +1,135 @@
+{
+  "tarea": "VIVERO_CONCILIACION_REVISION_Y_COMMIT",
+  "fecha": "2026-11-10",
+  "estado": "TRES_HALLAZGOS_CORREGIDOS_Y_VERIFICADOS_LOCALMENTE",
+  "base": {
+    "backend": "21749347a5f7ef2e717deb991a4338f419d3192b",
+    "pwa": "8b9dae168943bee247e77d48c353b30491b1c686"
+  },
+  "hallazgos": [
+    {
+      "prioridad": "P2",
+      "problema": "Un origen con habilitación física podía seleccionarse para INICIO aunque le faltase código o requisitos del origen.",
+      "correccion": "099 agrega requisitos optativos. El selector conserva la fila visible con motivo y ofrece solo orígenes aptos para INICIO."
+    },
+    {
+      "prioridad": "P2",
+      "problema": "El saldo y la entrada de INICIO reducían el remanente a un decimal.",
+      "correccion": "Saldo decimal de PostgreSQL en texto, comparación y sugerencias en unidades mínimas BigInt, ingreso de hasta seis decimales en G y envío decimal exacto."
+    },
+    {
+      "prioridad": "P3",
+      "problema": "Recolección solicitaba recepción total y ocultaba DESECHO para un remanente conciliado.",
+      "correccion": "El detalle expone la habilitación física aparte de T4. DESECHO verifica custodia, permiso, saldo y recepción o conciliación conforme."
+    }
+  ],
+  "verificacion": {
+    "backend": {
+      "node": "24.19.0",
+      "build": "CORRECTO",
+      "suites": 89,
+      "pruebas": 1281
+    },
+    "pwa": {
+      "node": "24.19.0",
+      "build": "CORRECTO",
+      "lint": "CORRECTO",
+      "archivos_test": 93,
+      "pruebas": 1289,
+      "entorno": "Copia aislada sin .env. Los dos archivos preexistentes excluidos del commit se sustituyeron por HEAD únicamente en esa copia.",
+      "ajuste_harness": "Vitest en la copia permite leer las dependencias instaladas enlazadas, incluido el worker MapLibre. La configuración de la aplicación conserva su versión de repositorio.",
+      "advertencia_build": "Chunk MapLibre superior a 1000 kB."
+    },
+    "sql_http": {
+      "evidencia": "vivero-conciliacion-revision-099-local-2026-11-10.json",
+      "sql": 195,
+      "carreras": 14,
+      "http": 10,
+      "postgresql": "14.17",
+      "postgis": false,
+      "storage": "SIMULADO",
+      "sin_env": true,
+      "cluster_eliminado": true
+    },
+    "openapi": {
+      "m2_rutas": 42,
+      "t4_rutas": 6,
+      "participacion_rutas": 41,
+      "participacion_schemas": 86,
+      "reproducible": true
+    }
+  },
+  "limites": [
+    "099 preparada y verificada localmente, pendiente de aplicación en el proyecto de destino y corte Backend/PWA.",
+    "097 y 098 mantienen sus huellas de los SQL aplicados.",
+    "El piloto conserva pendiente su pesaje físico, evidencia real, conciliación por operario y comprobación del primer débito operativo.",
+    "La corrección de esta revisión se comprobó con servicios externos sustituidos y PostgreSQL aislado. Las lecturas reales previas se registran en el informe de Storage/aplicaciones.",
+    "Sin push ni despliegue de esta entrega."
+  ],
+  "pwa_archivos_ajenos_excluidos": [
+    "src/modules/recolecciones/RecoleccionFormDatosScreen.tsx",
+    "src/modules/recolecciones/recoleccionFormTypes.ts"
+  ],
+  "sha256_fuentes": {
+    "backend/migrations/097_vivero_conciliacion_historica.sql": "21eb5f5a52ed04e124891e764548e761483742545e2c1da83f074a0b90ea14c2",
+    "backend/migrations/098_vivero_conciliacion_storage_privado.sql": "f2ef1e20451598b8c3b7aaea14d80ebbe123682be87ffd585067bec43a8f1eac",
+    "backend/migrations/099_vivero_origenes_requisitos_inicio.sql": "95850a403c863fcc583d780af681c55bc2039afd5c19dc05abec6c6fcbf24770",
+    "backend/scripts/qa/recepcion-semillas-test.py": "e5738cfa5e217cf2ef2fc11b2b4bb9518298eea0f0b779d697e5adb711d77a4d",
+    "backend/scripts/qa/vivero-acceso-openapi.cjs": "1346ab927c594b3950f5c850c3a25defeb0d3d9abeb464398fd390406020b616",
+    "backend/scripts/qa/vivero-conciliacion-postflight.sql": "4cc36492ab6e21143b8f53cb810e0f06ce28d94309afe913d9283c3960163ab0",
+    "backend/scripts/qa/vivero-conciliacion-preflight.sql": "652e655a87435b917b1864e8b146ae79645b641766ecb148585ced20904b2966",
+    "backend/scripts/qa/vivero-conciliacion-storage-estado.sql": "6c6c405266acf0aad26dbc1b229773f985b2874b1aaf203af8e9ce7b77827635",
+    "backend/scripts/qa/vivero-conciliacion-storage-test.py": "ebfff91f5b7d236ab4ef3f4570da0436e489bcccae1ec535fbcafe185378c1a8",
+    "backend/scripts/qa/vivero_conciliacion_checks.py": "8054399271a6d0639fbcdaf31aecc70a03ff992a5a500b36debb8fd18412f8b5",
+    "backend/src/evidencias-trazabilidad/evidencias-trazabilidad.service.spec.ts": "9eee4304d5108f4a2f4cec7c69cc3c77cb7e83ff386e5c1383db628ae9d2c763",
+    "backend/src/evidencias-trazabilidad/evidencias-trazabilidad.service.ts": "9d6851c98c28b3292240927d17062dfaf51c77b198c7163ee2545e949f1aa581",
+    "backend/src/lotes-vivero/api/docs/conciliacion-vivero.swagger.ts": "5b83b05123ad0c2af201b423c7e759b22f61b1b26031b09933e9a2679e2f0896",
+    "backend/src/lotes-vivero/api/docs/lotes-vivero.swagger.ts": "d6dd2adb7fd76a1b9d3b9342b14401d9172ffc9781d2570377db38597d31f6a3",
+    "backend/src/lotes-vivero/api/dto/conciliacion-vivero.dto.ts": "ff3fa3a99f83d59b22cdc381113e4a0b115a4cfc5e85004103db40d4039aa1f3",
+    "backend/src/lotes-vivero/api/dto/crear-lote-vivero.dto.ts": "05d2bcb47ebe0f2ec6f1354a92733f3a32a9f2d93bf52648f03fc700c451f377",
+    "backend/src/lotes-vivero/api/vivero-accesos.controller.ts": "d0771d61f58b4c5e1a5f1e5625506157b62deb7add7111e22f441f4d8373df90",
+    "backend/src/lotes-vivero/api/vivero-conciliacion.controller.ts": "bc0b47ded67f5c14aeaadf5c6edaf134c059509a455b3021ea5ae70ee7b0f5af",
+    "backend/src/lotes-vivero/application/vivero-accesos.service.ts": "4e6d9648d99d1a2ae246e5575e466a67cc7b4be616a2ca969607139f85786ccc",
+    "backend/src/lotes-vivero/application/vivero-conciliacion.service.ts": "38ade7b97f13d823503acd7a293239f91f79a53120f0a1774de0c83324b05fe1",
+    "backend/src/lotes-vivero/application/vivero-inicio.service.ts": "61a784f8190ded706f5d97c1441ed5b4a9c39cdf6dd2d3aaf53831c9baccd9fd",
+    "backend/src/lotes-vivero/domain/enums/estado-habilitacion-material.enum.ts": "d23dedd6a5ac0388953274a377cf721d22d3b089b98fd7929116cbe09faa4fac",
+    "backend/src/lotes-vivero/domain/policies/conciliacion-recibo.policy.ts": "35d6165b3c867762f34edf7ab7add323915f13a16362e0608a3d5e3dd6359a28",
+    "backend/src/lotes-vivero/tests/vivero-accesos.spec.ts": "a7fa1c23c46cad59d6be24f6a8821fbdd261d2276a022dd09baea3ce04235202",
+    "backend/src/lotes-vivero/tests/vivero-inicio.service.spec.ts": "0c4e27827b0e711efa6579bb51fb92ced35d8cf6e3873c8439f636b61bb033ba",
+    "backend/src/lotes-vivero/vivero-acceso.module.ts": "3d899e0b7671173ec5e5aca3ddb7be69b00823c944cd12404c6216234b833ca2",
+    "backend/src/recolecciones/api/docs/recolecciones.swagger.ts": "47b8fd6c8c561a13123fb7c12a79c87fffccc826df199fa06de2192ee043cfbd",
+    "backend/src/recolecciones/application/recoleccion-consultas.service.ts": "df31e3b1a0d75823389bcac70d69af82b46464309b0ea12603134c39bf4fd257",
+    "backend/src/recolecciones/domain/policies/elegibilidad-inicio-vivero.policy.ts": "7a918c9bf40939e208741d015bab42bfa7bc84c7d959e67422ad65d01ab510a3",
+    "backend/src/recolecciones/tests/recoleccion-elegibilidad.service.spec.ts": "2951e562ad6da4207b2b2ef97614a475c4888315116debda3909cda85e555922",
+    "backend/src/recolecciones/tests/recolecciones.service.spec.ts": "2d4a5c8fd0edb315ebdf799b438a8f211655a8d0e8a90179bca820651e18eebc",
+    "backend/test/README.md": "abe46e4b10f8a4765267e58ff12699194677ca119cc0120df28a32929f233534",
+    "backend/test/db/recepcion-semillas-http.spec.ts": "55f7fa6c048bf2b2d685f171c0309c954017fdb45d6965c1ad70c219852f3bad",
+    "backend/test/db/vivero-conciliacion-fixture.sql": "7a003b0e5a31983e1c11a9fc00cb91fda07691da926b7bdbf6783effc4990d5d",
+    "backend/test/db/vivero-conciliacion-http.spec.ts": "e134996c2d31188d346c612a179f7aa03c07fb358b8d895aa2b37fb9fca5f22e",
+    "backend/test/db/vivero-conciliacion-storage-fixture.sql": "6f9694a28976fcdcd9d3f96662db5853d04eca5d75272dc22bd119c7ce8d12d3",
+    "pwa/src/App.tsx": "f472659bc8d0c4540da3f534b8a1e4480cfee82d07edf2301965c1a14d89fed9",
+    "pwa/src/config/vivero.ts": "aaa44a5d8c6eed60cfb9a174f785d0f06a3aaaed44a9b7a1e356e087c71d830e",
+    "pwa/src/modules/recolecciones/RecoleccionDetailScreen.test.tsx": "301e675b2814c7742c3a80b38d5d1ad1e9ad75c9818febb36d7661bdd70a8a3c",
+    "pwa/src/modules/recolecciones/RecoleccionDetailScreen.tsx": "eacbae050faa86cab41e0f51f24c51b82ea1aedcec92f05dcd63450cf3165ac4",
+    "pwa/src/modules/vivero/README.md": "fd4ad438eb38ad2f4e79e5c8cba7df490d5c78398de55332602d9ca09d486e6b",
+    "pwa/src/modules/vivero/api/origenes.api.test.ts": "b6dea5b5f25610369665cb369383a9e2017d879dbc8d7252b270af747f426110",
+    "pwa/src/modules/vivero/api/origenes.api.ts": "ab56d9398b34faf1689d532b773199154766b86a80620bc69eada469dea5e460",
+    "pwa/src/modules/vivero/components/EstadoOrigenMaterial.tsx": "a9480db2908c6c64e6818a402362be80a3618f9cecf29ea5e053c37203243ce6",
+    "pwa/src/modules/vivero/components/event/SaldoMeter.tsx": "56ae30e964cf0cadfe5a0b4ff89c5522bd1dd0292e2e40e24bd89033bf1dfcce",
+    "pwa/src/modules/vivero/conciliacion/ConciliacionScreen.tsx": "a2ff80441dda172b2687c027111740e1df3327050a6c939b2c0bd177738890ea",
+    "pwa/src/modules/vivero/conciliacion/ConciliacionScreen.test.tsx": "3bd9e81f11eba66a4648cfd942630f6d0034ad109466c82cba112b7c10d0c683",
+    "pwa/src/modules/vivero/conciliacion/conciliacion.api.ts": "6ef05521e9e4f8ddc8cdc3c25935c3eb4a101090e9913a002f2d05ff78127b22",
+    "pwa/src/modules/vivero/hooks/useOrigenes.ts": "cb67563cd36d6aec1b20f8c66f8ecef03184e045a915ad95bd30678266457db9",
+    "pwa/src/modules/vivero/screens/ViveroDetailScreen.tsx": "df9908a4c000722802a9fcac91d4ef019b3533c33845d8395fc6e14b8ceeca6e",
+    "pwa/src/modules/vivero/screens/ViveroEmbolsadoScreen.tsx": "28f9fd1ab37bf95f21243fe4453e99153cbf98b76e4fda169c1eb418476a9161",
+    "pwa/src/modules/vivero/screens/ViveroEventScreen.tsx": "c5fc08449c0604dc09c3d573e60aa553e04abafc1fa60f783ea0531a829f9c88",
+    "pwa/src/modules/vivero/screens/ViveroMaterialScreen.test.tsx": "3b6c2d4a768f4ca251123962e1e81544ee72701cef5a664e88f8d82db7969089",
+    "pwa/src/modules/vivero/screens/ViveroMaterialScreen.tsx": "c055a0a383f33104c266f357dba0399be50a85083dbb557fcbed01a0cf86855f",
+    "pwa/src/modules/vivero/screens/ViveroNewScreen.test.tsx": "fc0997652e6b10be11ab3a1b97aa6a5bf0ce1d35d21092e498584c74626728fb",
+    "pwa/src/modules/vivero/screens/ViveroNewScreen.tsx": "48856cf484738bd0d13c8a5b0eb7a17c4eef38e308b2afb5dde37b97cd363ace",
+    "pwa/src/modules/vivero/types/contracts.ts": "08a8f9e509c3e52cc1b51a43c8f942e0e9e1728a53c128dd68dae19c23d4ae34",
+    "pwa/src/modules/vivero/utils/format.ts": "4f17d5f52f02a42951114f363fdcfda596e029703aae68d4a8846982884b4c97",
+    "pwa/src/modules/vivero/utils/validators.ts": "dbbc069eb67c88ab94efdff46e67201d57ae81afc48266a910a3ee819dbb527d",
+    "pwa/src/services/recolecciones.service.ts": "32ec4cacb1e4ad5fe15f33dda723585fb99ea3fe7e678554da0c378e17cb2691"
+  }
+}

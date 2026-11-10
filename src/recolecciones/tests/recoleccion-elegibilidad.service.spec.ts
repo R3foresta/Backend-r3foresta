@@ -55,6 +55,37 @@ describe('RecoleccionElegibilidadService', () => {
     });
   });
 
+  it('reconoce el remanente conciliado sin acreditar una recepción T4', () => {
+    const base = {
+      ...elegibleBase,
+      recepcion_conforme: false,
+      estado_registro: EstadoRegistro.VALIDADO,
+      estado_operativo: 'ABIERTO',
+      saldo_actual: 120,
+      planta_id: 55,
+    };
+    const conforme = service.evaluarRecoleccionElegibleParaInicioVivero(
+      {
+        ...base,
+        m2_estado_habilitacion: 'CONCILIACION_CONFORME',
+      },
+      20,
+    );
+    const incidencia = service.evaluarRecoleccionElegibleParaInicioVivero(
+      {
+        ...base,
+        m2_estado_habilitacion: 'INCIDENCIA_CONCILIACION',
+      },
+      20,
+    );
+    expect(conforme.elegible).toBe(true);
+    expect(incidencia).toMatchObject({
+      elegible: false,
+      motivo_no_elegibilidad:
+        'Se requiere conciliación histórica conforme del remanente.',
+    });
+  });
+
   it('deriva estado ABIERTO desde saldo positivo cuando estado_operativo no viene informado', () => {
     // RF-REC-05 dice que el estado operativo depende del saldo.
     // Si la BD o una proyección no manda estado_operativo, el servicio no debe fallar:

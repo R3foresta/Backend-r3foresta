@@ -91,6 +91,15 @@ importaciones/SQL privilegiado que omitan la disciplina de cuentas → ámbitos.
 
 T2 mantiene cuenta SHARE en operación y destino UPDATE en retiro, compartido con rol/baja072; campañas → hijas → asignaciones → lote/origen → fotos conservan el orden de077. Vigencias/revisión/historial/terminal M2 se confirman juntos. Las evidencias pendientes guardan contexto inmutable y se revalidan al vincular; el bucket legado conserva URLs públicas.
 
+097 añade la [conciliación histórica del remanente](docs/vivero-conciliacion-historica.md).
+Padrón, comprobación y recibo se serializan con cuenta → comando → origen → fotos.
+La misma elegibilidad SQL se usa al consultar, iniciar lote y registrar el
+movimiento. La ventana de captura conserva su alcance y permite recalcular un
+saldo antiguo a partir del ledger sin editar el origen.
+098 añade políticas restrictivas dedicadas para el bucket privado de
+conciliación en `storage.buckets` y `storage.objects`. Se aplicó y cotejó el
+10 de noviembre; el bucket se creó por API. [Entorno y límites verificados](docs/evidencia/vivero-conciliacion-storage-aplicado-2026-11-10.json).
+
 La validación de una Recolección precede a Pinata/mint; errores externos no revierten
 el hecho validado. No hay outbox/reintento durable para esos efectos. PostgreSQL
 continúa siendo la fuente operativa de verdad.

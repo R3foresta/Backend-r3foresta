@@ -326,6 +326,7 @@ test('diagnóstico es solo ADMIN y nunca acredita una recepción legada', async 
     .expect(403);
   const r = await request(app.getHttpServer())
     .get(`${base}/diagnostico`)
+    .query({ antes_de_id: '124', limite: '20' })
     .set(auth('fixture-admin'))
     .expect(200);
   expect(

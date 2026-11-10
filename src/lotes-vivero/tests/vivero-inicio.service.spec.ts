@@ -76,7 +76,7 @@ describe('ViveroInicioService', () => {
       expect.objectContaining({ id: 77 }),
       dto.vivero_id,
     );
-    expect(rpc).toHaveBeenCalledWith('fn_vivero_crear_lote_desde_recoleccion', {
+    expect(rpc).toHaveBeenCalledWith('m2_inicio_lote_exacto', {
       p_recoleccion_id: 10,
       p_vivero_id: 2,
       p_responsable_id: 77,
@@ -100,6 +100,29 @@ describe('ViveroInicioService', () => {
         saldo_recoleccion_despues: 2,
         evidencia_inicio_ids: [501],
       },
+    });
+  });
+
+  it('conserva los BIGINT fuera del rango seguro al devolver el lote', async () => {
+    const id = '9007199254740993';
+    rpc.mockResolvedValue({
+      data: {
+        lote_vivero_id: id,
+        evento_inicio_id: id,
+        recoleccion_movimiento_id: id,
+        codigo_trazabilidad: 'VIV-9007199254740993-REC-000010',
+        saldo_recoleccion_antes: 10,
+        saldo_recoleccion_despues: 2,
+        evidencia_inicio_ids: [id],
+      },
+      error: null,
+    });
+    const resultado = await service.crearDesdeRecoleccion(dto, 'auth-1');
+    expect(resultado.data).toMatchObject({
+      lote_vivero_id: id,
+      evento_inicio_id: id,
+      recoleccion_movimiento_id: id,
+      evidencia_inicio_ids: [id],
     });
   });
 

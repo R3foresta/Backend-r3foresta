@@ -28,6 +28,8 @@ export class ViveroAccesosService {
     origen: string | null,
     page: number,
     limit: number,
+    incluirPendientes = false,
+    incluirRequisitosInicio = false,
   ) {
     const { data, error } = (await this.supabase
       .getAdminClient()
@@ -37,6 +39,8 @@ export class ViveroAccesosService {
         p_recoleccion_id: origen,
         p_pagina: page,
         p_limite: limit,
+        ...(incluirPendientes && { p_incluir_pendientes: true }),
+        ...(incluirRequisitosInicio && { p_incluir_requisitos_inicio: true }),
       })) as { data: unknown; error: { code?: string } | null };
     if (error) {
       if (error.code === '42501')

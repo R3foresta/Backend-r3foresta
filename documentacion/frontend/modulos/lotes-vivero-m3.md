@@ -5,6 +5,9 @@ Base URL: `/api/lotes-vivero`
 **Alcance**: Documenta solo los endpoints relevantes para M3 (flujo de asignaciones).
 **Nota**: Endpoints de lifecycle completo (embolsado, adaptabilidad, merma, despacho) están en documentación separada.
 
+La selección de material M1 y su estado de recepción o conciliación tienen
+su propio [contrato M2](../../../docs/vivero-conciliacion-historica.md#api-privada-y-pwa).
+
 > **Cambio de contrato (2026-07)**: la asignación dejó de ser una *reserva lógica*
 > y pasó a ser una **entrega física** (RN-VIV-47). Asignar descuenta
 > `saldo_vivo_actual` del lote en ese momento y exige evidencia fotográfica de

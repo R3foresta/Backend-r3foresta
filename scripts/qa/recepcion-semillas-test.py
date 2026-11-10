@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""T4/096: clúster PostgreSQL privado, sin TCP, .env ni servicios reales."""
+"""Recepción T4 y conciliación histórica en PostgreSQL privado, sin TCP ni .env."""
 import argparse
 import hashlib
 import json
@@ -22,15 +22,19 @@ def main():
     parser.add_argument('--evidence', type=Path)
     parser.add_argument('--sql-only', action='store_true')
     parser.add_argument('--postgis', action='store_true',help='Extensión PostGIS real y regresión M3 de consumo sin M2; falla si falta la extensión.')
+    parser.add_argument('--conciliacion', action='store_true', help='Añade 097, remanentes sintéticos y regresiones SQL/HTTP de conciliación.')
+    parser.add_argument('--revision-conciliacion', action='store_true', help='Ejecuta la suite de conciliación y añade 099 y su regresión de orígenes.')
     args = parser.parse_args()
+    args.conciliacion = args.conciliacion or args.revision_conciliacion
     binaries = {n: str(args.pg_bin/n) if args.pg_bin else shutil.which(n) for n in ('initdb','pg_ctl','psql')}
     if not all(binaries.values()): parser.error('Faltan binarios PostgreSQL; use --pg-bin.')
     if args.evidence and args.evidence.exists(): parser.error('La evidencia debe ser nueva.')
+    migrations = MIGRATIONS.copy()
     env = {k:v for k,v in os.environ.items() if not k.startswith('PG')}
     env.update(LC_ALL='C',PGPASSFILE=os.devnull,PGSERVICEFILE=os.devnull,PGAPPNAME='t4_aislado')
     directory = Path(tempfile.mkdtemp(prefix='t4-recepcion-',dir='/tmp')).resolve()
     cluster,socket = directory/'pg',directory/'socket'; socket.mkdir(mode=0o700)
-    checks=[]; races=[]; children=[]; started=False; http=None; version=None; postgis_version=None
+    checks=[]; races=[]; children=[]; started=False; http=None; version=None; postgis_version=None; postflight=None
 
     def run(cmd, timeout=60):
         r=subprocess.run(cmd,env=env,text=True,capture_output=True,timeout=timeout)
@@ -101,9 +105,11 @@ def main():
         f=[{'ruta_archivo':f'vivero/eventos/pendientes/{actor}/{uuid.uuid4()}.jpg','mime_type':'image/jpeg','tamano_bytes':10}]
         return f"SELECT public.m2_evidencias_preparar({actor},{viv},{lote or 'NULL'},'{event}',{lit(f)});"
     def evidence(actor,viv=1,lote=None,event='INICIO'): return call(prepare(actor,viv,lote,event))
-    def inicio(actor,rec=100,viv=1,ids=None):
+    def inicio(actor,rec=100,viv=1,ids=None,exacto=False):
         ids=ids if ids is not None else evidence(actor,viv)
-        return f"SELECT to_jsonb(x) FROM public.fn_vivero_crear_lote_desde_recoleccion({rec},{viv},{actor},CURRENT_DATE,CURRENT_DATE,5,'G',NULL,ARRAY[{','.join(map(str,ids))}]::bigint[]) x;"
+        argumentos=f"{rec},{viv},{actor},CURRENT_DATE,CURRENT_DATE,5,'G',NULL,ARRAY[{','.join(map(str,ids))}]::bigint[]"
+        if exacto: return f'SELECT public.m2_inicio_lote_exacto({argumentos});'
+        return f'SELECT to_jsonb(x) FROM public.fn_vivero_crear_lote_desde_recoleccion({argumentos}) x;'
     def evento(actor,lote,event='MERMA',viv=1,qty=1,ids=None):
         ids=ids if ids is not None else ([] if event=='ADAPTABILIDAD' else evidence(actor,viv,lote,event))
         common=f"{lote},CURRENT_DATE,{actor}"
@@ -280,12 +286,111 @@ def main():
             details=lit([{'asignacion_id':asig,'lote_vivero_id':lote,'planta_id':1,'cantidad':1}])
             r=call(f"SELECT to_jsonb(x) FROM public.fn_m3_registrar_plantacion(61,true,4000,CURRENT_DATE,21,-16.5,-68.1,NULL,ARRAY[]::bigint[],{details},ARRAY[{ev}]::bigint[]) x")
             check(r['gps_dentro_poligono'] and before==sql(f'SELECT saldo_vivo_actual FROM public.lote_vivero WHERE id={lote}') and m1==sql('SELECT saldo_actual FROM public.recoleccion WHERE id=100'),'M3 consume asignación sin M2/recepción adicional ni doble débito; PostGIS real')
+        if args.conciliacion:
+            from vivero_conciliacion_checks import comprobar_conciliacion, instalar_conciliacion
+
+            fixture = ROOT/'test/db/vivero-conciliacion-fixture.sql'
+            run(command()+['-f',str(fixture)])
+            # Hechos de prueba válidos bajo las reglas antiguas antes de simular su antigüedad.
+            sql('ALTER TABLE public.recoleccion_movimiento DISABLE TRIGGER recepcion_exigida')
+            lote_historico=call(inicio(20,201))['lote_vivero_id']
+            sql("""
+                INSERT INTO public.recoleccion_movimiento
+                  (recoleccion_id,tipo_movimiento,delta,unidad_medida_movimiento,motivo,created_by)
+                VALUES (203,'DESECHO',-10,'G','DESECHO_OTRO',20),
+                       (208,'CONSUMO_A_VIVERO',-10,'G','CONSUMO_PARA_VIVERO',20),
+                       (214,'DESECHO',-10,'G','DESECHO_OTRO',20),
+                       (219,'DESECHO',-10,'G','DESECHO_OTRO',20),
+                       (227,'CORRECCION',-10,'G','DESECHO_OTRO',20),
+                       (228,'CORRECCION',10,'G','DESECHO_OTRO',20),
+                       (229,'AJUSTE_MIGRACION',-10,'G','DESECHO_OTRO',20),
+                       (230,'AJUSTE_MIGRACION',10,'G','DESECHO_OTRO',20);
+                ALTER TABLE public.recoleccion_movimiento ENABLE TRIGGER recepcion_exigida;
+            """)
+            call(evento(20,lote_historico,'EMBOLSADO',qty=30))
+            sql("UPDATE public.subcampania_equipo SET usuario_id=24 WHERE subcampania_id=11 AND rol='COORDINADOR'")
+            asignacion_historica=call(entrega(24,lote_historico))['asignacion_id']
+            receipt(20,payload(209))
+            # Se simula el paso del tiempo únicamente en el fixture. 090 vuelve a
+            # regir antes de instalar 097 y conserva su definición de catálogo.
+            sql("""
+                DO $fixture$
+                DECLARE regla text;
+                BEGIN
+                  SELECT pg_get_constraintdef(oid) INTO STRICT regla
+                    FROM pg_constraint WHERE conrelid='public.recoleccion'::regclass
+                    AND conname='chk_fecha_rango';
+                  ALTER TABLE public.recoleccion DROP CONSTRAINT chk_fecha_rango;
+                  ALTER TABLE public.recoleccion DISABLE TRIGGER recepcion_congelar;
+                  UPDATE public.recoleccion SET fecha=CURRENT_DATE-70,
+                    fecha_validacion=CASE WHEN estado_registro='VALIDADO' THEN CURRENT_DATE-69 END
+                    WHERE (id BETWEEN 201 AND 234 AND id<>214)
+                       OR id IN (9007199254741000,9007199254741001);
+                  ALTER TABLE public.recoleccion ENABLE TRIGGER recepcion_congelar;
+                  EXECUTE 'ALTER TABLE public.recoleccion ADD CONSTRAINT chk_fecha_rango ' || regla;
+                END $fixture$;
+            """)
+            sql(inicio(20,209),error='chk_fecha_rango',service=True)
+            check(True,'096 reproduce el bloqueo de saldo en un origen ordinario T4 envejecido')
+            migration = next((ROOT/'migrations').glob('097_*'))
+            migrations.append(migration.name)
+            preflight = ROOT/'scripts/qa/vivero-conciliacion-preflight.sql'
+            catalogo_antes = json.loads(run(command()+['-f',str(preflight)]))
+            check(catalogo_antes['entorno']['transaccion_solo_lectura']=='on'
+                  and catalogo_antes['comprobaciones']['enums_requeridos_presentes']
+                  and not catalogo_antes['comprobaciones']['enums_sin_extras']
+                  and not catalogo_antes['objetos_097_encontrados'],
+                  'Preflight de solo lectura distingue valores requeridos de extras antes de 097')
+            instalar_conciliacion(sql=sql, check=check, migracion=migration.read_text())
+            catalogo_despues = json.loads(run(command()+['-f',str(preflight)]))
+            check(catalogo_despues['entorno']['transaccion_solo_lectura']=='on'
+                  and bool(catalogo_despues['objetos_097_encontrados'])
+                  and all(
+                      tabla['permisos_efectivos'][rol]['privilegios_servidor']['SELECT']
+                      and not tabla['permisos_efectivos'][rol]['privilegios_servidor']['INSERT']
+                      for tabla in catalogo_despues['tablas_y_acl']
+                      if tabla['nombre'] in ('recoleccion','recoleccion_movimiento')
+                      for rol in ('anon','authenticated')
+                  ),
+                  'Preflight posterior muestra objetos 097 y el cierre efectivo sin modificar el catálogo')
+            postflight_file = ROOT/'scripts/qa/vivero-conciliacion-postflight.sql'
+            postflight = json.loads(run(command()+['-f',str(postflight_file)]))
+            check(postflight['entorno']['transaccion_solo_lectura']=='on'
+                  and all(value is True for value in postflight['comprobaciones'].values())
+                  and postflight['conteos']=={'eventos_totales':0,'origenes_en_padron':0},
+                  'Postflight de solo lectura verifica la instalación nueva y el padrón vacío')
+            comprobar_conciliacion(
+                sql=sql, call=call, lit=lit, check=check, race=race, assign=assign,
+                inicio=inicio, evento=evento, entrega=entrega, today=today,
+                lote_historico=lote_historico, asignacion_historica=asignacion_historica,
+                postgis=args.postgis,
+            )
+            postflight = json.loads(run(command()+['-f',str(postflight_file)]))
+            check(all(value is True for value in postflight['comprobaciones'].values())
+                  and postflight['conteos']['eventos_totales']>0,
+                  'Postflight conserva controles y cuenta hechos después de las operaciones sintéticas')
+            if args.revision_conciliacion:
+                from vivero_conciliacion_checks import comprobar_requisitos_inicio
+
+                migration = next((ROOT/'migrations').glob('099_*'))
+                run(command()+['-f',str(migration)])
+                migrations.append(migration.name)
+                comprobar_requisitos_inicio(sql=sql, call=call, check=check, inicio=inicio)
         if not args.sql_only:
             sql("CREATE FUNCTION public.t4_http_transport(p_sql text) RETURNS jsonb LANGUAGE plpgsql AS $$ DECLARE r jsonb; BEGIN EXECUTE p_sql INTO r; RETURN jsonb_build_object('data',r,'error',NULL); EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('data',NULL,'error',jsonb_build_object('code',SQLSTATE,'message',SQLERRM)); END $$;")
             http_env=dict(env,T4_DB_SOCKET=str(socket),T4_DB_PORT='55444',T4_DB_PSQL=binaries['psql'],NODE_ENV='test')
-            r=subprocess.run(['node',str(ROOT/'node_modules/jest/bin/jest.js'),'--config',str(ROOT/'test/jest-recepcion-semillas-db.json'),'--runInBand','--cacheDirectory=/private/tmp/t4-jest'],cwd=ROOT,env=http_env,timeout=180)
-            http={'exit_code':r.returncode,'suite':'test/db/recepcion-semillas-http.spec.ts'}
-            if r.returncode: raise AssertionError('Falló HTTP aislado T4')
+            if args.revision_conciliacion:
+                http_env['T4_DB_REVISION_CONCILIACION']='1'
+            jest=['node',str(ROOT/'node_modules/jest/bin/jest.js'),'--config',str(ROOT/'test/jest-recepcion-semillas-db.json'),'--runInBand','--cacheDirectory=/private/tmp/t4-jest']
+            http=[]
+            suites=['test/db/recepcion-semillas-http.spec.ts']
+            if args.conciliacion:
+                suites.insert(0,'test/db/vivero-conciliacion-http.spec.ts')
+            for suite in suites:
+                r=subprocess.run(jest+['--testMatch=**/'+suite,'--runTestsByPath',suite],
+                                 cwd=ROOT,env=http_env,timeout=180)
+                http.append({'exit_code':r.returncode,'suite':suite})
+                if r.returncode: raise AssertionError('Falló HTTP aislado: '+suite)
         failed=False
     finally:
         for p in children:
@@ -294,8 +399,41 @@ def main():
         stopped=not (cluster/'postmaster.pid').exists()
         if stopped: shutil.rmtree(directory)
         if args.evidence:
-            files=list((ROOT/'src/recolecciones').rglob('*.ts'))+[ROOT/'migrations'/m for m in MIGRATIONS]+[Path(__file__).resolve(),ROOT/'test/db/recepcion-semillas-http.spec.ts']
-            args.evidence.write_text(json.dumps({'tarea':'T4_RECEPCION_SEMILLAS','estado':'FALLIDO' if failed else 'CORRECTO','fecha':'2026-11-06','entorno':{'tipo':'SINTETICO_LOCAL','postgres':version,'tcp':False,'sin_env':True,'postgis':postgis_version or False,'cluster_detenido':stopped,'directorio_eliminado':not directory.exists()},'base':run(['git','-C',str(ROOT),'rev-parse','HEAD']),'migraciones':MIGRATIONS,'comprobaciones':checks,'carreras':races,'http':http,'sha256':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(files)) if p.exists()}},ensure_ascii=False,indent=2)+'\n')
-    print(f'T4: {len(checks)} grupos SQL y {len(races)} carreras aprobados.',flush=True)
+            files=list((ROOT/'src/recolecciones').rglob('*.ts'))+[ROOT/'migrations'/m for m in migrations]+[Path(__file__).resolve(),ROOT/'test/db/recepcion-semillas-http.spec.ts']
+            if args.conciliacion:
+                files+=list((ROOT/'src/lotes-vivero').rglob('*conciliacion*.ts'))
+                files += [ROOT/p for p in (
+                    'scripts/qa/vivero-conciliacion-preflight.sql',
+                    'scripts/qa/vivero-conciliacion-postflight.sql',
+                    'scripts/qa/vivero_conciliacion_checks.py',
+                    'src/lotes-vivero/api/vivero-accesos.controller.ts',
+                    'src/lotes-vivero/application/vivero-accesos.service.ts',
+                    'src/lotes-vivero/application/vivero-inicio.service.ts',
+                    'test/db/vivero-conciliacion-fixture.sql',
+                    'test/db/vivero-conciliacion-http.spec.ts',
+                )]
+            evidence = {
+                'tarea': 'VIVERO_CONCILIACION_HISTORICA' if args.conciliacion else 'T4_RECEPCION_SEMILLAS',
+                'estado': 'FALLIDO' if failed else 'CORRECTO',
+                'fecha': time.strftime('%Y-%m-%d'),
+                'entorno': {
+                    'tipo': 'SINTETICO_LOCAL', 'postgres': version, 'tcp': False, 'sin_env': True,
+                    'postgis': postgis_version or False, 'cluster_detenido': stopped,
+                    'directorio_eliminado': not directory.exists(),
+                },
+                'base': run(['git','-C',str(ROOT),'rev-parse','HEAD']),
+                'migraciones': migrations,
+                'comprobaciones': checks,
+                'carreras': races,
+                'http': http,
+                'postflight': postflight,
+                'sha256': {
+                    str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
+                    for p in sorted(set(files)) if p.exists()
+                },
+            }
+            args.evidence.write_text(json.dumps(evidence, ensure_ascii=False, indent=2)+'\n')
+    suite = 'T4 y conciliación histórica' if args.conciliacion else 'T4'
+    print(f'{suite}: {len(checks)} grupos SQL y {len(races)} carreras aprobados.',flush=True)
 
 if __name__=='__main__': main()

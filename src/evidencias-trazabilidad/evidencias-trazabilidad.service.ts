@@ -428,8 +428,9 @@ export class EvidenciasTrazabilidadService {
       `,
         { count: 'exact' },
       )
-      // Las cargas v1 tienen su propia audiencia y proyección sanitizada.
+      // Las cargas privadas se consultan por su flujo y autorización de objeto.
       .neq('bucket', 'participacion_evidencias')
+      .neq('bucket', 'r3foresta-conciliacion')
       .not('ruta_archivo', 'like', 'plantaciones/registros/pendientes/%')
       .not('ruta_archivo', 'like', 'recepcion/pendientes/%')
       .gt('entidad_id', 0)
@@ -492,6 +493,7 @@ export class EvidenciasTrazabilidadService {
         const evidence = row as EvidenciaRow;
         return (
           evidence.bucket !== 'participacion_evidencias' &&
+          evidence.bucket !== 'r3foresta-conciliacion' &&
           Boolean(evidence.entidad_id) &&
           !evidence.ruta_archivo?.startsWith(
             'plantaciones/registros/pendientes/',
@@ -559,6 +561,7 @@ export class EvidenciasTrazabilidadService {
       error ||
       !data ||
       (data as EvidenciaRow).bucket === 'participacion_evidencias' ||
+      (data as EvidenciaRow).bucket === 'r3foresta-conciliacion' ||
       (data as EvidenciaRow).ruta_archivo?.startsWith(
         'plantaciones/registros/pendientes/',
       ) ||

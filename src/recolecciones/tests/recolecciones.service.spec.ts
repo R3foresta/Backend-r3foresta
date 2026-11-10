@@ -400,6 +400,7 @@ describe('RecoleccionesService', () => {
       data: {
         id: 9,
         estado_registro: 'VALIDADO', // Recolección está validada
+        m2_estado_habilitacion: 'CONCILIACION_CONFORME',
         estado_operativo: 'ABIERTO', // Todavía abierta para operaciones
         saldo_actual: 40, // Pero solo quedan 40 unidades
         cantidad_inicial_canonica: 50, // Se recolectaron 50 inicialmente
@@ -507,6 +508,8 @@ describe('RecoleccionesService', () => {
     // Verificar que devuelve los datos correctos
     expect(response.data.saldo_actual).toBe(40);
     expect(response.data.estado_operativo).toBe('ABIERTO');
+    expect(response.data.recepcion_conforme).toBe(false);
+    expect(response.data.m2_estado_habilitacion).toBe('CONCILIACION_CONFORME');
 
     // Verificar que PRIORIZA snapshots (no usa datos de la tabla planta)
     expect(response.data.nombre_cientifico).toBe(

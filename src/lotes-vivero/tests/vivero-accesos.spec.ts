@@ -78,6 +78,30 @@ describe('Acceso por vivero T2: contrato, identidad y política por objeto', () 
       ).length,
     ).toBeGreaterThan(0);
   });
+  it.each([
+    ['0.000001', true],
+    ['9007199254740993.123456', true],
+    [0.000001, true],
+    [2.5, true],
+    ['0', false],
+    ['0.0000001', false],
+    [0.0000001, false],
+    ['1e-6', false],
+    ['1.0000000', false],
+    [Infinity, false],
+  ])('DTO preserva la cantidad exacta %p y su validez %p', async (cantidad, valida) => {
+    const dto = plainToInstance(CrearLoteViveroDto, {
+      recoleccion_id: '1',
+      vivero_id: '1',
+      fecha_inicio: '2026-11-10',
+      fecha_evento: '2026-11-10',
+      cantidad_inicial_en_proceso: cantidad,
+      unidad_medida_inicial: 'G',
+      evidencia_ids: ['1'],
+    });
+    expect((await validate(dto)).length === 0).toBe(valida);
+    expect(dto.cantidad_inicial_en_proceso).toBe(cantidad);
+  });
   function setup(scopes: unknown = { global: false, viveros: ['1'] }) {
     const query = {
       select: jest.fn().mockReturnThis(),

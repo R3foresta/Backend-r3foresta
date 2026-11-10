@@ -1,0 +1,56 @@
+{
+  "fecha": "2026-11-10",
+  "estado": "AJUSTE_LOCAL_VERIFICADO_TRAS_COTEJO",
+  "base_backend": "21749347a5f7ef2e717deb991a4338f419d3192b",
+  "migracion": "migrations/097_vivero_conciliacion_historica.sql",
+  "migracion_sha256": "21eb5f5a52ed04e124891e764548e761483742545e2c1da83f074a0b90ea14c2",
+  "antecedente": "vivero-conciliacion-preflight-aportado-2026-11-09.json",
+  "cambios": [
+    "Cierre de permisos de escritura y mantenimiento de PUBLIC/anon/authenticated en recoleccion y recoleccion_movimiento, incluidos permisos por columna.",
+    "Aborto transaccional ante escritura heredada residual o pérdida de privilegios efectivos de servicio.",
+    "Invalidación de conciliación conforme al aparecer CORRECCION, AJUSTE_MIGRACION u otro movimiento fuera de los débitos admitidos.",
+    "Separación entre valores requeridos y valores adicionales en el preflight, con postflight focal de solo lectura.",
+    "Prueba T4 de diagnóstico con cursor explícito para mantener su fixture esperado al ampliar el conjunto sintético."
+  ],
+  "verificacion": {
+    "postgres": {
+      "tipo": "SINTETICO_LOCAL",
+      "postgres": "14.17 (Homebrew)",
+      "tcp": false,
+      "sin_env": true,
+      "postgis": false,
+      "cluster_detenido": true,
+      "directorio_eliminado": true
+    },
+    "grupos_sql": 184,
+    "carreras": 14,
+    "http_conciliacion": 3,
+    "http_t4": 7,
+    "postflight": {
+      "raices_presentes": true,
+      "check_fecha_rango_retirado": true,
+      "roles_requeridos_presentes": true,
+      "triggers_efectivos_coinciden": true,
+      "cuerpos_criticos_097_coinciden": true,
+      "escritura_tabla_anon_auth_ausente": true,
+      "funciones_097_presentes_y_privadas": true,
+      "escritura_columna_anon_auth_ausente": true,
+      "tablas_097_presentes_privadas_inmutables": true
+    },
+    "evidencia": "vivero-conciliacion-cotejo-local-2026-11-10.json",
+    "fuentes_backend_pwa": "Coinciden con las huellas de verificación de build/unitarios/PWA del 9 de noviembre.",
+    "evidencia_anterior": "vivero-conciliacion-validacion-2026-11-09.json"
+  },
+  "limites": [
+    "La regresión ampliada se ejecutó en PostgreSQL 14.17 aislado sin PostGIS y con Storage/PostgREST sintéticos.",
+    "La evidencia inicial del 9 de noviembre conserva la prueba M3 con PostGIS real sobre la versión previa de 097.",
+    "El catálogo aportado corresponde a PostgreSQL 17.6. La aplicación y el postflight de destino siguen pendientes.",
+    "El ajuste abarca la escritura de dos tablas. Las lecturas directas públicas preexistentes y su RLS requieren un cierre de superficie separado.",
+    "Los orígenes con CORRECCION/AJUSTE_MIGRACION quedan en incidencia, con sus movimientos incluidos en suma y marca.",
+    "El inventario físico, bucket privado, QA de navegador con Backend real y habilitación del piloto conservan comprobación independiente."
+  ],
+  "scripts": {
+    "scripts/qa/vivero-conciliacion-preflight.sql": "652e655a87435b917b1864e8b146ae79645b641766ecb148585ced20904b2966",
+    "scripts/qa/vivero-conciliacion-postflight.sql": "4cc36492ab6e21143b8f53cb810e0f06ce28d94309afe913d9283c3960163ab0"
+  }
+}
