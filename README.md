@@ -58,8 +58,10 @@ se aplicó 098 y se confirmó el bucket privado en el proyecto de destino
 ([evidencia y comprobación local de las aplicaciones](docs/evidencia/vivero-conciliacion-storage-aplicado-2026-11-10.json)).
 Material se verificó con M2 en VIV-001 y VIV-002 y la ficha con ADMIN en VIV-003.
 Quedan pendientes el piloto físico, la carga de evidencia real y el despliegue.
-099 añade localmente requisitos previos de INICIO y saldo decimal exacto para
-el selector. Su aplicación en destino queda pendiente.
+099 añade requisitos previos de INICIO y saldo decimal exacto para el selector.
+Su catálogo y contrato PostgREST se cotejaron en el mismo proyecto el 10 de
+noviembre; [evidencia y límites](docs/evidencia/vivero-conciliacion-099-destino-2026-11-10.json).
+El corte/despliegue de las aplicaciones y el piloto conservan sus pendientes.
 
 T1 añade localmente [acceso explícito de Recolección](docs/t1-acceso-recoleccion.md)
 con API exclusiva ADMIN, vigencias, revisión M1 independiente, auditoría y recuperación.

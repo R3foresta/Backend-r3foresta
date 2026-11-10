@@ -1,0 +1,108 @@
+{
+  "tarea": "VIVERO_099_COTEJO_DESTINO",
+  "fecha": "2026-11-10",
+  "estado": "CATALOGO_099_Y_RESOLUCION_POSTGREST_VERIFICADOS",
+  "entorno": {
+    "proyecto": "vyrjlehkhabydkhjxagx",
+    "rama_studio": "main",
+    "etiqueta_studio": "PRODUCTION",
+    "postgresql": "17.6",
+    "hora_sql_observada": "2026-11-10T17:50:33.671918+00:00",
+    "api_pwa": "LOCAL_CON_DESTINO_REAL",
+    "backend_commit": "d55e547",
+    "pwa_commit": "30b16b4"
+  },
+  "procedencia": {
+    "sql": "Consulta BEGIN READ ONLY en Supabase Studio, mediante sesión existente y controles nativos. Resultado observado en tabla. No se ejecutó DDL ni se reaplicaron migraciones.",
+    "api": "Lecturas con servicio local configurado, sin registrar credenciales. No se fabricó JWT ni actor."
+  },
+  "funciones": [
+    {
+      "firma": "public.m2_origen_motivo_no_inicio(public.recoleccion,text,numeric)",
+      "prosrc_md5": "aed75cc0d9f033465f1fb565494885a2",
+      "coincide_sql_local": true,
+      "security_definer": false,
+      "proconfig": [
+        "search_path=pg_catalog, public"
+      ],
+      "execute": {
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      }
+    },
+    {
+      "firma": "public.m2_origenes_leer(bigint,bigint,bigint,integer,integer,boolean,boolean)",
+      "prosrc_md5": "f30f15c85e3b7404fc07a99643f21d28",
+      "coincide_sql_local": true,
+      "security_definer": true,
+      "proconfig": [
+        "search_path=pg_catalog, public",
+        "lock_timeout=5s",
+        "statement_timeout=30s"
+      ],
+      "execute": {
+        "anon": false,
+        "authenticated": false,
+        "service_role": true
+      }
+    },
+    {
+      "firma": "public.m2_origenes_leer(bigint,bigint,bigint,integer,integer,boolean)",
+      "prosrc_md5": "03ac6500626c8949126e80843cb2e680",
+      "coincide_097_local": true,
+      "security_definer": true,
+      "proconfig": [
+        "search_path=pg_catalog, public",
+        "lock_timeout=5s",
+        "statement_timeout=30s"
+      ],
+      "execute": {
+        "anon": false,
+        "authenticated": false,
+        "service_role": true
+      }
+    }
+  ],
+  "postgrest": {
+    "rpc": "m2_origenes_leer",
+    "parametros": 7,
+    "incluye_requisitos_inicio": true,
+    "actor_id": null,
+    "http": 403,
+    "codigo": "42501",
+    "resuelta_sin_PGRST202_ni_PGRST203": true,
+    "alcance": "Acredita resolución de firma y denegación sin actor; no acredita lectura autorizada de requisitos."
+  },
+  "storage_api": {
+    "http": 200,
+    "bucket": "r3foresta-conciliacion",
+    "public": false,
+    "file_size_limit": 15728640,
+    "allowed_mime_types": [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/heic",
+      "image/heif"
+    ]
+  },
+  "navegador": {
+    "url": "http://localhost:5173/app/vivero/material",
+    "sesion": "Existente, sin extraer credenciales",
+    "resultado": "Material VIV-001 visible con saldos y motivos pendientes de conciliación. No se verificó identidad/rol de nuevo.",
+    "requisitos_inicio": "NO_COMPLETADO: Chrome dejó de exponer ventana al intentar abrir el selector (noWindowsAvailable).",
+    "mutaciones_operativas": false
+  },
+  "sha256": {
+    "migrations/097_vivero_conciliacion_historica.sql": "21eb5f5a52ed04e124891e764548e761483742545e2c1da83f074a0b90ea14c2",
+    "migrations/098_vivero_conciliacion_storage_privado.sql": "f2ef1e20451598b8c3b7aaea14d80ebbe123682be87ffd585067bec43a8f1eac",
+    "migrations/099_vivero_origenes_requisitos_inicio.sql": "95850a403c863fcc583d780af681c55bc2039afd5c19dc05abec6c6fcbf24770"
+  },
+  "limites": [
+    "El cotejo es focal de 099 y la firma seis argumentos de 097; no sustituye el postflight completo de 097/098 registrado por separado.",
+    "No se escribió padrón, inventario, confirmación, evidencia, lote ni movimiento. REC-2026-055/137 conserva 6 G registrados pendientes de pesaje físico, fuera del padrón.",
+    "No se acredita en este paso lectura autenticada de requisitos INICIO, carga multipart real, piloto físico, corte ni despliegue.",
+    "Commit, push y despliegue se registran por separado; la evidencia no afirma despliegue."
+  ]
+}

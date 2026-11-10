@@ -240,8 +240,10 @@ La revisión posterior corrigió el selector de INICIO, el ingreso decimal y la
 presentación de la ficha de Recolección. 099 añade la consulta optativa de
 requisitos sin cambiar las dos firmas anteriores. La prueba local incluye un
 origen con T4 conforme y código vacío, un débito exacto de 0,000001 G y la
-separación de INICIO y DESECHO. La aplicación de 099 y el corte de Backend/PWA
-quedan pendientes en el proyecto de destino. [Pruebas SQL y HTTP aisladas](evidencia/vivero-conciliacion-revision-099-local-2026-11-10.json).
+separación de INICIO y DESECHO. El 10 de noviembre se cotejó 099 ya aplicada
+en `vyrjlehkhabydkhjxagx`: cuerpos, firmas, configuración y permisos efectivos
+coinciden; PostgREST reconoce la firma nueva. [Cotejo de destino y límites](evidencia/vivero-conciliacion-099-destino-2026-11-10.json).
+El corte/despliegue de Backend/PWA queda pendiente. [Pruebas SQL y HTTP aisladas](evidencia/vivero-conciliacion-revision-099-local-2026-11-10.json).
 
 El cierre local aprobó build y 1.281 unitarios del Backend. La PWA aprobó build,
 lint y 1.289 pruebas en una copia con el código destinado al commit. Los dos
