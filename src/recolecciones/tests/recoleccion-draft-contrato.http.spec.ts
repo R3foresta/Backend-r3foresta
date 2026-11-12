@@ -103,10 +103,9 @@ describe('PATCH draft de Recolección: contrato de ubicación y actor', () => {
       p_auth_id: authId,
     });
     expect(updateDraft).toHaveBeenCalledTimes(1);
-    const [id, dto, actor, role, fotos] = updateDraft.mock.calls[0];
+    const [id, dto, actor, fotos] = updateDraft.mock.calls[0];
     expect(id).toBe(292);
     expect(actor).toBe(authId);
-    expect(role).toBe('GENERAL');
     expect(fotos ?? []).toEqual([]);
     expect(dto).toBeInstanceOf(UpdateDraftDto);
     expect(dto).toMatchObject({

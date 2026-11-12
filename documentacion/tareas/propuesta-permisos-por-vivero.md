@@ -1,5 +1,10 @@
 # Propuesta de accesos de Recolección y Vivero
 
+Antecedente de diseño. Las reglas de recepción de esta propuesta fueron reemplazadas
+por la [recepción única100](../../docs/t4-recepcion-semillas.md): ADMIN global o
+VALIDADOR con asignación vigente; GENERAL con M2 conserva operación de material
+recibido. El contenido siguiente conserva las decisiones y la evidencia originales.
+
 Creación: 4 de noviembre de 2026. Actualización: **6 de noviembre de 2026**.
 **Modelo elegido por el usuario; T1–T4 implementadas, verificadas y revisadas localmente;
 [cierre T4](../../docs/evidencia/t4-revision-coordinadora-2026-11-06.json); T5 pendiente.**

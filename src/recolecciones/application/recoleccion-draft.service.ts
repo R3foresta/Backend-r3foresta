@@ -38,7 +38,6 @@ export class RecoleccionDraftService {
     id: number,
     dto: UpdateDraftDto,
     authId: string,
-    userRole: string,
     files: RecoleccionFotoInput[] = [],
   ) {
     const supabase = this.supabaseService.getAdminClient();

@@ -73,11 +73,7 @@ export class RecoleccionConsultasService {
     return data;
   }
 
-  async findPendingValidation(
-    filters: FiltersRecoleccionDto,
-    authId: string,
-    userRole: string,
-  ) {
+  async findPendingValidation(filters: FiltersRecoleccionDto, authId: string) {
     const supabase = this.supabaseService.getAdminClient();
     const page = filters.page || 1;
     const limit = Math.min(filters.limit || 10, 50);

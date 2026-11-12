@@ -1,5 +1,10 @@
 # Rechazo de recolecciones pendientes sin límite de fecha
 
+Antecedente histórico reemplazado por la [recepción única100](t4-recepcion-semillas.md).
+El runner de aprobación/rechazo documental se retiró; su [versión histórica](https://github.com/R3foresta/Backend-r3foresta/blob/6e5e756/scripts/qa/recoleccion-rechazo-fecha-test.py)
+y los resultados siguientes conservan el alcance de 090. La regresión vigente es
+`npm run test:db:recepcion`.
+
 Corrección MVP local del 3 de noviembre de 2026, sobre `2745885`. El CHECK legado
 `chk_fecha_rango` comprueba la ventana de 45 días en todo UPDATE: una pendiente
 que envejeció quedaba bloqueada incluso al rechazarla.

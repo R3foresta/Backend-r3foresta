@@ -1,17 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { VerifiedActor } from '../../auth/verified-actor.guard';
 import { HistorialSemillasQueryDto } from '../api/dto/historial-semillas-query.dto';
-import {
-  CreateRecoleccionDto,
-  type TipoMaterialRecoleccionCanonico,
-  type TipoMaterialRecoleccionInput,
-  type UnidadCanonicaRecoleccion,
-  type UnidadInputRecoleccion,
-} from '../api/dto/create-recoleccion.dto';
+import { CreateRecoleccionDto } from '../api/dto/create-recoleccion.dto';
 import { FiltersRecoleccionDto } from '../api/dto/filters-recoleccion.dto';
 import { UpdateDraftDto } from '../api/dto/update-draft.dto';
 import { RegistrarDesechoDto } from '../api/dto/registrar-desecho.dto';
-import { CantidadUnidadPolicy } from '../domain/policies/cantidad-unidad.policy';
 import type { RecoleccionFotoInput } from '../domain/policies/evidencia-completitud.policy';
 import { RecoleccionConsultasService } from './recoleccion-consultas.service';
 import { RecoleccionCreationService } from './recoleccion-creation.service';
@@ -34,25 +27,18 @@ export class RecoleccionesService {
   create(
     createRecoleccionDto: CreateRecoleccionDto,
     authId: string,
-    userRole?: string,
     files: RecoleccionFotoInput[] = [],
   ) {
-    return this.creationService.create(
-      createRecoleccionDto,
-      authId,
-      userRole,
-      files,
-    );
+    return this.creationService.create(createRecoleccionDto, authId, files);
   }
 
   updateDraft(
     id: number,
     dto: UpdateDraftDto,
     authId: string,
-    userRole: string,
     files: RecoleccionFotoInput[] = [],
   ) {
-    return this.draftService.updateDraft(id, dto, authId, userRole, files);
+    return this.draftService.updateDraft(id, dto, authId, files);
   }
 
   registrarDesecho(id: number, dto: RegistrarDesechoDto, authId: string) {
@@ -63,20 +49,12 @@ export class RecoleccionesService {
     return this.eliminacionService.eliminarBorrador(id, actorUsuarioId);
   }
 
-  submitForValidation(id: number, authId: string, userRole: string) {
-    return this.validacionService.submitForValidation(id, authId, userRole);
+  submitForValidation(id: number, authId: string) {
+    return this.validacionService.submitForValidation(id, authId);
   }
 
-  findPendingValidation(
-    filters: FiltersRecoleccionDto,
-    authId: string,
-    userRole: string,
-  ) {
-    return this.consultasService.findPendingValidation(
-      filters,
-      authId,
-      userRole,
-    );
+  findPendingValidation(filters: FiltersRecoleccionDto, authId: string) {
+    return this.consultasService.findPendingValidation(filters, authId);
   }
 
   findAll(authId: string, filters: FiltersRecoleccionDto) {
@@ -109,51 +87,5 @@ export class RecoleccionesService {
       actor,
       cantidadSolicitadaVivero,
     );
-  }
-
-  private getCanonicalRecoleccionSelect(): string {
-    return this.consultasService.getCanonicalRecoleccionSelect();
-  }
-
-  private normalizeTipoMaterial(
-    tipoMaterial: TipoMaterialRecoleccionInput,
-  ): TipoMaterialRecoleccionCanonico {
-    return CantidadUnidadPolicy.normalizarTipoMaterial(tipoMaterial);
-  }
-
-  private normalizeAndValidateCantidadYUnidad(
-    cantidad: number,
-    unidadInput: string | null | undefined,
-    tipoMaterial: string,
-  ): {
-    unidad_canonica: 'G' | 'UNIDAD';
-    cantidad_canonica: number;
-  } {
-    return CantidadUnidadPolicy.normalizarYValidar(
-      cantidad,
-      unidadInput,
-      tipoMaterial,
-    );
-  }
-
-  private validateCanonicalCantidadYUnidad(
-    cantidad: number,
-    unidadCanonica: UnidadCanonicaRecoleccion,
-    tipoMaterial: string,
-  ): {
-    unidad_canonica: 'G' | 'UNIDAD';
-    cantidad_canonica: number;
-  } {
-    return CantidadUnidadPolicy.validarCanonica(
-      cantidad,
-      unidadCanonica,
-      tipoMaterial,
-    );
-  }
-
-  private normalizeUnidadInput(
-    unidadCanonica: string | null | undefined,
-  ): UnidadInputRecoleccion {
-    return CantidadUnidadPolicy.normalizarUnidadInput(unidadCanonica);
   }
 }

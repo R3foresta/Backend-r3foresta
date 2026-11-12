@@ -1,5 +1,10 @@
 # Encargos de implementación: accesos de Recolección y Vivero
 
+El alcance de recepción T4 de este encargo es histórico. Su reemplazo es la
+[recepción única100](../../docs/t4-recepcion-semillas.md), con confirmación conforme
+o rechazo para corregir y autoridad ADMIN o VALIDADOR asignado. T1–T3 conservan
+sus reglas de acceso; las evidencias siguientes corresponden al encargo original.
+
 Actualización: 6 de noviembre de 2026. Estado: **T1–T4 implementadas y revisadas
 localmente; T5 pendiente**.
 Fuente de diseño: [propuesta elegida](propuesta-permisos-por-vivero.md).

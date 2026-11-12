@@ -12,6 +12,10 @@ exitosa de 100. Es una aplicación reportada por el usuario. El cotejo independi
 del catálogo destino, la limpieza física de Storage y el corte API/PWA mantienen
 su verificación separada.
 
+Posteriormente Pablo confirmó en el chat pruebas funcionales satisfactorias del
+flujo nuevo. Esa confirmación conserva su alcance separado de las pruebas
+aisladas y del cotejo independiente del catálogo.
+
 ## Flujo y autorización
 
 El recolector crea `BORRADOR`, lo envía a `PENDIENTE_VALIDACION` y otra persona

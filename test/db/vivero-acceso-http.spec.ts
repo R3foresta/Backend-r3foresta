@@ -10,7 +10,6 @@ import { ViveroEvidenciasService } from '../../src/lotes-vivero/application/vive
 import { ViveroInicioService } from '../../src/lotes-vivero/application/vivero-inicio.service';
 import { ViveroMermaService } from '../../src/lotes-vivero/application/vivero-merma.service';
 import { ViveroSaldosService } from '../../src/lotes-vivero/application/vivero-saldos.service';
-import { ViveroSnapshotsService } from '../../src/lotes-vivero/application/vivero-snapshots.service';
 import { ViveroTimelineService } from '../../src/lotes-vivero/application/vivero-timeline.service';
 import { ViveroAccesosService } from '../../src/lotes-vivero/application/vivero-accesos.service';
 import { LotesViveroController } from '../../src/lotes-vivero/api/lotes-vivero.controller';
@@ -453,7 +452,6 @@ describe('T2 HTTP → JWT real → alcance de vivero → RPC PostgreSQL reales',
         ViveroInicioService,
         ViveroMermaService,
         ViveroSaldosService,
-        ViveroSnapshotsService,
         ViveroTimelineService,
         ViveroAccesosService,
         RecoleccionesService,

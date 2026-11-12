@@ -38,7 +38,6 @@ export class RecoleccionCreationService {
   async create(
     createRecoleccionDto: CreateRecoleccionDto,
     authId: string,
-    userRole?: string,
     files: RecoleccionFotoInput[] = [],
   ) {
     const supabase = this.supabaseService.getAdminClient();

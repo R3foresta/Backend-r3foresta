@@ -22,6 +22,7 @@ import { RecoleccionSnapshotsService } from '../application/recoleccion-snapshot
 import { RecoleccionUbicacionService } from '../application/recoleccion-ubicacion.service';
 import { RecoleccionValidacionService } from '../application/recoleccion-validacion.service';
 import { RecoleccionesService } from '../application/recolecciones.service';
+import { CantidadUnidadPolicy } from '../domain/policies/cantidad-unidad.policy';
 
 // TODO: Eliminar comentarios.
 /**
@@ -93,6 +94,7 @@ function createTipoEntidadRecoleccionQuery(id = 7) {
 describe('RecoleccionesService', () => {
   // Variables que usaremos en los tests
   let service: RecoleccionesService;
+  let consultasService: RecoleccionConsultasService;
   let authService: RecoleccionAuthService;
   let rpc: jest.Mock;
   let evidenciasService: RecoleccionEvidenciasService;
@@ -191,6 +193,7 @@ describe('RecoleccionesService', () => {
 
     // 3. OBTENER la instancia del servicio que queremos probar
     service = module.get(RecoleccionesService);
+    consultasService = module.get(RecoleccionConsultasService);
     authService = module.get(RecoleccionAuthService);
     evidenciasService = module.get(RecoleccionEvidenciasService);
   });
@@ -205,8 +208,7 @@ describe('RecoleccionesService', () => {
    * PATRÓN: Test SIN mocks de Supabase (solo verifica lógica interna)
    */
   it('proyecta columnas canonicas sin aliases legacy de cantidad/unidad', () => {
-    // Llamar el método privado del servicio (usamos 'as any' para acceder a privados)
-    const select = (service as any).getCanonicalRecoleccionSelect() as string;
+    const select = consultasService.getCanonicalRecoleccionSelect();
 
     // expect() es la función de aserción de Jest
     // Aquí verificamos que el string contiene ciertos campos
@@ -232,15 +234,12 @@ describe('RecoleccionesService', () => {
    * - El backend solo debe persistir "G" o "UNIDAD".
    * - "kg" existe solo como input y debe convertirse a gramos.
    *
-   * POR QUÉ USAMOS EL MÉTODO PRIVADO:
-   * - Esta regla vive dentro de la normalización interna del servicio.
-   * - Probarla aquí permite ver el contrato sin armar todo un flujo create()
-   *   con mocks de usuario, vivero, planta, ubicación, storage y evidencias.
+   * La política compartida normaliza antes de persistir, sin necesitar servicios externos.
    */
   it('normaliza kg/g/unidad a unidades canonicas persistibles', () => {
     // Caso 1: 2.5 kg de semilla deben persistirse como 2500 G.
     // Importante: la unidad final NO es KG, porque KG no se guarda en DB.
-    const semillaEnKg = (service as any).normalizeAndValidateCantidadYUnidad(
+    const semillaEnKg = CantidadUnidadPolicy.normalizarYValidar(
       2.5,
       'kg',
       'SEMILLA',
@@ -253,9 +252,11 @@ describe('RecoleccionesService', () => {
 
     // Caso 2: 125.75 g de semilla ya está en la unidad oficial de peso.
     // La cantidad puede tener decimales porque SEMILLA por peso permite gramos.
-    const semillaEnGramos = (
-      service as any
-    ).normalizeAndValidateCantidadYUnidad(125.75, 'g', 'SEMILLA');
+    const semillaEnGramos = CantidadUnidadPolicy.normalizarYValidar(
+      125.75,
+      'g',
+      'SEMILLA',
+    );
 
     expect(semillaEnGramos).toEqual({
       unidad_canonica: 'G',
@@ -264,9 +265,11 @@ describe('RecoleccionesService', () => {
 
     // Caso 3: 12 unidades de semilla deben persistirse como UNIDAD.
     // Para UNIDAD la cantidad debe ser entera, porque representa conteo.
-    const semillaEnUnidades = (
-      service as any
-    ).normalizeAndValidateCantidadYUnidad(12, 'unidad', 'SEMILLA');
+    const semillaEnUnidades = CantidadUnidadPolicy.normalizarYValidar(
+      12,
+      'unidad',
+      'SEMILLA',
+    );
 
     expect(semillaEnUnidades).toEqual({
       unidad_canonica: 'UNIDAD',
@@ -285,17 +288,13 @@ describe('RecoleccionesService', () => {
     // ESQUEJE no puede registrarse por peso. Si alguien manda G o KG,
     // el servicio debe cortar antes de persistir datos inválidos.
     expect(() =>
-      (service as any).normalizeAndValidateCantidadYUnidad(10, 'g', 'ESQUEJE'),
+      CantidadUnidadPolicy.normalizarYValidar(10, 'g', 'ESQUEJE'),
     ).toThrow(BadRequestException);
 
     // UNIDAD representa conteo. 3.5 unidades no tiene sentido inventariable,
     // así que debe rechazarse para SEMILLA y también para ESQUEJE.
     expect(() =>
-      (service as any).normalizeAndValidateCantidadYUnidad(
-        3.5,
-        'unidad',
-        'SEMILLA',
-      ),
+      CantidadUnidadPolicy.normalizarYValidar(3.5, 'unidad', 'SEMILLA'),
     ).toThrow(BadRequestException);
   });
 
@@ -753,12 +752,7 @@ describe('RecoleccionesService', () => {
     supabaseService.getClient.mockReturnValue(client);
 
     await expect(
-      service.updateDraft(
-        9,
-        { unidad_canonica: 'KG' },
-        'auth-general',
-        'ADMIN',
-      ),
+      service.updateDraft(9, { unidad_canonica: 'KG' }, 'auth-general'),
     ).rejects.toThrow(BadRequestException);
 
     expect(recoleccionQuery.update).not.toHaveBeenCalled();
@@ -860,12 +854,7 @@ describe('RecoleccionesService', () => {
       ]),
     );
 
-    await service.updateDraft(
-      9,
-      { tipo_material: 'SEMILLA' },
-      'auth-general',
-      'ADMIN',
-    );
+    await service.updateDraft(9, { tipo_material: 'SEMILLA' }, 'auth-general');
 
     expect(rpc).toHaveBeenCalledWith(
       'm1_recoleccion_guardar',
@@ -926,7 +915,7 @@ describe('RecoleccionesService', () => {
     supabaseService.getClient.mockReturnValue(client);
 
     await expect(
-      service.submitForValidation(9, 'auth-general', 'GENERAL'),
+      service.submitForValidation(9, 'auth-general'),
     ).rejects.toThrow(BadRequestException);
 
     expect(recoleccionQuery.update).not.toHaveBeenCalled();
@@ -947,7 +936,7 @@ describe('RecoleccionesService', () => {
     supabaseService.getClient.mockReturnValue(client);
 
     await expect(
-      service.create({} as any, 'auth-voluntario', 'ADMIN', []),
+      service.create({} as any, 'auth-voluntario', []),
     ).rejects.toThrow(ForbiddenException);
   });
 });

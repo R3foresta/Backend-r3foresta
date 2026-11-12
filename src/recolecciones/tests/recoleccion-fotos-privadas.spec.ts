@@ -211,7 +211,6 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
         ubicacion: { latitud: -17, longitud: -66 },
       },
       'actor-verificado',
-      undefined,
       fotos,
     );
   }
@@ -252,7 +251,6 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
       99,
       { observaciones: 'Nueva' },
       'actor-verificado',
-      'GENERAL',
       fotos,
     );
     expect(rpc).toHaveBeenCalledWith(
@@ -280,7 +278,6 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
         99,
         { observaciones: 'Nueva' },
         'actor-verificado',
-        'GENERAL',
         fotos,
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
@@ -290,7 +287,7 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
     );
   });
   it('envía a validación contando únicamente evidencias activas de la entidad', async () => {
-    await validacion.submitForValidation(99, 'actor-verificado', 'GENERAL');
+    await validacion.submitForValidation(99, 'actor-verificado');
     expect(evidencias.select).toHaveBeenCalledWith('id', {
       count: 'exact',
       head: true,
@@ -312,7 +309,7 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
     async (count) => {
       evidencias.result.count = count;
       await expect(
-        validacion.submitForValidation(99, 'actor-verificado', 'GENERAL'),
+        validacion.submitForValidation(99, 'actor-verificado'),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(recoleccion.update).not.toHaveBeenCalled();
     },
@@ -321,18 +318,18 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
   it('no envía a validación si falla el conteo privado', async () => {
     evidencias.result.error = { code: '42501' };
     await expect(
-      validacion.submitForValidation(99, 'actor-verificado', 'GENERAL'),
+      validacion.submitForValidation(99, 'actor-verificado'),
     ).rejects.toThrow('Error al validar evidencias');
     expect(recoleccion.update).not.toHaveBeenCalled();
   });
 
-  it('conserva la autorización por objeto aunque se declare ADMIN en el argumento legado', async () => {
+  it('conserva la autorización por objeto con el rol verificado en DB', async () => {
     registro.usuario_id = 8;
     await expect(
-      draft.updateDraft(99, {}, 'actor-verificado', 'ADMIN', fotos),
+      draft.updateDraft(99, {}, 'actor-verificado', fotos),
     ).rejects.toBeInstanceOf(ForbiddenException);
     await expect(
-      validacion.submitForValidation(99, 'actor-verificado', 'ADMIN'),
+      validacion.submitForValidation(99, 'actor-verificado'),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(upload).not.toHaveBeenCalled();
     expect(evidencias.select).not.toHaveBeenCalled();

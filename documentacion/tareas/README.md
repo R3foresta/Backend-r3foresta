@@ -12,9 +12,10 @@ todavía no está implementada.
 [Accesos de Recolección y Vivero](propuesta-permisos-por-vivero.md): opción elegida
 de accesos fijos combinables y asignación por vivero. Incluye tablas propuestas,
 matriz de permisos, una cuenta con ambos accesos y la continuidad de `VALIDADOR`.
-Un único operario recibe y maneja su vivero en el modelo elegido. M1/T1, operación
-M2/T2 y administración visual T3 implementadas y revisadas localmente; recepción
-física T4 implementada y revisada localmente y plantas externas T5 pendiente.
+M1/T1, operación M2/T2 y administración visual T3 implementadas y revisadas
+localmente. La [recepción única100](../../docs/t4-recepcion-semillas.md) reemplaza
+las reglas de recepción de la propuesta: ADMIN global o VALIDADOR asignado,
+sin autorrecepción. Plantas externas T5 pendiente.
 
 [Encargos para implementar los accesos](encargos-accesos-recoleccion-vivero.md):
 T1 Recolección, T2 Vivero y T3 administración en el módulo existente, revisadas
@@ -33,8 +34,8 @@ en la PWA con GPT-6.1 Sol y esfuerzo máximo, revisada el 6 de noviembre.
 [Cierre y evidencia independiente](../../docs/evidencia/t3-revision-coordinadora-2026-11-06.json).
 
 [T4 · Recepción de semillas y «Recibir y validar»](t4-recepcion-semillas.md):
-implementación local autorizada el 6 de noviembre, con GPT-6.1 Sol y esfuerzo
-máximo. Incluye API y PWA, recepción total conforme e incidencias;
+encargo histórico del 6 de noviembre, con GPT-6.1 Sol y esfuerzo máximo.
+Su modelo de incidencias fue reemplazado por la recepción única100;
 [revisión coordinadora cerrada](../../docs/evidencia/t4-revision-coordinadora-2026-11-06.json)
 tras dos correcciones, sin hallazgos pendientes. T5 sigue pendiente.
 

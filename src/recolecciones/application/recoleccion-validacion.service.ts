@@ -17,7 +17,7 @@ export class RecoleccionValidacionService {
     private readonly completitudService: RecoleccionCompletitudService,
   ) {}
 
-  async submitForValidation(id: number, authId: string, userRole: string) {
+  async submitForValidation(id: number, authId: string) {
     const supabase = this.supabaseService.getAdminClient();
     const usuario = await this.authService.getUserByAuthId(authId);
     const recoleccion = await this.consultasService.getRawRecoleccion(id);

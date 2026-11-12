@@ -1,5 +1,10 @@
 # T4 · Recepción de semillas y «Recibir y validar»
 
+Encargo histórico del modelo096. La [recepción única100](../../docs/t4-recepcion-semillas.md)
+reemplaza sus reglas de recepción: ADMIN global o VALIDADOR con asignación vigente,
+confirmación conforme o rechazo para corregir, sin incidencias ni conciliación.
+El contenido siguiente conserva el alcance y la evidencia del 6 de noviembre.
+
 Fecha: 6 de noviembre de 2026. **Implementación local autorizada**.
 Modelo: **GPT-6.1 Sol · esfuerzo máximo**. Proyecto principal: Backend; incluye
 la integración necesaria en la PWA. Al terminar, avisar al chat coordinador para

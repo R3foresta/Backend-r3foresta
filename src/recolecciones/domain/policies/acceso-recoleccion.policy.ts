@@ -10,10 +10,4 @@ export class AccesoRecoleccionPolicy {
   ): boolean {
     return rol === 'ADMIN' || String(actor) === String(autor);
   }
-  static puedeConfirmar(
-    actor: string | number,
-    autor: string | number,
-  ): boolean {
-    return String(actor) !== String(autor);
-  }
 }

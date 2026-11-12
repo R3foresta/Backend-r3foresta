@@ -59,7 +59,6 @@ export class RecoleccionesController {
     return this.service.create(
       await this.parser.parseCreateBody(body),
       req.actor.auth_id,
-      undefined,
       files?.fotos,
     );
   }
@@ -76,7 +75,6 @@ export class RecoleccionesController {
       id,
       await this.parser.parseUpdateDraftBody(body),
       req.actor.auth_id,
-      req.actor.rol,
       files?.fotos,
     );
   }
@@ -94,11 +92,7 @@ export class RecoleccionesController {
     @Param('id', ParseIntPipe) id: number,
     @Req() req: ActorRequest,
   ) {
-    return this.service.submitForValidation(
-      id,
-      req.actor.auth_id,
-      req.actor.rol,
-    );
+    return this.service.submitForValidation(id, req.actor.auth_id);
   }
   @Post(':id/desecho')
   @ApiRegistrarDesecho()
@@ -115,11 +109,7 @@ export class RecoleccionesController {
     @Query() filters: FiltersRecoleccionDto,
     @Req() req: ActorRequest,
   ) {
-    return this.service.findPendingValidation(
-      filters,
-      req.actor.auth_id,
-      req.actor.rol,
-    );
+    return this.service.findPendingValidation(filters, req.actor.auth_id);
   }
   @Get('stock-summary')
   @ApiFindStockSummaryRecolecciones()

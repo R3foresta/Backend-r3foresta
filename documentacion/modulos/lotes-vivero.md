@@ -59,8 +59,7 @@ lotes-vivero.module.ts
     ├── ViveroConsultasService   (listar lotes y timeline)
     ├── ViveroEvidenciasService  (subida de fotos a Storage)
     ├── ViveroAuthService        (resolución de usuario y permisos)
-    ├── ViveroCodigosService     (generación de códigos de trazabilidad)
-    └── ViveroSnapshotsService   (snapshots de saldo por lote)
+    └── ViveroCodigosService     (generación de códigos de trazabilidad)
 ```
 
 ---

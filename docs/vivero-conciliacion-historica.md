@@ -117,13 +117,13 @@ orígenes, la ficha de conciliación y el recibo del alta conservan BIGINT exact
 ## Procedimiento del piloto
 
 1. Identificar la versión de API/PWA y la base de destino. Antes de aplicar 097
-   en un entorno autorizado, ejecutar la [consulta de catálogo de solo lectura](../scripts/qa/vivero-conciliacion-preflight.sql)
+   en un entorno autorizado, ejecutar la [consulta histórica de catálogo de solo lectura](https://github.com/R3foresta/Backend-r3foresta/blob/6e5e756/scripts/qa/vivero-conciliacion-preflight.sql)
    y conservar su JSON junto con el proyecto y entorno confirmados. Cotejar las
    funciones de 090/093/095/096, los triggers efectivos del ledger, fecha y
    autorización, y las diferencias de cuerpos o tipos que muestre el informe.
    La migración deja el padrón vacío. El corte requiere el Backend compatible con 097 y que
    PostgREST reconozca las funciones nuevas.
-   Tras `Success`, ejecutar la [consulta posterior de solo lectura](../scripts/qa/vivero-conciliacion-postflight.sql)
+   Tras `Success`, ejecutar la [consulta histórica posterior de solo lectura](https://github.com/R3foresta/Backend-r3foresta/blob/6e5e756/scripts/qa/vivero-conciliacion-postflight.sql)
    y cotejar sus controles y huellas con el archivo aplicado. Un error de la
    migración requiere revisar el mensaje y su transacción antes de continuar.
    Instalar después [098](../migrations/098_vivero_conciliacion_storage_privado.sql),

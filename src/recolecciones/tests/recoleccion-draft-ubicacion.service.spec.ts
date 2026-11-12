@@ -209,7 +209,6 @@ describe('ubicación al corregir una recolección', () => {
       99,
       { fecha: fechaNueva, ubicacion: { ...ubicacionInput } },
       'actor-verificado',
-      'GENERAL',
     );
     expect(result).toMatchObject({
       fecha: fechaNueva,
@@ -240,7 +239,6 @@ describe('ubicación al corregir una recolección', () => {
         },
       },
       'actor-verificado',
-      'GENERAL',
     );
     expect(result).toMatchObject({
       ubicacion_id: 9,
@@ -262,12 +260,7 @@ describe('ubicación al corregir una recolección', () => {
   });
 
   it('conserva el vínculo y evita lecturas de ubicación si se omite el campo', async () => {
-    await service.updateDraft(
-      99,
-      { fecha: fechaNueva },
-      'actor-verificado',
-      'GENERAL',
-    );
+    await service.updateDraft(99, { fecha: fechaNueva }, 'actor-verificado');
     expect(registro.ubicacion_id).toBe(8);
     expect(adminFrom).not.toHaveBeenCalledWith('ubicacion');
     expect(ubicacionInserts).not.toHaveBeenCalled();
@@ -288,7 +281,6 @@ describe('ubicación al corregir una recolección', () => {
           ...(explicita ? { fecha: antigua } : {}),
         },
         'actor-verificado',
-        'GENERAL',
       );
       expect(registro.fecha).toBe(antigua);
       expect(registro.ubicacion_id).toBe(8);
@@ -305,12 +297,7 @@ describe('ubicación al corregir una recolección', () => {
       -90,
     );
     await expect(
-      service.updateDraft(
-        99,
-        { fecha: antigua },
-        'actor-verificado',
-        'GENERAL',
-      ),
+      service.updateDraft(99, { fecha: antigua }, 'actor-verificado'),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(updates).not.toHaveBeenCalled();
   });
@@ -322,7 +309,6 @@ describe('ubicación al corregir una recolección', () => {
         99,
         { ubicacion: ubicacionInput },
         'actor-verificado',
-        'GENERAL',
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(ubicacionInserts).not.toHaveBeenCalled();
@@ -339,7 +325,6 @@ describe('ubicación al corregir una recolección', () => {
           99,
           { ubicacion: ubicacionInput },
           'actor-verificado',
-          'GENERAL',
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(adminFrom).not.toHaveBeenCalledWith('ubicacion');
@@ -355,7 +340,6 @@ describe('ubicación al corregir una recolección', () => {
         99,
         { ubicacion: ubicacionInput },
         'actor-verificado',
-        'ADMIN',
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(adminFrom).not.toHaveBeenCalledWith('ubicacion');
@@ -370,7 +354,6 @@ describe('ubicación al corregir una recolección', () => {
         99,
         { ubicacion: { ...ubicacionInput, latitud: -17 } },
         'actor-verificado',
-        'GENERAL',
       ),
     ).rejects.toThrow('No se pudo determinar el resultado');
     expect(registro.ubicacion_id).toBe(9);
@@ -388,7 +371,6 @@ describe('ubicación al corregir una recolección', () => {
         99,
         { ubicacion: { ...ubicacionInput, latitud: -17 } },
         'actor-verificado',
-        'GENERAL',
       ),
     ).rejects.toThrow('Snapshot no disponible');
     expect(updates).not.toHaveBeenCalled();

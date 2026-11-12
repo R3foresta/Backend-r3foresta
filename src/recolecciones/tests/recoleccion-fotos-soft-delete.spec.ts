@@ -124,7 +124,7 @@ describe('PATCH solo fotos frente a DELETE de borrador', () => {
       );
 
       await expect(
-        service.updateDraft(292, {}, 'fixture', 'GENERAL', [
+        service.updateDraft(292, {}, 'fixture', [
           {
             originalname: 'foto.jpg',
             mimetype: 'image/jpeg',
