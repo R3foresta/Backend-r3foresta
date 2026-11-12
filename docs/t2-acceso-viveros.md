@@ -1,5 +1,10 @@
 # T2 · Acceso operativo por vivero
 
+> La [recepción única con100](t4-recepcion-semillas.md) sustituye las capacidades
+> documentales y el contrato de material anterior. La gestión M2 y sus evidencias
+> conservan el corte histórico aquí indicado; este documento describe el contrato
+> consumible actualizado donde se señala recepción.
+
 Implementación **local del 5 de noviembre de 2026**, revisada por el chat
 coordinador. [Cierre de revisión y comprobación independiente](evidencia/t2-revision-coordinadora-2026-11-05.json).
 Base `6f59263c349c664c15893528df1c129a7d25ef0d` más el árbol local de T1,
@@ -21,7 +26,7 @@ global, sin necesitar vigencias; administra las asignaciones por API. `VOLUNTARI
 y cuentas inactivas carecen de acceso operativo efectivo. Cambiar rol/baja no borra
 vigencias ni cambia revisiones M1/M2. Restablecer un rol interno activo vuelve a
 evaluar las vigencias conservadas; retirar un vivero es una operación explícita.
-No existe operario mínimo, encargado ni receptor separado.
+No existe operario mínimo ni encargado. La recepción usa autoridad separada: ADMIN global o VALIDADOR con asignación explícita vigente.
 
 M1 y M2 son independientes: retirar A conserva B y M1; retirar M1 conserva los
 viveros. Afiliación, organización, equipo y autoría no conceden M2. Plantar consume
@@ -51,12 +56,12 @@ y `siguiente_antes_de_id`; `observado_en` acompaña a `data`.
 
 Cada elemento de `viveros` es una vigencia abierta: `id`, `vivero_id`, `otorgado_en`,
 `otorgado_por`, `acceso_efectivo` y `capacidades`. Estas últimas expresan ese mismo
-vivero: `operar`, `consultar_material`, `desechar_semillas` y `revisar_documental`.
-La última conserva ADMIN/VALIDADOR hasta T4; las demás son iguales para los
+vivero: `operar`, `consultar_material`, `desechar_semillas` y `recibir_y_validar`.
+La última requiere ADMIN o VALIDADOR y vigencia explícita; las demás son iguales para los
 operarios GENERAL/VALIDADOR. Una vigencia conservada de cuenta inelegible muestra
 capacidades falsas. ADMIN no necesita aparecer en la lista: usa `alcance_global`
 y los campos explícitos `administrar`, `operar_cualquier_vivero`,
-`desechar_semillas_cualquier_vivero`, `revisar_documental_cualquier_vivero` de
+`desechar_semillas_cualquier_vivero`, `recibir_y_validar_cualquier_vivero` de
 `capacidades_globales`. No convertir una facultad de A en un flag de operación
 sobre B. El catálogo público `GET /api/viveros` permite seleccionar establecimientos;
 no es un listado de permisos.
@@ -128,7 +133,7 @@ devolución/cancelación/cierre no son RPC ejecutables directamente por service_
 los entrypoints privados verificados invocan sus efectos con search_path fijo.
 Las sobrecargas antiguas no recuperan EXECUTE de servicio por coincidir en nombre.
 
-## Material M1, revisión documental y desecho
+## Material M1, recepción y desecho
 
 `GET /api/v1/vivero/origenes` acepta `vivero_id` obligatorio,
 `recoleccion_id?`, `page?` (1–1000000) y `limit?` (1–50). Devuelve material VALIDADO,
@@ -147,18 +152,12 @@ con destinos distintos del contrato anterior; no se implementan traslados. El al
 conserva unidad/saldo, snapshots, ubicación y evidencia mínima elegibles y confirma
 lote, INICIO, consumo negativo M1 y fotos juntos. INICIO no crea plantas vivas.
 
-La revisión legada de fichas ajenas, detalle/fotos y aprobación/rechazo queda limitada
-a ADMIN o VALIDADOR asignado al vivero de almacenamiento. `pending-validation`
-combina para VALIDADOR los pendientes de esos viveros con los propios cuando tiene
-M1 efectivo, incluso sin M2. GENERAL con M1 conserva sus pendientes propios; ADMIN
-conserva alcance global. Filtros y búsqueda se intersectan con esa unión antes de
-contar y paginar, sin duplicar una ficha propia situada en un vivero asignado.
-Al retirar M1 quedan solo los viveros asignados; sin M1/M2 no hay respaldo global.
-GENERAL con
-M2 no obtiene la acción conjunta futura. M1 permite mantener lo propio, no revisar
-lo ajeno. La aprobación propia continúa denegada para ADMIN y cuentas combinadas.
-El rechazo antiguo conserva la excepción090. Ninguna de estas acciones registra
-recepción física: VALIDADO histórico no se presenta como recepción acreditada.
+La aprobación/rechazo documental autónoma se retira. La [API de recepción](t4-recepcion-semillas.md#api-consumible)
+expone bandeja, detalle, carga y decisiones con la misma autoridad: ADMIN global
+o VALIDADOR con vigencia explícita al almacenamiento, sin autorrecepción ni M1 requerido. Confirmar
+recepción conforme produce VALIDADO; rechazar conserva snapshot y permite al
+recolector corregir la misma ficha. La recuperación del recibo propio exige cuenta
+activa, aunque se haya perdido rol o vivero; no concede lectura actual.
 
 El almacenamiento se obtiene mediante `vivero_id::text` en PostgreSQL antes de
 autorizar la ficha. La proyección de detalle/listas devuelve `vivero_id` y
@@ -176,7 +175,7 @@ ABIERTO, unidad y saldo; UNIDAD exige entero y se rechazan cantidades no finitas
 El hecho sigue siendo `DESECHO` en el ledger M1, separado de MERMA de plantas M2.
 El flag M1 `desechar` conserva su significado global de ADMIN; para un operario T3
 usa la capacidad **por vivero**. Los flags de estado del detalle no conceden acceso.
-La precondición de recepción conforme pertenece a T4 y no se inventa para el legado.
+Con100 el ledger exige recepción conforme; el material previo sin ese hecho permanece bloqueado.
 
 ## Evidencias, Storage y transacciones
 
@@ -191,7 +190,7 @@ nuevos eventos, sin borrar las anteriores ni mover vínculos históricos.
 También se protegen `GET /api/evidencias-trazabilidad/:id`, `/entidad/:tipo/:id`,
 filtros equivalentes y consultas por código. Un no ADMIN indica evento/lote autorizado
 para leer M2; búsquedas generales excluyen M1/M2 antes del total/paginación. Una foto
-M1 sigue la política de ficha propia o revisión documental autorizada; la proyección
+M1 sigue la política de ficha propia o lectura por objeto autorizada; la proyección
 mínima de material M2 no concede acceso general a sus fotos.
 
 **Audiencia real:** el bucket existente `recoleccion_fotos`, sus originales y las

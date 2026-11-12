@@ -21,7 +21,6 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RecoleccionesService } from '../application/recolecciones.service';
 import {
-  ApiApproveRecoleccionValidation,
   ApiCreateRecoleccion,
   ApiDeleteDraftRecoleccion,
   ApiFindAllRecolecciones,
@@ -29,7 +28,6 @@ import {
   ApiFindOneRecoleccion,
   ApiFindPendingValidationRecolecciones,
   ApiRegistrarDesecho,
-  ApiRejectRecoleccionValidation,
   ApiFindStockSummaryRecolecciones,
   ApiFindHistorialSemillas,
   ApiSubmitRecoleccionValidation,
@@ -38,7 +36,6 @@ import {
 import { HistorialSemillasQueryDto } from './dto/historial-semillas-query.dto';
 import { FiltersRecoleccionDto } from './dto/filters-recoleccion.dto';
 import { RecoleccionElegibilidadViveroQueryDto } from './dto/recoleccion-elegibilidad-vivero-query.dto';
-import { RejectValidationDto } from './dto/reject-validation.dto';
 import { RegistrarDesechoDto } from './dto/registrar-desecho.dto';
 import { RecoleccionFormDataParser } from './parsers/recoleccion-formdata.parser';
 
@@ -101,28 +98,6 @@ export class RecoleccionesController {
       id,
       req.actor.auth_id,
       req.actor.rol,
-    );
-  }
-  @Patch(':id/approve')
-  @ApiApproveRecoleccionValidation()
-  approveValidation(
-    @Param('id', ParseIntPipe) id: number,
-    @Req() req: ActorRequest,
-  ) {
-    return this.service.approveValidation(id, req.actor.auth_id, req.actor.rol);
-  }
-  @Patch(':id/reject')
-  @ApiRejectRecoleccionValidation()
-  rejectValidation(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: RejectValidationDto,
-    @Req() req: ActorRequest,
-  ) {
-    return this.service.rejectValidation(
-      id,
-      req.actor.auth_id,
-      req.actor.rol,
-      body,
     );
   }
   @Post(':id/desecho')

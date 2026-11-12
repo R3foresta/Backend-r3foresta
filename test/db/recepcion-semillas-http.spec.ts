@@ -10,6 +10,11 @@ import { VerifiedActorGuard } from '../../src/auth/verified-actor.guard';
 import { SupabaseService } from '../../src/supabase/supabase.service';
 import { EvidenceFileService } from '../../src/common/files/evidence-file.service';
 import { RecoleccionRecepcionService } from '../../src/recolecciones/application/recoleccion-recepcion.service';
+import { RecoleccionBlockchainService } from '../../src/recolecciones/application/recoleccion-blockchain.service';
+import { RecoleccionesController } from '../../src/recolecciones/api/recolecciones.controller';
+import { RecoleccionesService } from '../../src/recolecciones/application/recolecciones.service';
+import { RecoleccionFormDataParser } from '../../src/recolecciones/api/parsers/recoleccion-formdata.parser';
+import { InternalActorGuard } from '../../src/auth/internal-actor.guard';
 import { RecoleccionRecepcionController } from '../../src/recolecciones/api/recoleccion-recepcion.controller';
 import { configureGlobalRoutes } from '../../src/app.routes';
 
@@ -59,6 +64,9 @@ async function sql(s: string) {
 }
 let uncertain = false;
 const uploads: string[] = [];
+const blockchain = {
+  executeBlockchainFlow: jest.fn().mockResolvedValue(undefined),
+};
 const client = {
   rpc: async (name: string, args: Record<string, unknown>) => {
     if (!/^(m1_recepcion_[a-z_]+|pa_actor_verificar)$/.test(name))
@@ -126,9 +134,13 @@ async function body(
 }
 beforeAll(async () => {
   const m = await Test.createTestingModule({
-    controllers: [RecoleccionRecepcionController],
+    controllers: [RecoleccionRecepcionController, RecoleccionesController],
     providers: [
       RecoleccionRecepcionService,
+      InternalActorGuard,
+      { provide: RecoleccionesService, useValue: {} },
+      { provide: RecoleccionFormDataParser, useValue: {} },
+      { provide: RecoleccionBlockchainService, useValue: blockchain },
       EvidenceFileService,
       VerifiedActorGuard,
       {
@@ -156,6 +168,9 @@ beforeAll(async () => {
   day = await sql(
     "SELECT (clock_timestamp() AT TIME ZONE 'America/La_Paz')::date",
   );
+  await sql(
+    "INSERT INTO public.recoleccion(id,usuario_id,fecha,estado_registro,codigo_trazabilidad,tipo_material,ubicacion_id,vivero_id,metodo_id,planta_id,unidad_canonica,cantidad_inicial_canonica,nombre_cientifico_snapshot,nombre_comercial_snapshot,variedad_snapshot,nombre_comunidad_snapshot,nombre_recolector_snapshot) SELECT 9007199254740993,usuario_id,fecha,'PENDIENTE_VALIDACION','HTTP-ID-EXACTO','SEMILLA',ubicacion_id,vivero_id,metodo_id,planta_id,'G',100,nombre_cientifico_snapshot,nombre_comercial_snapshot,variedad_snapshot,nombre_comunidad_snapshot,nombre_recolector_snapshot FROM public.recoleccion WHERE id=163 AND NOT EXISTS(SELECT 1 FROM public.recoleccion WHERE id=9007199254740993)",
+  );
 });
 afterAll(async () => {
   await app?.close();
@@ -181,7 +196,7 @@ test('JWT real y cuenta activa; headers no conceden identidad/rol', async () => 
     .set(auth('fixture-voluntario'))
     .expect(403);
 });
-test('solo M2 accede cola/detalle/fotos; solo M1/otro vivero no accede por URL directa', async () => {
+test('ADMIN o VALIDADOR vigente accede cola/detalle/fotos; GENERAL M2, M1 u otro vivero no accede', async () => {
   const q = await request(app.getHttpServer())
     .get(base)
     .set(auth())
@@ -189,7 +204,7 @@ test('solo M2 accede cola/detalle/fotos; solo M1/otro vivero no accede por URL d
   expect(q.headers['cache-control']).toContain('no-store');
   expect(q.body.data.length).toBeGreaterThan(0);
   const d = await request(app.getHttpServer())
-    .get(`${base}/136`)
+    .get(`${base}/160`)
     .set(auth())
     .expect(200);
   expect(d.body.puede_recibir_validar).toBe(true);
@@ -199,14 +214,15 @@ test('solo M2 accede cola/detalle/fotos; solo M1/otro vivero no accede por URL d
     'fixture-t2-m1',
     'fixture-t2-sin-vivero',
     'fixture-t2-big2',
+    'fixture-t2-coordinador',
   ]) {
     const denied = await request(app.getHttpServer())
-      .get(`${base}/136`)
+      .get(`${base}/160`)
       .set(auth(actor))
       .expect(403);
     expect(denied.body.error.codigo).toBe('CAPACIDAD_INSUFICIENTE');
     await request(app.getHttpServer())
-      .post(`${base}/136/evidencias`)
+      .post(`${base}/160/evidencias`)
       .set(auth(actor))
       .attach('fotos', Buffer.from('fixture'), {
         filename: 'foto.jpg',
@@ -215,81 +231,113 @@ test('solo M2 accede cola/detalle/fotos; solo M1/otro vivero no accede por URL d
       .expect(403);
   }
 });
-test('multipart contextual y recibir/validar con replay sin otra carga ni anclaje externo', async () => {
-  const b = await body('136');
+test('multipart contextual y recepción con un único anclaje; replay no carga ni ejecuta de nuevo', async () => {
+  const b = await body('160');
   const n = uploads.length;
+  const anclajes = blockchain.executeBlockchainFlow.mock.calls.length;
   const r = await request(app.getHttpServer())
-    .post(`${base}/136/recibir-validar`)
+    .post(`${base}/160/recibir-validar`)
     .set(auth())
     .send(b)
     .expect(200);
   expect(r.body.estado).toBe('CONFIRMADO');
-  expect(r.body.resultado.anclaje_externo).toBe('PENDIENTE_NO_EJECUTADO');
+  expect(r.body.resultado.anclaje_externo).toBe('FUERA_TRANSACCION');
   const replay = await request(app.getHttpServer())
-    .post(`${base}/136/recibir-validar`)
+    .post(`${base}/160/recibir-validar`)
     .set(auth())
     .send(b)
     .expect(200);
   expect(replay.body).toEqual(r.body);
   expect(uploads).toHaveLength(n);
+  expect(blockchain.executeBlockchainFlow.mock.calls.length).toBe(anclajes + 1);
   await request(app.getHttpServer())
-    .post(`${base}/136/recibir-validar`)
+    .post(`${base}/160/recibir-validar`)
     .set(auth())
     .send({ ...b, cantidad_recibida: 90 })
     .expect(409);
 });
-test('incidencia y resolución conforme con evidencia nueva preservan historia', async () => {
-  const b = await body('137', undefined, 80);
-  const r = await request(app.getHttpServer())
-    .post(`${base}/137/recibir-validar`)
+test('diferencias se rechazan sin incidencia; rechazo confirmado y corrección90 conservan ficha, lugar e historial100', async () => {
+  const anterior = JSON.parse(
+    await sql(
+      "SELECT json_build_object('ubicacion_id',ubicacion_id,'fecha',fecha,'codigo',codigo_trazabilidad) FROM public.recoleccion WHERE id=161",
+    ),
+  );
+  const b = await body('161', undefined, 80);
+  const n = blockchain.executeBlockchainFlow.mock.calls.length;
+  const noConforme = await request(app.getHttpServer())
+    .post(`${base}/161/recibir-validar`)
     .set(auth())
     .send(b)
-    .expect(200);
-  expect(r.body.estado).toBe('INCIDENCIA');
-  expect(r.body.resultado.estado_registro).toBe('PENDIENTE_VALIDACION');
-  const corrected = {
-    ...(await body('137')),
-    incidencia_id: r.body.resultado.incidencia_id,
-    motivo_resolucion: 'Comprobación nueva total conforme',
+    .expect(409);
+  expect(noConforme.body.estado).toBe('RECHAZADO');
+  expect(noConforme.body.resultado).toBeNull();
+  expect(blockchain.executeBlockchainFlow.mock.calls.length).toBe(n);
+  const rechazo = {
+    comando_id: randomUUID(),
+    revision_esperada: b.revision_esperada,
+    motivo_rechazo: 'Cantidad declarada no conforme; corregir la misma ficha',
   };
+  const r = await request(app.getHttpServer())
+    .post(`${base}/161/rechazar`)
+    .set(auth())
+    .send(rechazo)
+    .expect(200);
+  expect(r.body.estado).toBe('CONFIRMADO');
+  expect(r.body.resultado.estado_registro).toBe('RECHAZADO');
+  expect(r.body.resultado.recepcion_id).toBeNull();
+  expect(r.body.resultado.anclaje_externo).toBe('NO_APLICA');
+  const rechazoReplay = await request(app.getHttpServer())
+    .post(`${base}/161/rechazar`)
+    .set(auth())
+    .send(rechazo)
+    .expect(200);
+  expect(rechazoReplay.body).toEqual(r.body);
   await request(app.getHttpServer())
-    .post(`${base}/137/recibir-validar`)
+    .post(`${base}/161/recibir-validar`)
+    .set(auth())
+    .send({ ...b, comando_id: rechazo.comando_id })
+    .expect(409);
+  const historia = await request(app.getHttpServer())
+    .get(`${base}/161`)
+    .set(auth())
+    .expect(200);
+  expect(
+    historia.body.historial.some(
+      (h: {
+        metadata: { ficha_revisada?: { cantidad_inicial_canonica?: number } };
+      }) => h.metadata.ficha_revisada?.cantidad_inicial_canonica === 100,
+    ),
+  ).toBe(true);
+  await sql(
+    "SET ROLE service_role; SELECT public.m1_recoleccion_guardar(21,'EDITAR',161,(SELECT revision_captura FROM public.recoleccion WHERE id=161),'{\"cantidad_inicial_canonica\":90}'::jsonb,'[]'::jsonb); SELECT public.m1_recoleccion_guardar(21,'ENVIAR',161,(SELECT revision_captura FROM public.recoleccion WHERE id=161),'{}'::jsonb,'[]'::jsonb)",
+  );
+  expect(
+    JSON.parse(
+      await sql(
+        "SELECT json_build_object('ubicacion_id',ubicacion_id,'fecha',fecha,'codigo',codigo_trazabilidad) FROM public.recoleccion WHERE id=161",
+      ),
+    ),
+  ).toEqual(anterior);
+  const corrected = await body('161', undefined, 90);
+  await request(app.getHttpServer())
+    .post(`${base}/161/recibir-validar`)
+    .set(auth())
+    .send({
+      ...corrected,
+      comando_id: randomUUID(),
+      evidencia_ids: b.evidencia_ids,
+    })
+    .expect(403);
+  await request(app.getHttpServer())
+    .post(`${base}/161/recibir-validar`)
     .set(auth())
     .send(corrected)
     .expect(200);
-  const d = await request(app.getHttpServer())
-    .get(`${base}/137`)
-    .set(auth())
-    .expect(200);
-  expect(d.body.historial.map((x: { clase: string }) => x.clase)).toEqual([
-    'INCIDENCIA',
-    'CONFORME',
-  ]);
-});
-test('commit con respuesta incierta se recupera por misma clave tras perder acceso', async () => {
-  const b = await body('138');
-  uncertain = true;
-  await request(app.getHttpServer())
-    .post(`${base}/138/recibir-validar`)
-    .set(auth())
-    .send(b)
-    .expect(503);
-  const rev = await sql(
-    'SELECT revision FROM public.usuario_vivero_revision WHERE usuario_id=20',
-  );
-  await sql(
-    `SET ROLE service_role; SELECT public.m2_acceso_ejecutar(1,'fixture-admin','RETIRAR_ACCESO_VIVERO','${randomUUID()}',${lit({ usuario_destino_id: '20', vivero_id: '1', revision_esperada: rev, motivo: 'Retiro sintético HTTP T4' })}::jsonb)`,
-  );
-  await request(app.getHttpServer()).get(`${base}/138`).set(auth()).expect(403);
-  const r = await request(app.getHttpServer())
-    .get(`${base}/comandos/${b.comando_id}`)
-    .set(auth())
-    .expect(200);
-  expect(r.body.estado).toBe('CONFIRMADO');
-  await request(app.getHttpServer())
-    .get(`${base}/comandos/${b.comando_id}`)
-    .set(auth('fixture-t2-ambos'))
-    .expect(202);
+  expect(
+    await sql(
+      'SELECT cantidad_recibida FROM public.recoleccion_recepcion WHERE recoleccion_id=161',
+    ),
+  ).toBe('90');
 });
 test('parser cerrado rechaza actor/custodia/base64 y BIGINT inseguro antes de efectos', async () => {
   const b = {
@@ -307,7 +355,7 @@ test('parser cerrado rechaza actor/custodia/base64 y BIGINT inseguro antes de ef
     { revision_esperada: 9007199254740992 },
   ]) {
     await request(app.getHttpServer())
-      .post(`${base}/139/recibir-validar`)
+      .post(`${base}/163/recibir-validar`)
       .set(auth('fixture-admin'))
       .send({ ...b, ...extra })
       .expect(422);
@@ -317,25 +365,44 @@ test('parser cerrado rechaza actor/custodia/base64 y BIGINT inseguro antes de ef
     .set(auth('fixture-admin'))
     .expect(200);
   expect(exact.body.recoleccion_id).toBe('9007199254740993');
-  expect(exact.body.vivero_id).toBe('9007199254740993');
+  expect(exact.body.vivero_id).toBe('1');
 });
-test('diagnóstico es solo ADMIN y nunca acredita una recepción legada', async () => {
+test('diagnóstico y aprobación/rechazo documental retirados devuelven404', async () => {
   await request(app.getHttpServer())
     .get(`${base}/diagnostico`)
-    .set(auth('fixture-t2-ambos'))
-    .expect(403);
-  const r = await request(app.getHttpServer())
-    .get(`${base}/diagnostico`)
-    .query({ antes_de_id: '124', limite: '20' })
     .set(auth('fixture-admin'))
+    .expect(404);
+  for (const action of ['approve', 'reject'])
+    await request(app.getHttpServer())
+      .patch(`/api/recolecciones/163/${action}`)
+      .set(auth('fixture-admin'))
+      .send({ motivo_rechazo: 'Motivo de operación retirada' })
+      .expect(404);
+});
+test('commit con respuesta incierta se recupera tras perder acceso sin anclaje ni nueva operación', async () => {
+  const n = blockchain.executeBlockchainFlow.mock.calls.length;
+  const b = await body('162');
+  uncertain = true;
+  await request(app.getHttpServer())
+    .post(`${base}/162/recibir-validar`)
+    .set(auth())
+    .send(b)
+    .expect(503);
+  const rev = await sql(
+    'SELECT revision FROM public.usuario_vivero_revision WHERE usuario_id=20',
+  );
+  await sql(
+    `SET ROLE service_role; SELECT public.m2_acceso_ejecutar(1,'fixture-admin','RETIRAR_ACCESO_VIVERO','${randomUUID()}',${lit({ usuario_destino_id: '20', vivero_id: '1', revision_esperada: rev, motivo: 'Retiro sintético HTTP T4' })}::jsonb)`,
+  );
+  await request(app.getHttpServer()).get(`${base}/162`).set(auth()).expect(403);
+  const r = await request(app.getHttpServer())
+    .get(`${base}/comandos/${b.comando_id}`)
+    .set(auth())
     .expect(200);
-  expect(
-    r.body.some((x: { recoleccion_id: string }) => x.recoleccion_id === '123'),
-  ).toBe(true);
-  expect(
-    r.body.every(
-      (x: { recepcion_acreditada: boolean }) =>
-        x.recepcion_acreditada === false,
-    ),
-  ).toBe(true);
+  expect(r.body.estado).toBe('CONFIRMADO');
+  expect(blockchain.executeBlockchainFlow.mock.calls.length).toBe(n);
+  await request(app.getHttpServer())
+    .get(`${base}/comandos/${b.comando_id}`)
+    .set(auth('fixture-t2-ambos'))
+    .expect(202);
 });

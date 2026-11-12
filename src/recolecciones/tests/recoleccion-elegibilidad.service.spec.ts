@@ -55,7 +55,7 @@ describe('RecoleccionElegibilidadService', () => {
     });
   });
 
-  it('reconoce el remanente conciliado sin acreditar una recepción T4', () => {
+  it('solo la recepción conforme habilita el material con saldo', () => {
     const base = {
       ...elegibleBase,
       recepcion_conforme: false,
@@ -64,25 +64,20 @@ describe('RecoleccionElegibilidadService', () => {
       saldo_actual: 120,
       planta_id: 55,
     };
-    const conforme = service.evaluarRecoleccionElegibleParaInicioVivero(
-      {
-        ...base,
-        m2_estado_habilitacion: 'CONCILIACION_CONFORME',
-      },
-      20,
-    );
-    const incidencia = service.evaluarRecoleccionElegibleParaInicioVivero(
-      {
-        ...base,
-        m2_estado_habilitacion: 'INCIDENCIA_CONCILIACION',
-      },
-      20,
-    );
-    expect(conforme.elegible).toBe(true);
-    expect(incidencia).toMatchObject({
+    expect(
+      service.evaluarRecoleccionElegibleParaInicioVivero(
+        { ...base, m2_estado_habilitacion: 'RECEPCION_CONFORME' },
+        20,
+      ).elegible,
+    ).toBe(true);
+    expect(
+      service.evaluarRecoleccionElegibleParaInicioVivero(
+        { ...base, m2_estado_habilitacion: 'SIN_RECEPCION' },
+        20,
+      ),
+    ).toMatchObject({
       elegible: false,
-      motivo_no_elegibilidad:
-        'Se requiere conciliación histórica conforme del remanente.',
+      motivo_no_elegibilidad: 'Se requiere recepción física conforme.',
     });
   });
 

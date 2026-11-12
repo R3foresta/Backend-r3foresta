@@ -7,9 +7,9 @@ Vivero al asignar y M3 consume luego ese stock sin volver a descontar el lote.
 ```mermaid
 flowchart TD
   A["Recolección BORRADOR"] -->|"PATCH /recolecciones/:id/submit"| B["PENDIENTE_VALIDACION"]
-  B -->|"PATCH /:id/reject"| C["RECHAZADO"]
+  B -->|"POST /v1/recepcion-semillas/:id/rechazar"| C["RECHAZADO"]
   C -->|"PATCH /:id/draft"| A
-  B -->|"PATCH /:id/approve"| D["VALIDADO + saldo operativo"]
+  B -->|"POST /v1/recepcion-semillas/:id/recibir-validar"| D["Recepción conforme + VALIDADO"]
   D -.->|"intento no bloqueante: metadata IPFS + NFT"| BC["Pinata / Blockchain"]
 
   D -->|"POST /lotes-vivero"| E["Lote ACTIVO + evento INICIO"]
@@ -39,15 +39,19 @@ flowchart TD
 | `POST /api/recolecciones` | Crea `BORRADOR` con fotos multipart |
 | `PATCH /api/recolecciones/:id/draft` | Edita `BORRADOR`; si estaba `RECHAZADO`, vuelve a `BORRADOR` |
 | `PATCH /api/recolecciones/:id/submit` | Pasa a `PENDIENTE_VALIDACION` |
-| `PATCH /api/recolecciones/:id/approve` | Pasa a `VALIDADO`, materializa snapshots e intenta el anclaje |
-| `PATCH /api/recolecciones/:id/reject` | Pasa a `RECHAZADO` con motivo |
+| `POST /api/v1/recepcion-semillas/:id/recibir-validar` | Confirma recepción conforme, `VALIDADO`, snapshots e historial en una transacción. Después intenta el anclaje. |
+| `POST /api/v1/recepcion-semillas/:id/rechazar` | Pasa a `RECHAZADO` con motivo y conserva la ficha revisada en el historial. |
 
-Una Recolección `VALIDADO` con saldo disponible alimenta Vivero. El historial
-de estado y los movimientos de saldo son entidades separadas.
+Una Recolección `VALIDADO` con recepción conforme, saldo disponible y requisitos
+de INICIO completos alimenta Vivero. El historial de estado y los movimientos de
+saldo son entidades separadas. ADMIN o VALIDADOR con asignación vigente al vivero
+resuelve la recepción, con prohibición de autorrecepción.
 
 El anclaje externo ocurre después de persistir la validación. Si Pinata o
 blockchain fallan, la Recolección permanece validada y el error se registra; no
-hay reintento durable automático.
+hay reintento durable automático. Replay y recuperación del comando no repiten
+el anclaje. El [contrato de recepción](../modulos/recolecciones.md) enlaza los DTO
+y la guía consumible del flujo único.
 
 ## 2. M2 — Vivero
 
@@ -147,7 +151,8 @@ saldo_asignado_disponible
 
 ## 6. Límites actuales
 
-- El JWT no se valida globalmente; muchos endpoints confían en `x-auth-id`.
+- No existe guard JWT global. Las rutas privadas de este recorrido exigen actor
+  verificado y autorización por objeto. `x-auth-id` por sí solo no autentica.
 - Pinata/blockchain no usan outbox ni reintento durable.
 - Challenges WebAuthn viven en memoria.
 - La reaplicación de migraciones no reproduce todavía dos cambios directos del

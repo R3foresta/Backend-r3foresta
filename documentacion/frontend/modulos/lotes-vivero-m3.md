@@ -5,8 +5,10 @@ Base URL: `/api/lotes-vivero`
 **Alcance**: Documenta solo los endpoints relevantes para M3 (flujo de asignaciones).
 **Nota**: Endpoints de lifecycle completo (embolsado, adaptabilidad, merma, despacho) están en documentación separada.
 
-La selección de material M1 y su estado de recepción o conciliación tienen
-su propio [contrato M2](../../../docs/vivero-conciliacion-historica.md#api-privada-y-pwa).
+La selección de material M1 y su recepción conforme tienen su propio
+[contrato de recepción única](../../../docs/t4-recepcion-semillas.md). INICIO
+descuenta el origen una sola vez; Plantación consume su asignación física y
+no vuelve a debitar Recolección ni Vivero.
 
 > **Cambio de contrato (2026-07)**: la asignación dejó de ser una *reserva lógica*
 > y pasó a ser una **entrega física** (RN-VIV-47). Asignar descuenta

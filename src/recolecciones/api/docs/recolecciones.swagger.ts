@@ -14,7 +14,6 @@ import {
   CreateUbicacionDto,
   FUENTES_UBICACION,
 } from '../dto/create-ubicacion.dto';
-import { RejectValidationDto } from '../dto/reject-validation.dto';
 import { ESTADOS_HABILITACION_MATERIAL } from '../../../lotes-vivero/domain/enums/estado-habilitacion-material.enum';
 
 const ELEGIBILIDAD_QUERY_DESCRIPTION =
@@ -129,7 +128,13 @@ export function ApiCreateRecoleccion() {
           'fotos',
         ],
         properties: {
-          fecha: { type: 'string', format: 'date', example: '2026-03-04' },
+          fecha: {
+            type: 'string',
+            format: 'date',
+            example: '2026-03-04',
+            description:
+              'Al crear o cambiar la fecha debe estar entre hoy y 45 días atrás (America/La_Paz). En PATCH se puede omitir o conservar la fecha original aunque la ficha envejezca.',
+          },
           cantidad_inicial_canonica: { type: 'number', example: 250 },
           unidad_canonica: {
             type: 'string',
@@ -204,7 +209,13 @@ export function ApiUpdateDraftRecoleccion() {
       schema: {
         type: 'object',
         properties: {
-          fecha: { type: 'string', format: 'date', example: '2026-03-04' },
+          fecha: {
+            type: 'string',
+            format: 'date',
+            example: '2026-03-04',
+            description:
+              'Al crear o cambiar la fecha debe estar entre hoy y 45 días atrás (America/La_Paz). En PATCH se puede omitir o conservar la fecha original aunque la ficha envejezca.',
+          },
           cantidad_inicial_canonica: { type: 'number', example: 250 },
           unidad_canonica: {
             type: 'string',
@@ -284,44 +295,6 @@ export function ApiSubmitRecoleccionValidation() {
   );
 }
 
-export function ApiApproveRecoleccionValidation() {
-  return applyDecorators(
-    ApiOperation({
-      summary: 'Aprobar validación de recolección',
-      description:
-        'Cambia PENDIENTE_VALIDACION -> VALIDADO. ADMIN o VALIDADOR asignado al vivero de almacenamiento, distintos del recolector incluso si este es ADMIN. Revisión documental T2; no acredita recepción física. Conserva la ventana de fecha de recolección de hasta 45 días, sin fechas futuras. Ejecuta Pinata + Blockchain.',
-    }),
-    ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
-    ApiResponse({
-      status: 200,
-      description: 'Recolección validada y minteada en blockchain',
-    }),
-    ApiResponse({ status: 400, description: 'Estado no permite aprobación' }),
-    ApiResponse({ status: 403, description: 'Sin permisos de validador' }),
-    ApiResponse({ status: 404, description: 'Recolección no encontrada' }),
-  );
-}
-
-export function ApiRejectRecoleccionValidation() {
-  return applyDecorators(
-    ApiOperation({
-      summary: 'Rechazar validación de recolección',
-      description:
-        'Cambia PENDIENTE_VALIDACION -> RECHAZADO sin límite por fecha de recolección. ADMIN o VALIDADOR asignado al almacenamiento. Requiere motivo de 10 a 500 caracteres; estado, motivo e historial se guardan juntos.',
-    }),
-    ApiParam({ name: 'id', type: Number, description: 'ID de la recolección' }),
-    ApiBody({ type: RejectValidationDto }),
-    ApiResponse({ status: 200, description: 'Recolección rechazada' }),
-    ApiResponse({ status: 400, description: 'Estado no permite rechazo' }),
-    ApiResponse({ status: 403, description: 'Sin permisos de validador' }),
-    ApiResponse({ status: 404, description: 'Recolección no encontrada' }),
-    ApiResponse({
-      status: 409,
-      description: 'Recolección en modificación concurrente; reintentar',
-    }),
-  );
-}
-
 export function ApiRegistrarDesecho() {
   return applyDecorators(
     ApiOperation({
@@ -369,7 +342,7 @@ export function ApiFindPendingValidationRecolecciones() {
     ApiOperation({
       summary: 'Listar recolecciones pendientes de validación',
       description:
-        'Devuelve recolecciones en estado PENDIENTE_VALIDACION con filtros y paginación. ADMIN conserva alcance global; VALIDADOR combina la cola de sus viveros asignados con las propias si tiene M1 efectivo, incluso sin M2; GENERAL con M1 ve propias. La unión se filtra antes de contar y paginar y nunca permite aprobación propia. No acredita recepción física.',
+        'Devuelve recolecciones en estado PENDIENTE_VALIDACION con filtros y paginación. ADMIN conserva alcance global; VALIDADOR combina la cola de sus viveros asignados con las propias si tiene M1 efectivo, incluso sin M2; GENERAL con M1 ve propias. La unión se filtra antes de contar y paginar y la decisión se realiza exclusivamente por la API de recepción, sin autorrecepción. Esta lista no acredita recepción física.',
     }),
     ...commonListQueries,
     ApiQuery({ name: 'vivero_id', required: false, schema: VIVERO_ID_SCHEMA }),

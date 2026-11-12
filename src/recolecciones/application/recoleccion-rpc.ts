@@ -35,7 +35,7 @@ export function recoleccionRpcError(error: { code?: string }): never {
 export async function guardarRecoleccion(
   client: SupabaseClient,
   actor: number | string,
-  accion: 'CREAR' | 'EDITAR' | 'FOTOS' | 'ENVIAR' | 'APROBAR',
+  accion: 'CREAR' | 'EDITAR' | 'FOTOS' | 'ENVIAR',
   id: number | string | null,
   revision: unknown,
   payload: Record<string, unknown>,

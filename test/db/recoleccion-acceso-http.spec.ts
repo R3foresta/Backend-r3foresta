@@ -524,7 +524,7 @@ describe('T1 HTTP → JWT verificado → casos de uso → PostgreSQL privado', (
       200,
     );
   });
-  it('editar/enviar propio; la autoría no confirma como VALIDADOR ni ADMIN', async () => {
+  it('editar/enviar propio; la aprobación documental retirada devuelve404', async () => {
     await request(app.getHttpServer())
       .patch(`/api/recolecciones/${propio}/draft`)
       .set('Authorization', bearer('general'))
@@ -546,11 +546,11 @@ describe('T1 HTTP → JWT verificado → casos de uso → PostgreSQL privado', (
       await request(app.getHttpServer())
         .patch(`/api/recolecciones/${id}/approve`)
         .set('Authorization', bearer(who))
-        .expect(403);
+        .expect(404);
     await request(app.getHttpServer())
       .patch(`/api/recolecciones/${propio}/approve`)
       .set('Authorization', bearer('admin'))
-      .expect(200);
+      .expect(404);
   });
   it('retiro corta captura/mantenimiento/fotos sin borrar historia; recibo no reactiva acceso', async () => {
     await change('retiros', '1').expect(200);

@@ -30,13 +30,6 @@ const receipt = object({
   recibido_por: id,
   registrado_en: instant,
 });
-const incident = object({
-  id,
-  cantidad_observada: number,
-  unidad_observada: unit,
-  fecha_recepcion: date,
-  registrado_en: instant,
-});
 export const RECEPCION_ORIGEN_SCHEMA = object({
   recoleccion_id: id,
   vivero_id: id,
@@ -53,12 +46,12 @@ export const RECEPCION_ORIGEN_SCHEMA = object({
   revision,
   estado_registro: {
     type: 'string',
-    enum: ['PENDIENTE_VALIDACION', 'VALIDADO'],
+    enum: ['BORRADOR', 'PENDIENTE_VALIDACION', 'RECHAZADO', 'VALIDADO'],
   },
+  motivo_rechazo: nullable(text),
   recepcion: nullable(receipt),
-  incidencia: nullable(incident),
-  requiere_conciliacion: { type: 'boolean' },
   puede_recibir_validar: { type: 'boolean' },
+  puede_rechazar: { type: 'boolean' },
 });
 export const RECEPCION_COLA_SCHEMA = object({
   data: { type: 'array', items: RECEPCION_ORIGEN_SCHEMA },
@@ -66,20 +59,33 @@ export const RECEPCION_COLA_SCHEMA = object({
 });
 export const RECEPCION_DETALLE_SCHEMA = object({
   ...RECEPCION_ORIGEN_SCHEMA.properties!,
+  observaciones: nullable(text),
+  ubicacion_id: id,
+  metodo_id: nullable(id),
+  planta_id: nullable(id),
+  ubicacion: nullable(
+    object({
+      id,
+      pais_id: nullable(id),
+      division_id: nullable(id),
+      nombre: nullable(text),
+      referencia: nullable(text),
+      latitud: nullable(number),
+      longitud: nullable(number),
+      precision_m: nullable(number),
+      fuente: nullable(text),
+    }),
+  ),
   historial: {
     type: 'array',
     items: object({
       id,
-      clase: { type: 'string', enum: ['CONFORME', 'INCIDENCIA'] },
-      actor_id: id,
-      cantidad_declarada: number,
-      unidad_declarada: unit,
-      cantidad_observada: number,
-      unidad_observada: unit,
-      fecha_recepcion: date,
-      incidencia_id: nullable(id),
-      motivo_resolucion: nullable(text),
-      registrado_en: instant,
+      tipo_historial: text,
+      estado_origen: nullable(text),
+      estado_destino: text,
+      actor_id: nullable(id),
+      fecha: date,
+      metadata: { type: 'object', additionalProperties: true },
     }),
   },
   evidencias: {
@@ -90,38 +96,35 @@ export const RECEPCION_DETALLE_SCHEMA = object({
       ruta_archivo: text,
       mime_type: text,
       titulo: nullable(text),
-      observacion_id: nullable(id),
+      recepcion_id: nullable(id),
       public_url: { type: 'string', format: 'uri' },
     }),
   },
 });
 const result = object({
+  accion: { type: 'string', enum: ['RECIBIR', 'RECHAZAR'] },
   recoleccion_id: id,
   vivero_id: id,
-  observacion_id: id,
   recepcion_id: nullable(id),
-  incidencia_id: nullable(id),
   revision_anterior: revision,
   revision_nueva: revision,
-  cantidad_recibida: number,
-  unidad_recibida: unit,
-  fecha_recepcion: date,
-  recibido_por: id,
+  cantidad_recibida: nullable(number),
+  unidad_recibida: nullable(unit),
+  fecha_recepcion: nullable(date),
+  actor_id: id,
   saldo_actual: number,
-  estado_registro: text,
-  anclaje_externo: { type: 'string', enum: ['PENDIENTE_NO_EJECUTADO'] },
+  estado_registro: { type: 'string', enum: ['VALIDADO', 'RECHAZADO'] },
+  anclaje_externo: { type: 'string', enum: ['FUERA_TRANSACCION', 'NO_APLICA'] },
+  motivo_rechazo: nullable(text),
+  registrado_en: instant,
 });
 export const RECEPCION_RECIBO_SCHEMA = object({
   comando_id: { type: 'string', format: 'uuid' },
   estado: {
     type: 'string',
-    enum: [
-      'CONFIRMADO',
-      'INCIDENCIA',
-      'RECHAZADO',
-      'SIN_RESULTADO',
-      'CONFLICTO_CLAVE',
-    ],
+    enum: ['CONFIRMADO', 'RECHAZADO', 'SIN_RESULTADO', 'CONFLICTO_CLAVE'],
+    description:
+      'CONFIRMADO incluye la decisión de rechazar la ficha. RECHAZADO representa un error del comando.',
   },
   resultado: nullable(result),
   error: nullable(object({ codigo: text })),
@@ -131,17 +134,3 @@ export const RECEPCION_CARGA_SCHEMA = object({
   evidencia_ids: { type: 'array', items: id, minItems: 1, maxItems: 5 },
   audiencia: { type: 'string', enum: ['BUCKET_LEGADO_PUBLICO'] },
 });
-export const RECEPCION_DIAGNOSTICO_SCHEMA: SchemaObject = {
-  type: 'array',
-  items: object({
-    recoleccion_id: id,
-    vivero_id: nullable(id),
-    cantidad_original: number,
-    saldo_actual: number,
-    unidad: unit,
-    fecha_recoleccion: date,
-    movimientos: { type: 'integer' },
-    lotes: { type: 'integer' },
-    recepcion_acreditada: { type: 'boolean', enum: [false] },
-  }),
-};

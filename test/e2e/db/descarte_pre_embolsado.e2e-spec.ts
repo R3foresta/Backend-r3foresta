@@ -47,6 +47,7 @@ function nuevoRegistro(): CreatedIds {
 describe('DESCARTE_PRE_EMBOLSADO - fn_vivero_registrar_descarte_pre_embolsado', () => {
   let client: SupabaseClient;
   let ref: RefData;
+  let esquemaHistoricoVerificado = false;
 
   beforeAll(async () => {
     const url = process.env.SUPABASE_URL;
@@ -60,10 +61,24 @@ describe('DESCARTE_PRE_EMBOLSADO - fn_vivero_registrar_descarte_pre_embolsado', 
     }
 
     client = createClient(url, key);
+    // Estos fixtures y su limpieza pertenecen al esquema anterior a 100.
+    const { error } = await client
+      .from('recoleccion')
+      .select('usuario_validacion_id,fecha_validacion')
+      .limit(0);
+    if (error) {
+      throw new Error(
+        'Suite histórica anterior a 100: no se pudo verificar el esquema requerido. ' +
+          'No se ejecutaron fixtures ni limpieza. Para recepción única usar npm run test:db:recepcion. ' +
+          formatError(error),
+      );
+    }
     ref = await loadReferences(client);
+    esquemaHistoricoVerificado = true;
   });
 
   afterEach(async () => {
+    if (!esquemaHistoricoVerificado) return;
     await cleanupByPrefix(client);
   });
 

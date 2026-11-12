@@ -16,8 +16,8 @@ export class RecoleccionBlockchainService {
   ) {}
 
   async executeBlockchainFlow(
-    recoleccionId: number,
-    codigoTrazabilidad: string,
+    recoleccionId: number | string,
+    codigoTrazabilidad?: string,
   ): Promise<void> {
     const supabase = this.supabaseService.getAdminClient();
 
@@ -34,6 +34,7 @@ export class RecoleccionBlockchainService {
         return;
       }
 
+      codigoTrazabilidad ??= String(findResult.data.codigo_trazabilidad);
       const metadata = this.buildNFTMetadata(findResult.data);
       this.logger.log(
         `📦 Subiendo metadata a IPFS/Pinata para ${codigoTrazabilidad}...`,
@@ -67,17 +68,13 @@ export class RecoleccionBlockchainService {
 
       if (updateError) {
         this.logger.error(
-          '⚠️  No se pudo guardar datos de blockchain en BD:',
-          updateError,
+          'No se pudo guardar la referencia de anclaje en la base de datos.',
         );
       } else {
         this.logger.log('✅ Datos de blockchain guardados en la base de datos');
       }
-    } catch (blockchainFlowError) {
-      this.logger.error(
-        `⚠️  Error en flujo blockchain para recolección ${recoleccionId}:`,
-        blockchainFlowError,
-      );
+    } catch {
+      this.logger.error('No se completó el anclaje externo de la recolección.');
     }
   }
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recepción T4 y conciliación histórica en PostgreSQL privado, sin TCP ni .env."""
+"""Recepción única100 en PostgreSQL privado, sin TCP ni .env."""
 import argparse
 import hashlib
 import json
@@ -22,10 +22,7 @@ def main():
     parser.add_argument('--evidence', type=Path)
     parser.add_argument('--sql-only', action='store_true')
     parser.add_argument('--postgis', action='store_true',help='Extensión PostGIS real y regresión M3 de consumo sin M2; falla si falta la extensión.')
-    parser.add_argument('--conciliacion', action='store_true', help='Añade 097, remanentes sintéticos y regresiones SQL/HTTP de conciliación.')
-    parser.add_argument('--revision-conciliacion', action='store_true', help='Ejecuta la suite de conciliación y añade 099 y su regresión de orígenes.')
     args = parser.parse_args()
-    args.conciliacion = args.conciliacion or args.revision_conciliacion
     binaries = {n: str(args.pg_bin/n) if args.pg_bin else shutil.which(n) for n in ('initdb','pg_ctl','psql')}
     if not all(binaries.values()): parser.error('Faltan binarios PostgreSQL; use --pg-bin.')
     if args.evidence and args.evidence.exists(): parser.error('La evidencia debe ser nueva.')
@@ -131,7 +128,7 @@ def main():
     try:
         run([binaries['initdb'],'-D',str(cluster),'-U','postgres','--auth-local=trust','--auth-host=reject','--locale=en_US.UTF-8','--encoding=UTF8'])
         run([binaries['pg_ctl'],'-D',str(cluster),'-l',str(directory/'pg.log'),'-w','-t','20','start','-o',f"-c listen_addresses='' -c unix_socket_directories='{socket}' -c port=55444 -c unix_socket_permissions=0700"])
-        started=True;version=sql('SHOW server_version');print('T4 PostgreSQL aislado '+version,flush=True)
+        started=True;version=sql('SHOW server_version');print('Recepción única PostgreSQL aislado '+version,flush=True)
         run(command()+['-f',str(ROOT/'test/db/vivero-acceso-fixture.sql')])
         if args.postgis:
             run(command()+['-f',str(ROOT/'test/db/vivero-acceso-postgis-fixture.sql')])
@@ -141,142 +138,147 @@ def main():
         sql(extract('010_vivero_operational_rules.sql','fn_vivero_cerrar_lote_si_corresponde'))
         for num in ('018','019','021','026','046','055'):
             run(command()+['-f',str(next((ROOT/'migrations').glob(num+'_*')))])
-        # 077 real con antecedentes focales; el helper del plan no interviene en esta suite.
         sql("CREATE FUNCTION public.fn_subcampania_obtener_plan(bigint) RETURNS jsonb LANGUAGE sql AS $$ SELECT '{}'::jsonb $$;")
         run(command()+['-f',str(ROOT/'migrations/077_pa_int02d_operaciones_compartidas.sql')])
-        for _ in range(2):
-            for migration in MIGRATIONS: run(command()+['-f',str(ROOT/'migrations'/migration)])
-        for user in (20,22,24,9007199254740995): call(assign(user))
+        for migration in MIGRATIONS: run(command()+['-f',str(ROOT/'migrations'/migration)])
+        for num in ('097','099'):
+            migration=next((ROOT/'migrations').glob(num+'_*'));migrations.append(migration.name)
+            run(command()+['-f',str(migration)])
+        migration=ROOT/'migrations/100_recoleccion_recepcion_unica.sql';migrations.append(migration.name)
+        sql(migration.read_text(),error='RECEPCION_UNICA_REQUIERE_RESET_REVISADO')
+        check(sql("SELECT to_regclass('public.recoleccion_recepcion_observacion') IS NOT NULL")=='t','100 aborta con datos de prueba existentes y revierte esquema sin borrarlos')
+        # Sólo fixture aislado: retirar el único origen heredado, sin fabricación de recepción.
+        sql('DELETE FROM public.recoleccion WHERE id=9000; ALTER TABLE public.recoleccion ADD COLUMN blockchain_url text,ADD COLUMN token_id text,ADD COLUMN transaction_hash text')
+        for _ in range(2):run(command()+['-f',str(migration)])
+        check(sql("SELECT count(*) FROM pg_class WHERE relnamespace='public'::regnamespace AND relname IN ('recoleccion_recepcion_observacion','recoleccion_conciliacion_comando','recoleccion_conciliacion_evento','recoleccion_conciliacion_evidencia_contexto','recoleccion_conciliacion_evidencia')")=='0','100 repetible retira las cinco tablas obsoletas sin CASCADE')
+        check(sql("SELECT count(*) FROM pg_proc WHERE pronamespace='public'::regnamespace AND (proname LIKE 'm2_conciliacion_%' OR proname IN ('fn_recoleccion_rechazar_validacion','m1_recepcion_diagnostico'))")=='0','Funciones exclusivas y bypass de rechazo/diagnóstico retirados')
+        check(sql("SELECT count(*) FROM pg_attribute WHERE attrelid='public.recoleccion'::regclass AND NOT attisdropped AND attname IN ('usuario_validacion_id','fecha_validacion')")=='0','Actor y momento de recepción se conservan en el hecho sin columnas duplicadas')
+        # El antecedente20 era GENERAL: en target es un receptor VALIDADOR.
+        sql("UPDATE public.usuario SET rol='VALIDADOR' WHERE id=20")
+        for user in (20,22,24,9007199254740995):call(assign(user))
         call(access(21));call(access(22))
         today=sql("SELECT (clock_timestamp() AT TIME ZONE 'America/La_Paz')::date")
-        sql("INSERT INTO public.recoleccion(id,usuario_id,fecha,estado_registro,codigo_trazabilidad,tipo_material,ubicacion_id,vivero_id,metodo_id,planta_id,unidad_canonica,cantidad_inicial_canonica,nombre_cientifico_snapshot,nombre_comercial_snapshot,variedad_snapshot,nombre_comunidad_snapshot,nombre_recolector_snapshot) SELECT i,21,CURRENT_DATE,'PENDIENTE_VALIDACION','T4-ORIGEN-'||i,'SEMILLA',1,1,1,1,'G',100,'Especie sintética','Tara','comun','Zona','Autor M1' FROM generate_series(100,180) i;")
+        sql("INSERT INTO public.recoleccion(id,usuario_id,fecha,estado_registro,codigo_trazabilidad,tipo_material,ubicacion_id,vivero_id,metodo_id,planta_id,unidad_canonica,cantidad_inicial_canonica,nombre_cientifico_snapshot,nombre_comercial_snapshot,variedad_snapshot,nombre_comunidad_snapshot,nombre_recolector_snapshot) SELECT i,21,CURRENT_DATE,'PENDIENTE_VALIDACION','REC-UNICA-'||i,'SEMILLA',1,1,1,1,'G',100,'Especie sintética','Tara','comun','Zona','Autor M1' FROM generate_series(100,180) i;")
         sql("INSERT INTO public.evidencias_trazabilidad(tipo_entidad_id,entidad_id,bucket,ruta_archivo,tipo_archivo,mime_type,creado_por_usuario_id) SELECT 1,r.id,'recoleccion_fotos','origen/'||r.id||'/'||n,'FOTO','image/jpeg',21 FROM public.recoleccion r CROSS JOIN generate_series(1,2) n WHERE r.id BETWEEN 100 AND 180;")
         def photos(actor,rec):
             fs=[{'ruta_archivo':f'recepcion/pendientes/{actor}/{rec}/{uuid.uuid4()}.jpg','mime_type':'image/jpeg','tamano_bytes':20}]
-            return call(f'SELECT public.m1_recepcion_evidencias_preparar({actor},{rec},{lit(fs)})')
+            return call(f'SELECT public.m1_recepcion_evidencias_preparar({actor},{rec},(SELECT revision_captura FROM public.recoleccion WHERE id={rec}),{lit(fs)})')
         def payload(rec=100,qty=100,unit='G',rev=None,ids=None,actor=20,**more):
-            return dict(recoleccion_id=str(rec),revision_esperada=str(rev if rev is not None else sql(f'SELECT revision_captura FROM public.recoleccion WHERE id={rec}')),
+            return dict(accion='RECIBIR',recoleccion_id=str(rec),revision_esperada=str(rev if rev is not None else sql(f'SELECT revision_captura FROM public.recoleccion WHERE id={rec}')),
                         cantidad_recibida=qty,unidad_recibida=unit,fecha_recepcion=today,evidencia_ids=ids if ids is not None else photos(actor,rec),**more)
+        def reject(rec,actor=20,rev=None):
+            return {'accion':'RECHAZAR','recoleccion_id':str(rec),'revision_esperada':str(rev if rev is not None else sql(f'SELECT revision_captura FROM public.recoleccion WHERE id={rec}')),'motivo_rechazo':'La cantidad declarada no corresponde a la entrega.'}
         def receive(actor,p,key=None):
             auth={1:'fixture-admin',3:'fixture-voluntario',5:'fixture-inactivo',20:'fixture-t2-operario',21:'fixture-t2-m1',22:'fixture-t2-ambos',23:'fixture-t2-sin-vivero',24:'fixture-t2-coordinador',9007199254740995:'fixture-t2-big',9007199254740996:'fixture-t2-big2'}.get(actor,'fixture-validador')
             return f"SELECT public.m1_recepcion_ejecutar({actor},'{auth}','{key or uuid.uuid4()}',{lit(p)})"
         def receipt(actor,p,expected='CONFIRMADO',key=None):
             r=call(receive(actor,p,key));check(r['body']['estado']==expected,f'{actor}/{p["recoleccion_id"]}: {expected}');return r
         def snap(rec):
-            return sql(f"SELECT jsonb_build_array((SELECT to_jsonb(r) FROM public.recoleccion r WHERE id={rec}),(SELECT count(*) FROM public.recoleccion_recepcion),(SELECT count(*) FROM public.recoleccion_recepcion_observacion),(SELECT count(*) FROM public.recoleccion_historial),(SELECT count(*) FROM public.recoleccion_recepcion_comando),(SELECT count(*) FROM public.recoleccion_recepcion_evidencia))")
-        check(sql('SELECT count(*) FROM public.recoleccion_recepcion')=='0','096 repetible sin backfill físico ni saldo inventado')
-        queue=call('SELECT public.m1_recepcion_leer(20,NULL,NULL,2)')
-        check(len(queue['data'])==2 and 'correo' not in json.dumps(queue),'GENERAL solo M2 tiene cola/proyección mínima sin M1')
-        for actor in (3,5,21,23,9007199254740996):
+            return sql(f"SELECT jsonb_build_array((SELECT to_jsonb(r) FROM public.recoleccion r WHERE id={rec}),(SELECT count(*) FROM public.recoleccion_recepcion),(SELECT count(*) FROM public.recoleccion_historial),(SELECT count(*) FROM public.recoleccion_recepcion_comando),(SELECT count(*) FROM public.recoleccion_recepcion_evidencia))")
+        created=call(save(21));created_id=created['id'];call(save(21,'ENVIAR',created_id,0,{},[]))
+        check(sql(f"SELECT estado_registro FROM public.recoleccion WHERE id={created_id}")=='PENDIENTE_VALIDACION','Creación con evidencia y envío conservan capturaM1')
+        check(len(call('SELECT public.m1_recepcion_leer(20,NULL,NULL,2)')['data'])==2,'VALIDADOR con vigencia tiene bandeja sin acceso M1')
+        for actor in (3,5,21,23,24,9007199254740995,9007199254740996):
             sql(f'SELECT public.m1_recepcion_leer({actor},100,NULL,20)',error='cuenta interna' if actor in (3,5) else 'CAPACIDAD_INSUFICIENTE',service=True)
-        check(True,'Solo M1, VOLUNTARIO, inactivo, otro ámbito y vecinos BIGINT no leen cola/detalle')
+        check(True,'GENERAL con M2, solo M1, inactivo y VALIDADOR sin vigencia no consultan recepción')
         p=payload(qty=.1,unit='KG');key=str(uuid.uuid4());r=receipt(20,p,key=key)
-        check(call(receive(20,p,key))==r,'Replay mismo UUID/carga idéntico y sin duplicar efectos')
-        check(call(receive(20,dict(p,cantidad_recibida=101),key))['body']['estado']=='CONFLICTO_CLAVE','Otra intención no reutiliza UUID')
-        check(sql('SELECT saldo_actual FROM public.recoleccion WHERE id=100')=='100' and sql('SELECT count(*) FROM public.recoleccion_movimiento WHERE recoleccion_id=100')=='0','Conforme KG/G conserva saldo original y no acredita otro inventario')
-        check(sql('SELECT usuario_id||\':\'||usuario_validacion_id FROM public.recoleccion WHERE id=100')=='21:20','Autor M1 y receptor/validador permanecen separados')
-        receipt(22,payload(101,actor=22))
-        receipt(1,payload(102,actor=1))
-        # Prohibición de autorrecepción, también ADMIN y ambos accesos.
-        for rec,actor in ((103,22),(104,1),(105,20)):
+        replay=call(receive(20,p,key));check(replay['body']==r['body'] and r['ejecucion_nueva'] is True and replay['ejecucion_nueva'] is False,'Replay preserva recibo y marca que no debe repetir anclaje externo')
+        check(call(receive(20,dict(p,cantidad_recibida=101),key))['body']['estado']=='CONFLICTO_CLAVE','Misma clave con carga distinta genera conflicto')
+        check(call(receive(20,reject(100,rev=0),key))['body']['estado']=='CONFLICTO_CLAVE','Misma clave con otra acción genera conflicto')
+        check(sql('SELECT saldo_actual FROM public.recoleccion WHERE id=100')=='100' and sql('SELECT count(*) FROM public.recoleccion_movimiento WHERE recoleccion_id=100')=='0','Recepción G/KG conforme conserva saldo sin entrada inventada')
+        check(sql("SELECT usuario_id||':'||c.recibido_por FROM public.recoleccion r JOIN public.recoleccion_recepcion c ON c.recoleccion_id=r.id WHERE r.id=100")=='21:20','Autor y receptor permanecen separados')
+        sql("UPDATE public.recoleccion SET blockchain_url='https://example.invalid/token',token_id='1',transaction_hash='fixture-hash' WHERE id=100",service=True)
+        sql("UPDATE public.recoleccion SET observaciones='Prohibida' WHERE id=100",error='DECLARACION_RECIBIDA_CONGELADA',service=True)
+        check(sql("SELECT token_id FROM public.recoleccion WHERE id=100")=='1','Anclaje privado persiste sus tres campos sin abrir edición de ficha validada')
+        receipt(22,payload(101,actor=22));receipt(1,payload(102,actor=1))
+        sql('UPDATE public.recoleccion SET vivero_id=2 WHERE id=103');receipt(1,payload(103,actor=1))
+        check(True,'ADMIN puede recibir cualquier vivero sin asignación')
+        for rec,actor in ((104,22),(105,1),(106,20)):
             sql(f'UPDATE public.recoleccion SET usuario_id={actor} WHERE id={rec}')
-            bad=payload(rec,ids=['1']);r=receipt(actor,bad,'RECHAZADO');check(r['body']['error']['codigo']=='AUTORRECEPCION_PROHIBIDA','Autorrecepción nunca habilitada por rol/accesos')
-        for rec,actor in ((106,21),(107,23),(108,3)):
-            r=receipt(actor,payload(rec,ids=['1']),'RECHAZADO');check(r['http_status']==403,'Escritura RPC también deniega sin M2/rol')
-        sql('UPDATE public.recoleccion SET vivero_id=2 WHERE id=109')
-        receipt(20,payload(109,ids=['1']),'RECHAZADO')
-        before=sql('SELECT saldo_actual FROM public.recoleccion WHERE id=110')
-        r=receipt(20,payload(110,qty=80),'INCIDENCIA');inc=r['body']['resultado']['incidencia_id']
-        check(sql("SELECT estado_registro||':'||saldo_actual FROM public.recoleccion WHERE id=110")=='PENDIENTE_VALIDACION:'+before,'Diferencia conserva pendiente, saldo y observado sin rechazo automático')
-        sql("UPDATE public.recoleccion SET cantidad_inicial_canonica=80 WHERE id=110",error='CONGELADA')
-        sql("SELECT public.m1_recoleccion_guardar(22,'APROBAR',110,1,'{}','[]')",error='INCIDENCIA_ABIERTA',service=True)
-        bad=receipt(20,payload(110,qty=80,incidencia_id=inc,motivo_resolucion='No coincide todavía'),'RECHAZADO')
-        check(bad['body']['error']['codigo']=='INCIDENCIA_REQUIERE_COMPROBACION_CONFORME','Resolución no inventa aceptación parcial')
-        receipt(20,payload(110,incidencia_id=inc,motivo_resolucion='Nueva comprobación física conforme'))
-        check(sql('SELECT count(*) FROM public.recoleccion_recepcion_observacion WHERE recoleccion_id=110')=='2','Resolución conserva incidencia original y vincula evidencia nueva')
-        receipt(20,payload(111,rev=99),'RECHAZADO')
-        for rec,qty,unit in ((112,1.5,'UNIDAD'),(113,0,'G'),(114,1,'GR')):
-            r=receipt(20,payload(rec,qty=qty,unit=unit),'RECHAZADO');check(r['http_status']==422,'Cantidad/unidad inválida no tiene efectos')
-        sql("UPDATE public.recoleccion SET tipo_material='ESQUEJE',unidad_canonica='UNIDAD' WHERE id IN(115,116)")
-        receipt(20,payload(115,qty=100,unit='UNIDAD'));receipt(20,payload(116),'RECHAZADO')
-        for rec,date in ((117,'2099-01-01'),(118,'2000-01-01'),(119,'2026-02-30')):
-            receipt(20,dict(payload(rec),fecha_recepcion=date),'RECHAZADO')
-        wrong=photos(22,120);receipt(20,payload(120,ids=wrong),'RECHAZADO')
-        wrong=photos(20,121);receipt(20,payload(122,ids=wrong),'RECHAZADO')
-        check(True,'Evidencia exige actor, origen, custodia y pendiente sin vínculo anterior')
-        # Antiguo VALIDADO con movimiento: antecedente insertado solo en fixture privado.
-        sql("UPDATE public.recoleccion SET estado_registro='VALIDADO' WHERE id IN(123,124); ALTER TABLE public.recoleccion_movimiento DISABLE TRIGGER recepcion_exigida; INSERT INTO public.recoleccion_movimiento(recoleccion_id,tipo_movimiento,delta,unidad_medida_movimiento,created_by) VALUES(123,'CONSUMO_A_VIVERO',-10,'G',20); ALTER TABLE public.recoleccion_movimiento ENABLE TRIGGER recepcion_exigida;")
-        old=sql('SELECT saldo_actual FROM public.recoleccion WHERE id=123')
-        receipt(20,payload(123),'RECHAZADO')
-        check(sql('SELECT saldo_actual FROM public.recoleccion WHERE id=123')==old and any(x['recoleccion_id']=='123' for x in call('SELECT public.m1_recepcion_diagnostico(1,NULL,100)')),'Conciliación histórica diagnostica sin reponer lo consumido')
-        sql('SELECT public.fn_recoleccion_registrar_desecho(124,1,20)',error='RECEPCION_CONFORME_REQUERIDA',service=True)
-        sql(inicio(20,124),error='RECEPCION_CONFORME_REQUERIDA',service=True)
-        sql("INSERT INTO public.recoleccion_movimiento(recoleccion_id,tipo_movimiento,delta,created_by) VALUES(124,'DESECHO',-1,20)",error='RECEPCION_CONFORME_REQUERIDA',service=True)
-        check(not any(x['recoleccion_id']=='124' for x in call('SELECT public.m2_origenes_leer(20,1,NULL,1,50)')['data']),'Orígenes y bypass ledger/RPC legados exigen recepción')
-        lote=call(inicio(20,100))['lote_vivero_id'];call('SELECT to_jsonb(x) FROM public.fn_recoleccion_registrar_desecho(100,1,20) x')
-        check(sql('SELECT saldo_actual FROM public.recoleccion WHERE id=100')=='94','Consumo y desecho elegibles preservan ledger/saldo M1')
-        sql("UPDATE public.recoleccion SET estado_registro='VALIDADO',usuario_validacion_id=4,fecha_validacion=CURRENT_DATE-1 WHERE id=141")
-        receipt(20,payload(141))
-        check(sql("SELECT usuario_validacion_id||':'||fecha_validacion::text FROM public.recoleccion WHERE id=141")=='4:'+sql('SELECT (CURRENT_DATE-1)::text'),'VALIDADO legado sin movimientos registra comprobación real sin sobrescribir autor/fecha de aprobación')
-        sql(inicio(20,100,2,ids=['1']),error='CAPACIDAD_INSUFICIENTE',service=True)
-        call(inicio(1,100,2))
-        check(sql('SELECT saldo_actual FROM public.recoleccion WHERE id=100')=='89','ADMIN conserva destino operativo explícito distinto de custodia sin traslado implícito ordinario')
-        # Fallo después de recepción/aprobación pero antes del terminal: rollback total.
+            r=receipt(actor,payload(rec,ids=['1']),'RECHAZADO');check(r['body']['error']['codigo']=='AUTORRECEPCION_PROHIBIDA','Autorrecepción prohibida incluso ADMIN')
+        for actor in (21,23,24,3):receipt(actor,payload(107,ids=['1']),'RECHAZADO')
+        # Rechazo no necesita evidencia y conserva 100 antes de la corrección a90.
+        old_location=sql('SELECT to_jsonb(u) FROM public.ubicacion u WHERE id=1')
+        r=receipt(20,reject(110));check(r['body']['resultado']['estado_registro']=='RECHAZADO' and r['body']['resultado']['recepcion_id'] is None,'Rechazar ficha es comando CONFIRMADO y no crea recepción')
+        correction={'cantidad_inicial_canonica':90,'observaciones':'Cantidad corregida'}
+        call(save(21,'EDITAR',110,1,correction,[]))
+        check(sql("SELECT cantidad_inicial_canonica||':'||ubicacion_id||':'||(motivo_rechazo IS NULL) FROM public.recoleccion WHERE id=110")=='90:1:true' and old_location==sql('SELECT to_jsonb(u) FROM public.ubicacion u WHERE id=1'),'Corrección misma ficha limpia motivo actual y conserva ubicación íntegra')
+        call(save(21,'ENVIAR',110,2,{},[]));receipt(20,reject(110));call(save(21,'EDITAR',110,4,{'observaciones':'Segundo ajuste'},[]));call(save(21,'ENVIAR',110,5,{},[]))
+        receipt(20,payload(110,qty=90))
+        check(sql("SELECT string_agg(metadata->'ficha_revisada'->>'cantidad_inicial_canonica',',' ORDER BY id) FROM public.recoleccion_historial WHERE recoleccion_id=110 AND tipo_historial='VALIDACION_RECHAZADA'")=='100,90','Múltiples rechazos conservan snapshots100 y90 y mismo código/origen')
+        r=receipt(20,payload(111,qty=80),'RECHAZADO');check(r['body']['error']['codigo']=='RECEPCION_NO_CONFORME' and sql('SELECT estado_registro FROM public.recoleccion WHERE id=111')=='PENDIENTE_VALIDACION','Diferencia no acepta ni ajusta ni rechaza ficha automáticamente')
+        for rec,qty,unit in ((112,1.5,'UNIDAD'),(113,0,'G'),(114,1,'GR'),(115,.0000001,'G')):receipt(20,payload(rec,qty=qty,unit=unit),'RECHAZADO')
+        sql("UPDATE public.recoleccion SET tipo_material='ESQUEJE',unidad_canonica='UNIDAD' WHERE id IN(116,117)")
+        receipt(20,payload(116,qty=100,unit='UNIDAD'));receipt(20,payload(117),'RECHAZADO')
+        sql('UPDATE public.recoleccion SET cantidad_inicial_canonica=0.000001,saldo_actual=0.000001 WHERE id=118');receipt(20,payload(118,qty=.000000001,unit='KG'))
+        check(True,'G permite seis decimales exactos, KG normaliza y UNIDAD/ESQUEJE exigen enteros')
+        for rec,date in ((119,'2099-01-01'),(120,'2000-01-01'),(121,'2026-02-30')):receipt(20,dict(payload(rec),fecha_recepcion=date),'RECHAZADO')
+        wrong=photos(22,122);receipt(20,payload(122,ids=wrong),'RECHAZADO')
+        wrong=photos(20,123);receipt(20,payload(124,ids=wrong),'RECHAZADO')
+        stale=photos(20,125);receipt(20,reject(125));call(save(21,'EDITAR',125,1,{'observaciones':'Conservo cantidad'},[]));call(save(21,'ENVIAR',125,2,{},[]));receipt(20,payload(125,ids=stale),'RECHAZADO')
+        stale_files=[{'ruta_archivo':f'recepcion/pendientes/20/125/{uuid.uuid4()}.jpg','mime_type':'image/jpeg','tamano_bytes':20}]
+        sql(f'SELECT public.m1_recepcion_evidencias_preparar(20,125,0,{lit(stale_files)})',error='REVISION_OBSOLETA',service=True)
+        check(True,'Carga iniciada antes del cambio de versión no se reetiqueta a la revisión nueva')
+        receipt(20,payload(125))
+        check(True,'Fotos se validan por actor/origen/vivero/revisión; versión anterior no se reutiliza')
+        # Envejecimiento sintético equivale a captura válida conservada al pasar los días.
+        sql('ALTER TABLE public.recoleccion DISABLE TRIGGER trg_recoleccion_acotar_excepcion_fecha_rechazo; UPDATE public.recoleccion SET fecha=CURRENT_DATE-70 WHERE id=126; ALTER TABLE public.recoleccion ENABLE TRIGGER trg_recoleccion_acotar_excepcion_fecha_rechazo')
+        receipt(20,reject(126));call(save(21,'EDITAR',126,1,{'observaciones':'Antigua conservada'},[]));call(save(21,'ENVIAR',126,2,{},[]));receipt(20,payload(126))
+        check(sql('SELECT fecha=(CURRENT_DATE-70) FROM public.recoleccion WHERE id=126')=='t','Captura envejecida conserva fecha al corregir/reenviar/recibir')
+        sql("UPDATE public.recoleccion SET fecha=CURRENT_DATE-46 WHERE id=127",error='Fecha fuera de rango')
+        sql(save(21,payload={'fecha':sql('SELECT (CURRENT_DATE-46)::text'),'tipo_material':'SEMILLA','ubicacion_id':1,'vivero_id':1,'metodo_id':1,'planta_id':1,'unidad_canonica':'G','cantidad_inicial_canonica':100,'codigo_trazabilidad':'REC-FECHA-FUERA'}),error='Fecha fuera de rango',service=True)
+        sql("UPDATE public.recoleccion SET estado_registro='VALIDADO' WHERE id=127",error='RECEPCION_CONFORME_REQUERIDA')
+        sql("SELECT public.m1_recoleccion_guardar(22,'APROBAR',127,0,'{}','[]')",error='Entrada inválida',service=True)
+        check(True,'Crear/cambiar fecha mantiene45d y VALIDADO no se obtiene por APROBAR/DML sin recepción')
+        # Rollback de toda la decisión y terminal ante fallos de infraestructura/catálogo.
         sql("CREATE FUNCTION public.t4_fallar() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'FALLO_T4'; END $$; CREATE TRIGGER t4_fallar BEFORE INSERT ON public.recoleccion_recepcion_comando FOR EACH ROW EXECUTE FUNCTION public.t4_fallar();")
-        p=payload(125);before=snap(125);sql(receive(20,p),error='FALLO_T4',service=True)
-        check(before==snap(125),'Fallo terminal revierte recepción, aprobación, snapshot, revisión, historia, vínculo y auditoría')
-        sql('DROP TRIGGER t4_fallar ON public.recoleccion_recepcion_comando')
-        sql('CREATE TRIGGER t4_fallar BEFORE INSERT ON public.recoleccion_historial FOR EACH ROW EXECUTE FUNCTION public.t4_fallar();')
-        p=payload(140);before=snap(140);sql(receive(20,p),error='FALLO_T4',service=True)
-        check(before==snap(140),'Fallo intermedio de historia revierte también el terminal; no se disfraza de rechazo de negocio')
+        p=payload(128);before=snap(128);sql(receive(20,p),error='FALLO_T4',service=True);check(before==snap(128),'Fallo terminal revierte recepción/snapshot/revisión/historial/evidencias')
+        sql('DROP TRIGGER t4_fallar ON public.recoleccion_recepcion_comando; CREATE TRIGGER t4_fallar BEFORE INSERT ON public.recoleccion_historial FOR EACH ROW EXECUTE FUNCTION public.t4_fallar()')
+        before=snap(129);sql(receive(20,reject(129)),error='FALLO_T4',service=True);check(before==snap(129),'Fallo historia rechazada no fabrica recibo de rollback')
         sql('DROP TRIGGER t4_fallar ON public.recoleccion_historial')
-        # Dos receptores y el mismo comando compiten bajo locks observados.
-        a=payload(126,actor=20);b=payload(126,actor=22)
-        out=race(receive(20,a),receive(22,b),'dos_receptores')
-        check('REVISION_OBSOLETA' in out and sql('SELECT count(*) FROM public.recoleccion_recepcion WHERE recoleccion_id=126')=='1','Dos receptores confirman una sola recepción')
-        p=payload(127);k=str(uuid.uuid4());out=race(receive(20,p,k),receive(20,p,k),'mismo_comando')
-        check(sql('SELECT count(*) FROM public.recoleccion_recepcion WHERE recoleccion_id=127')=='1','Doble envío concurrente confirma recibo único')
-        def lifecycle(op,user=24):
-            payload={'usuario_destino_id':str(user),'revision_esperada':sql(f'SELECT revision_autoridad FROM public.usuario WHERE id={user}'),'motivo':'Cambio sintético T4'}
-            if op=='CAMBIAR_ROL_GLOBAL': payload['rol_global']='VOLUNTARIO'
-            canon=json.dumps(payload,ensure_ascii=False,separators=(',',':'),sort_keys=True)
-            return f"SELECT public.pa_autoridad_ejecutar(1,'fixture-admin','{op}','{uuid.uuid4()}',{lit(payload)},'{canon}');"
-        p=payload(128,actor=24);race(assign(24,op='RETIRAR'),receive(24,p),'retiro_antes_recepcion')
-        check(sql('SELECT count(*) FROM public.recoleccion_recepcion WHERE recoleccion_id=128')=='0','Retiro previo impide recepción en la misma custodia')
-        call(assign(24));p=payload(129,actor=24);race(receive(24,p),assign(24,op='RETIRAR'),'recepcion_antes_retiro');call(assign(24))
+        a=payload(130,actor=20);b=payload(130,actor=22);out=race(receive(20,a),receive(22,b),'dos_receptores');check('REVISION_OBSOLETA' in out,'Dos receptores producen recepción única y revisión obsoleta')
+        p=payload(131);k=str(uuid.uuid4());out=race(receive(20,p,k),receive(20,p,k),'mismo_comando');check(sql('SELECT count(*) FROM public.recoleccion_recepcion WHERE recoleccion_id=131')=='1','UUID concurrente no duplica recepción')
+        out=race(receive(20,payload(132)),receive(22,reject(132)),'recibir_antes_rechazar');check('REVISION_OBSOLETA' in out,'Recibir contra rechazar serializa una sola decisión')
+        out=race(receive(20,reject(133)),receive(22,payload(133,actor=22)),'rechazar_antes_recibir');check('REVISION_OBSOLETA' in out,'Rechazar contra recibir serializa una sola decisión')
+        out=race(receive(20,reject(134)),save(21,'EDITAR',134,1,{'cantidad_inicial_canonica':90},[]),'rechazar_antes_corregir');check(sql('SELECT estado_registro FROM public.recoleccion WHERE id=134')=='BORRADOR','Corrección espera rechazo y mantiene la misma ficha')
+        # Reenvío y decisión vieja no se mezclan entre ciclos.
+        out=race(save(21,'ENVIAR',134,2,{},[]),receive(22,reject(134,rev=1)),'reenviar_antes_decision_vieja');check('REVISION_OBSOLETA' in out,'Reenvío invalida decisión de revisión anterior')
+        p=payload(135);out=race(assign(20,op='RETIRAR'),receive(20,p),'retiro_antes_recibir');check('CAPACIDAD_INSUFICIENTE' in out,'Retiro de vigencia bloquea recepción que espera')
+        call(assign(20));p=payload(136);race(receive(20,p),assign(20,op='RETIRAR'),'recibir_antes_retiro');call(assign(20))
+        def lifecycle(op,user=20):
+            data={'usuario_destino_id':str(user),'revision_esperada':sql(f'SELECT revision_autoridad FROM public.usuario WHERE id={user}'),'motivo':'Cambio sintético recepción'}
+            if op=='CAMBIAR_ROL_GLOBAL':data['rol_global']='VOLUNTARIO'
+            canon=json.dumps(data,ensure_ascii=False,separators=(',',':'),sort_keys=True)
+            return f"SELECT public.pa_autoridad_ejecutar(1,'fixture-admin','{op}','{uuid.uuid4()}',{lit(data)},'{canon}')"
         for i,op in enumerate(('INACTIVAR_CUENTA','CAMBIAR_ROL_GLOBAL')):
-            p=payload(130+i,actor=24);race(lifecycle(op),receive(24,p),op.lower()+'_antes_recepcion', 'CUENTA_NO_DISPONIBLE' if op=='INACTIVAR_CUENTA' else None)
-            check(sql(f'SELECT count(*) FROM public.recoleccion_recepcion WHERE recoleccion_id={130+i}')=='0','Baja/rol serializa y deniega recepción posterior')
-            sql("UPDATE public.usuario SET activo=true,rol='GENERAL' WHERE id=24")
-            p=payload(132+i,actor=24);race(receive(24,p),lifecycle(op),'recepcion_antes_'+op.lower())
-            sql("UPDATE public.usuario SET activo=true,rol='GENERAL' WHERE id=24")
-        p=payload(134,actor=24);k=str(uuid.uuid4());r=receipt(24,p,key=k);call(assign(24,op='RETIRAR'));call(lifecycle('CAMBIAR_ROL_GLOBAL'))
-        recovered=call(f"SELECT public.m1_recepcion_recuperar(24,'fixture-t2-coordinador','{k}')")
-        check(recovered['body']==r['body'],'Recuperación propia tras retiro M2 y rol no presta autorización vigente')
-        check(call(f"SELECT public.m1_recepcion_recuperar(20,'fixture-t2-operario','{k}')")['http_status']==202,'Recuperación no revela terminal ajeno')
-        sql("UPDATE public.usuario SET activo=true,rol='GENERAL' WHERE id=24");call(assign(24))
-        sql('SELECT public.m1_recepcion_leer(9007199254740996,100,NULL,20)',error='CAPACIDAD_INSUFICIENTE',service=True)
-        sql("INSERT INTO public.vivero(id,codigo,nombre) VALUES(9007199254740992,'BIG-A','Vivero BIG A'),(9007199254740993,'BIG-B','Vivero BIG B')")
-        call(assign(9007199254740995,9007199254740992))
-        sql('UPDATE public.recoleccion SET vivero_id=9007199254740993 WHERE id=135')
-        receipt(9007199254740995,payload(135,ids=['1']),'RECHAZADO')
-        sql('UPDATE public.recoleccion SET vivero_id=9007199254740992,revision_captura=9007199254740992 WHERE id=135')
-        p=payload(135,actor=9007199254740995);r=receipt(9007199254740995,p)
-        check(r['body']['resultado']['revision_nueva']=='9007199254740993' and r['body']['resultado']['vivero_id']=='9007199254740992','Custodias y revisiones BIGINT vecinos exactos sin Number')
-        sql("INSERT INTO public.recoleccion(id,usuario_id,fecha,estado_registro,codigo_trazabilidad,tipo_material,ubicacion_id,vivero_id,metodo_id,planta_id,unidad_canonica,cantidad_inicial_canonica,nombre_cientifico_snapshot,nombre_comercial_snapshot) SELECT i,21,CURRENT_DATE,'PENDIENTE_VALIDACION','T4-BIG-ORIGEN-'||i,'SEMILLA',1,i,1,1,'G',100,'Especie sintética','Tara' FROM unnest(ARRAY[9007199254740992,9007199254740993]::bigint[]) i; INSERT INTO public.evidencias_trazabilidad(tipo_entidad_id,entidad_id,bucket,ruta_archivo,tipo_archivo,mime_type,creado_por_usuario_id) SELECT 1,r.id,'recoleccion_fotos','big/'||r.id||'/'||n,'FOTO','image/jpeg',21 FROM public.recoleccion r CROSS JOIN generate_series(1,2) n WHERE r.id>9007199254740991;")
-        sql('SELECT public.m1_recepcion_leer(9007199254740995,9007199254740993,NULL,20)',error='CAPACIDAD_INSUFICIENTE',service=True)
-        r=receipt(9007199254740995,payload(9007199254740992,actor=9007199254740995))
-        check(r['body']['resultado']['recoleccion_id']=='9007199254740992','Orígenes BIGINT vecinos mayores a MAX_SAFE_INTEGER también conservan identidad exacta')
-        sql('SELECT public.m1_recepcion_proyectar(20,100,true)',error='permission denied',service=True)
+            p=payload(137+i);out=race(lifecycle(op),receive(20,p),op.lower()+'_antes_recepcion','CUENTA_NO_DISPONIBLE' if op=='INACTIVAR_CUENTA' else None)
+            check(sql(f'SELECT count(*) FROM public.recoleccion_recepcion WHERE recoleccion_id={137+i}')=='0','Baja/rol serializan recepción')
+            sql("UPDATE public.usuario SET activo=true,rol='VALIDADOR' WHERE id=20")
+            race(receive(20,payload(139+i)),lifecycle(op),'recepcion_antes_'+op.lower());sql("UPDATE public.usuario SET activo=true,rol='VALIDADOR' WHERE id=20")
+        p=reject(141);k=str(uuid.uuid4());r=receipt(20,p,key=k);call(assign(20,op='RETIRAR'));call(lifecycle('CAMBIAR_ROL_GLOBAL'))
+        check(call(f"SELECT public.m1_recepcion_recuperar(20,'fixture-t2-operario','{k}')")['body']==r['body'],'Recuperación propia tras pérdida de rol/vivero conserva rechazo confirmado')
+        check(call(receive(20,p,k))['body']==r['body'],'Replay propio tras pérdida de rol no permite nueva intención')
+        sql('SELECT public.m1_recepcion_leer(20,141,NULL,20)',error='cuenta interna',service=True)
+        check(call(f"SELECT public.m1_recepcion_recuperar(22,'fixture-t2-ambos','{k}')")['http_status']==202,'Recuperación no revela comando ajeno')
+        sql("UPDATE public.usuario SET activo=false WHERE id=20");sql(f"SELECT public.m1_recepcion_recuperar(20,'fixture-t2-operario','{k}')",error='CUENTA_NO_DISPONIBLE',service=True)
+        sql("UPDATE public.usuario SET activo=true,rol='VALIDADOR' WHERE id=20");call(assign(20))
+        # Material recibido es operativo para GENERAL con M2, sin rol receptor ni M1.
+        lote=call(inicio(24,100))['lote_vivero_id'];call('SELECT to_jsonb(x) FROM public.fn_recoleccion_registrar_desecho(100,1,24) x')
+        check(sql('SELECT saldo_actual FROM public.recoleccion WHERE id=100')=='94','GENERAL M2 INICIO/DESECHO preserva débito único y saldo')
+        ids=evidence(24);sql(f"SELECT * FROM public.fn_vivero_crear_lote_desde_recoleccion(100,1,24,CURRENT_DATE-1,CURRENT_DATE-1,5,'G',NULL,ARRAY[{','.join(ids)}]::bigint[])",error='INICIO_NO_PUEDE_PRECEDER_RECEPCION',service=True)
+        check(True,'INICIO no puede preceder la recepción física aunque entre en ventanaVivero')
+        # Un legado inconsistente no es habilitado por lectura ni por escritores.
+        sql("ALTER TABLE public.recoleccion DISABLE TRIGGER recepcion_congelar; UPDATE public.recoleccion SET estado_registro='VALIDADO' WHERE id=142; ALTER TABLE public.recoleccion ENABLE TRIGGER recepcion_congelar")
+        sql(inicio(24,142),error='RECEPCION_CONFORME_REQUERIDA',service=True)
+        sql('SELECT public.fn_recoleccion_registrar_desecho(142,1,24)',error='RECEPCION_CONFORME_REQUERIDA',service=True)
+        sql("INSERT INTO public.recoleccion_movimiento(recoleccion_id,tipo_movimiento,delta,created_by) VALUES(142,'DESECHO',-1,24)",error='RECEPCION_CONFORME_REQUERIDA',service=True)
+        check(call('SELECT public.m2_origenes_leer(24,1,142,1,20,true,true)')['data'][0]['estado_habilitacion']=='PENDIENTE_RECEPCION','Legado sin recepción visible como bloqueado sin conciliación')
+        receipt(20,payload(143));call('SELECT to_jsonb(x) FROM public.fn_recoleccion_registrar_desecho(143,94,24) x')
+        out=race(inicio(24,143),inicio(24,143),'inicios_stock_suficiente','saldo suficiente');check(sql('SELECT saldo_actual FROM public.recoleccion WHERE id=143')=='1','INICIO concurrente no sobreconsume stock y cada lote tiene un solo débito')
+        sql("INSERT INTO public.recoleccion_movimiento(recoleccion_id,tipo_movimiento,delta,unidad_medida_movimiento,lote_vivero_id,created_by) VALUES(100,'CONSUMO_A_VIVERO',-5,'G',"+str(lote)+",24)",error='VINCULO_CONSUMO_LOTE_INICIO_INCONSISTENTE',service=True)
         sql('DELETE FROM public.recoleccion_recepcion',error='append-only')
-        check(sql("SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'm1_recepcion_%' AND (has_function_privilege('anon',p.oid,'EXECUTE') OR has_function_privilege('authenticated',p.oid,'EXECUTE'))")=='0','RPC/helpers sin EXECUTE público/autenticado e historia inmutable')
-        sql('CREATE ROLE t4_heredado NOLOGIN; GRANT t4_heredado TO anon; GRANT SELECT ON public.recoleccion_recepcion_observacion TO t4_heredado;')
-        sql((ROOT/'migrations/096_recoleccion_recepcion.sql').read_text(),error='T4_PRIVILEGIO_TABLA_INESPERADO')
-        sql('REVOKE SELECT ON public.recoleccion_recepcion_observacion FROM t4_heredado; REVOKE t4_heredado FROM anon; DROP ROLE t4_heredado;')
-        sql('ALTER TABLE public.recoleccion_recepcion_observacion ALTER COLUMN clase TYPE varchar;')
-        sql((ROOT/'migrations/096_recoleccion_recepcion.sql').read_text(),error='T4_CATALOGO_INCOMPATIBLE')
-        sql('ALTER TABLE public.recoleccion_recepcion_observacion ALTER COLUMN clase TYPE text;')
-        check(True,'096 aborta ante drift de catálogo y ACL heredadas sin corregirlos silenciosamente')
+        check(sql("SELECT count(*) FROM pg_proc p WHERE p.pronamespace='public'::regnamespace AND (p.proname LIKE 'm1_recepcion_%' OR p.proname='m2_movimiento_unidades') AND (has_function_privilege('anon',p.oid,'EXECUTE') OR has_function_privilege('authenticated',p.oid,'EXECUTE'))")=='0','Helpers/RPC privados y recepción inmutable')
+        check(sql("SELECT count(*) FROM unnest(ARRAY['anon','authenticated']) u CROSS JOIN unnest(ARRAY['public.recoleccion','public.recoleccion_movimiento']) t WHERE has_table_privilege(u,t,'INSERT,UPDATE,DELETE,TRUNCATE') OR has_any_column_privilege(u,t,'INSERT,UPDATE,REFERENCES')")=='0','100 conserva cierre DML público097')
         if args.postgis:
             call(evento(20,lote,'EMBOLSADO',qty=30))
             sql("INSERT INTO public.campania(id,nombre) VALUES(4,'Campaña M3 T4'); INSERT INTO public.subcampania(id,campania_id,nombre,estado,codigo_trazabilidad,created_by,updated_by,zona_id,poligono_geom) VALUES(61,4,'M3 independiente','ACTIVA','SUB-T4-M3',1,1,1,ST_GeomFromText('POLYGON((-68.2 -16.6,-68.0 -16.6,-68.0 -16.4,-68.2 -16.4,-68.2 -16.6))',4326)); INSERT INTO public.subcampania_meta_especie(subcampania_id,planta_id) VALUES(61,1); INSERT INTO public.subcampania_equipo(subcampania_id,usuario_id,rol,agregado_by) VALUES(61,24,'COORDINADOR',1),(61,21,'OPERARIO',1); INSERT INTO public.registro_plantacion(id,subcampania_id,responsable_id,fecha_plantacion,cantidad_total_plantada,nombre_responsable_snapshot,codigo_trazabilidad,created_by,cantidad_muerta_acumulada) VALUES(4000,61,21,CURRENT_DATE,2,'Actor M3','T4-GRUPO-LEGADO',21,2);")
@@ -286,154 +288,42 @@ def main():
             details=lit([{'asignacion_id':asig,'lote_vivero_id':lote,'planta_id':1,'cantidad':1}])
             r=call(f"SELECT to_jsonb(x) FROM public.fn_m3_registrar_plantacion(61,true,4000,CURRENT_DATE,21,-16.5,-68.1,NULL,ARRAY[]::bigint[],{details},ARRAY[{ev}]::bigint[]) x")
             check(r['gps_dentro_poligono'] and before==sql(f'SELECT saldo_vivo_actual FROM public.lote_vivero WHERE id={lote}') and m1==sql('SELECT saldo_actual FROM public.recoleccion WHERE id=100'),'M3 consume asignación sin M2/recepción adicional ni doble débito; PostGIS real')
-        if args.conciliacion:
-            from vivero_conciliacion_checks import comprobar_conciliacion, instalar_conciliacion
-
-            fixture = ROOT/'test/db/vivero-conciliacion-fixture.sql'
-            run(command()+['-f',str(fixture)])
-            # Hechos de prueba válidos bajo las reglas antiguas antes de simular su antigüedad.
-            sql('ALTER TABLE public.recoleccion_movimiento DISABLE TRIGGER recepcion_exigida')
-            lote_historico=call(inicio(20,201))['lote_vivero_id']
-            sql("""
-                INSERT INTO public.recoleccion_movimiento
-                  (recoleccion_id,tipo_movimiento,delta,unidad_medida_movimiento,motivo,created_by)
-                VALUES (203,'DESECHO',-10,'G','DESECHO_OTRO',20),
-                       (208,'CONSUMO_A_VIVERO',-10,'G','CONSUMO_PARA_VIVERO',20),
-                       (214,'DESECHO',-10,'G','DESECHO_OTRO',20),
-                       (219,'DESECHO',-10,'G','DESECHO_OTRO',20),
-                       (227,'CORRECCION',-10,'G','DESECHO_OTRO',20),
-                       (228,'CORRECCION',10,'G','DESECHO_OTRO',20),
-                       (229,'AJUSTE_MIGRACION',-10,'G','DESECHO_OTRO',20),
-                       (230,'AJUSTE_MIGRACION',10,'G','DESECHO_OTRO',20);
-                ALTER TABLE public.recoleccion_movimiento ENABLE TRIGGER recepcion_exigida;
-            """)
-            call(evento(20,lote_historico,'EMBOLSADO',qty=30))
-            sql("UPDATE public.subcampania_equipo SET usuario_id=24 WHERE subcampania_id=11 AND rol='COORDINADOR'")
-            asignacion_historica=call(entrega(24,lote_historico))['asignacion_id']
-            receipt(20,payload(209))
-            # Se simula el paso del tiempo únicamente en el fixture. 090 vuelve a
-            # regir antes de instalar 097 y conserva su definición de catálogo.
-            sql("""
-                DO $fixture$
-                DECLARE regla text;
-                BEGIN
-                  SELECT pg_get_constraintdef(oid) INTO STRICT regla
-                    FROM pg_constraint WHERE conrelid='public.recoleccion'::regclass
-                    AND conname='chk_fecha_rango';
-                  ALTER TABLE public.recoleccion DROP CONSTRAINT chk_fecha_rango;
-                  ALTER TABLE public.recoleccion DISABLE TRIGGER recepcion_congelar;
-                  UPDATE public.recoleccion SET fecha=CURRENT_DATE-70,
-                    fecha_validacion=CASE WHEN estado_registro='VALIDADO' THEN CURRENT_DATE-69 END
-                    WHERE (id BETWEEN 201 AND 234 AND id<>214)
-                       OR id IN (9007199254741000,9007199254741001);
-                  ALTER TABLE public.recoleccion ENABLE TRIGGER recepcion_congelar;
-                  EXECUTE 'ALTER TABLE public.recoleccion ADD CONSTRAINT chk_fecha_rango ' || regla;
-                END $fixture$;
-            """)
-            sql(inicio(20,209),error='chk_fecha_rango',service=True)
-            check(True,'096 reproduce el bloqueo de saldo en un origen ordinario T4 envejecido')
-            migration = next((ROOT/'migrations').glob('097_*'))
-            migrations.append(migration.name)
-            preflight = ROOT/'scripts/qa/vivero-conciliacion-preflight.sql'
-            catalogo_antes = json.loads(run(command()+['-f',str(preflight)]))
-            check(catalogo_antes['entorno']['transaccion_solo_lectura']=='on'
-                  and catalogo_antes['comprobaciones']['enums_requeridos_presentes']
-                  and not catalogo_antes['comprobaciones']['enums_sin_extras']
-                  and not catalogo_antes['objetos_097_encontrados'],
-                  'Preflight de solo lectura distingue valores requeridos de extras antes de 097')
-            instalar_conciliacion(sql=sql, check=check, migracion=migration.read_text())
-            catalogo_despues = json.loads(run(command()+['-f',str(preflight)]))
-            check(catalogo_despues['entorno']['transaccion_solo_lectura']=='on'
-                  and bool(catalogo_despues['objetos_097_encontrados'])
-                  and all(
-                      tabla['permisos_efectivos'][rol]['privilegios_servidor']['SELECT']
-                      and not tabla['permisos_efectivos'][rol]['privilegios_servidor']['INSERT']
-                      for tabla in catalogo_despues['tablas_y_acl']
-                      if tabla['nombre'] in ('recoleccion','recoleccion_movimiento')
-                      for rol in ('anon','authenticated')
-                  ),
-                  'Preflight posterior muestra objetos 097 y el cierre efectivo sin modificar el catálogo')
-            postflight_file = ROOT/'scripts/qa/vivero-conciliacion-postflight.sql'
-            postflight = json.loads(run(command()+['-f',str(postflight_file)]))
-            check(postflight['entorno']['transaccion_solo_lectura']=='on'
-                  and all(value is True for value in postflight['comprobaciones'].values())
-                  and postflight['conteos']=={'eventos_totales':0,'origenes_en_padron':0},
-                  'Postflight de solo lectura verifica la instalación nueva y el padrón vacío')
-            comprobar_conciliacion(
-                sql=sql, call=call, lit=lit, check=check, race=race, assign=assign,
-                inicio=inicio, evento=evento, entrega=entrega, today=today,
-                lote_historico=lote_historico, asignacion_historica=asignacion_historica,
-                postgis=args.postgis,
-            )
-            postflight = json.loads(run(command()+['-f',str(postflight_file)]))
-            check(all(value is True for value in postflight['comprobaciones'].values())
-                  and postflight['conteos']['eventos_totales']>0,
-                  'Postflight conserva controles y cuenta hechos después de las operaciones sintéticas')
-            if args.revision_conciliacion:
-                from vivero_conciliacion_checks import comprobar_requisitos_inicio
-
-                migration = next((ROOT/'migrations').glob('099_*'))
-                run(command()+['-f',str(migration)])
-                migrations.append(migration.name)
-                comprobar_requisitos_inicio(sql=sql, call=call, check=check, inicio=inicio)
+        sql('ALTER TABLE public.recoleccion_recepcion_evidencia_contexto ALTER COLUMN revision_captura TYPE numeric')
+        sql(migration.read_text(),error='RECEPCION_UNICA_CATALOGO_INCOMPATIBLE')
+        sql('ALTER TABLE public.recoleccion_recepcion_evidencia_contexto ALTER COLUMN revision_captura TYPE bigint')
+        check(True,'100 aborta ante drift de la revisión de evidencia sin corregir catálogo silenciosamente')
+        sql('UPDATE public.recoleccion SET revision_captura=9007199254740992 WHERE id=144')
+        receipt(20,reject(144))
+        snapshot = json.loads(sql("SELECT metadata->'ficha_revisada' FROM public.recoleccion_historial WHERE recoleccion_id=144 AND tipo_historial='VALIDACION_RECHAZADA'"))
+        exact_fields = ('id','usuario_id','ubicacion_id','vivero_id','planta_id','metodo_id','revision_captura')
+        check(all(isinstance(snapshot[field], str) for field in exact_fields)
+              and snapshot['revision_captura']=='9007199254740992'
+              and isinstance(snapshot['ubicacion']['id'], str),
+              'Historial conserva IDs y revisión BIGINT como texto también dentro del snapshot revisado')
+        # Repetición sobre target ya poblado conserva hechos y saldos.
+        before=snap(100);run(command()+['-f',str(migration)]);check(before==snap(100),'100 reinstalada sobre target poblado no borra ni duplica hechos')
         if not args.sql_only:
             sql("CREATE FUNCTION public.t4_http_transport(p_sql text) RETURNS jsonb LANGUAGE plpgsql AS $$ DECLARE r jsonb; BEGIN EXECUTE p_sql INTO r; RETURN jsonb_build_object('data',r,'error',NULL); EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('data',NULL,'error',jsonb_build_object('code',SQLSTATE,'message',SQLERRM)); END $$;")
             http_env=dict(env,T4_DB_SOCKET=str(socket),T4_DB_PORT='55444',T4_DB_PSQL=binaries['psql'],NODE_ENV='test')
-            if args.revision_conciliacion:
-                http_env['T4_DB_REVISION_CONCILIACION']='1'
-            jest=['node',str(ROOT/'node_modules/jest/bin/jest.js'),'--config',str(ROOT/'test/jest-recepcion-semillas-db.json'),'--runInBand','--cacheDirectory=/private/tmp/t4-jest']
-            http=[]
-            suites=['test/db/recepcion-semillas-http.spec.ts']
-            if args.conciliacion:
-                suites.insert(0,'test/db/vivero-conciliacion-http.spec.ts')
-            for suite in suites:
-                r=subprocess.run(jest+['--testMatch=**/'+suite,'--runTestsByPath',suite],
-                                 cwd=ROOT,env=http_env,timeout=180)
-                http.append({'exit_code':r.returncode,'suite':suite})
-                if r.returncode: raise AssertionError('Falló HTTP aislado: '+suite)
+            suite='test/db/recepcion-semillas-http.spec.ts'
+            jest=['node',str(ROOT/'node_modules/jest/bin/jest.js'),'--config',str(ROOT/'test/jest-recepcion-semillas-db.json'),'--runInBand','--cacheDirectory=/private/tmp/r3-jest','--testMatch=**/'+suite,'--runTestsByPath',suite]
+            r=subprocess.run(jest,cwd=ROOT,env=http_env,timeout=180)
+            http={'exit_code':r.returncode,'suite':suite}
+            if r.returncode:raise AssertionError('Falló HTTP aislado: '+suite)
         failed=False
     finally:
         for p in children:
-            if p.poll() is None: p.kill();p.wait(timeout=5)
+            if p.poll() is None:p.kill();p.wait(timeout=5)
         if started or (cluster/'postmaster.pid').exists():run([binaries['pg_ctl'],'-D',str(cluster),'-w','-t','15','stop','-m','fast'])
         stopped=not (cluster/'postmaster.pid').exists()
-        if stopped: shutil.rmtree(directory)
+        if stopped:shutil.rmtree(directory)
         if args.evidence:
             files=list((ROOT/'src/recolecciones').rglob('*.ts'))+[ROOT/'migrations'/m for m in migrations]+[Path(__file__).resolve(),ROOT/'test/db/recepcion-semillas-http.spec.ts']
-            if args.conciliacion:
-                files+=list((ROOT/'src/lotes-vivero').rglob('*conciliacion*.ts'))
-                files += [ROOT/p for p in (
-                    'scripts/qa/vivero-conciliacion-preflight.sql',
-                    'scripts/qa/vivero-conciliacion-postflight.sql',
-                    'scripts/qa/vivero_conciliacion_checks.py',
-                    'src/lotes-vivero/api/vivero-accesos.controller.ts',
-                    'src/lotes-vivero/application/vivero-accesos.service.ts',
-                    'src/lotes-vivero/application/vivero-inicio.service.ts',
-                    'test/db/vivero-conciliacion-fixture.sql',
-                    'test/db/vivero-conciliacion-http.spec.ts',
-                )]
-            evidence = {
-                'tarea': 'VIVERO_CONCILIACION_HISTORICA' if args.conciliacion else 'T4_RECEPCION_SEMILLAS',
-                'estado': 'FALLIDO' if failed else 'CORRECTO',
-                'fecha': time.strftime('%Y-%m-%d'),
-                'entorno': {
-                    'tipo': 'SINTETICO_LOCAL', 'postgres': version, 'tcp': False, 'sin_env': True,
-                    'postgis': postgis_version or False, 'cluster_detenido': stopped,
-                    'directorio_eliminado': not directory.exists(),
-                },
-                'base': run(['git','-C',str(ROOT),'rev-parse','HEAD']),
-                'migraciones': migrations,
-                'comprobaciones': checks,
-                'carreras': races,
-                'http': http,
-                'postflight': postflight,
-                'sha256': {
-                    str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
-                    for p in sorted(set(files)) if p.exists()
-                },
-            }
-            args.evidence.write_text(json.dumps(evidence, ensure_ascii=False, indent=2)+'\n')
-    suite = 'T4 y conciliación histórica' if args.conciliacion else 'T4'
-    print(f'{suite}: {len(checks)} grupos SQL y {len(races)} carreras aprobados.',flush=True)
+            evidence={'tarea':'RECOLECCION_RECEPCION_UNICA','estado':'FALLIDO' if failed else 'CORRECTO','fecha':time.strftime('%Y-%m-%d'),
+                'entorno':{'tipo':'SINTETICO_LOCAL','postgres':version,'tcp':False,'sin_env':True,'postgis':postgis_version or False,'cluster_detenido':stopped,'directorio_eliminado':not directory.exists()},
+                'base':run(['git','-C',str(ROOT),'rev-parse','HEAD']),'migraciones':migrations,'comprobaciones':checks,'carreras':races,'http':http,
+                'sha256':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(files)) if p.exists()}}
+            args.evidence.write_text(json.dumps(evidence,ensure_ascii=False,indent=2)+'\n')
+    print(f'Recepción única: {len(checks)} grupos SQL y {len(races)} carreras aprobados.',flush=True)
 
-if __name__=='__main__': main()
+if __name__=='__main__':main()

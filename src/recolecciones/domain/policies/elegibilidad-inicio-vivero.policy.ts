@@ -52,14 +52,10 @@ export class ElegibilidadInicioViveroPolicy {
     const habilitada =
       habilitacion === undefined
         ? recoleccion.recepcion_conforme === true
-        : habilitacion === 'RECEPCION_CONFORME' ||
-          habilitacion === 'CONCILIACION_CONFORME';
+        : habilitacion === 'RECEPCION_CONFORME';
     const motivoMaterial = habilitada
       ? null
-      : habilitacion === 'PENDIENTE_CONCILIACION' ||
-          habilitacion === 'INCIDENCIA_CONCILIACION'
-        ? 'Se requiere conciliación histórica conforme del remanente.'
-        : 'Se requiere recepción física conforme.';
+      : 'Se requiere recepción física conforme.';
 
     if (estadoRegistro !== EstadoRegistro.VALIDADO) {
       return this.crearResultado(

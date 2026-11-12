@@ -4,32 +4,33 @@ Anexo a [pinata.md](./pinata.md) y [recolecciones.md](./recolecciones.md). Descr
 
 ## Cuándo se dispara
 
-La subida automática a Pinata **no ocurre en la creación** (`POST /api/recolecciones`). Ocurre durante la **aprobación de validación**:
+La subida automática a Pinata ocurre después de confirmar la **recepción y validación**:
 
 ```txt
-PATCH /api/recolecciones/:id/approve   (solo VALIDADOR o ADMIN)
+POST /api/v1/recepcion-semillas/:id/recibir-validar
 ```
 
-Razón: solo las recolecciones validadas deben quedar inmutables en IPFS/blockchain. Mientras una recolección esté en `BORRADOR` o `PENDIENTE_VALIDACION`, puede ser editada o rechazada y no debe consumir recursos on-chain.
+La operación requiere ADMIN global o VALIDADOR con asignación vigente al vivero,
+siempre distinto del recolector. BORRADOR y RECHAZADO permiten corrección.
+PENDIENTE_VALIDACION espera la decisión de recepción y mantiene la ficha congelada.
 
-## Flujo end-to-end (aprobación)
+## Flujo end-to-end de recepción
 
 ```
-PATCH /api/recolecciones/:id/approve
+POST /api/v1/recepcion-semillas/:id/recibir-validar
          │
          ▼
-1. RecoleccionValidacionService valida estado y rol
+1. RecoleccionRecepcionService ejecuta la RPC de recepción
          │
          ▼
-2. Actualiza estado_registro → VALIDADO
+2. PostgreSQL confirma recepción, VALIDADO, revisión, evidencia, historial y recibo
          │
          ▼
-3. RecoleccionBlockchainService:
+3. Sólo la primera ejecución confirmada llama RecoleccionBlockchainService
    a. Genera JSON NFT con datos de la recolección
    b. PinataService.uploadJson() → IPFS CID
-   c. Persiste metadata_ipfs_url en tabla recoleccion
-   d. BlockchainService.mint() → token NFT
-   e. Persiste token_id / tx_hash
+   c. BlockchainService.mintNFT() → token NFT
+   d. Persiste blockchain_url / token_id / transaction_hash
 ```
 
 Implementación: [src/recolecciones/application/recoleccion-blockchain.service.ts](../../src/recolecciones/application/recoleccion-blockchain.service.ts).
@@ -61,21 +62,28 @@ Columnas relevantes en la tabla `recoleccion`:
 
 | Columna | Tipo | Cuándo se llena |
 |---|---|---|
-| `metadata_ipfs_url` | TEXT | Tras subir el JSON a Pinata |
-| `nft_token_id` | TEXT/NUMERIC | Tras el `mint` on-chain |
-| `nft_tx_hash` | TEXT | Tras el `mint` on-chain |
+| `blockchain_url` | TEXT | Tras completar el `mint`, enlace al explorador |
+| `token_id` | TEXT | Identificador devuelto por el `mint` |
+| `transaction_hash` | TEXT | Transacción devuelta por el `mint` |
 
 ## Manejo de fallos
 
-- Si la subida a Pinata falla, la transición a `VALIDADO` se revierte o se loguea según `RecoleccionBlockchainService`. Revisar logs del backend ante un `metadata_ipfs_url` nulo en una recolección validada.
-- Si el `mint` falla pero el JSON sí se subió, queda el CID en `metadata_ipfs_url` para reintentar manualmente vía `POST /api/blockchain/mint` con esa URI.
+- Un fallo de Pinata o blockchain conserva la recepción confirmada y se registra
+  en los logs del backend. El recibo identifica el anclaje como `FUERA_TRANSACCION`.
+- Replay y recuperación no vuelven a intentar el mint. Una interrupción después
+  del commit puede dejarlo pendiente. No existe outbox ni reintento durable.
+- El servicio actual guarda las referencias en Recolección después de completar
+  el mint. Una subida IPFS seguida de un fallo de mint no garantiza una URI
+  persistida para recuperación automática.
 
 ## Verificación rápida
 
 ```sql
-SELECT codigo_trazabilidad, estado_registro, metadata_ipfs_url, nft_token_id
+SELECT codigo_trazabilidad, estado_registro, blockchain_url, token_id,
+       transaction_hash
 FROM recoleccion
 WHERE id = :id;
 ```
 
-Abrir el JSON en `https://gateway.pinata.cloud/ipfs/<cid>` (sin el prefijo `ipfs://`).
+El contrato de recepción y sus límites están en la
+[guía consumible](../../docs/t4-recepcion-semillas.md).

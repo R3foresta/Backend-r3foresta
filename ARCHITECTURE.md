@@ -7,7 +7,7 @@ viven en [r3foresta-docs](https://github.com/R3foresta/r3foresta-docs).
 
 Actualización transversal del 5 de noviembre de 2026: [T1 M1 local](docs/t1-acceso-recoleccion.md)
 añade 092/093, acceso explícito independiente del rol y gestión ADMIN recuperable.
-T2 incorpora [asignaciones por vivero](docs/t2-acceso-viveros.md) con 094/095; revisión y aplicación/corte remoto conservan estado separado. T3 añade administración visual y proyecciones exactas, [revisadas localmente el 6 de noviembre](docs/evidencia/t3-revision-coordinadora-2026-11-06.json). T4 añade localmente [recepción física e incidencias](docs/t4-recepcion-semillas.md) con 096 y PWA, [revisadas y corregidas localmente](docs/evidencia/t4-revision-coordinadora-2026-11-06.json); conciliación, aplicación/corte remoto pendientes, T5 separado.
+T2 incorpora [asignaciones por vivero](docs/t2-acceso-viveros.md) con 094/095; revisión y aplicación/corte remoto conservan estado separado. T3 añade administración visual y proyecciones exactas, [revisadas localmente el 6 de noviembre](docs/evidencia/t3-revision-coordinadora-2026-11-06.json). La [recepción única](docs/t4-recepcion-semillas.md) con 100 reemplaza aprobación documental y conciliación de prueba. Pablo reportó reinicio y aplicación exitosa de 100 el 12 de noviembre. Cotejo remoto y corte coordinado pendientes. T5 separado.
 
 ## Fuentes y mapa de código
 
@@ -44,9 +44,12 @@ Perfil/v1 y participación usan el guard de cuenta activa; cada operación valid
 GET del plan conserva la lectura para cuentas activas y su escritura requiere ADMIN.
 
 En M1, GENERAL/VALIDADOR activos necesitan vigencia explícita para capturar y
-mantener lo propio; ADMIN deriva acceso. La aprobación propia está prohibida incluso
-para ADMIN. T2 limita revisión documental a ADMIN/VALIDADOR asignado al almacenamiento; T4 habilita recepción conjunta para GENERAL/VALIDADOR con M2 de custodia, sin M1 y sin autorrecepción. La revisión documental legada conserva su audiencia y no acredita recepción física. DESECHO exige ADMIN u operario vigente del almacenamiento, sin M1 ni autoridad por autoría. Las capacidades M1 tienen contrato propio, separado
-del DTO de participación.
+mantener lo propio; ADMIN deriva acceso. La recepción requiere ADMIN global o VALIDADOR con
+asignación explícita vigente al almacenamiento, sin M1 y sin autorrecepción.
+Bandeja, detalle, evidencias, confirmación y rechazo comparten esa autoridad.
+ADMIN puede recibir en cualquier vivero sin vigencia. GENERAL con M2 mantiene INICIO y
+DESECHO sobre material recibido. Las capacidades M1 tienen contrato propio,
+separado del DTO de participación.
 
 Los controllers de campañas, subcampañas, recolecciones, vivero, plantaciones,
 organizaciones y evidencias usan guard interno. Usuarios/perfil y participación
@@ -91,18 +94,26 @@ importaciones/SQL privilegiado que omitan la disciplina de cuentas → ámbitos.
 
 T2 mantiene cuenta SHARE en operación y destino UPDATE en retiro, compartido con rol/baja072; campañas → hijas → asignaciones → lote/origen → fotos conservan el orden de077. Vigencias/revisión/historial/terminal M2 se confirman juntos. Las evidencias pendientes guardan contexto inmutable y se revalidan al vincular; el bucket legado conserva URLs públicas.
 
-097 añade la [conciliación histórica del remanente](docs/vivero-conciliacion-historica.md).
-Padrón, comprobación y recibo se serializan con cuenta → comando → origen → fotos.
-La misma elegibilidad SQL se usa al consultar, iniciar lote y registrar el
-movimiento. La ventana de captura conserva su alcance y permite recalcular un
-saldo antiguo a partir del ledger sin editar el origen.
-098 añade políticas restrictivas dedicadas para el bucket privado de
-conciliación en `storage.buckets` y `storage.objects`. Se aplicó y cotejó el
-10 de noviembre; el bucket se creó por API. [Entorno y límites verificados](docs/evidencia/vivero-conciliacion-storage-aplicado-2026-11-10.json).
+100 conserva el cierre DML, el ledger protegido, las unidades y el saldo exacto
+de 097–099 y sustituye su recepción/conciliación por una decisión única. Cuenta →
+comando → origen → fotos serializa recepción/rechazo frente a retiro, rol y baja.
+El rechazo conserva el snapshot previo de la ficha y permite corregir la misma
+identidad. Las fotos de recepción quedan ligadas a una revisión de captura.
+Recepción conforme, historial y terminal se confirman juntos; INICIO exige el
+hecho físico, fechas ordenadas y débito único. La ventana de 45 días solo se
+revalida al crear o cambiar la fecha de recolección.
 
-La validación de una Recolección precede a Pinata/mint; errores externos no revierten
-el hecho validado. No hay outbox/reintento durable para esos efectos. PostgreSQL
-continúa siendo la fuente operativa de verdad.
+El esquema efectivo conserva hecho/comando/contexto/vínculo de recepción y retira
+observaciones y conciliación. `recibido_por`/`registrado_en` pertenecen al hecho de
+recepción; `fecha_recepcion` es el día físico. La primera instalación exige datos
+operativos vacíos y no hace backfill. El reinicio de pruebas y la limpieza externa
+de imágenes requieren verificar destino antes del corte; no los ejecuta esta guía.
+
+Los efectos Pinata/blockchain y las cargas Storage siguen fuera de la transacción
+SQL. Tras la primera confirmación conforme se reclama atómicamente el anclaje desde
+VALIDADO; replay/recuperación no vuelven a ejecutar Pinata/mint. No hay outbox
+durable: una caída tras el commit puede dejar el anclaje pendiente, y un fallo
+externo no revierte el hecho confirmado. No se promete ejecución exactamente una vez.
 
 ## Migraciones y evidencia
 

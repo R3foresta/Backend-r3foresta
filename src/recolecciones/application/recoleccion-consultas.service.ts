@@ -476,7 +476,7 @@ export class RecoleccionConsultasService {
     return this.findOne(id, cantidad);
   }
 
-  async findOne(id: number, cantidadSolicitadaVivero?: number) {
+  async findOne(id: number | string, cantidadSolicitadaVivero?: number) {
     const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('recoleccion')
@@ -628,8 +628,6 @@ export class RecoleccionConsultasService {
       cantidad_inicial_canonica,
       saldo_actual,
       estado_operativo,
-      usuario_validacion_id,
-      fecha_validacion,
       revision_captura::text,
       m2_estado_habilitacion,
       recepcion:recoleccion_recepcion(id::text,fecha_recepcion,recibido_por::text,registrado_en),

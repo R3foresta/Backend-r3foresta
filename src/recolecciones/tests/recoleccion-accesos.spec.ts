@@ -172,17 +172,11 @@ describe('M1 efectivo y propiedad en aplicación', () => {
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     await expect(
-      auth.assertReviewerVivero(usuario, redondeado),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(
       auth.assertCanRead(
         { usuario_id: '3', vivero_id: '9007199254740992' },
         usuario.id,
         usuario.rol,
       ),
-    ).resolves.toBeUndefined();
-    await expect(
-      auth.assertReviewerVivero(usuario, '9007199254740992'),
     ).resolves.toBeUndefined();
   });
   it.each([

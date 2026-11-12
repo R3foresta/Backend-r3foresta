@@ -46,26 +46,20 @@ La escritura inicial del backend normal requiere
 por omisión se pausa y conserva recuperación/terminales.
 
 
-T4 incorpora localmente [recepción de semillas y «Recibir y validar»](docs/t4-recepcion-semillas.md)
-con 096, incidencias, recuperación y elegibilidad física de consumo/desecho; incluye
-PWA solo M2. [Revisión coordinadora cerrada](docs/evidencia/t4-revision-coordinadora-2026-11-06.json),
-con comparación decimal y retiro de datos por vivero corregidos. La [conciliación
-histórica del remanente](docs/vivero-conciliacion-historica.md) añade localmente
-097, padrón individual ADMIN y comprobación física por M2. El
-[postflight aportado del 10 de noviembre](docs/evidencia/vivero-conciliacion-postflight-aportado-2026-11-10.json)
-coincide con la versión actual de 097 y registra el padrón vacío. El 10 de noviembre
-se aplicó 098 y se confirmó el bucket privado en el proyecto de destino
-([evidencia y comprobación local de las aplicaciones](docs/evidencia/vivero-conciliacion-storage-aplicado-2026-11-10.json)).
-Material se verificó con M2 en VIV-001 y VIV-002 y la ficha con ADMIN en VIV-003.
-Quedan pendientes el piloto físico, la carga de evidencia real y el despliegue.
-099 añade requisitos previos de INICIO y saldo decimal exacto para el selector.
-Su catálogo y contrato PostgREST se cotejaron en el mismo proyecto el 10 de
-noviembre; [evidencia y límites](docs/evidencia/vivero-conciliacion-099-destino-2026-11-10.json).
-El corte/despliegue de las aplicaciones y el piloto conservan sus pendientes.
+La [recepción única de Recolección](docs/t4-recepcion-semillas.md) sustituye
+la aprobación documental y la conciliación de prueba: BORRADOR → pendiente →
+recepción conforme/VALIDADO o rechazo motivado y corrección de la misma ficha.
+La nueva migración [100](migrations/100_recoleccion_recepcion_unica.sql) exige
+reinicio operativo de datos de prueba y corte coordinado. Pablo reportó el
+reinicio y la aplicación exitosa de 100 el 12 de noviembre. Cotejo remoto,
+Storage, despliegue y frontend conservan su verificación separada.
+ADMIN global o VALIDADOR con asignación vigente puede recibir; GENERAL con M2 conserva INICIO y
+DESECHO sobre material recibido. El selector mantiene saldo exacto y requisitos
+previos de INICIO. Las evidencias 096–099 conservan su contexto histórico.
 
 T1 añade localmente [acceso explícito de Recolección](docs/t1-acceso-recoleccion.md)
 con API exclusiva ADMIN, vigencias, revisión M1 independiente, auditoría y recuperación.
-Requiere 092/093 y corte coordinado. T2 añade localmente [acceso operativo por vivero](docs/t2-acceso-viveros.md), API ADMIN, ámbitos M2, revisión documental y DESECHO acotados con 094/095; [revisión coordinadora cerrada](docs/evidencia/t2-revision-coordinadora-2026-11-05.json). T3 incorpora Usuarios y permisos en la PWA y proyecciones exactas, [revisadas localmente](docs/evidencia/t3-revision-coordinadora-2026-11-06.json). Aplicación hasta095 [reportada por el usuario](docs/evidencia/t2-migraciones-095-aplicacion-reportada-2026-11-05.json); cotejo de catálogo, corte de T4 y despliegue pendientes; T5 separado.
+Requiere 092/093 y corte coordinado. T2 añade localmente [acceso operativo por vivero](docs/t2-acceso-viveros.md), API ADMIN, ámbitos M2 y DESECHO acotados con 094/095; [revisión coordinadora cerrada](docs/evidencia/t2-revision-coordinadora-2026-11-05.json). T3 incorpora Usuarios y permisos en la PWA y proyecciones exactas, [revisadas localmente](docs/evidencia/t3-revision-coordinadora-2026-11-06.json). Aplicación hasta095 [reportada por el usuario](docs/evidencia/t2-migraciones-095-aplicacion-reportada-2026-11-05.json); cotejo de catálogo, corte de T4 y despliegue pendientes; T5 separado.
 
 ## Verificar un cambio
 

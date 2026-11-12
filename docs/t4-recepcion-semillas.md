@@ -1,176 +1,166 @@
-# T4 · Recepción de semillas
+# Recepción única de Recolección en Vivero
 
-Contrato local del 6 de noviembre de 2026 sobre Backend `032527a` y PWA
-`fc48be2`. Requiere 096 posterior a 095; no acredita aplicación ni corte remoto.
+Contrato local del 12 de noviembre de 2026 en la rama `recollection-refactoring`.
+Requiere [100](../migrations/100_recoleccion_recepcion_unica.sql) después de 099,
+reinicio operativo de los datos de prueba y corte coordinado de API y cliente.
+Su presencia en el repositorio no acredita aplicación remota ni despliegue.
+[OpenAPI reproducible](recepcion-semillas-openapi.json).
 
-**Revisión coordinadora cerrada el 6 de noviembre**, con dos correcciones PWA y
-regresión independiente aprobada. [Evidencia del cierre](evidencia/t4-revision-coordinadora-2026-11-06.json)
-y [detalle de las correcciones](../../pwa-r3foresta/docs/QA_T4_REVISION_2026-11-06.md).
-Sin hallazgos pendientes en esta revisión; conciliación y habilitación externa separadas.
+El 12 de noviembre Pablo confirmó en el chat el reinicio operativo con conteos
+cero de recolecciones, lotes y eventos de Vivero, y posteriormente la ejecución
+exitosa de 100. Es una aplicación reportada por el usuario. El cotejo independiente
+del catálogo destino, la limpieza física de Storage y el corte API/PWA mantienen
+su verificación separada.
 
-## Hechos y autorización
+## Flujo y autorización
 
-`recoleccion_recepcion` registra una única recepción **total conforme** por origen:
-custodia derivada de la ficha bajo lock, cantidad/unidad canónicas, día físico,
-receptor verificado, instante de registro y comando. El autor M1 no cambia.
-GENERAL/VALIDADOR activos con M2 de custodia y ADMIN global pueden recibir;
-siempre se prohíbe autorrecepción. M1, afiliación y equipo no conceden recepción.
-Las capacidades cerradas de participación y acceso M2 no cambian de forma: la
-facultad de recepción deriva de `operar`, y el detalle devuelve la capacidad por
-objeto tras verificar autor, estado, movimientos e incidencia.
+El recolector crea `BORRADOR`, lo envía a `PENDIENTE_VALIDACION` y otra persona
+confirma **recibir y validar** o rechaza con motivo. `PENDIENTE_VALIDACION`
+representa espera de revisión y recepción física en Vivero. La confirmación
+conforme produce `VALIDADO`; el rechazo produce `RECHAZADO`. El recolector corrige
+la misma ficha/código, guarda `BORRADOR` y vuelve a enviar. No existe aprobación
+documental autónoma, aceptación de diferencias, incidencia, recuento ni conciliación.
 
-`recoleccion_recepcion_observacion` conserva cantidad declarada y observada,
-unidad, fecha, actor, evidencia y revisión por cada incidencia o conformidad.
-Una diferencia no valida ni rechaza la ficha y no mueve saldo. Solo se permite
-resolver la incidencia abierta mediante nueva comprobación física **conforme**,
-indicando su ID, motivo y evidencia nueva. El faltante no se acepta parcialmente.
-La corrección documental de cantidades con incidencia sigue bloqueada: requiere
-un futuro procedimiento de negocio explícito. El original observado se conserva.
-
-## Comando y transacción
-
-La intención contiene `comando_id` UUID, `revision_esperada` decimal BIGINT,
-`cantidad_recibida`, `unidad_recibida` (`G`, `KG`, `UNIDAD`), `fecha_recepcion`
-YYYY-MM-DD, `evidencia_ids` y, para resolver, `incidencia_id` y `motivo_resolucion`.
-KG se normaliza a G; UNIDAD exige entero y ESQUEJE exige UNIDAD. G respeta la
-precisión canónica de M1 (hasta seis decimales). La fecha física debe estar entre
-la recolección y hoy en America/La_Paz; no se infiere del instante de registro.
-
-UUID es único por actor y carga canónica JSON. Replay devuelve el recibo original;
-otra carga con la misma clave devuelve conflicto. La revisión es
-`revision_captura`, compartida con mantenimiento/revisión documental: toda
-incidencia y recepción la incrementa una vez. Un rechazo de negocio conserva
-terminal, sin cambios parciales. Una excepción técnica conserva incertidumbre y
-no fabrica un rechazo. Recuperar solo revela el terminal propio; no concede
-acceso actual a origen/fotos. Exige cuenta activa, aun después de perder M2/rol.
-
-Orden: cuenta SHARE → clave de comando → origen UPDATE → evidencias ASC. Retiro,
-rol y baja conservan UPDATE de cuenta según 072/094. Recepción, aprobación nueva,
-snapshots, revisión, historia, auditoría y recibo se confirman juntos. Saldo inicial
-se conserva; no se inserta una segunda entrada. No se llama a Pinata/mint desde
-el nuevo comando: esos servicios legados no tienen outbox durable y quedan como
-anclaje externo pendiente, explícito en el recibo, sin presentar fallo como rollback.
-
-## Transición y stock
-
-Nuevos CONSUMO_A_VIVERO y DESECHO exigen recepción conforme y VALIDADO también
-en el ledger, cerrando RPC/rutas legadas. Las proyecciones de orígenes aplican la
-misma condición. M3 conserva sus asignaciones y no vuelve a debitar M2/M1.
-
-VALIDADO histórico es aprobación documental, nunca prueba física. Puede
-conciliarse mediante comprobación total real solo si no hay movimientos/lotes y
-la ficha cumple las reglas vigentes de fecha/completitud. Si ya hay movimientos o
-envejeció fuera de la ventana M1, requiere conciliación específica antes del corte;
-no se cambia su fecha, recepción, saldo, movimientos, lotes o asignaciones.
-El diagnóstico privado ADMIN enumera estos casos y sus saldos actuales. No hay
-backfill ni creación automática de hechos. El corte real requiere diagnóstico,
-inventario físico de remanentes y decisión documentada para cada caso bloqueado.
-
-## Evidencia y cliente
-
-Las nuevas fotos se cargan por multipart en contexto actor/origen/custodia; SQL
-vuelve a comprobarlo al vincular, en la misma transacción del comando. Evidencia
-de incidencia y de resolución permanece vinculada a su observación. La cola y
-detalle M2 exponen la proyección necesaria y fotos autorizadas, sin abrir fichas
-privadas M1 ajenas. El bucket legado y URLs públicas existentes conservan audiencia.
-
-La PWA muestra cantidad declarada, aprobación documental y recepción por separado,
-confirmación, carga, error, incidencia y recuperación. Ante resultado incierto
-conserva la intención y ofrece consultar el mismo comando; no reenvía ni crea otra
-clave automáticamente. Todos los IDs/revisiones viajan como cadenas exactas.
+Bandeja, detalle, fotos y ambas decisiones requieren cuenta activa ADMIN, con
+alcance global sin vigencia, o VALIDADOR con asignación explícita vigente al vivero
+de almacenamiento. Se prohíbe la autorrecepción también para ADMIN. M1, equipo
+y afiliación no conceden esta autoridad. GENERAL con M2 sigue pudiendo
+operar material recibido mediante INICIO y DESECHO, sin ser receptor.
 
 ## API consumible
 
-Todas las rutas requieren Bearer verificado, cuenta activa y cliente privado.
-No reciben actor ni vivero concedidos por el body. [OpenAPI reproducible](recepcion-semillas-openapi.json).
+Todas las rutas usan Bearer JWT verificado y respuesta privada sin caché.
+IDs y revisiones viajan como cadenas decimales exactas. El actor se obtiene de la
+sesión; el vivero se deriva de la ficha. No se aceptan desde el body como permiso.
 
 | Método y ruta bajo `/api/v1/recepcion-semillas` | Contrato |
 |---|---|
-| `GET /?antes_de_id=…&limite=20` | Cola M2 por custodia; incluye incidencias/legados pendientes y propias sin capacidad de recibirlas. Cursor/IDs/revisión como texto. |
-| `GET /:id` | Proyección mínima, capacidad por objeto, recepción, incidencia, historial y fotos autorizadas. No abre la ficha privada M1. |
-| `POST /:id/evidencias` | Multipart `fotos`, 1–5 archivos, máximo 15 MB por archivo. Sin campos JSON/base64. Devuelve 201 y `evidencia_ids` exactos. |
-| `POST /:id/recibir-validar` | Intención cerrada, resultado durable; ejemplo abajo. |
-| `GET /comandos/:comando_id` | Solo recibo propio. 200 terminal original, 202 `SIN_RESULTADO`; no carga el origen ni sus fotos. |
-| `GET /diagnostico?antes_de_id=…&limite=20` | Solo ADMIN. Array de VALIDADO sin recepción, cantidad original, saldo actual, número de movimientos/lotes. Cursor siguiente: último ID de la página. |
+| `GET /?antes_de_id=…&limite=20` | Bandeja de fichas pendientes en viveros autorizados. |
+| `GET /:id` | Versión revisable, capacidad por objeto, recepción, historial y fotos autorizadas. |
+| `POST /:id/evidencias` | Multipart `fotos`, 1–5 imágenes, máximo 15 MiB por archivo; contexto fijado por servidor. |
+| `POST /:id/recibir-validar` | Confirma conformidad sobre la revisión precargada. |
+| `POST /:id/rechazar` | Rechaza esa revisión con motivo de 10–500 caracteres, sin exigir foto. |
+| `GET /comandos/:comando_id` | Solo recibo propio; cuenta activa incluso tras perder rol o asignación. |
+
+Confirmación:
 
 ```json
 {
   "comando_id": "4ff8f9bb-4280-463d-95c8-97a3f11f122c",
-  "revision_esperada": "9007199254740992",
+  "revision_esperada": "2",
   "cantidad_recibida": 0.1,
   "unidad_recibida": "KG",
-  "fecha_recepcion": "2026-11-06",
-  "evidencia_ids": ["9007199254740993"]
+  "fecha_recepcion": "2026-11-12",
+  "evidencia_ids": ["42"]
 }
 ```
 
-Para resolver añadir `incidencia_id` exacto y `motivo_resolucion` de 10–500
-caracteres. Se exige nueva evidencia pendiente del mismo actor/origen/custodia.
-Resultado 200 `CONFIRMADO` o `INCIDENCIA`: `resultado` incluye origen, custodia,
-observación, recepción/incidencia, revisión anterior/nueva, cantidad/unidad/fecha,
-receptor, saldo conservado, estado documental y anclaje externo pendiente.
+Rechazo:
 
-Rechazos de negocio 403/404/409/422 conservan `estado=RECHAZADO`, `resultado=null`,
-`error.codigo` y fecha terminal. `REVISION_OBSOLETA` exige releer y confirmar
-otra intención; `CONCILIACION_HISTORICA_REQUERIDA` bloquea la vía total;
-`INCIDENCIA_REQUIERE_COMPROBACION_CONFORME` no admite faltantes.
-Reutilizar UUID con otra carga produce 409 `CONFLICTO_CLAVE`, sin reemplazar
-el terminal original. 503 o respuesta inválida significa incertidumbre: persistir
-la intención y consultar el mismo comando. 202 tampoco prueba rollback. El reenvío
-con la misma carga/clave requiere acción explícita; nunca se hace automáticamente.
+```json
+{
+  "comando_id": "59ecb1e1-06f9-4e9e-a421-e63e455c6825",
+  "revision_esperada": "2",
+  "motivo_rechazo": "La cantidad declarada no corresponde al material presentado."
+}
+```
 
-Las cargas de Storage siguen fuera de SQL. No tienen recuperación durable propia:
-si su respuesta se pierde pueden quedar archivos/contextos pendientes sin vínculo;
-no se interpretan como recepción ni se borran ante incertidumbre. Un nuevo comando
-no vuelve a subir imágenes ni ejecuta Pinata/mint. La PWA guarda solo la intención
-validada por actor; un error de almacenamiento local bloquea el envío antes del POST.
+Cantidad y unidad son responsabilidad del recolector. El receptor confirma la
+versión cargada o la rechaza. Se comparan G/KG normalizados a G, con hasta seis
+decimales canónicos; UNIDAD exige entero y ESQUEJE solo admite UNIDAD. Una cantidad
+distinta no genera ajustes automáticos, recepción parcial ni saldo nuevo.
 
-## Conciliación antes del corte real
+## Revisión, historial y corrección
 
-Para versiones con 097, usar el [procedimiento de conciliación del remanente](vivero-conciliacion-historica.md#procedimiento-del-piloto).
-Los pasos siguientes documentan la transición prevista para 096.
+El servidor fija `revision_captura` al cargar evidencia de recepción. Al confirmar
+revalida actor, origen, vivero y esa revisión; una foto de una versión anterior no
+sirve para decidir sobre la nueva. Cada decisión confirma revisión, historia y
+recibo en la misma transacción. El historial de rechazo conserva el snapshot de
+la ficha revisada antes del cambio: cantidad/unidad, vivero, ubicación, fecha,
+revisión, motivo, actor y comando. Corregir 100 a 90 conserva el rechazo sobre 100.
+`motivo_rechazo` resume solo el rechazo del ciclo actual; el historial conserva
+los motivos anteriores.
 
-1. Exportar el diagnóstico ADMIN paginado y contrastar movimientos, lotes y
-   asignaciones contra el catálogo/datos de destino, con versión y fecha.
-2. Hacer inventario físico de cada remanente. Conservar la cantidad original,
-   saldo actual y todos los hechos históricos como evidencia separada.
-3. Sin movimientos/lotes, dentro de la ventana M1 vigente y con ficha completa:
-   otra persona autorizada puede confirmar una comprobación total real, con día
-   físico y fotos reales. La aprobación documental antigua y sus snapshots no
-   se reemplazan; la recepción nueva tiene su receptor/instante propios.
-4. Con movimientos/lotes, saldo distinto del original o fecha envejecida: mantener
-   bloqueado el nuevo consumo/desecho y decidir un procedimiento explícito para
-   remanentes antes de habilitar el corte. Esta versión no inventa recepción parcial,
-   backfill de VALIDADO, fechas, receptores, correcciones o entradas de stock.
-5. Verificar correspondencias de acceso y coordinar API, 096 y cliente. M3 continúa
-   consumiendo lo ya asignado sin otra recepción ni nuevo débito de Vivero.
+En `PATCH /api/recolecciones/:id/draft`, omitir `ubicacion` conserva su ID,
+coordenadas, comunidad/país, nombre, referencia, precisión y fuente. Enviar la
+misma ubicación tampoco crea otra. Una edición explícita distinta crea una
+nueva referencia y conserva la anterior; no modifica en sitio una ubicación
+compartida. Corregir cantidad, unidad, notas o fotos no exige recapturar GPS.
+Omitir `fecha` o conservar su valor mantiene el día original.
 
-La implementación y pruebas locales se documentan en la
-[evidencia de entrega](evidencia/t4-validacion-2026-11-06.json); el
-[ensayo SQL/HTTP/PostGIS](evidencia/t4-recepcion-local-2026-11-06.json) y el
-[informe PWA](../../pwa-r3foresta/docs/QA_T4_RECEPCION.md) conservan sus límites.
+La ventana de 45 días se aplica al crear o cambiar explícitamente la fecha de
+recolección. Una captura válida puede corregirse, reenviarse y recibirse al
+envejecer si conserva su fecha. Se exige
+`fecha_recoleccion <= fecha_recepcion <= hoy` en `America/La_Paz`. INICIO no puede
+preceder la recepción física. El material recibido no caduca al superar 45 días.
 
-## Verificación local del 6 de noviembre
+## Comandos, datos y límites
 
-Backend: build y **89 suites / 1.268 unitarios** aprobados con Node24.19.0,
-npm12.0.2. ESLint sin `--fix` aprobado en el núcleo nuevo DTO/Swagger/controller/
-service/validador/pruebas; no se acredita lint global del código legado.
-OpenAPI T4 (6 rutas), T2 (36), M1 (5) y participación (41/86 schemas) reproducibles.
+La clave `(actor, comando_id)` conserva intención y acción `RECIBIR`/`RECHAZAR`.
+Repetir la misma clave y carga devuelve el resultado original; otra carga o acción
+produce conflicto. Rechazar correctamente una ficha es un comando `CONFIRMADO`
+con resultado de ficha `RECHAZADO`, distinto de un error de comando.
 
-Runner privado: **69 grupos SQL, 8 carreras y 7 HTTP** aprobados en PostgreSQL14.24
-con PostGIS3.2.10 real, socket privado sin TCP/.env; clúster detenido/eliminado.
-Comprueba replay/revisión, cantidades/unidades, incidencia/resolución, fechas,
-rollback intermedio/terminal, retiro/rol/baja en ambos órdenes, BIGINT vecinos de
-actor/custodia/origen/revisión, rechazo de drift/ACL heredadas, legado diagnosticado,
-bypass cerrado y M3 sin doble débito. Storage HTTP es sintético; no ejecuta
-WebAuthn, Pinata/mint ni servicios remotos. Antecedentes mínimos T1/T2/077:
-no acredita reconstrucción001–096 ni catálogo Supabase destino.
+Una respuesta perdida, timeout o 503 no prueba rollback. Conservar clave,
+intención y recursos; consultar el mismo comando sin reenvío automático. La
+recuperación no abre la ficha ni concede permiso actual. `202 SIN_RESULTADO` es
+inconcluso. Una excepción técnica no fabrica un rechazo durable.
 
-PWA: build/lint y **92 archivos / 1.263 pruebas**, más **28 checks de Chrome y
-10 capturas** con HTTP sintético local. Finales con Node24.19 explícito por comando,
-Chrome156.0.8078.80 y Playwright1.64.1. Metadatos/logs en
-[qa/t4-recepcion-2026-11-06](qa/t4-recepcion-2026-11-06/); se inspeccionaron las
-capturas de incidencia móvil y confirmación de escritorio. Este corte inicial se
-complementa con la revisión coordinadora enlazada arriba: PWA 1.273 pruebas tras
-las correcciones. Catálogo/aplicación096, conciliación, corte y despliegue se
-acreditan por separado.
+Orden cooperativo: cuenta SHARE → comando → origen UPDATE → evidencias ASC.
+Retiro, cambio de rol y baja toman UPDATE de cuenta. Recepción conforme única,
+revisión, snapshots, historial, vínculos de evidencia y recibo se confirman juntos.
+El hecho `recoleccion_recepcion` es inmutable y contiene `fecha_recepcion` física,
+`recibido_por` y `registrado_en` real. Estos últimos sustituyen la persistencia de
+`usuario_validacion_id` y `fecha_validacion` en Recolección.
+
+Se conservan cuatro tablas de recepción: hecho, comando, contexto de evidencia y
+vínculo evidencia–recepción. Se retiran observaciones y las cuatro tablas de
+conciliación. INICIO y el ledger exigen recepción conforme, saldo suficiente y
+un solo débito; Plantación consume la asignación M3 sin volver a descontar M1/M2.
+El saldo exacto y `motivo_no_inicio` siguen disponibles en el selector de material.
+
+Pinata/blockchain se ejecutan después de la primera confirmación conforme, fuera
+de la transacción de PostgreSQL. El indicador privado `ejecucion_nueva`, confirmado con el comando, evita
+repetir el mint al reproducir o recuperar un comando; el recibo indica `FUERA_TRANSACCION` en RECIBIR
+y `NO_APLICA` en RECHAZAR. No existe outbox durable: una caída después del commit
+puede dejar el anclaje pendiente y un error externo no revierte la recepción.
+No se promete ejecución exactamente una vez ni recuperación automática.
+Las cargas de Storage también son externas: conservar archivos/contextos ante
+incertidumbre, sin interpretar una subida como una recepción.
+
+La primera instalación de 100 requiere datos operativos vacíos. El reinicio
+preparado está acotado a datos de prueba de Recolección/Vivero/Plantación y sus
+dependencias; no crea recepciones ficticias ni migra inventario de prueba. La
+limpieza remota, Storage, destino y corte deben revisarse antes de ejecutar.
+Catálogos, infraestructura, usuarios y permisos se conservan salvo dependencia
+real identificada. Ninguna instrucción de esta guía ejecuta ese reinicio.
+
+Preparar el plan con `python3 scripts/qa/reset-operativo-pruebas.py --pg-bin /ruta/postgresql/bin`
+(solo lectura por defecto), revisar destino/dependencias/archivos y después usar
+`--execute HUELLA_REVISADA` en el mismo destino. La huella de inventario (conteos, estructura y objetos; no el contenido de cada fila) se vuelve a comprobar
+bajo locks; una dependencia externa aborta sin CASCADE. El plan incluye campañas,
+permisos por subcampaña, cargas/comandos e historial de autoridad relacionados:
+revisar esas consecuencias además del inventario M1/M2/M3. El SQL conserva las
+secuencias y no borra Storage; los objetos inventariados se limpian por su API
+oficial, en un paso externo revisado. [Uso y regresión aislada](../test/README.md#reinicio-operativo-de-datos-de-prueba).
+
+## Verificación
+
+```sh
+npm run build
+npm run test:unit -- --runInBand --cacheDirectory=/private/tmp/r3-jest
+npm run test:db:recepcion -- --pg-bin /ruta/postgresql/bin --evidence /private/tmp/recepcion-unica.json
+node scripts/qa/recepcion-semillas-openapi.cjs --check
+node scripts/qa/vivero-acceso-openapi.cjs --check
+```
+
+El runner usa PostgreSQL privado desechable, socket sin TCP, sin `.env` ni servicios
+externos; HTTP/JWT/RPC locales y Storage sintético. PostGIS solo queda acreditado
+cuando se ejecuta con un runtime real compatible. Los resultados de esta rama se
+reportan en el chat de implementación y revisión; no se trasladan automáticamente
+los conteos históricos a la nueva implementación.
+
+Los cortes [T4/096](evidencia/t4-recepcion-local-2026-11-06.json) y
+[097–099](evidencia/vivero-conciliacion-099-destino-2026-11-10.json) conservan su
+fecha, contratos anteriores y límites de entorno; no son instrucciones vigentes
+para instalar recepción única.

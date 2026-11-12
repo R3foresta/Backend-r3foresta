@@ -68,8 +68,16 @@ export class RecoleccionDraftService {
     const updatePayload: Record<string, unknown> = {};
 
     if (dto.fecha !== undefined) {
+      const fecha = FechaRecoleccionPolicy.normalizeIsoDateString(
+        dto.fecha,
+        'fecha',
+      );
+      // Reenviar la fecha conservada no vuelve a abrir la ventana de captura.
+      // Un cambio real sí exige una nueva fecha dentro de los 45 días.
       updatePayload.fecha =
-        FechaRecoleccionPolicy.assertFechaRecoleccionPermitida(dto.fecha);
+        fecha === recoleccion.fecha
+          ? fecha
+          : FechaRecoleccionPolicy.assertFechaRecoleccionPermitida(fecha);
     }
     if (dto.tipo_material !== undefined)
       updatePayload.tipo_material = dto.tipo_material;
@@ -160,9 +168,7 @@ export class RecoleccionDraftService {
       }
 
       const shouldRefreshSnapshots =
-        dto.planta_id !== undefined ||
-        estadoActual === EstadoRegistro.RECHAZADO ||
-        nuevaUbicacionId !== null;
+        dto.planta_id !== undefined || nuevaUbicacionId !== null;
 
       if (shouldRefreshSnapshots) {
         const snapshotPayload = await this.snapshotsService.resolve({
@@ -171,7 +177,16 @@ export class RecoleccionDraftService {
           ubicacionId: nuevaUbicacionId ?? recoleccion.ubicacion_id,
         });
 
-        Object.assign(updatePayload, snapshotPayload);
+        if (dto.planta_id !== undefined) {
+          updatePayload.nombre_cientifico_snapshot =
+            snapshotPayload.nombre_cientifico_snapshot;
+          updatePayload.nombre_comercial_snapshot =
+            snapshotPayload.nombre_comercial_snapshot;
+          updatePayload.variedad_snapshot = snapshotPayload.variedad_snapshot;
+        }
+        if (nuevaUbicacionId !== null)
+          updatePayload.nombre_comunidad_snapshot =
+            snapshotPayload.nombre_comunidad_snapshot;
       }
 
       const fotos = files.length

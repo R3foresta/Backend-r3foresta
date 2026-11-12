@@ -1,8 +1,8 @@
 # Módulo: Recolecciones
 
-> T2 local acota revisión documental a ADMIN/VALIDADOR asignado al almacenamiento y DESECHO a ADMIN u operario vigente de ese vivero, sin M1/autoría como permiso. No registra recepción física. [Contrato actual y límites](../../docs/t2-acceso-viveros.md).
+> [Recepción única vigente en código](../../docs/t4-recepcion-semillas.md): ADMIN global o VALIDADOR con asignación vigente recibe y valida o rechaza con motivo; el recolector corrige la misma ficha. Requiere100 y corte coordinado, sin aplicación remota acreditada. GENERAL con M2 conserva INICIO y DESECHO sobre material recibido.
 
-Gestión del registro de recolecciones de material vegetal (semillas/esquejes) desde el campo. Es el **primer paso** del flujo de trazabilidad; las recolecciones validadas alimentan el módulo [Lotes de Vivero](./lotes-vivero.md) y disparan el minting NFT vía [Pinata + Blockchain](./pinata-integracion.md).
+Gestión del registro de recolecciones de material vegetal (semillas/esquejes) desde el campo. Es el **primer paso** del flujo de trazabilidad; las recolecciones validadas alimentan el módulo [Lotes de Vivero](./lotes-vivero.md) y alimentan la trazabilidad física. La primera confirmación conforme ejecuta el anclaje externo tras el commit, sin repetirlo al recuperar/reproducir el comando y sin outbox durable.
 
 Código fuente: [src/recolecciones/](../../src/recolecciones/).
 
@@ -16,7 +16,8 @@ recolecciones.module.ts
     ├── RecoleccionCreationService     creación de borrador
     ├── RecoleccionDraftService        edición de borrador
     ├── RecoleccionEliminacionService  soft delete + historial atómico (089)
-    ├── RecoleccionValidacionService   submit / approve / reject
+    ├── RecoleccionValidacionService   submit
+    ├── RecoleccionRecepcionService    recepción/rechazo/comandos/evidencias
     ├── RecoleccionConsultasService    findAll / findOne / findByVivero / pending
     ├── RecoleccionEvidenciasService   subida de fotos a Supabase Storage
     ├── RecoleccionUbicacionService    persistencia de ubicaciones
@@ -42,10 +43,10 @@ recolecciones.module.ts
         ▼
    PENDIENTE_VALIDACION
         │
-        ├── PATCH /:id/approve (VALIDADOR/ADMIN) ──► VALIDADO
-        │       └─► Pinata upload + Blockchain mint
+        ├── POST /v1/recepcion-semillas/:id/recibir-validar ──► VALIDADO
         │
-        └── PATCH /:id/reject  (VALIDADOR/ADMIN) ──► RECHAZADO
+        └── POST /v1/recepcion-semillas/:id/rechazar ──► RECHAZADO
+                   └── PATCH /recolecciones/:id/draft → BORRADOR → submit
 ```
 
 Enum `EstadoRegistro`: `BORRADOR | PENDIENTE_VALIDACION | VALIDADO | RECHAZADO` ([src/recolecciones/domain/enums/estado-registro.enum.ts](../../src/recolecciones/domain/enums/estado-registro.enum.ts)).
@@ -76,8 +77,6 @@ captura/mantenimiento propios para GENERAL/VALIDADOR. ADMIN deriva autoridad glo
 | PATCH | `/api/recolecciones/:id/draft` | `UpdateDraftDto` (JSON/multipart) | dueño con M1 / ADMIN | `BORRADOR` o `RECHAZADO`; al corregir rechazado vuelve a `BORRADOR` |
 | DELETE | `/api/recolecciones/:id` | — | dueño con M1 / ADMIN | Solo `BORRADOR`; soft delete + `BORRADOR_ELIMINADO` en RPC 089 redefinida por 093; repetir devuelve 404 |
 | PATCH | `/api/recolecciones/:id/submit` | — | dueño con M1 / ADMIN | `BORRADOR` → `PENDIENTE_VALIDACION` |
-| PATCH | `/api/recolecciones/:id/approve` | — | VALIDADOR / ADMIN | ADMIN o VALIDADOR asignado al almacenamiento; distinto del autor, incluso ADMIN. `PENDIENTE_VALIDACION` → `VALIDADO`; no acredita recepción física |
-| PATCH | `/api/recolecciones/:id/reject` | `RejectValidationDto` | VALIDADOR / ADMIN | `PENDIENTE_VALIDACION` → `RECHAZADO` sin límite por fecha; estado/motivo/historial atómicos (090/093). `motivo_rechazo` 10–500 chars |
 | GET | `/api/recolecciones/pending-validation` | `FiltersRecoleccionDto` (query) | cuenta interna | ADMIN ve pendientes globales; VALIDADOR combina su cola por vivero con propios si tiene M1 (incluso sin M2); GENERAL con M1 ve propios. Unión antes de filtros, total y paginación |
 | GET | `/api/recolecciones` | `FiltersRecoleccionDto` (query) | cuenta interna | M1 efectivo; lista propia incluso para ADMIN |
 | GET | `/api/recolecciones/vivero/:viveroId` | `FiltersRecoleccionDto` (query) | M1 / revisor legado | M1 filtra propios antes de contar/paginar; revisión ADMIN global o VALIDADOR asignado al almacenamiento |
@@ -87,13 +86,13 @@ captura/mantenimiento propios para GENERAL/VALIDADOR. ADMIN deriva autoridad glo
 La API de evidencias equivalente exige M1/autoría o ADMIN y estado editable;
 los listados/IDs no permiten abrir fotos ajenas por esa vía. El usuario reportó aplicación hasta095; catálogo/cuerpos y despliegue requieren su propio cotejo antes del corte coordinado con T3.
 
-El rechazo usa `fn_recoleccion_rechazar_validacion(bigint,bigint,text)` vía
-`getAdminClient()`, con actor resuelto desde la identidad verificada. Revalida
-cuenta activa y rol `VALIDADOR`/`ADMIN`, toma locks cuenta → recolección y confirma
-estado, motivo e historial juntos. Acepta cualquier fecha de una ficha pendiente;
-la aprobación conserva la ventana de 45 días y la prohibición de fechas futuras.
-Captura, edición, corrección y reenvío conservan sus restricciones temporales.
-Instalar/cotejar 090 y su redefinición 093 antes del corte; [alcance y evidencia local](../../docs/recoleccion-rechazo-fecha.md).
+La decisión usa la [API v1 de recepción](../../docs/t4-recepcion-semillas.md#api-consumible)
+y la RPC privada de 100, con revisión esperada, actor verificado y recibo durable.
+No existen rutas públicas de aprobación/rechazo documental. El rechazo conserva
+el snapshot previo en historial; la corrección mantiene código y ubicación salvo
+edición explícita. Los 45 días se comprueban al crear o cambiar la fecha; conservar
+su valor permite corregir, reenviar y recibir una captura que haya envejecido.
+La recepción física no precede a la recolección ni supera hoy America/La_Paz.
 
 RN-REC-09A usa `fn_recoleccion_eliminar_borrador(bigint,bigint)` vía cliente
 administrativo privado y el actor de `InternalActorGuard`. La RPC toma locks en
@@ -197,13 +196,15 @@ PostgreSQL. Captura/edición aceptan números legados solo si son enteros seguro
 
 ## Respuesta de detalle (campos persistidos)
 
-`id, fecha, created_at, tipo_material, cantidad_inicial_canonica, unidad_canonica, saldo_actual, estado_operativo, estado_registro, codigo_trazabilidad, observaciones, vivero_id, metodo_id, planta_id, usuario_id, ubicacion_id, blockchain_url, token_id, transaction_hash, usuario_validacion_id, fecha_validacion, especie_nueva, *_snapshot` + relaciones (`usuario`, `vivero`, `metodo`, `planta`).
+El hecho de recepción aporta `recibido_por`, `registrado_en` y el día físico `fecha_recepcion`; no se duplican actor/momento en columnas de validación de Recolección.
+
+`id, fecha, created_at, tipo_material, cantidad_inicial_canonica, unidad_canonica, saldo_actual, estado_operativo, estado_registro, codigo_trazabilidad, observaciones, vivero_id, metodo_id, planta_id, usuario_id, ubicacion_id, blockchain_url, token_id, transaction_hash, especie_nueva, *_snapshot` + relaciones (`usuario`, `vivero`, `metodo`, `planta`).
 
 ## Integraciones laterales
 
-- **Pinata + Blockchain**: ver [pinata-integracion.md](./pinata-integracion.md). Se dispara en `PATCH /:id/approve`.
+- **Pinata + Blockchain**: tras la primera confirmación conforme, con reclamo atómico; replay/recuperación no vuelven a ejecutar. Fuera de SQL, sin outbox ni promesa exactamente una vez.
 - **Storage de fotos**: bucket `recoleccion_fotos` (migración 003). El frontend recibe URLs públicas.
-- **Saldo y consumo hacia vivero**: la API de lotes de vivero llama RPC `fn_vivero_crear_lote_desde_recoleccion`, que descuenta `saldo_actual` atómicamente.
+- **Saldo y consumo hacia vivero**: la API de lotes llama `m2_inicio_lote_exacto`, que exige recepción conforme y descuenta `saldo_actual` una vez, junto al lote/evento/evidencias. INICIO no precede a la recepción.
 
 ## Tests relevantes
 

@@ -42,8 +42,9 @@ type PendingInicioEvidence = {
 
 describe('Migraciones DB - flujo mínimo vivero', () => {
   let client: SupabaseClient;
+  let esquemaHistoricoVerificado = false;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     const url = process.env.SUPABASE_URL;
     const key =
       process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_KEY;
@@ -55,9 +56,23 @@ describe('Migraciones DB - flujo mínimo vivero', () => {
     }
 
     client = createClient(url, key);
+    // Estos fixtures y su limpieza pertenecen al esquema anterior a 100.
+    const { error } = await client
+      .from('recoleccion')
+      .select('usuario_validacion_id,fecha_validacion')
+      .limit(0);
+    if (error) {
+      throw new Error(
+        'Suite histórica anterior a 100: no se pudo verificar el esquema requerido. ' +
+          'No se ejecutaron fixtures ni limpieza. Para recepción única usar npm run test:db:recepcion. ' +
+          formatError(error),
+      );
+    }
+    esquemaHistoricoVerificado = true;
   });
 
   afterEach(async () => {
+    if (!esquemaHistoricoVerificado) return;
     await cleanupByTag(client);
   });
 

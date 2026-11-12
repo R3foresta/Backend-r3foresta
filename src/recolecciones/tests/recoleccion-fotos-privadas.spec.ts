@@ -326,18 +326,6 @@ describe('Recolección con fotos y superficie privada 080/083', () => {
     expect(recoleccion.update).not.toHaveBeenCalled();
   });
 
-  it('approve también comprueba el mínimo de fotos mediante completitud privada', async () => {
-    usuario.rol = 'VALIDADOR';
-    usuario.id = 8;
-    registro.estado_registro = 'PENDIENTE_VALIDACION';
-    evidencias.result.count = 1;
-    await expect(
-      validacion.approveValidation(99, 'actor-verificado', 'VALIDADOR'),
-    ).rejects.toBeInstanceOf(BadRequestException);
-    expect(evidencias.select).toHaveBeenCalled();
-    expect(recoleccion.update).not.toHaveBeenCalled();
-  });
-
   it('conserva la autorización por objeto aunque se declare ADMIN en el argumento legado', async () => {
     registro.usuario_id = 8;
     await expect(

@@ -27,13 +27,34 @@ const { configureGlobalRoutes } = require('../../src/app.routes');
     await app.init();
     const config = new DocumentBuilder()
       .setTitle('R3Foresta · Recepción de semillas T4')
-      .setVersion('1.0.0')
+      .setVersion('2.0.0')
       .setDescription(
-        'Contrato local 096. Recepción conforme y validación atómicas por M2 de custodia, sin autorrecepción. Incidencia sin consumo; recuperación propia. SQL remoto y despliegue pendientes.',
+        'Contrato local de decisión única. ADMIN o VALIDADOR con asignación vigente al vivero confirma recepción conforme y validación atómicas, sin autorrecepción, o rechaza con motivo. Corrección sobre la misma ficha. Recuperación propia; SQL remoto y despliegue pendientes.',
       )
       .addBearerAuth()
       .build();
     const doc = SwaggerModule.createDocument(app, config);
+    const base = '/api/v1/recepcion-semillas';
+    const expected = [
+      base,
+      `${base}/comandos/{comando_id}`,
+      `${base}/{id}`,
+      `${base}/{id}/evidencias`,
+      `${base}/{id}/recibir-validar`,
+      `${base}/{id}/rechazar`,
+    ];
+    if (
+      Object.keys(doc.paths).length !== expected.length ||
+      expected.some((route) => !doc.paths[route])
+    )
+      throw new Error('Recepción única exige las seis rutas acordadas');
+    const contract = JSON.stringify(doc);
+    if (
+      /"(incidencia_id|observacion_id|motivo_resolucion|requiere_conciliacion|puede_consultar_conciliacion)"/.test(
+        contract,
+      )
+    )
+      throw new Error('Recepción única conserva campos retirados');
     const encoded = JSON.stringify(doc, null, 2) + '\n';
     const target = path.resolve(
       __dirname,

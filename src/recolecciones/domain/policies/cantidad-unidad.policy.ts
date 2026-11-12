@@ -66,13 +66,44 @@ export class CantidadUnidadPolicy {
   ): CantidadUnidadCanonica {
     const tipoMaterialCanonico = this.normalizarTipoMaterial(tipoMaterial);
     const unidadNormalizada = this.normalizarUnidadInput(unidadInput);
+    if (!Number.isFinite(cantidad) || cantidad <= 0)
+      throw new BadRequestException(
+        'cantidad_inicial_canonica debe ser un número mayor a 0',
+      );
+    const decimalesPermitidos =
+      unidadNormalizada === 'KG' ? 9 : unidadNormalizada === 'G' ? 6 : 0;
+    if (this.decimales(cantidad) > decimalesPermitidos)
+      throw new BadRequestException(
+        unidadNormalizada === 'UNIDAD'
+          ? 'Para unidad_canonica=UNIDAD la cantidad_inicial_canonica debe ser entera.'
+          : 'La cantidad normalizada en G admite hasta 6 decimales.',
+      );
+    // Mover el exponente decimal evita artefactos de multiplicación binaria
+    // (p.ej. 0.000000003 KG debe ser exactamente 0.000003 G).
+    const [mantisa, exponente = '0'] = cantidad
+      .toString()
+      .toLowerCase()
+      .split('e');
     const cantidadEnUnidadCanonica =
-      unidadNormalizada === 'KG' ? Number(cantidad) * 1000 : Number(cantidad);
+      unidadNormalizada === 'KG'
+        ? Number(`${mantisa}e${Number(exponente) + 3}`)
+        : cantidad;
 
     return this.validarCanonica(
       cantidadEnUnidadCanonica,
       unidadNormalizada === 'KG' ? 'G' : unidadNormalizada,
       tipoMaterialCanonico,
+    );
+  }
+
+  private static decimales(cantidad: number): number {
+    const [mantisa, exponente = '0'] = cantidad
+      .toString()
+      .toLowerCase()
+      .split('e');
+    return Math.max(
+      0,
+      (mantisa.split('.')[1]?.length ?? 0) - Number(exponente),
     );
   }
 
@@ -95,7 +126,11 @@ export class CantidadUnidadPolicy {
       );
     }
 
-    const cantidadCanonica = Number(cantidad.toFixed(6));
+    if (unidadCanonica === 'G' && this.decimales(cantidad) > 6)
+      throw new BadRequestException(
+        'La cantidad normalizada en G admite hasta 6 decimales.',
+      );
+    const cantidadCanonica = cantidad;
 
     if (unidadCanonica === 'UNIDAD' && !Number.isInteger(cantidadCanonica)) {
       throw new BadRequestException(

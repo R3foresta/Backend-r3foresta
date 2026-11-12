@@ -101,15 +101,6 @@ export class RecoleccionAuthService {
     await this.assertOwnerOrAdmin(recoleccion, userId, userRole);
   }
 
-  assertReviewerRole(userRole: string): void {
-    const role = String(userRole ?? '').toUpperCase();
-    if (!['VALIDADOR', 'ADMIN'].includes(role)) {
-      throw new ForbiddenException(
-        'Solo usuarios con rol VALIDADOR o ADMIN pueden realizar esta acción.',
-      );
-    }
-  }
-
   assertAdminRole(userRole: string): void {
     const role = String(userRole ?? '').toUpperCase();
     if (role !== 'ADMIN') {
@@ -140,18 +131,6 @@ export class RecoleccionAuthService {
         'No se pudo verificar el alcance de revisión.',
       );
     return ambitos.viveros;
-  }
-
-  async assertReviewerVivero(
-    usuario: { id: number | string; rol: string },
-    vivero: unknown,
-  ): Promise<void> {
-    this.assertReviewerRole(usuario.rol);
-    const ambitos = await this.ambitosRevision(usuario);
-    if (ambitos !== null && !this.viveroEnAmbitos(vivero, ambitos))
-      throw new ForbiddenException(
-        'La revisión documental requiere asignación al vivero de almacenamiento.',
-      );
   }
 
   private viveroEnAmbitos(vivero: unknown, ambitos: string[]): boolean {

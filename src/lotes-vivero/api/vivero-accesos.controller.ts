@@ -47,7 +47,7 @@ import {
   type M2Operacion,
 } from './dto/acceso-viveros.dto';
 import type { RpcReply } from '../../participacion/comando-recibo';
-import { ORIGENES_SCHEMA } from './docs/conciliacion-vivero.swagger';
+import { ORIGENES_SCHEMA } from './docs/origenes-vivero.swagger';
 
 @ApiTags('acceso-viveros-v1')
 @ApiBearerAuth()
@@ -72,7 +72,7 @@ export class ViveroAccesosController {
     type: Boolean,
     required: false,
     description:
-      'Incluye saldo pendiente de recepción o conciliación y su motivo.',
+      'Incluye material pendiente de recepción conforme y su motivo.',
   })
   @ApiQuery({
     name: 'incluir_requisitos_inicio',

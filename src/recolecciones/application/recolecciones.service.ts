@@ -9,7 +9,6 @@ import {
   type UnidadInputRecoleccion,
 } from '../api/dto/create-recoleccion.dto';
 import { FiltersRecoleccionDto } from '../api/dto/filters-recoleccion.dto';
-import { RejectValidationDto } from '../api/dto/reject-validation.dto';
 import { UpdateDraftDto } from '../api/dto/update-draft.dto';
 import { RegistrarDesechoDto } from '../api/dto/registrar-desecho.dto';
 import { CantidadUnidadPolicy } from '../domain/policies/cantidad-unidad.policy';
@@ -66,19 +65,6 @@ export class RecoleccionesService {
 
   submitForValidation(id: number, authId: string, userRole: string) {
     return this.validacionService.submitForValidation(id, authId, userRole);
-  }
-
-  approveValidation(id: number, authId: string, userRole: string) {
-    return this.validacionService.approveValidation(id, authId, userRole);
-  }
-
-  rejectValidation(
-    id: number,
-    authId: string,
-    userRole: string,
-    dto: RejectValidationDto,
-  ) {
-    return this.validacionService.rejectValidation(id, authId, userRole, dto);
   }
 
   findPendingValidation(

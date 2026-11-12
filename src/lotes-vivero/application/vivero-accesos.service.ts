@@ -207,7 +207,7 @@ export function validateM2Reply(
       'administrar',
       'operar_cualquier_vivero',
       'desechar_semillas_cualquier_vivero',
-      'revisar_documental_cualquier_vivero',
+      'recibir_y_validar_cualquier_vivero',
     ]);
     assert(Object.values(global).every((v) => v === data.alcance_global));
     assert(Array.isArray(data.viveros));
@@ -228,7 +228,7 @@ export function validateM2Reply(
         'operar',
         'consultar_material',
         'desechar_semillas',
-        'revisar_documental',
+        'recibir_y_validar',
       ]);
       assert(
         caps.operar === v.acceso_efectivo &&
@@ -236,7 +236,7 @@ export function validateM2Reply(
           caps.desechar_semillas === v.acceso_efectivo,
       );
       assert(
-        caps.revisar_documental ===
+        caps.recibir_y_validar ===
           (v.acceso_efectivo &&
             ['ADMIN', 'VALIDADOR'].includes(String(data.rol_global))),
       );

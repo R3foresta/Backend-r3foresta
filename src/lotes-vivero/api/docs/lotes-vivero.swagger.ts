@@ -104,7 +104,7 @@ export function ApiCrearLoteDesdeRecoleccion() {
     ApiOperation({
       summary: 'Crear lote de vivero desde recoleccion validada',
       description:
-        'Inicia un lote desde un origen con recepción T4 o conciliación histórica conforme y saldo habilitado en la misma custodia. Crea lote, evento INICIO y movimiento CONSUMO_A_VIVERO, descuenta saldo y vincula evidencias en una sola transacción.',
+        'Inicia un lote desde un origen con recepción conforme y saldo habilitado en la misma custodia. Crea lote, evento INICIO y movimiento CONSUMO_A_VIVERO, descuenta saldo y vincula evidencias en una sola transacción.',
     }),
     ApiBody({
       description: 'Datos del inicio de lote de vivero',

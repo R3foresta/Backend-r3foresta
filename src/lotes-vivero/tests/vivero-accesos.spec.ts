@@ -89,19 +89,22 @@ describe('Acceso por vivero T2: contrato, identidad y política por objeto', () 
     ['1e-6', false],
     ['1.0000000', false],
     [Infinity, false],
-  ])('DTO preserva la cantidad exacta %p y su validez %p', async (cantidad, valida) => {
-    const dto = plainToInstance(CrearLoteViveroDto, {
-      recoleccion_id: '1',
-      vivero_id: '1',
-      fecha_inicio: '2026-11-10',
-      fecha_evento: '2026-11-10',
-      cantidad_inicial_en_proceso: cantidad,
-      unidad_medida_inicial: 'G',
-      evidencia_ids: ['1'],
-    });
-    expect((await validate(dto)).length === 0).toBe(valida);
-    expect(dto.cantidad_inicial_en_proceso).toBe(cantidad);
-  });
+  ])(
+    'DTO preserva la cantidad exacta %p y su validez %p',
+    async (cantidad, valida) => {
+      const dto = plainToInstance(CrearLoteViveroDto, {
+        recoleccion_id: '1',
+        vivero_id: '1',
+        fecha_inicio: '2026-11-10',
+        fecha_evento: '2026-11-10',
+        cantidad_inicial_en_proceso: cantidad,
+        unidad_medida_inicial: 'G',
+        evidencia_ids: ['1'],
+      });
+      expect((await validate(dto)).length === 0).toBe(valida);
+      expect(dto.cantidad_inicial_en_proceso).toBe(cantidad);
+    },
+  );
   function setup(scopes: unknown = { global: false, viveros: ['1'] }) {
     const query = {
       select: jest.fn().mockReturnThis(),
@@ -221,6 +224,53 @@ describe('Acceso por vivero T2: contrato, identidad y política por objeto', () 
       response: { comando_id: key, resultado_concluyente: false },
     });
   });
+  it.each(['GENERAL', 'VALIDADOR', 'ADMIN'])(
+    'proyecta recepción por vigencia para %s sin restringir su operación M2',
+    (rol) => {
+      const global = rol === 'ADMIN';
+      const value = {
+        http_status: 200,
+        body: {
+          data: {
+            usuario_id: '20',
+            rol_global: rol,
+            activo: true,
+            revision_acceso: '1',
+            revision_autoridad: '0',
+            alcance_global: global,
+            viveros: [
+              {
+                id: '1',
+                vivero_id: '2',
+                otorgado_en: '2026-11-12T12:00:00Z',
+                otorgado_por: '3',
+                acceso_efectivo: true,
+                capacidades: {
+                  operar: true,
+                  consultar_material: true,
+                  desechar_semillas: true,
+                  recibir_y_validar: rol !== 'GENERAL',
+                },
+              },
+            ],
+            capacidades_globales: {
+              administrar: global,
+              operar_cualquier_vivero: global,
+              desechar_semillas_cualquier_vivero: global,
+              recibir_y_validar_cualquier_vivero: global,
+            },
+            historial: [],
+            siguiente_antes_de_id: null,
+          },
+          observado_en: '2026-11-12T12:00:00Z',
+        },
+      };
+      expect(validateM2Reply(value, null)).toEqual(value);
+      value.body.data.viveros[0].capacidades.recibir_y_validar =
+        rol === 'GENERAL';
+      expect(() => validateM2Reply(value, null)).toThrow();
+    },
+  );
   it('no acepta una lectura que fabrique alcance global por tener una vigencia', () => {
     expect(() =>
       validateM2Reply(

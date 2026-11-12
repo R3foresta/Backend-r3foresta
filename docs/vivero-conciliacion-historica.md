@@ -1,5 +1,9 @@
 # Conciliación histórica del remanente de Vivero
 
+> Antecedente histórico de 097–099 y del entorno indicado en sus evidencias.
+> La [recepción única con 100](t4-recepcion-semillas.md) retira esta familia y sus
+> endpoints. El procedimiento siguiente no es una instrucción vigente de corte.
+
 El postflight aportado el 10 de noviembre coincide con la versión actual de
 097 en PostgreSQL 17.6. Los 13 cuerpos de función y sus grants/configuraciones
 cotejados coinciden con el ensayo local. El informe registra cero eventos y

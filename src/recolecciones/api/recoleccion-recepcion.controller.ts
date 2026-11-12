@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
   Param,
   Post,
   Query,
@@ -41,11 +42,12 @@ import {
   RECEPCION_DETALLE_SCHEMA,
   RECEPCION_RECIBO_SCHEMA,
   RECEPCION_CARGA_SCHEMA,
-  RECEPCION_DIAGNOSTICO_SCHEMA,
 } from './docs/recepcion-semillas.swagger';
 import { parseM1Query } from './dto/acceso-recoleccion.dto';
 import {
   parseRecepcionComando,
+  parseRecepcionRechazo,
+  RECEPCION_RECHAZO_SCHEMA,
   RECEPCION_COMANDO_SCHEMA,
 } from './dto/recepcion-semillas.dto';
 import { RecoleccionRecepcionService } from '../application/recoleccion-recepcion.service';
@@ -61,7 +63,7 @@ export class RecoleccionRecepcionController {
   @Get()
   @ApiOperation({
     summary:
-      'Cola M2 por custodia: pendientes, incidencias y VALIDADO sin recepción. Sin exigir M1.',
+      'Pendientes de recepción: ADMIN global o VALIDADOR con asignación vigente al vivero. Sin exigir M1.',
   })
   @ApiQuery({ name: 'antes_de_id', type: String, required: false })
   @ApiQuery({ name: 'limite', type: String, required: false })
@@ -69,18 +71,6 @@ export class RecoleccionRecepcionController {
   cola(@Req() req: ActorRequest, @Query() query: unknown) {
     const q = parseM1Query(query);
     return this.service.leer(req.actor, null, q.antes_de_id, q.limite);
-  }
-  @Get('diagnostico')
-  @ApiOperation({
-    summary:
-      'ADMIN: diagnóstico paginado de VALIDADO sin prueba física; no cambia stock ni fabrica recepción.',
-  })
-  @ApiQuery({ name: 'antes_de_id', type: String, required: false })
-  @ApiQuery({ name: 'limite', type: String, required: false })
-  @ApiResponse({ status: 200, schema: RECEPCION_DIAGNOSTICO_SCHEMA })
-  diagnostico(@Req() req: ActorRequest, @Query() query: unknown) {
-    const q = parseM1Query(query);
-    return this.service.diagnostico(req.actor, q.antes_de_id, q.limite);
   }
   @Get('comandos/:comando_id')
   @ApiOperation({
@@ -90,7 +80,7 @@ export class RecoleccionRecepcionController {
   @ApiParam({ name: 'comando_id', type: String, format: 'uuid' })
   @ApiResponse({
     status: 200,
-    description: 'Recibo original CONFIRMADO, INCIDENCIA o RECHAZADO.',
+    description: 'Recibo original CONFIRMADO o error de comando RECHAZADO.',
     schema: RECEPCION_RECIBO_SCHEMA,
   })
   @ApiResponse({
@@ -110,17 +100,18 @@ export class RecoleccionRecepcionController {
   @Get(':id')
   @ApiOperation({
     summary:
-      'Detalle y evidencias mínimos autorizados M2, revisión exacta, incidencia e historia. No abre la ficha privada M1.',
+      'Detalle, revisión exacta e historial para ADMIN o VALIDADOR con asignación vigente al vivero.',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({ status: 200, schema: RECEPCION_DETALLE_SCHEMA })
   detalle(@Req() req: ActorRequest, @Param('id') origen: string) {
+    if (!/^[1-9][0-9]*$/.test(origen)) throw new NotFoundException();
     return this.service.leer(req.actor, id(origen), null, 20);
   }
   @Post(':id/evidencias')
   @ApiOperation({
     summary:
-      'Carga multipart en contexto inmutable actor/origen/custodia; bucket legado público.',
+      'Carga de 1–5 fotos multipart con contexto inmutable actor/origen/vivero/revisión; bucket legado público.',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiConsumes('multipart/form-data')
@@ -157,20 +148,20 @@ export class RecoleccionRecepcionController {
   @Post(':id/recibir-validar')
   @ApiOperation({
     summary:
-      'Recibir y validar atómicamente; diferencia registra incidencia sin aprobación/consumo. Nunca autorrecepción.',
+      'Confirma recepción física y validación en una transacción. Cantidad y unidad deben ser conformes. Nunca autorrecepción.',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiBody({ schema: RECEPCION_COMANDO_SCHEMA })
   @ApiResponse({
     status: 200,
     description:
-      'Recibo durable CONFIRMADO o INCIDENCIA. Anclaje externo no ejecutado.',
+      'Recibo durable CONFIRMADO; ficha VALIDADO. Anclaje externo posterior fuera de la transacción, sólo en primera ejecución y sin reintento durable.',
     schema: RECEPCION_RECIBO_SCHEMA,
   })
   @ApiResponse({
     status: 409,
     description:
-      'Revisión obsoleta, incidencia no resoluble, conciliación requerida o clave reutilizada.',
+      'Revisión obsoleta, material no conforme, estado incompatible o clave reutilizada.',
     schema: RECEPCION_RECIBO_SCHEMA,
   })
   @ApiResponse({
@@ -185,6 +176,39 @@ export class RecoleccionRecepcionController {
     @Res() res: Response,
   ) {
     const p = parseRecepcionComando(origen, body),
+      r = await this.service.ejecutar(req.actor, p.comando_id, p.payload);
+    return res.status(r.http_status).json(r.body);
+  }
+  @Post(':id/rechazar')
+  @ApiOperation({
+    summary:
+      'Rechaza la versión revisada con motivo y conserva su snapshot. No requiere fotos; misma autoridad que recibir.',
+  })
+  @ApiParam({ name: 'id', type: String })
+  @ApiBody({ schema: RECEPCION_RECHAZO_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Comando CONFIRMADO; ficha RECHAZADO para corregir y reenviar el mismo código.',
+    schema: RECEPCION_RECIBO_SCHEMA,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Revisión obsoleta, estado incompatible o clave reutilizada.',
+    schema: RECEPCION_RECIBO_SCHEMA,
+  })
+  @ApiResponse({
+    status: 503,
+    description:
+      'Resultado no determinado: recuperar misma clave; no reenviar automáticamente.',
+  })
+  async rechazar(
+    @Req() req: ActorRequest,
+    @Param('id') origen: string,
+    @Body() body: unknown,
+    @Res() res: Response,
+  ) {
+    const p = parseRecepcionRechazo(origen, body),
       r = await this.service.ejecutar(req.actor, p.comando_id, p.payload);
     return res.status(r.http_status).json(r.body);
   }

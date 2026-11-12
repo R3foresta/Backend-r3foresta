@@ -12,12 +12,6 @@ const {
 const {
   ViveroAccesosService,
 } = require('../../src/lotes-vivero/application/vivero-accesos.service');
-const {
-  ViveroConciliacionController,
-} = require('../../src/lotes-vivero/api/vivero-conciliacion.controller');
-const {
-  ViveroConciliacionService,
-} = require('../../src/lotes-vivero/application/vivero-conciliacion.service');
 const { InternalActorGuard } = require('../../src/auth/internal-actor.guard');
 const {
   LotesViveroController,
@@ -39,13 +33,11 @@ const {
   const module = await Test.createTestingModule({
     controllers: [
       ViveroAccesosController,
-      ViveroConciliacionController,
       LotesViveroController,
       RecoleccionesController,
     ],
     providers: [
       { provide: ViveroAccesosService, useValue: {} },
-      { provide: ViveroConciliacionService, useValue: {} },
       { provide: LotesViveroService, useValue: {} },
       { provide: RecoleccionesService, useValue: {} },
       { provide: RecoleccionFormDataParser, useValue: {} },
@@ -62,13 +54,31 @@ const {
     await app.init();
     const config = new DocumentBuilder()
       .setTitle('R3Foresta · Acceso y material por vivero')
-      .setVersion('1.1.0')
+      .setVersion('2.0.0')
       .setDescription(
-        'Contrato local 094/095, 097 y 099. M2 por establecimiento independiente de M1 y Plantación. Conciliación histórica del remanente, requisitos de INICIO y recuperación propia con la misma clave.',
+        'Contrato local de recepción única y material por vivero. M2 operativo independiente de M1 y de la autoridad para recibir. INICIO requiere recepción conforme, saldo decimal exacto y orden físico de fechas. Recuperación propia con la misma clave.',
       )
       .addBearerAuth()
       .build();
     const doc = SwaggerModule.createDocument(app, config);
+    if (
+      Object.keys(doc.paths).some((route) =>
+        /\/conciliaciones(?:\/|$)|\/(approve|reject)$/.test(route),
+      )
+    )
+      throw new Error('El contrato M2 conserva rutas retiradas');
+    const contract = JSON.stringify(doc);
+    if (
+      /"(puede_consultar_conciliacion|revisar_documental|revisar_documental_cualquier_vivero)"/.test(
+        contract,
+      ) ||
+      /"(?:CONCILIACION_CONFORME|PENDIENTE_CONCILIACION|INCIDENCIA_CONCILIACION)"/.test(
+        contract,
+      )
+    )
+      throw new Error(
+        'El contrato M2 conserva capacidades o estados retirados',
+      );
     const encoded = JSON.stringify(doc, null, 2) + '\n';
     const target = path.resolve(
       __dirname,

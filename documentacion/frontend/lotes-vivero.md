@@ -1,6 +1,6 @@
 # Consumo frontend - Lotes de vivero
 
-> T4 local/096 exige VALIDADO y recepción física conforme para nuevos orígenes consumibles y DESECHO. «Recibir y validar» usa M2 de custodia sin M1 ni autorrecepción; [API, incidencias, recuperación y transición](../../docs/t4-recepcion-semillas.md). No se modifican asignaciones históricas ni el débito M3.
+> [Recepción única](../../docs/t4-recepcion-semillas.md) con100: INICIO y DESECHO requieren material VALIDADO con recepción conforme. ADMIN global o VALIDADOR con vigencia explícita recibe o rechaza; GENERAL con M2 sigue operando lo recibido. INICIO no precede a la recepción. Plantación consume su asignación sin otro débito M1/M2. Aplicación/corte remoto pendientes.
 
 Documento operativo para que una IA/frontend consuma el backend actual sin inventar campos ni llamar rutas incompletas.
 
@@ -117,23 +117,22 @@ El ciclo de inicio, embolsado, descarte pre-embolsado, adaptabilidad, merma,
 despacho manual, asignación física, devolución y timeline está implementado.
 La plantación consume el stock asignado y no genera un despacho M2 adicional.
 
-## Regla de autenticacion
+## Regla de autenticación
 
-Todos los endpoints de escritura requieren header:
+Todos los endpoints requieren `Authorization: Bearer <token>` de sesión
+verificada y cuenta interna activa. `x-auth-id` no autentica; si se envía, solo
+se coteja con la sesión. Para operar se exige ADMIN o GENERAL/VALIDADOR con
+asignación M2 vigente al vivero. Ser receptor requiere una autoridad separada:
+ADMIN global o VALIDADOR con vigencia explícita; GENERAL no necesita ese rol para INICIO.
 
-```txt
-x-auth-id: <auth_id_de_supabase>
-```
+## Material disponible para INICIO
 
-Enviar el `auth_id` de Supabase, no el `usuario.id` interno de la tabla `usuario`. El backend resuelve el usuario operativo y valida permisos.
-
-Roles permitidos para escribir:
-
-```txt
-ADMIN
-VALIDADOR
-GENERAL
-```
+Consultar `GET /api/v1/vivero/origenes?vivero_id=…&incluir_pendientes=true&incluir_requisitos_inicio=true`.
+La proyección mantiene `saldo_actual_exacto` como decimal en texto y
+`motivo_no_inicio` nulo cuando reúne requisitos previos. `estado_habilitacion`
+solo usa `RECEPCION_CONFORME` o `PENDIENTE_RECEPCION`; el servidor vuelve a validar
+saldo, evidencia, fecha y ámbito bajo lock al crear. No hay conciliación ni
+incidencias en este contrato.
 
 ## Flujo obligatorio de inicio
 
@@ -149,7 +148,7 @@ No crear el lote sin evidencia. La RPC `fn_vivero_crear_lote_desde_recoleccion` 
 ```txt
 POST /api/lotes-vivero/evidencias-pendientes
 Content-Type: multipart/form-data
-x-auth-id: <auth_id_de_supabase>
+Authorization: Bearer <token>
 ```
 
 Body FormData:
@@ -179,7 +178,7 @@ formData.append('es_principal', 'true');
 const res = await fetch(`${API_URL}/api/lotes-vivero/evidencias-pendientes`, {
   method: 'POST',
   headers: {
-    'x-auth-id': authId,
+    Authorization: `Bearer ${token}`,
   },
   body: formData,
 });
@@ -232,7 +231,7 @@ Guardar `evidencia_ids`. Esos IDs se envian en la siguiente llamada.
 ```txt
 POST /api/lotes-vivero
 Content-Type: application/json
-x-auth-id: <auth_id_de_supabase>
+Authorization: Bearer <token>
 ```
 
 Body JSON:
@@ -266,7 +265,7 @@ const res = await fetch(`${API_URL}/api/lotes-vivero`, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'x-auth-id': authId,
+    Authorization: `Bearer ${token}`,
   },
   body: JSON.stringify(payload),
 });
@@ -297,7 +296,7 @@ Despues de esta llamada, las evidencias pendientes quedan vinculadas al evento `
 GET /api/lotes-vivero
 ```
 
-No requiere `x-auth-id`.
+Requiere Bearer verificado y ámbito M2 al vivero; el listado se filtra antes de contar/paginar.
 
 Query params:
 
@@ -458,7 +457,7 @@ Si `data.puede_registrar_embolsado` es `false`, no mostrar el submit del formula
 ```txt
 POST /api/lotes-vivero/:id/embolsado/evidencias-pendientes
 Content-Type: multipart/form-data
-x-auth-id: <auth_id_de_supabase>
+Authorization: Bearer <token>
 ```
 
 Usa el mismo FormData de evidencias: `fotos`, `titulo`, `descripcion`, `metadata`, `tomado_en`, `es_principal`.
@@ -486,7 +485,7 @@ type EvidenciasPendientesEmbolsadoResponse = {
 ```txt
 POST /api/lotes-vivero/:id/embolsado
 Content-Type: application/json
-x-auth-id: <auth_id_de_supabase>
+Authorization: Bearer <token>
 ```
 
 Body:
@@ -610,7 +609,7 @@ No permitir editar esos dos campos si la UI usa esta accion como "descarte total
 ```txt
 POST /api/lotes-vivero/:id/descarte-pre-embolsado/evidencias-pendientes
 Content-Type: multipart/form-data
-x-auth-id: <auth_id_de_supabase>
+Authorization: Bearer <token>
 ```
 
 Usa el mismo FormData de evidencias: `fotos`, `titulo`, `descripcion`, `metadata`, `tomado_en`, `es_principal`.
@@ -638,7 +637,7 @@ type EvidenciasPendientesDescartePreEmbolsadoResponse = {
 ```txt
 POST /api/lotes-vivero/:id/descarte-pre-embolsado
 Content-Type: application/json
-x-auth-id: <auth_id_de_supabase>
+Authorization: Bearer <token>
 ```
 
 Body:
@@ -708,6 +707,7 @@ Antes de llamar `POST /api/lotes-vivero`, el frontend debe seleccionar una recol
 
 ```txt
 estado_registro = VALIDADO
+estado_habilitacion = RECEPCION_CONFORME
 estado_operativo = ABIERTO
 saldo_actual suficiente
 codigo_trazabilidad existente
@@ -727,7 +727,7 @@ No enviar mas de 6 decimales.
 Fechas:
 
 ```txt
-No enviar fechas futuras.
+No enviar fechas futuras ni anteriores a fecha_recepcion.
 Usar formato YYYY-MM-DD para fecha_inicio y fecha_evento.
 ```
 
@@ -776,7 +776,7 @@ Errores frecuentes:
 | Status | Causa probable                                                                           | Accion frontend                                         |
 | ------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | 400    | Payload invalido, metadata no es JSON, falta foto, saldo insuficiente, unidad incorrecta | Mostrar mensaje y permitir corregir.                    |
-| 401    | Falta `x-auth-id`                                                                        | Reautenticar o reenviar header.                         |
+| 401    | Falta Bearer válido                                                                        | Reautenticar o reenviar header.                         |
 | 403    | Rol sin permiso                                                                          | Bloquear accion para el usuario.                        |
 | 404    | Usuario/vivero/recoleccion/tipo evidencia no existe                                      | Refrescar datos base o reportar configuracion faltante. |
 | 500    | Error interno o storage/RPC                                                              | Mostrar error generico y permitir reintento.            |
@@ -786,8 +786,8 @@ Errores frecuentes:
 Para implementar inicio de lote:
 
 ```txt
-1. Tener authId de Supabase.
-2. Elegir recoleccion VALIDADO/ABIERTO con saldo.
+1. Tener JWT de sesión verificado y ámbito M2 vigente.
+2. Elegir recoleccion VALIDADO/ABIERTO con recepción conforme, saldo suficiente y sin motivo_no_inicio.
 3. Elegir vivero_id.
 4. Pedir al menos 1 foto.
 5. Llamar POST /api/lotes-vivero/evidencias-pendientes con FormData.

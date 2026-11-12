@@ -21,12 +21,8 @@ usan socket privado/DB sin TCP y destruyen exclusivamente su clúster al termina
 
 | Comando | Qué comprueba |
 |---|---|
-| `npm run test:db:recepcion -- --conciliacion --postgis --pg-bin /ruta/postgis/bin --evidence /ruta/nueva/vivero-conciliacion.json` | 097 sobre T4: padrón, ficha con ledger/lotes/asignaciones, diferencia e inconsistencia, recuento obsoleto, enum ampliado y correcciones posteriores, cierre DML público/por columna y rollback ante permisos heredados, recuperación, locks de retiro, fecha original, débito único y continuidad M3. PostgreSQL/PostGIS privado y HTTP/JWT local con Storage sintético, sin TCP de PostgreSQL ni `.env`. Puede omitirse `--postgis` para comprobar SQL/HTTP con PostgreSQL básico y `--sql-only` omite HTTP. |
-| [Preflight de 097](../scripts/qa/vivero-conciliacion-preflight.sql) | SQL de solo lectura que devuelve catálogo, hashes de funciones, triggers, tipos y ACL para cotejo humano antes de aplicar 097. Se debe identificar proyecto/entorno por separado. |
-| [Postflight de 097](../scripts/qa/vivero-conciliacion-postflight.sql) | Solo lectura posterior a Success. Verifica cierre acotado de escritura, tablas privadas, cuerpos críticos, triggers y conteos sin datos personales. El runner de conciliación lo comprueba antes y después de sus operaciones sintéticas. |
-| `npm run test:db:recepcion -- --revision-conciliacion --pg-bin /ruta/postgresql/bin --evidence /ruta/nueva/vivero-099.json` | Añade 099 a la prueba aislada de conciliación. Verifica requisitos de INICIO, saldo decimal exacto, contratos anteriores, custodia y permisos. |
 | `python3 scripts/qa/vivero-conciliacion-storage-test.py --pg-bin /ruta/postgresql/bin --evidence /ruta/nueva/storage-098.json` | 098 en PostgreSQL/RLS sintético: políticas permisivas globales, denegación a anon/auth del bucket dedicado, movimientos entre buckets, CRUD del servicio y otros buckets, instalación repetida, ausencia del bucket y abortos ante drift de catálogo, roles, políticas o metadatos. Comprueba el informe de estado antes/después. Sin HTTP Storage, TCP, `.env` ni servicios externos. |
-| `npm run test:db:recepcion -- --postgis --pg-bin /ruta/postgis/bin --evidence /ruta/nueva/t4.json` | T4/096: recepción, incidencia/resolución, replay/revisión/rollback, ledger protegido, ocho carreras observadas con retiro/rol/baja, HTTP/JWT y M3 sin doble débito. PostgreSQL/PostGIS desechable sin TCP/.env; Storage sintético. No servicios reales. |
+| `npm run test:db:recepcion -- --pg-bin /ruta/postgresql/bin --evidence /private/tmp/recepcion-unica.json` | Recepción única100 sobre antecedente092–099: instalación/repetición, retiro de dependencias antiguas, recepción/rechazo/corrección de la misma ficha, contexto de fotos por revisión, comandos/replay/recuperación, locks de retiro/rol/baja, fechas y ledger/INICIO sin doble débito. PostgreSQL privado desechable sin TCP/.env, HTTP/JWT local y Storage sintético. PostGIS exige runtime real al usar su opción. |
 | `npm run test:db:plan` | Revisión atómica del plan y concurrencia/ACL 062–063 |
 | `npm run test:db:recoleccion:soft-delete` | RN-REC-09A/089 sobre antecedente mínimo M1 + 014/015: permisos, fechas DATE, rollback, conservación de fotos/compensación, instalación repetida y siete carreras con locks observados. PostgreSQL privado desechable sin TCP/.env. |
 | `npm run test:db:vivero:acceso -- --postgis --pg-bin /ruta/runtime-postgis/bin --evidence /ruta/nueva/t2.json` | T2/094–095 sobre T1 local: scopes, vigencias/revisión/auditoría/recuperación, M1/M2 independientes, RPC reales, retiro/rol/baja072, cancelación y desactivación masiva, JWT/HTTP/Storage sintético; con `--postgis` exige extensión real y prueba consumo M3 sin acceso M2 ni doble débito. Sin TCP/.env ni servicios reales. Evidencia propia; nunca sobrescribir la de T1. |
@@ -42,14 +38,21 @@ usan socket privado/DB sin TCP y destruyen exclusivamente su clúster al termina
 | `npm run test:db:participantes -- --pg-bin /ruta/postgis/bin` | INT07 participantes y lecturas: 085 sobre 082/084, altas/retiros/restauración, autorización efectiva propia, proyección pública, snapshots y carreras. Clúster privado desechable y evidencia separada; sin `.env` ni servicios externos. |
 | `python3 scripts/qa/pa-contexto-registro-test.py --pg-bin /ruta/postgis/bin` | Contexto v1 con avance por especie (086): PostgreSQL/PostGIS aislados, confirmaciones, rechazo, reposición excluida, ledger de corrección sintético, stock cero y privacidad. |
 | `npm run preview:impacto -- --pg-bin /ruta/postgis/bin --check` | Preview INT05/INT04 sintético y limpieza, sin servicios externos |
-| `node scripts/qa/recepcion-semillas-openapi.cjs --check` | Swagger real de las seis rutas T4 coincide con DTO/recibos/cola/detalle y artefacto consumible; no abre sockets ni servicios externos. |
-| `node scripts/qa/vivero-acceso-openapi.cjs --check` | Swagger real de gestión/operación M2, orígenes, conciliación histórica y rutas M1 afectadas (42 rutas), sin sockets ni servicios externos. |
+| `node scripts/qa/recepcion-semillas-openapi.cjs --check` | Swagger real de las seis rutas de recepción única coincide con DTO/recibos/cola/detalle y artefacto consumible; no abre sockets ni servicios externos. |
+| `node scripts/qa/vivero-acceso-openapi.cjs --check` | Swagger real de gestión/operación M2, orígenes y rutas M1 afectadas, sin conciliación ni aprobación documental; sin sockets ni servicios externos. |
 | `node scripts/qa/recoleccion-acceso-openapi.cjs --check` | Swagger real de las cinco rutas de acceso M1 coincide con el artefacto consumible, sin abrir sockets ni cargar servicios externos. |
 | `node scripts/qa/pa-int02c-openapi.cjs --check` | OpenAPI y proyección Swagger coinciden con el generador |
 | `python3 scripts/qa/pa-int07-catalogo-test.py --pg-bin /ruta/postgresql/bin` | Utilidad BE01 de catálogo, ACL heredadas/por columna/vacías, triggers y ausencia de efectos; clúster privado desechable sin TCP ni PostGIS. No prueba correcciones INT07. |
 | `python3 scripts/qa/pa-int07-persistencia-test.py --pg-bin /ruta/postgresql/bin` | BE02 parcial082: instalación/repetición, drift, materialización fiel, conservación y ACL/RLS. Antecedente focal sin PostGIS; no ejecuta correcciones ni RPC075–081. |
 | `python3 scripts/qa/pa-superficie-compat-test.py --pg-bin /ruta/postgresql/bin` | Cierre aditivo 083: permisos SQL reales, conservación de SELECT/servicio y rollback ante drift. Usar PG17 para cubrir MAINTAIN; clúster sintético desechable sin TCP/.env, sin aplicación remota. |
 | `python3 scripts/qa/pa-superficie-083-diagnostico-test.py --pg-bin /ruta/postgresql/bin` | Diagnóstico de 083: bloqueos completos, dependencias y permisos de vistas, metadatos de ubicación y READ ONLY real. No aplica la migración ni modifica permisos del destino. |
+
+Los runners T1/T2 conservan sus antecedentes SQL históricos de acceso y comprueban
+que las rutas documentales retiradas respondan 404 en el backend actual. T2 añade,
+únicamente para HTTP, el lector `m2_acceso_leer` de 100 y la proyección de IDs
+`m2_inicio_lote_exacto` de 097 sobre la operación 095. Esto alinea el contrato de
+capacidades e IDs; no instala recepción/conciliación ni acredita 100 completa.
+La recepción única se verifica con su runner propio.
 
 B/C usan antecedentes mínimos post-067: no acreditan replay 001–067, PostGIS,
 Storage ni garantías del registro participante/INT02-D. Los runners pueden regenerar
@@ -61,6 +64,31 @@ por un mock. Instala/repite 074–076 sobre un antecedente representativo post-0
 sin acreditar replay completo. Su Storage de prueba verifica bytes y derivados;
 las políticas del bucket Supabase remoto conservan su comprobación separada.
 [Comandos, evidencia y límites](../docs/pa-int03a-entrega-local.md).
+
+## Reinicio operativo de datos de prueba
+
+El [script de reinicio](../scripts/qa/reset-operativo-pruebas.py) no carga `.env`:
+usa la conexión `PG*` de psql. Sin opciones de ejecución solo devuelve un plan
+con destino, tablas/conteos, dependencias, objetos Storage y huella. Revisar ese
+plan antes del corte; guardarlo fuera del repositorio.
+
+```sh
+python3 scripts/qa/reset-operativo-pruebas.py --pg-bin /ruta/postgresql/bin > /private/tmp/reset-plan.json
+python3 scripts/qa/reset-operativo-pruebas.py --pg-bin /ruta/postgresql/bin --execute HUELLA_REVISADA
+```
+
+`--execute` exige la huella del mismo destino/inventario y la revalida bajo locks.
+Las FK externas al inventario abortan; no se usa CASCADE ni se reinician secuencias.
+Borra datos operativos M1/M2/M3 y dependencias de campañas, participación/cargas,
+permisos por subcampaña, comandos e historial de autoridad relacionados. Conserva
+cuentas, roles actuales, accesos M1/M2 y catálogos. Revisar el detalle del plan para
+conocer las consecuencias completas antes de ejecutarlo.
+
+El SQL no elimina objetos Storage: devuelve `objetos_storage` y URLs legadas
+para una limpieza externa por la API oficial, con destino revisado. El script no
+se ejecuta como parte de100. Su regresión aislada es
+`python3 scripts/qa/reset-operativo-pruebas-test.py --pg-bin /ruta/postgresql/bin`;
+no acredita una limpieza remota ni un reinicio ya realizado.
 
 ## Integración de frontend
 
@@ -74,6 +102,14 @@ verifica 37 casos HTTP, incluida la lectura de equipo para PLANTADOR tras la mig
 `npm run test:integration` y `npm run test:e2e` (incluidos `test:e2e:p0` y `test:e2e:db`)
 pueden depender de `.env`, Supabase y escribir/limpiar datos. Confirmar el destino
 antes de usarlos. No son sustitutos de las suites aisladas.
+
+Las cuatro suites `test/e2e/db/` conservan fixtures históricos anteriores a 100:
+fabrican registros validados y limpian datos directamente. No están adaptadas a
+la recepción única ni acreditan el esquema actual. Su preflight de solo lectura
+bloquea ejecución y limpieza si las columnas históricas ya no están disponibles;
+no ejecutar esas suites contra el destino migrado. Para 100 usar
+`npm run test:db:recepcion` sobre PostgreSQL aislado. Adaptar esos e2e requiere
+preparar recepciones reales y una estrategia de fixtures/limpieza aislados.
 
 Los probes REST/HTTP de desarrollo `scripts/qa/pa-int02{b,c}-*.cjs` exigen project-ref
 coincidente y configuración privada; sus informes distinguen validación temprana,

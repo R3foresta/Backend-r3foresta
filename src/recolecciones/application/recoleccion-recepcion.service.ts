@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   HttpException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
@@ -10,17 +11,20 @@ import type { VerifiedActor } from '../../auth/verified-actor.guard';
 import { EvidenceFileService } from '../../common/files/evidence-file.service';
 import type { EvidenceFileInput } from '../../common/files/evidence-file.policy';
 import { SupabaseService } from '../../supabase/supabase.service';
-import { id } from '../../participacion/dto/comandos.dto';
+import { id, revision } from '../../participacion/dto/comandos.dto';
 import type { RecepcionIntencion } from '../api/dto/recepcion-semillas.dto';
+import { RecoleccionBlockchainService } from './recoleccion-blockchain.service';
 import { validarReciboRecepcion } from '../domain/policies/recepcion-semillas.policy';
 
 type DbReply = { data: unknown; error: { code?: string } | null };
 
 @Injectable()
 export class RecoleccionRecepcionService {
+  private readonly logger = new Logger(RecoleccionRecepcionService.name);
   constructor(
     private readonly supabase: SupabaseService,
     private readonly files: EvidenceFileService,
+    private readonly blockchain: RecoleccionBlockchainService,
   ) {}
 
   async leer(
@@ -47,21 +51,30 @@ export class RecoleccionRecepcionService {
     }
     return data;
   }
-  diagnostico(actor: VerifiedActor, antes: string | null, limite: number) {
-    return this.rpc('m1_recepcion_diagnostico', {
-      p_actor_id: actor.usuario_id,
-      p_antes_de_id: antes,
-      p_limite: limite,
-    });
-  }
   async ejecutar(
     actor: VerifiedActor,
     comando: string,
     payload: RecepcionIntencion,
   ) {
-    return this.comando('m1_recepcion_ejecutar', actor, comando, {
+    const reply = await this.comando('m1_recepcion_ejecutar', actor, comando, {
       p_payload: payload,
     });
+    if (
+      reply.ejecucion_nueva &&
+      reply.body.estado === 'CONFIRMADO' &&
+      payload.accion === 'RECIBIR'
+    ) {
+      // El flag se confirma con el comando en SQL y no aparece en replay/recovery.
+      // El efecto externo queda fuera del recibo: un fallo no revierte la recepción.
+      try {
+        await this.blockchain.executeBlockchainFlow(payload.recoleccion_id);
+      } catch {
+        this.logger.error(
+          'No se completó el anclaje externo posterior a la recepción.',
+        );
+      }
+    }
+    return reply;
   }
   recuperar(actor: VerifiedActor, comando: string) {
     return this.comando('m1_recepcion_recuperar', actor, comando, {}, true);
@@ -74,6 +87,7 @@ export class RecoleccionRecepcionService {
   ) {
     const detalle = (await this.leer(actor, origen, null, 20)) as {
       puede_recibir_validar: boolean;
+      revision: string;
     };
     if (!detalle.puede_recibir_validar)
       throw new ForbiddenException(
@@ -81,6 +95,7 @@ export class RecoleccionRecepcionService {
       );
     if (!files.length || files.length > 5)
       throw new BadRequestException('Se requieren de 1 a 5 fotos.');
+    const revisionCarga = revision(detalle.revision);
     const prepared = this.files.prepareOriginalEvidenceFiles(files);
     const client = this.supabase.getAdminClient();
     const uploaded: Record<string, unknown>[] = [];
@@ -111,6 +126,7 @@ export class RecoleccionRecepcionService {
         {
           p_actor_id: actor.usuario_id,
           p_recoleccion_id: origen,
+          p_revision_esperada: revisionCarga,
           p_fotos: uploaded,
         },
       )) as DbReply;
@@ -125,11 +141,22 @@ export class RecoleccionRecepcionService {
         );
       }
       if (!Array.isArray(data) || data.length !== uploaded.length)
-        throw new Error('Respuesta de carga inválida');
-      return {
-        evidencia_ids: data.map((v) => id(v)),
-        audiencia: 'BUCKET_LEGADO_PUBLICO',
-      };
+        throw new HttpException(
+          'Resultado de carga no determinado. Conserva la pantalla y consulta el origen.',
+          503,
+        );
+      let evidencia_ids: string[];
+      try {
+        evidencia_ids = data.map((v) => id(v));
+        if (new Set(evidencia_ids).size !== evidencia_ids.length)
+          throw new Error('IDs de carga repetidos');
+      } catch {
+        throw new HttpException(
+          'Resultado de carga no determinado. Conserva la pantalla y consulta el origen.',
+          503,
+        );
+      }
+      return { evidencia_ids, audiencia: 'BUCKET_LEGADO_PUBLICO' };
     } catch (error) {
       if (!incierto && uploaded.length)
         await client.storage
@@ -158,6 +185,7 @@ export class RecoleccionRecepcionService {
         actor: actor.usuario_id,
         origen: p?.recoleccion_id,
         revision: p?.revision_esperada,
+        accion: p?.accion,
       });
     } catch {
       throw new HttpException(

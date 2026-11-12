@@ -1,3 +1,4 @@
+import { CantidadUnidadPolicy } from '../../domain/policies/cantidad-unidad.policy';
 import type { SchemaObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
 import {
   commandId,
@@ -7,15 +8,32 @@ import {
   strictObject,
 } from '../../../participacion/dto/comandos.dto';
 
-export type RecepcionIntencion = {
-  recoleccion_id: string;
-  revision_esperada: string;
-  cantidad_recibida: number;
-  unidad_recibida: 'G' | 'KG' | 'UNIDAD';
-  fecha_recepcion: string;
-  evidencia_ids: string[];
-  incidencia_id?: string;
-  motivo_resolucion?: string;
+export type RecepcionIntencion =
+  | {
+      accion: 'RECIBIR';
+      recoleccion_id: string;
+      revision_esperada: string;
+      cantidad_recibida: number;
+      unidad_recibida: 'G' | 'KG' | 'UNIDAD';
+      fecha_recepcion: string;
+      evidencia_ids: string[];
+    }
+  | {
+      accion: 'RECHAZAR';
+      recoleccion_id: string;
+      revision_esperada: string;
+      motivo_rechazo: string;
+    };
+const comando: SchemaObject = {
+  type: 'string',
+  format: 'uuid',
+  description: 'UUID v4 por intención; conservar ante respuesta incierta.',
+};
+const revisionSchema: SchemaObject = {
+  type: 'string',
+  pattern: '^(0|[1-9][0-9]*)$',
+  maxLength: 19,
+  description: 'revision_captura exacta; no convertir a Number.',
 };
 export const RECEPCION_COMANDO_SCHEMA: SchemaObject = {
   type: 'object',
@@ -29,18 +47,15 @@ export const RECEPCION_COMANDO_SCHEMA: SchemaObject = {
     'evidencia_ids',
   ],
   properties: {
-    comando_id: {
-      type: 'string',
-      format: 'uuid',
-      description: 'UUID v4 por intención; conservar ante respuesta incierta.',
+    comando_id: comando,
+    revision_esperada: revisionSchema,
+    cantidad_recibida: {
+      type: 'number',
+      exclusiveMinimum: true,
+      minimum: 0,
+      description:
+        'Debe coincidir exactamente con lo declarado al normalizar G/KG. G admite hasta seis decimales; UNIDAD es entero.',
     },
-    revision_esperada: {
-      type: 'string',
-      pattern: '^(0|[1-9][0-9]*)$',
-      maxLength: 19,
-      description: 'revision_captura exacta; no convertir a Number.',
-    },
-    cantidad_recibida: { type: 'number', exclusiveMinimum: true, minimum: 0 },
     unidad_recibida: {
       type: 'string',
       enum: ['G', 'KG', 'UNIDAD'],
@@ -50,7 +65,7 @@ export const RECEPCION_COMANDO_SCHEMA: SchemaObject = {
       type: 'string',
       format: 'date',
       description:
-        'Día físico entre fecha de recolección y hoy en America/La_Paz.',
+        'Día físico entre fecha de recolección y hoy en America/La_Paz. No es el instante de registro.',
     },
     evidencia_ids: {
       type: 'array',
@@ -58,9 +73,19 @@ export const RECEPCION_COMANDO_SCHEMA: SchemaObject = {
       maxItems: 5,
       uniqueItems: true,
       items: { type: 'string', pattern: '^[1-9][0-9]*$', maxLength: 19 },
+      description:
+        'Fotos cargadas por esta cuenta para la revisión actual de esta ficha y vivero.',
     },
-    incidencia_id: { type: 'string', pattern: '^[1-9][0-9]*$', maxLength: 19 },
-    motivo_resolucion: { type: 'string', minLength: 10, maxLength: 500 },
+  },
+};
+export const RECEPCION_RECHAZO_SCHEMA: SchemaObject = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['comando_id', 'revision_esperada', 'motivo_rechazo'],
+  properties: {
+    comando_id: comando,
+    revision_esperada: revisionSchema,
+    motivo_rechazo: { type: 'string', minLength: 10, maxLength: 500 },
   },
 };
 export function parseRecepcionComando(origen: unknown, value: unknown) {
@@ -76,6 +101,18 @@ export function parseRecepcionComando(origen: unknown, value: unknown) {
     invalidInput('cantidad_recibida');
   if (!['G', 'KG', 'UNIDAD'].includes(String(b.unidad_recibida)))
     invalidInput('unidad_recibida');
+  // PostgreSQL vuelve a normalizar y comparar con NUMERIC dentro de la transacción.
+  // No redondear aquí: una diferencia nunca se convierte en conformidad.
+  const cantidad = b.cantidad_recibida;
+  try {
+    CantidadUnidadPolicy.normalizarYValidar(
+      cantidad,
+      b.unidad_recibida,
+      'SEMILLA',
+    );
+  } catch {
+    invalidInput('cantidad_recibida');
+  }
   if (
     typeof b.fecha_recepcion !== 'string' ||
     !/^\d{4}-\d{2}-\d{2}$/.test(b.fecha_recepcion) ||
@@ -93,21 +130,30 @@ export function parseRecepcionComando(origen: unknown, value: unknown) {
   if (new Set(evidencia_ids).size !== evidencia_ids.length)
     invalidInput('evidencia_ids');
   const payload: RecepcionIntencion = {
+    accion: 'RECIBIR',
     recoleccion_id: id(origen),
     revision_esperada: revision(b.revision_esperada),
-    cantidad_recibida: b.cantidad_recibida,
-    unidad_recibida: b.unidad_recibida as RecepcionIntencion['unidad_recibida'],
+    cantidad_recibida: cantidad,
+    unidad_recibida: b.unidad_recibida as 'G' | 'KG' | 'UNIDAD',
     fecha_recepcion: b.fecha_recepcion,
     evidencia_ids,
   };
-  if (b.incidencia_id !== undefined || b.motivo_resolucion !== undefined) {
-    payload.incidencia_id = id(b.incidencia_id, 'incidencia_id');
-    if (typeof b.motivo_resolucion !== 'string')
-      invalidInput('motivo_resolucion');
-    const motivo = b.motivo_resolucion.trim().normalize('NFC');
-    if (motivo.length < 10 || motivo.length > 500)
-      invalidInput('motivo_resolucion');
-    payload.motivo_resolucion = motivo;
-  }
+  return { comando_id: commandId(b.comando_id), payload };
+}
+export function parseRecepcionRechazo(origen: unknown, value: unknown) {
+  const b = strictObject(
+    value,
+    Object.keys(RECEPCION_RECHAZO_SCHEMA.properties!),
+  );
+  if (typeof b.motivo_rechazo !== 'string') invalidInput('motivo_rechazo');
+  const motivo = b.motivo_rechazo.trim().normalize('NFC');
+  if ([...motivo].length < 10 || [...motivo].length > 500)
+    invalidInput('motivo_rechazo');
+  const payload: RecepcionIntencion = {
+    accion: 'RECHAZAR',
+    recoleccion_id: id(origen),
+    revision_esperada: revision(b.revision_esperada),
+    motivo_rechazo: motivo,
+  };
   return { comando_id: commandId(b.comando_id), payload };
 }

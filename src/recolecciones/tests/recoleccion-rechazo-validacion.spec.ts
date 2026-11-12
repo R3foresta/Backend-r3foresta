@@ -1,123 +1,244 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
-import { validate } from 'class-validator';
+import { HttpException, Logger } from '@nestjs/common';
+import type { VerifiedActor } from '../../auth/verified-actor.guard';
+import { RecoleccionRecepcionService } from '../application/recoleccion-recepcion.service';
+import { RecoleccionBlockchainService } from '../application/recoleccion-blockchain.service';
 import { SupabaseService } from '../../supabase/supabase.service';
-import { RejectValidationDto } from '../api/dto/reject-validation.dto';
-import { RecoleccionAuthService } from '../application/recoleccion-auth.service';
-import { RecoleccionValidacionService } from '../application/recoleccion-validacion.service';
-import { RecoleccionConsultasService } from '../application/recoleccion-consultas.service';
+import { EvidenceFileService } from '../../common/files/evidence-file.service';
+import {
+  parseRecepcionComando,
+  parseRecepcionRechazo,
+} from '../api/dto/recepcion-semillas.dto';
 
-describe('Rechazo de validación (RPC privada 090)', () => {
-  const motivo = '  Datos de campo inconsistentes  ';
-  let rol: string;
+const key = '4ff8f9bb-4280-463d-95c8-97a3f11f122c';
+const actor = {
+  usuario_id: '20',
+  auth_id: 'sesion-verificada',
+  rol: 'VALIDADOR',
+} as VerifiedActor;
+const payload = (accion: 'RECIBIR' | 'RECHAZAR') =>
+  accion === 'RECIBIR'
+    ? parseRecepcionComando('100', {
+        comando_id: key,
+        revision_esperada: '5',
+        cantidad_recibida: 100,
+        unidad_recibida: 'G',
+        fecha_recepcion: '2026-11-06',
+        evidencia_ids: ['9'],
+      }).payload
+    : parseRecepcionRechazo('100', {
+        comando_id: key,
+        revision_esperada: '5',
+        motivo_rechazo: 'Cantidad declarada no conforme',
+      }).payload;
+const receipt = (accion: 'RECIBIR' | 'RECHAZAR', nueva = true) => ({
+  http_status: 200,
+  ejecucion_nueva: nueva,
+  body: {
+    comando_id: key,
+    estado: 'CONFIRMADO',
+    error: null,
+    finalizado_en: '2026-11-06T12:00:00Z',
+    resultado: {
+      accion,
+      recoleccion_id: '100',
+      vivero_id: '1',
+      recepcion_id: accion === 'RECIBIR' ? '1' : null,
+      revision_anterior: '5',
+      revision_nueva: '6',
+      cantidad_recibida: accion === 'RECIBIR' ? 100 : null,
+      unidad_recibida: accion === 'RECIBIR' ? 'G' : null,
+      fecha_recepcion: accion === 'RECIBIR' ? '2026-11-06' : null,
+      actor_id: '20',
+      saldo_actual: 100,
+      estado_registro: accion === 'RECIBIR' ? 'VALIDADO' : 'RECHAZADO',
+      anclaje_externo: accion === 'RECIBIR' ? 'FUERA_TRANSACCION' : 'NO_APLICA',
+      motivo_rechazo:
+        accion === 'RECHAZAR' ? 'Cantidad declarada no conforme' : null,
+      registrado_en: '2026-11-06T12:00:00Z',
+    },
+  },
+});
+describe('Decisión y anclaje posterior a recepción', () => {
   let rpc: jest.Mock;
-  let findOne: jest.Mock;
-  let getClient: jest.Mock;
-  let service: RecoleccionValidacionService;
-
+  let blockchain: { executeBlockchainFlow: jest.Mock };
+  let service: RecoleccionRecepcionService;
   beforeEach(() => {
-    rol = 'VALIDADOR';
-    rpc = jest.fn().mockResolvedValue({ error: null });
-    findOne = jest
-      .fn()
-      .mockResolvedValue({ id: 9, estado_registro: 'RECHAZADO' });
-    getClient = jest.fn(() => {
-      throw new Error('Cliente público prohibido');
-    });
-    const admin = {
-      rpc,
-      from: jest.fn(() => ({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: jest.fn(async () => ({
-          data: { id: 7, rol, activo: true },
-          error: null,
-        })),
-      })),
+    rpc = jest.fn();
+    blockchain = {
+      executeBlockchainFlow: jest.fn().mockResolvedValue(undefined),
     };
-    const supabase = {
-      getAdminClient: () => admin,
-      getClient,
-    } as unknown as SupabaseService;
-    service = new RecoleccionValidacionService(
-      supabase,
-      new RecoleccionAuthService(supabase),
-      { findOne } as unknown as RecoleccionConsultasService,
-      undefined!,
-      undefined!,
-      undefined!,
+    service = new RecoleccionRecepcionService(
+      {
+        getAdminClient: () => ({ rpc }),
+        getClient: () => {
+          throw new Error('Cliente público prohibido');
+        },
+      } as unknown as SupabaseService,
+      {} as EvidenceFileService,
+      blockchain as unknown as RecoleccionBlockchainService,
     );
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
   });
-
-  it.each(['VALIDADOR', 'ADMIN'])(
-    'usa actor resuelto en DB y conserva motivo exacto (%s)',
-    async (role) => {
-      rol = role;
-      await expect(
-        service.rejectValidation(9, 'identidad-verificada', 'GENERAL', {
-          motivo_rechazo: motivo,
-        }),
-      ).resolves.toEqual({ id: 9, estado_registro: 'RECHAZADO' });
-      expect(rpc).toHaveBeenCalledWith('fn_recoleccion_rechazar_validacion', {
-        p_recoleccion_id: 9,
-        p_actor_id: 7,
-        p_motivo_rechazo: motivo,
-      });
-      expect(getClient).not.toHaveBeenCalled();
-      expect(findOne).toHaveBeenCalledWith(9);
-    },
-  );
-
-  it('un rol recibido no convierte a GENERAL en revisor', async () => {
-    rol = 'GENERAL';
+  afterEach(() => jest.restoreAllMocks());
+  it('el rechazo de ficha confirmado usa actor de sesión y no ejecuta blockchain', async () => {
+    const r = receipt('RECHAZAR');
+    rpc.mockResolvedValue({ data: r, error: null });
     await expect(
-      service.rejectValidation(9, 'identidad-verificada', 'ADMIN', {
-        motivo_rechazo: motivo,
-      }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-    expect(rpc).not.toHaveBeenCalled();
+      service.ejecutar(actor, key, payload('RECHAZAR')),
+    ).resolves.toEqual(r);
+    expect(rpc).toHaveBeenCalledWith('m1_recepcion_ejecutar', {
+      p_actor_id: '20',
+      p_auth_id: actor.auth_id,
+      p_comando_id: key,
+      p_payload: payload('RECHAZAR'),
+    });
+    expect(blockchain.executeBlockchainFlow).not.toHaveBeenCalled();
+  });
+  it('ejecuta anclaje sólo tras recibir por primera vez; replay y recuperación lo conservan', async () => {
+    rpc
+      .mockResolvedValueOnce({ data: receipt('RECIBIR'), error: null })
+      .mockResolvedValue({ data: receipt('RECIBIR', false), error: null });
+    await service.ejecutar(actor, key, payload('RECIBIR'));
+    await service.ejecutar(actor, key, payload('RECIBIR'));
+    await service.recuperar(actor, key);
+    expect(blockchain.executeBlockchainFlow).toHaveBeenCalledTimes(1);
+    expect(blockchain.executeBlockchainFlow).toHaveBeenCalledWith('100');
+  });
+  it('fallo externo conserva el comando y la recepción confirmados', async () => {
+    const r = receipt('RECIBIR');
+    rpc.mockResolvedValue({ data: r, error: null });
+    blockchain.executeBlockchainFlow.mockRejectedValue(
+      new Error('Servicio externo caído'),
+    );
+    await expect(
+      service.ejecutar(actor, key, payload('RECIBIR')),
+    ).resolves.toEqual(r);
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+  it('respuesta de DB perdida no fabrica rechazo ni ejecuta anclaje/reintento', async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: 'TIMEOUT' } });
+    await expect(
+      service.ejecutar(actor, key, payload('RECIBIR')),
+    ).rejects.toMatchObject({ status: 503 });
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(blockchain.executeBlockchainFlow).not.toHaveBeenCalled();
+  });
+  it('un rechazo de negocio conserva su recibo sin intentar anclaje', async () => {
+    const r = {
+      http_status: 409,
+      ejecucion_nueva: true,
+      body: {
+        comando_id: key,
+        estado: 'RECHAZADO',
+        resultado: null,
+        error: { codigo: 'MATERIAL_NO_CONFORME' },
+        finalizado_en: '2026-11-06T12:00:00Z',
+      },
+    };
+    rpc.mockResolvedValue({ data: r, error: null });
+    await expect(
+      service.ejecutar(actor, key, payload('RECIBIR')),
+    ).resolves.toEqual(r);
+    expect(blockchain.executeBlockchainFlow).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['42501', ForbiddenException],
-    ['P0002', NotFoundException],
-    ['P0001', BadRequestException],
-    ['22023', BadRequestException],
-    ['55P03', ConflictException],
-    ['57014', ConflictException],
-    ['40001', ConflictException],
-    ['XX000', InternalServerErrorException],
-  ])(
-    'propaga fallo %s sin compensación ni lectura de éxito',
-    async (code, exception) => {
-      rpc.mockResolvedValue({ error: { code } });
-      await expect(
-        service.rejectValidation(9, 'identidad-verificada', 'VALIDADOR', {
-          motivo_rechazo: motivo,
+  it('fija la revisión de carga antes de Storage y la envía al revalidar en SQL', async () => {
+    const remove = jest.fn();
+    rpc.mockImplementation(async (name: string) =>
+      name === 'm1_recepcion_leer'
+        ? {
+            data: { puede_recibir_validar: true, revision: '9007199254740992' },
+            error: null,
+          }
+        : { data: null, error: { code: 'P0001' } },
+    );
+    const client = {
+      rpc,
+      storage: {
+        from: () => ({
+          upload: async () => ({ data: { id: 'objeto' }, error: null }),
+          remove,
         }),
-      ).rejects.toBeInstanceOf(exception);
-      expect(findOne).not.toHaveBeenCalled();
-      expect(getClient).not.toHaveBeenCalled();
+      },
+    };
+    service = new RecoleccionRecepcionService(
+      { getAdminClient: () => client } as unknown as SupabaseService,
+      {
+        prepareOriginalEvidenceFiles: () => [
+          {
+            storageExtension: 'jpg',
+            originalBuffer: Buffer.from('foto'),
+            storageContentType: 'image/jpeg',
+            tamanoBytes: 4,
+            hashSha256: 'hash',
+          },
+        ],
+      } as unknown as EvidenceFileService,
+      blockchain as unknown as RecoleccionBlockchainService,
+    );
+    await expect(service.evidencias(actor, '100', [{}])).rejects.toMatchObject({
+      status: 409,
+    });
+    expect(rpc).toHaveBeenLastCalledWith(
+      'm1_recepcion_evidencias_preparar',
+      expect.objectContaining({ p_revision_esperada: '9007199254740992' }),
+    );
+    expect(remove).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['TIMEOUT', 'RESPUESTA_INVALIDA', 'ID_INVALIDO'])(
+    'una carga incierta conserva recursos (%s)',
+    async (fallo) => {
+      const remove = jest.fn();
+      rpc.mockImplementation(async (name: string) =>
+        name === 'm1_recepcion_leer'
+          ? {
+              data: { puede_recibir_validar: true, revision: '5' },
+              error: null,
+            }
+          : fallo === 'TIMEOUT'
+            ? { data: null, error: { code: 'TIMEOUT' } }
+            : { data: fallo === 'ID_INVALIDO' ? [1] : [], error: null },
+      );
+      const client = {
+        rpc,
+        storage: {
+          from: () => ({
+            upload: async () => ({ data: { id: 'objeto' }, error: null }),
+            remove,
+          }),
+        },
+      };
+      service = new RecoleccionRecepcionService(
+        { getAdminClient: () => client } as unknown as SupabaseService,
+        {
+          prepareOriginalEvidenceFiles: () => [
+            {
+              storageExtension: 'jpg',
+              originalBuffer: Buffer.from('foto'),
+              storageContentType: 'image/jpeg',
+              tamanoBytes: 4,
+              hashSha256: 'hash',
+            },
+          ],
+        } as unknown as EvidenceFileService,
+        blockchain as unknown as RecoleccionBlockchainService,
+      );
+      await expect(
+        service.evidencias(actor, '100', [{}]),
+      ).rejects.toMatchObject({ status: 503 });
+      expect(remove).not.toHaveBeenCalled();
     },
   );
 
-  it.each([
-    [9, false],
-    [10, true],
-    [500, true],
-    [501, false],
-  ])(
-    'mantiene contrato HTTP de motivo con %i caracteres',
-    async (length, valid) => {
-      const dto = Object.assign(new RejectValidationDto(), {
-        motivo_rechazo: 'a'.repeat(length as number),
-      });
-      expect((await validate(dto)).length === 0).toBe(valid);
-    },
-  );
+  it('un recibo incoherente conserva incertidumbre', async () => {
+    rpc.mockResolvedValue({
+      data: { ...receipt('RECIBIR'), ejecucion_nueva: undefined },
+      error: null,
+    });
+    await expect(
+      service.ejecutar(actor, key, payload('RECIBIR')),
+    ).rejects.toBeInstanceOf(HttpException);
+    expect(blockchain.executeBlockchainFlow).not.toHaveBeenCalled();
+  });
 });

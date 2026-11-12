@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import select
@@ -119,7 +120,7 @@ def main():
         return f"SELECT to_jsonb(x) FROM public.fn_vivero_asignar_stock_subcampania({lote},{sub},2,'{proposito}',{actor},CURRENT_DATE,ARRAY[{','.join(map(str,ids))}]::bigint[],NULL) x;"
     def devolucion(actor,asig): return f"SELECT to_jsonb(x) FROM public.fn_m3_devolver_asignacion_vivero({asig},1,'SOBRANTE_OPERATIVO',{actor},CURRENT_DATE,NULL) x;"
     def extract(file,name):
-        s=(ROOT/'migrations'/file).read_text();start=s.index('CREATE OR REPLACE FUNCTION public.'+name+'(');end=s.index('$$;',s.index('AS $$',start))+3
+        s=(ROOT/'migrations'/file).read_text();match=re.search(r'CREATE(?: OR REPLACE)? FUNCTION public\.'+re.escape(name)+r'\(',s);start=match.start();end=s.index('$$;',s.index('AS $$',start))+3
         return s[start:end]
     failed=True
     try:
@@ -283,6 +284,13 @@ def main():
         check(len(paged['historial'])==1 and int(next_page['historial'][0]['id'])<int(paged['historial'][0]['id']),'Historial M2 pagina por cursor exacto sin mezclar revisiones de rol/M1')
         # HTTP ejecuta las mismas RPC reales a través de un adaptador SQL local y JWT real.
         if not args.sql_only:
+            # El antecedente sigue probando 094/095. Estas proyecciones actuales
+            # alinean capacidades e IDs de INICIO; no instalan recepción
+            # ni acreditan la migración 100 completa sobre este fixture histórico.
+            sql(extract('100_recoleccion_recepcion_unica.sql','m2_acceso_leer'))
+            sql(extract('097_vivero_conciliacion_historica.sql','m2_inicio_lote_exacto'))
+            sql('REVOKE ALL ON FUNCTION public.m2_inicio_lote_exacto(bigint,bigint,bigint,date,date,numeric,public.unidad_medida,text,bigint[],text) FROM PUBLIC,anon,authenticated; GRANT EXECUTE ON FUNCTION public.m2_inicio_lote_exacto(bigint,bigint,bigint,date,date,numeric,public.unidad_medida,text,bigint[],text) TO service_role;')
+            check(True,'HTTP usa lector de capacidades 100 y proyección de IDs 097 sobre antecedente T2, sin instalar recepción/conciliación')
             http_env=dict(env,T2_DB_SOCKET=str(socket),T2_DB_PORT='55444',T2_DB_PSQL=binaries['psql'],NODE_ENV='test')
             r=subprocess.run(['node',str(ROOT/'node_modules/jest/bin/jest.js'),'--config',str(ROOT/'test/jest-vivero-acceso-db.json'),'--runInBand','--cacheDirectory=/private/tmp/t2-jest'],cwd=ROOT,env=http_env,timeout=180)
             http={'exit_code':r.returncode,'suite':'test/db/vivero-acceso-http.spec.ts'}
@@ -295,8 +303,8 @@ def main():
         stopped=not (cluster/'postmaster.pid').exists()
         if stopped: shutil.rmtree(directory)
         if args.evidence:
-            files=list((ROOT/'src/lotes-vivero').rglob('*.ts'))+list((ROOT/'src/recolecciones').rglob('*.ts'))+list((ROOT/'src/evidencias-trazabilidad').rglob('*.ts'))+[ROOT/'migrations'/m for m in MIGRATIONS]+[Path(__file__).resolve(),ROOT/'test/db/vivero-acceso-fixture.sql',ROOT/'test/db/vivero-acceso-postgis-fixture.sql',ROOT/'test/db/vivero-acceso-http.spec.ts',ROOT/'test/jest-vivero-acceso-db.json']
-            args.evidence.write_text(json.dumps({'tarea':'T2_ACCESO_VIVEROS','estado':'FALLIDO' if failed else 'CORRECTO','fecha':'2026-11-05','entorno':{'tipo':'SINTETICO_LOCAL','postgres':version,'tcp':False,'sin_env':True,'postgis':postgis_version or False,'cluster_detenido':stopped,'directorio_eliminado':not directory.exists()},'base':run(['git','-C',str(ROOT),'rev-parse','HEAD']),'base_arbol':'docs/evidencia/t2-acceso-viveros-base-2026-11-05.json','migraciones':MIGRATIONS,'comprobaciones':checks,'carreras':races,'http':http,'sha256':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(files))}},ensure_ascii=False,indent=2)+'\n')
+            files=list((ROOT/'src/lotes-vivero').rglob('*.ts'))+list((ROOT/'src/recolecciones').rglob('*.ts'))+list((ROOT/'src/evidencias-trazabilidad').rglob('*.ts'))+[ROOT/'migrations'/m for m in MIGRATIONS]+[Path(__file__).resolve(),ROOT/'test/db/vivero-acceso-fixture.sql',ROOT/'test/db/vivero-acceso-postgis-fixture.sql',ROOT/'test/db/vivero-acceso-http.spec.ts',ROOT/'test/jest-vivero-acceso-db.json',ROOT/'migrations/100_recoleccion_recepcion_unica.sql',ROOT/'migrations/097_vivero_conciliacion_historica.sql']
+            args.evidence.write_text(json.dumps({'tarea':'T2_ACCESO_VIVEROS','estado':'FALLIDO' if failed else 'CORRECTO','fecha':time.strftime('%Y-%m-%d'),'entorno':{'tipo':'SINTETICO_LOCAL','postgres':version,'tcp':False,'sin_env':True,'postgis':postgis_version or False,'cluster_detenido':stopped,'directorio_eliminado':not directory.exists()},'base':run(['git','-C',str(ROOT),'rev-parse','HEAD']),'base_arbol':'docs/evidencia/t2-acceso-viveros-base-2026-11-05.json','migraciones':MIGRATIONS,'proyecciones_actuales_http':[] if args.sql_only else ['100:m2_acceso_leer','097:m2_inicio_lote_exacto'],'comprobaciones':checks,'carreras':races,'http':http,'sha256':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(files))}},ensure_ascii=False,indent=2)+'\n')
     print(f'T2: {len(checks)} grupos SQL y {len(races)} carreras aprobados.',flush=True)
 
 if __name__=='__main__': main()

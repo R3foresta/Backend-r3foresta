@@ -1,8 +1,7 @@
 # Consumo frontend - Recolecciones
 
-> T4 local requiere096 para nuevos consumos/desechos: VALIDADO y recepción física conforme. GENERAL/VALIDADOR con M2 pueden «Recibir y validar» a otra persona sin M1 mediante la [API v1 de recepción](../../docs/t4-recepcion-semillas.md#api-consumible). Incidencias, recuperación y conciliación histórica conservan contrato separado de la revisión documental. Revisión/corte remoto pendientes.
+> [Recepción única](../../docs/t4-recepcion-semillas.md): ADMIN global o VALIDADOR con asignación vigente recibe/valida o rechaza con motivo, sin aprobación documental autónoma. El recolector corrige la misma ficha/código. Requiere100 y corte coordinado; esta guía no acredita aplicación remota ni cambios en la PWA.
 
-> T2 local acota revisión documental a ADMIN/VALIDADOR asignado al almacenamiento y DESECHO a ADMIN u operario vigente de ese vivero, sin M1/autoría como permiso. No registra recepción física. [Contrato actual y límites](../../docs/t2-acceso-viveros.md).
 
 Documento operativo para que el equipo de frontend (PWA) y herramientas IA consuman el backend sin inventar campos ni asumir comportamientos.
 
@@ -32,8 +31,8 @@ con `sub`. `x-user-role` no concede permisos: el guard lo deriva de la cuenta.
 T1 añade [acceso M1 explícito y su administración por API](../../docs/t1-acceso-recoleccion.md).
 Consultar `/api/v1/me/acceso-recoleccion`: GENERAL/VALIDADOR requieren acceso efectivo
 para capturar y mantener lo propio; ADMIN deriva acceso. La revisión M1 se mantiene
-separada de `revision_autoridad`. El autor no puede aprobar su ficha, incluso ADMIN.
-T2 permite DESECHO a ADMIN u operario vigente del almacenamiento y aporta capacidades por vivero; la UI conjunta sigue en T3. Aplicación hasta095 reportada por el usuario; cotejo y despliegue se acreditan aparte.
+separada de `revision_autoridad`. El autor no puede recibir/validar su ficha, incluso ADMIN.
+DESECHO conserva ADMIN u operario vigente del almacenamiento. Las decisiones usan los flags por objeto de la API de recepción; los flags M1 solo indican editar/enviar. Aplicación100 y despliegue se acreditan aparte.
 
 Abrir la URL directamente en la barra del navegador no agrega el Bearer almacenado
 por la PWA y devuelve 401. Un 500 con `Error al obtener evidencias de recolecciones`
@@ -47,8 +46,6 @@ corresponde a una lectura posterior a la autenticación en el backend.
 | PATCH | `/api/recolecciones/:id/draft` | Editar borrador antes de enviar a validación |
 | DELETE | `/api/recolecciones/:id` | Eliminar lógicamente un `BORRADOR` propio (o cualquiera si es ADMIN) |
 | PATCH | `/api/recolecciones/:id/submit` | Enviar borrador a la bandeja del validador |
-| PATCH | `/api/recolecciones/:id/approve` | Validar (VALIDADOR / ADMIN distintos del autor). Dispara IPFS + NFT |
-| PATCH | `/api/recolecciones/:id/reject` | Rechazar con motivo (solo VALIDADOR / ADMIN) |
 | GET | `/api/recolecciones/pending-validation` | Bandeja del validador |
 | GET | `/api/recolecciones` | Lista propia con filtros |
 | GET | `/api/recolecciones/vivero/:viveroId` | M1: recolecciones propias por vivero; revisión ADMIN global o VALIDADOR asignado al almacenamiento |
@@ -71,8 +68,9 @@ Pantalla de captura
    ▼
 Bandeja del validador
    │
-   ├─► PATCH /:id/approve  →  VALIDADO + nft minteado
-   └─► PATCH /:id/reject   →  RECHAZADO + motivo_rechazo guardado
+   ├─► POST /v1/recepcion-semillas/:id/recibir-validar → VALIDADO
+   └─► POST /v1/recepcion-semillas/:id/rechazar → RECHAZADO + motivo
+           └─► PATCH /recolecciones/:id/draft → BORRADOR → submit
 ```
 
 Una vez `VALIDADO`, la recolección **no** se puede editar y queda disponible como origen de lotes de vivero.
@@ -211,30 +209,22 @@ PATCH antes de llamar a `submit`; un error de edición debe impedir el reenvío.
 
 Sin body. Transiciona de `BORRADOR` a `PENDIENTE_VALIDACION`.
 
-## PATCH /api/recolecciones/:id/approve y /:id/reject
+## Recepción y rechazo
 
-Requiere Bearer y ADMIN o VALIDADOR asignado al vivero de almacenamiento, verificado
-por el servidor. La aprobación propia está prohibida incluso para ADMIN.
+Usar la [API v1 de recepción](../../docs/t4-recepcion-semillas.md#api-consumible).
+El receptor confirma cantidad/unidad precargadas y fecha física con 1–5 fotos,
+o rechaza con motivo sin exigir foto. Las dos decisiones requieren revisión
+esperada y clave de comando; actor/vivero se derivan en servidor. Rechazar la
+ficha correctamente devuelve comando `CONFIRMADO` y ficha `RECHAZADO`.
 
-Body de `reject`:
+El snapshot del rechazo conserva la versión anterior a la corrección. Corregir
+cantidad/unidad/notas/fotos no cambia ubicación ni fecha si se omiten o conservan.
+La ventana de45 días se aplica a creación y cambio explícito de fecha; una ficha
+válida envejecida puede corregirse, reenviarse y recibirse sin cambiar ese día.
+No recapturar GPS como requisito de corrección ni reemplazar `fuente` por defecto.
 
-```json
-{ "motivo_rechazo": "Datos incompletos o inconsistentes" }
-```
-
-`motivo_rechazo`: string 10–500 caracteres.
-
-`reject` permite rechazar cualquier ficha en `PENDIENTE_VALIDACION`, aunque su
-fecha ya supere 45 días o sea futura; estado, motivo e historial se guardan juntos
-en la RPC privada de 090. La autorización y el motivo siguen siendo obligatorios.
-Un segundo rechazo devuelve 400 por estado; un conflicto temporal de locks devuelve
-409 y permite reintentar. No requiere modificar la fecha para rechazar.
-
-`approve` conserva la ventana de fecha original: hasta 45 días atrás, sin fechas
-futuras. Corregir y reenviar una ficha rechazada también conserva las restricciones
-temporales previas. La aprobación persiste la validación antes de Pinata/mint;
-los efectos externos no comparten la transacción de PostgreSQL. Ver
-[arquitectura](../../ARCHITECTURE.md#invariantes-y-transacciones).
+Ante timeout o respuesta perdida conservar intención/UUID/fotos y consultar el
+mismo comando. No enviar otra intención automáticamente ni asumir rollback.
 
 ## GET /api/recolecciones (lista propia)
 
@@ -309,7 +299,7 @@ Forma de la respuesta (campos clave):
 |---|---|
 | 400 | DTO inválido, `forbidNonWhitelisted` rechaza campos extra, fecha futura |
 | 401 | Bearer ausente o inválido |
-| 403 | M1 ausente/retirado, objeto ajeno o aprobación propia; revisión exige VALIDADOR/ADMIN distintos del autor |
+| 403 | M1 ausente/retirado, objeto ajeno o autorrecepción; recepción exige ADMIN o VALIDADOR asignado distinto del autor |
 | 404 | `id` no existe |
 | 409 | Ficha modificada durante la preparación; releer antes de repetir. Estado/datos inválidos devuelven 400 |
 | 503 | Escritura inconclusa; consultar la ficha antes de repetir. Comandos de acceso M1 conservan su UUID e intención |

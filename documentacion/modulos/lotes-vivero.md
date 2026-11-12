@@ -3,6 +3,13 @@
 > **Contrato vigente local T2 (5 de noviembre de2026):** [API, ámbitos, errores, recuperación y límites](../../docs/t2-acceso-viveros.md), [OpenAPI real](../../docs/vivero-acceso-openapi.json). Todas las rutas operativas requieren Bearer JWT verificado y ámbito de vivero; ADMIN deriva alcance global. La carga multipart previa a INICIO exige `vivero_id`; las demás usan el lote de la ruta. Entrega/devolución explícitas requieren ADMIN o M2 + COORDINADOR. Los ejemplos numéricos seguros siguen admitidos; usar cadenas para BIGINT. Aplicación hasta095 reportada por el usuario; cotejo de catálogo y despliegue pendientes.
 
 
+La recepción y validación de origen siguen el [contrato de recepción única](../../docs/t4-recepcion-semillas.md).
+La migración100 retira conciliación y exige recepción conforme antes de INICIO o
+DESECHO. GENERAL con M2 conserva operación. Los días de INICIO/evento no preceden
+la recepción; el material recibido no caduca por superar45 días de recolección.
+`GET /api/v1/vivero/origenes` conserva `saldo_actual_exacto` y `motivo_no_inicio`
+al solicitar requisitos. La cantidad se descuenta una sola vez, dentro de la RPC.
+
 ## 📋 Índice
 
 1. [Descripción General](#descripción-general)
@@ -93,9 +100,9 @@ Todos los endpoints de **escritura** (`POST`) requieren:
 |--------|-------------|---------|
 | `Authorization` | JWT de sesión verificado por el servidor | `Bearer {{token}}` |
 
-**Roles con permiso de escritura**: `ADMIN`, `GENERAL`
-
-Los endpoints de **lectura** (`GET`) no requieren autenticación.
+**Operación**: ADMIN o GENERAL/VALIDADOR con M2 vigente al vivero.
+Todos los GET también requieren Bearer y ámbito de objeto. Recibir requiere ADMIN global o VALIDADOR
+con asignación explícita; ese requisito no se aplica a INICIO ni a DESECHO.
 
 ---
 

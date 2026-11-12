@@ -55,10 +55,10 @@
                           "saldo_actual",
                           "revision",
                           "estado_registro",
+                          "motivo_rechazo",
                           "recepcion",
-                          "incidencia",
-                          "requiere_conciliacion",
-                          "puede_recibir_validar"
+                          "puede_recibir_validar",
+                          "puede_rechazar"
                         ],
                         "properties": {
                           "recoleccion_id": {
@@ -123,9 +123,15 @@
                           "estado_registro": {
                             "type": "string",
                             "enum": [
+                              "BORRADOR",
                               "PENDIENTE_VALIDACION",
+                              "RECHAZADO",
                               "VALIDADO"
                             ]
+                          },
+                          "motivo_rechazo": {
+                            "type": "string",
+                            "nullable": true
                           },
                           "recepcion": {
                             "type": "object",
@@ -158,47 +164,10 @@
                             },
                             "nullable": true
                           },
-                          "incidencia": {
-                            "type": "object",
-                            "additionalProperties": false,
-                            "required": [
-                              "id",
-                              "cantidad_observada",
-                              "unidad_observada",
-                              "fecha_recepcion",
-                              "registrado_en"
-                            ],
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "pattern": "^[1-9][0-9]*$",
-                                "maxLength": 19
-                              },
-                              "cantidad_observada": {
-                                "type": "number"
-                              },
-                              "unidad_observada": {
-                                "type": "string",
-                                "enum": [
-                                  "G",
-                                  "UNIDAD"
-                                ]
-                              },
-                              "fecha_recepcion": {
-                                "type": "string",
-                                "format": "date"
-                              },
-                              "registrado_en": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "nullable": true
-                          },
-                          "requiere_conciliacion": {
+                          "puede_recibir_validar": {
                             "type": "boolean"
                           },
-                          "puede_recibir_validar": {
+                          "puede_rechazar": {
                             "type": "boolean"
                           }
                         }
@@ -221,108 +190,7 @@
             "bearer": []
           }
         ],
-        "summary": "Cola M2 por custodia: pendientes, incidencias y VALIDADO sin recepción. Sin exigir M1.",
-        "tags": [
-          "recepcion-semillas-v1"
-        ]
-      }
-    },
-    "/api/v1/recepcion-semillas/diagnostico": {
-      "get": {
-        "operationId": "RecoleccionRecepcionController_diagnostico",
-        "parameters": [
-          {
-            "name": "limite",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "antes_de_id",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": [
-                      "recoleccion_id",
-                      "vivero_id",
-                      "cantidad_original",
-                      "saldo_actual",
-                      "unidad",
-                      "fecha_recoleccion",
-                      "movimientos",
-                      "lotes",
-                      "recepcion_acreditada"
-                    ],
-                    "properties": {
-                      "recoleccion_id": {
-                        "type": "string",
-                        "pattern": "^[1-9][0-9]*$",
-                        "maxLength": 19
-                      },
-                      "vivero_id": {
-                        "type": "string",
-                        "pattern": "^[1-9][0-9]*$",
-                        "maxLength": 19,
-                        "nullable": true
-                      },
-                      "cantidad_original": {
-                        "type": "number"
-                      },
-                      "saldo_actual": {
-                        "type": "number"
-                      },
-                      "unidad": {
-                        "type": "string",
-                        "enum": [
-                          "G",
-                          "UNIDAD"
-                        ]
-                      },
-                      "fecha_recoleccion": {
-                        "type": "string",
-                        "format": "date"
-                      },
-                      "movimientos": {
-                        "type": "integer"
-                      },
-                      "lotes": {
-                        "type": "integer"
-                      },
-                      "recepcion_acreditada": {
-                        "type": "boolean",
-                        "enum": [
-                          false
-                        ]
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "ADMIN: diagnóstico paginado de VALIDADO sin prueba física; no cambia stock ni fabrica recepción.",
+        "summary": "Pendientes de recepción: ADMIN global o VALIDADOR con asignación vigente al vivero. Sin exigir M1.",
         "tags": [
           "recepcion-semillas-v1"
         ]
@@ -344,7 +212,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Recibo original CONFIRMADO, INCIDENCIA o RECHAZADO.",
+            "description": "Recibo original CONFIRMADO o error de comando RECHAZADO.",
             "content": {
               "application/json": {
                 "schema": {
@@ -366,32 +234,40 @@
                       "type": "string",
                       "enum": [
                         "CONFIRMADO",
-                        "INCIDENCIA",
                         "RECHAZADO",
                         "SIN_RESULTADO",
                         "CONFLICTO_CLAVE"
-                      ]
+                      ],
+                      "description": "CONFIRMADO incluye la decisión de rechazar la ficha. RECHAZADO representa un error del comando."
                     },
                     "resultado": {
                       "type": "object",
                       "additionalProperties": false,
                       "required": [
+                        "accion",
                         "recoleccion_id",
                         "vivero_id",
-                        "observacion_id",
                         "recepcion_id",
-                        "incidencia_id",
                         "revision_anterior",
                         "revision_nueva",
                         "cantidad_recibida",
                         "unidad_recibida",
                         "fecha_recepcion",
-                        "recibido_por",
+                        "actor_id",
                         "saldo_actual",
                         "estado_registro",
-                        "anclaje_externo"
+                        "anclaje_externo",
+                        "motivo_rechazo",
+                        "registrado_en"
                       ],
                       "properties": {
+                        "accion": {
+                          "type": "string",
+                          "enum": [
+                            "RECIBIR",
+                            "RECHAZAR"
+                          ]
+                        },
                         "recoleccion_id": {
                           "type": "string",
                           "pattern": "^[1-9][0-9]*$",
@@ -402,18 +278,7 @@
                           "pattern": "^[1-9][0-9]*$",
                           "maxLength": 19
                         },
-                        "observacion_id": {
-                          "type": "string",
-                          "pattern": "^[1-9][0-9]*$",
-                          "maxLength": 19
-                        },
                         "recepcion_id": {
-                          "type": "string",
-                          "pattern": "^[1-9][0-9]*$",
-                          "maxLength": 19,
-                          "nullable": true
-                        },
-                        "incidencia_id": {
                           "type": "string",
                           "pattern": "^[1-9][0-9]*$",
                           "maxLength": 19,
@@ -430,20 +295,23 @@
                           "maxLength": 19
                         },
                         "cantidad_recibida": {
-                          "type": "number"
+                          "type": "number",
+                          "nullable": true
                         },
                         "unidad_recibida": {
                           "type": "string",
                           "enum": [
                             "G",
                             "UNIDAD"
-                          ]
+                          ],
+                          "nullable": true
                         },
                         "fecha_recepcion": {
                           "type": "string",
-                          "format": "date"
+                          "format": "date",
+                          "nullable": true
                         },
-                        "recibido_por": {
+                        "actor_id": {
                           "type": "string",
                           "pattern": "^[1-9][0-9]*$",
                           "maxLength": 19
@@ -452,13 +320,26 @@
                           "type": "number"
                         },
                         "estado_registro": {
-                          "type": "string"
+                          "type": "string",
+                          "enum": [
+                            "VALIDADO",
+                            "RECHAZADO"
+                          ]
                         },
                         "anclaje_externo": {
                           "type": "string",
                           "enum": [
-                            "PENDIENTE_NO_EJECUTADO"
+                            "FUERA_TRANSACCION",
+                            "NO_APLICA"
                           ]
+                        },
+                        "motivo_rechazo": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "registrado_en": {
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "nullable": true
@@ -509,32 +390,40 @@
                       "type": "string",
                       "enum": [
                         "CONFIRMADO",
-                        "INCIDENCIA",
                         "RECHAZADO",
                         "SIN_RESULTADO",
                         "CONFLICTO_CLAVE"
-                      ]
+                      ],
+                      "description": "CONFIRMADO incluye la decisión de rechazar la ficha. RECHAZADO representa un error del comando."
                     },
                     "resultado": {
                       "type": "object",
                       "additionalProperties": false,
                       "required": [
+                        "accion",
                         "recoleccion_id",
                         "vivero_id",
-                        "observacion_id",
                         "recepcion_id",
-                        "incidencia_id",
                         "revision_anterior",
                         "revision_nueva",
                         "cantidad_recibida",
                         "unidad_recibida",
                         "fecha_recepcion",
-                        "recibido_por",
+                        "actor_id",
                         "saldo_actual",
                         "estado_registro",
-                        "anclaje_externo"
+                        "anclaje_externo",
+                        "motivo_rechazo",
+                        "registrado_en"
                       ],
                       "properties": {
+                        "accion": {
+                          "type": "string",
+                          "enum": [
+                            "RECIBIR",
+                            "RECHAZAR"
+                          ]
+                        },
                         "recoleccion_id": {
                           "type": "string",
                           "pattern": "^[1-9][0-9]*$",
@@ -545,18 +434,7 @@
                           "pattern": "^[1-9][0-9]*$",
                           "maxLength": 19
                         },
-                        "observacion_id": {
-                          "type": "string",
-                          "pattern": "^[1-9][0-9]*$",
-                          "maxLength": 19
-                        },
                         "recepcion_id": {
-                          "type": "string",
-                          "pattern": "^[1-9][0-9]*$",
-                          "maxLength": 19,
-                          "nullable": true
-                        },
-                        "incidencia_id": {
                           "type": "string",
                           "pattern": "^[1-9][0-9]*$",
                           "maxLength": 19,
@@ -573,20 +451,23 @@
                           "maxLength": 19
                         },
                         "cantidad_recibida": {
-                          "type": "number"
+                          "type": "number",
+                          "nullable": true
                         },
                         "unidad_recibida": {
                           "type": "string",
                           "enum": [
                             "G",
                             "UNIDAD"
-                          ]
+                          ],
+                          "nullable": true
                         },
                         "fecha_recepcion": {
                           "type": "string",
-                          "format": "date"
+                          "format": "date",
+                          "nullable": true
                         },
-                        "recibido_por": {
+                        "actor_id": {
                           "type": "string",
                           "pattern": "^[1-9][0-9]*$",
                           "maxLength": 19
@@ -595,13 +476,26 @@
                           "type": "number"
                         },
                         "estado_registro": {
-                          "type": "string"
+                          "type": "string",
+                          "enum": [
+                            "VALIDADO",
+                            "RECHAZADO"
+                          ]
                         },
                         "anclaje_externo": {
                           "type": "string",
                           "enum": [
-                            "PENDIENTE_NO_EJECUTADO"
+                            "FUERA_TRANSACCION",
+                            "NO_APLICA"
                           ]
+                        },
+                        "motivo_rechazo": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "registrado_en": {
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "nullable": true
@@ -677,10 +571,15 @@
                     "saldo_actual",
                     "revision",
                     "estado_registro",
+                    "motivo_rechazo",
                     "recepcion",
-                    "incidencia",
-                    "requiere_conciliacion",
                     "puede_recibir_validar",
+                    "puede_rechazar",
+                    "observaciones",
+                    "ubicacion_id",
+                    "metodo_id",
+                    "planta_id",
+                    "ubicacion",
                     "historial",
                     "evidencias"
                   ],
@@ -747,9 +646,15 @@
                     "estado_registro": {
                       "type": "string",
                       "enum": [
+                        "BORRADOR",
                         "PENDIENTE_VALIDACION",
+                        "RECHAZADO",
                         "VALIDADO"
                       ]
+                    },
+                    "motivo_rechazo": {
+                      "type": "string",
+                      "nullable": true
                     },
                     "recepcion": {
                       "type": "object",
@@ -782,15 +687,46 @@
                       },
                       "nullable": true
                     },
-                    "incidencia": {
+                    "puede_recibir_validar": {
+                      "type": "boolean"
+                    },
+                    "puede_rechazar": {
+                      "type": "boolean"
+                    },
+                    "observaciones": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "ubicacion_id": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]*$",
+                      "maxLength": 19
+                    },
+                    "metodo_id": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]*$",
+                      "maxLength": 19,
+                      "nullable": true
+                    },
+                    "planta_id": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]*$",
+                      "maxLength": 19,
+                      "nullable": true
+                    },
+                    "ubicacion": {
                       "type": "object",
                       "additionalProperties": false,
                       "required": [
                         "id",
-                        "cantidad_observada",
-                        "unidad_observada",
-                        "fecha_recepcion",
-                        "registrado_en"
+                        "pais_id",
+                        "division_id",
+                        "nombre",
+                        "referencia",
+                        "latitud",
+                        "longitud",
+                        "precision_m",
+                        "fuente"
                       ],
                       "properties": {
                         "id": {
@@ -798,32 +734,44 @@
                           "pattern": "^[1-9][0-9]*$",
                           "maxLength": 19
                         },
-                        "cantidad_observada": {
-                          "type": "number"
-                        },
-                        "unidad_observada": {
+                        "pais_id": {
                           "type": "string",
-                          "enum": [
-                            "G",
-                            "UNIDAD"
-                          ]
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "nullable": true
                         },
-                        "fecha_recepcion": {
+                        "division_id": {
                           "type": "string",
-                          "format": "date"
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "nullable": true
                         },
-                        "registrado_en": {
+                        "nombre": {
                           "type": "string",
-                          "format": "date-time"
+                          "nullable": true
+                        },
+                        "referencia": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "latitud": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "longitud": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "precision_m": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "fuente": {
+                          "type": "string",
+                          "nullable": true
                         }
                       },
                       "nullable": true
-                    },
-                    "requiere_conciliacion": {
-                      "type": "boolean"
-                    },
-                    "puede_recibir_validar": {
-                      "type": "boolean"
                     },
                     "historial": {
                       "type": "array",
@@ -832,16 +780,12 @@
                         "additionalProperties": false,
                         "required": [
                           "id",
-                          "clase",
+                          "tipo_historial",
+                          "estado_origen",
+                          "estado_destino",
                           "actor_id",
-                          "cantidad_declarada",
-                          "unidad_declarada",
-                          "cantidad_observada",
-                          "unidad_observada",
-                          "fecha_recepcion",
-                          "incidencia_id",
-                          "motivo_resolucion",
-                          "registrado_en"
+                          "fecha",
+                          "metadata"
                         ],
                         "properties": {
                           "id": {
@@ -849,55 +793,29 @@
                             "pattern": "^[1-9][0-9]*$",
                             "maxLength": 19
                           },
-                          "clase": {
+                          "tipo_historial": {
+                            "type": "string"
+                          },
+                          "estado_origen": {
                             "type": "string",
-                            "enum": [
-                              "CONFORME",
-                              "INCIDENCIA"
-                            ]
+                            "nullable": true
+                          },
+                          "estado_destino": {
+                            "type": "string"
                           },
                           "actor_id": {
-                            "type": "string",
-                            "pattern": "^[1-9][0-9]*$",
-                            "maxLength": 19
-                          },
-                          "cantidad_declarada": {
-                            "type": "number"
-                          },
-                          "unidad_declarada": {
-                            "type": "string",
-                            "enum": [
-                              "G",
-                              "UNIDAD"
-                            ]
-                          },
-                          "cantidad_observada": {
-                            "type": "number"
-                          },
-                          "unidad_observada": {
-                            "type": "string",
-                            "enum": [
-                              "G",
-                              "UNIDAD"
-                            ]
-                          },
-                          "fecha_recepcion": {
-                            "type": "string",
-                            "format": "date"
-                          },
-                          "incidencia_id": {
                             "type": "string",
                             "pattern": "^[1-9][0-9]*$",
                             "maxLength": 19,
                             "nullable": true
                           },
-                          "motivo_resolucion": {
+                          "fecha": {
                             "type": "string",
-                            "nullable": true
+                            "format": "date"
                           },
-                          "registrado_en": {
-                            "type": "string",
-                            "format": "date-time"
+                          "metadata": {
+                            "type": "object",
+                            "additionalProperties": true
                           }
                         }
                       }
@@ -913,7 +831,7 @@
                           "ruta_archivo",
                           "mime_type",
                           "titulo",
-                          "observacion_id",
+                          "recepcion_id",
                           "public_url"
                         ],
                         "properties": {
@@ -935,7 +853,7 @@
                             "type": "string",
                             "nullable": true
                           },
-                          "observacion_id": {
+                          "recepcion_id": {
                             "type": "string",
                             "pattern": "^[1-9][0-9]*$",
                             "maxLength": 19,
@@ -959,7 +877,7 @@
             "bearer": []
           }
         ],
-        "summary": "Detalle y evidencias mínimos autorizados M2, revisión exacta, incidencia e historia. No abre la ficha privada M1.",
+        "summary": "Detalle, revisión exacta e historial para ADMIN o VALIDADOR con asignación vigente al vivero.",
         "tags": [
           "recepcion-semillas-v1"
         ]
@@ -1043,7 +961,7 @@
             "bearer": []
           }
         ],
-        "summary": "Carga multipart en contexto inmutable actor/origen/custodia; bucket legado público.",
+        "summary": "Carga de 1–5 fotos multipart con contexto inmutable actor/origen/vivero/revisión; bucket legado público.",
         "tags": [
           "recepcion-semillas-v1"
         ]
@@ -1092,7 +1010,8 @@
                   "cantidad_recibida": {
                     "type": "number",
                     "exclusiveMinimum": true,
-                    "minimum": 0
+                    "minimum": 0,
+                    "description": "Debe coincidir exactamente con lo declarado al normalizar G/KG. G admite hasta seis decimales; UNIDAD es entero."
                   },
                   "unidad_recibida": {
                     "type": "string",
@@ -1106,7 +1025,7 @@
                   "fecha_recepcion": {
                     "type": "string",
                     "format": "date",
-                    "description": "Día físico entre fecha de recolección y hoy en America/La_Paz."
+                    "description": "Día físico entre fecha de recolección y hoy en America/La_Paz. No es el instante de registro."
                   },
                   "evidencia_ids": {
                     "type": "array",
@@ -1117,17 +1036,8 @@
                       "type": "string",
                       "pattern": "^[1-9][0-9]*$",
                       "maxLength": 19
-                    }
-                  },
-                  "incidencia_id": {
-                    "type": "string",
-                    "pattern": "^[1-9][0-9]*$",
-                    "maxLength": 19
-                  },
-                  "motivo_resolucion": {
-                    "type": "string",
-                    "minLength": 10,
-                    "maxLength": 500
+                    },
+                    "description": "Fotos cargadas por esta cuenta para la revisión actual de esta ficha y vivero."
                   }
                 }
               }
@@ -1136,7 +1046,7 @@
         },
         "responses": {
           "200": {
-            "description": "Recibo durable CONFIRMADO o INCIDENCIA. Anclaje externo no ejecutado.",
+            "description": "Recibo durable CONFIRMADO; ficha VALIDADO. Anclaje externo posterior fuera de la transacción, sólo en primera ejecución y sin reintento durable.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1158,32 +1068,40 @@
                       "type": "string",
                       "enum": [
                         "CONFIRMADO",
-                        "INCIDENCIA",
                         "RECHAZADO",
                         "SIN_RESULTADO",
                         "CONFLICTO_CLAVE"
-                      ]
+                      ],
+                      "description": "CONFIRMADO incluye la decisión de rechazar la ficha. RECHAZADO representa un error del comando."
                     },
                     "resultado": {
                       "type": "object",
                       "additionalProperties": false,
                       "required": [
+                        "accion",
                         "recoleccion_id",
                         "vivero_id",
-                        "observacion_id",
                         "recepcion_id",
-                        "incidencia_id",
                         "revision_anterior",
                         "revision_nueva",
                         "cantidad_recibida",
                         "unidad_recibida",
                         "fecha_recepcion",
-                        "recibido_por",
+                        "actor_id",
                         "saldo_actual",
                         "estado_registro",
-                        "anclaje_externo"
+                        "anclaje_externo",
+                        "motivo_rechazo",
+                        "registrado_en"
                       ],
                       "properties": {
+                        "accion": {
+                          "type": "string",
+                          "enum": [
+                            "RECIBIR",
+                            "RECHAZAR"
+                          ]
+                        },
                         "recoleccion_id": {
                           "type": "string",
                           "pattern": "^[1-9][0-9]*$",
@@ -1194,18 +1112,7 @@
                           "pattern": "^[1-9][0-9]*$",
                           "maxLength": 19
                         },
-                        "observacion_id": {
-                          "type": "string",
-                          "pattern": "^[1-9][0-9]*$",
-                          "maxLength": 19
-                        },
                         "recepcion_id": {
-                          "type": "string",
-                          "pattern": "^[1-9][0-9]*$",
-                          "maxLength": 19,
-                          "nullable": true
-                        },
-                        "incidencia_id": {
                           "type": "string",
                           "pattern": "^[1-9][0-9]*$",
                           "maxLength": 19,
@@ -1222,20 +1129,23 @@
                           "maxLength": 19
                         },
                         "cantidad_recibida": {
-                          "type": "number"
+                          "type": "number",
+                          "nullable": true
                         },
                         "unidad_recibida": {
                           "type": "string",
                           "enum": [
                             "G",
                             "UNIDAD"
-                          ]
+                          ],
+                          "nullable": true
                         },
                         "fecha_recepcion": {
                           "type": "string",
-                          "format": "date"
+                          "format": "date",
+                          "nullable": true
                         },
-                        "recibido_por": {
+                        "actor_id": {
                           "type": "string",
                           "pattern": "^[1-9][0-9]*$",
                           "maxLength": 19
@@ -1244,13 +1154,26 @@
                           "type": "number"
                         },
                         "estado_registro": {
-                          "type": "string"
+                          "type": "string",
+                          "enum": [
+                            "VALIDADO",
+                            "RECHAZADO"
+                          ]
                         },
                         "anclaje_externo": {
                           "type": "string",
                           "enum": [
-                            "PENDIENTE_NO_EJECUTADO"
+                            "FUERA_TRANSACCION",
+                            "NO_APLICA"
                           ]
+                        },
+                        "motivo_rechazo": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "registrado_en": {
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "nullable": true
@@ -1279,7 +1202,7 @@
             }
           },
           "409": {
-            "description": "Revisión obsoleta, incidencia no resoluble, conciliación requerida o clave reutilizada.",
+            "description": "Revisión obsoleta, material no conforme, estado incompatible o clave reutilizada.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1301,32 +1224,40 @@
                       "type": "string",
                       "enum": [
                         "CONFIRMADO",
-                        "INCIDENCIA",
                         "RECHAZADO",
                         "SIN_RESULTADO",
                         "CONFLICTO_CLAVE"
-                      ]
+                      ],
+                      "description": "CONFIRMADO incluye la decisión de rechazar la ficha. RECHAZADO representa un error del comando."
                     },
                     "resultado": {
                       "type": "object",
                       "additionalProperties": false,
                       "required": [
+                        "accion",
                         "recoleccion_id",
                         "vivero_id",
-                        "observacion_id",
                         "recepcion_id",
-                        "incidencia_id",
                         "revision_anterior",
                         "revision_nueva",
                         "cantidad_recibida",
                         "unidad_recibida",
                         "fecha_recepcion",
-                        "recibido_por",
+                        "actor_id",
                         "saldo_actual",
                         "estado_registro",
-                        "anclaje_externo"
+                        "anclaje_externo",
+                        "motivo_rechazo",
+                        "registrado_en"
                       ],
                       "properties": {
+                        "accion": {
+                          "type": "string",
+                          "enum": [
+                            "RECIBIR",
+                            "RECHAZAR"
+                          ]
+                        },
                         "recoleccion_id": {
                           "type": "string",
                           "pattern": "^[1-9][0-9]*$",
@@ -1337,18 +1268,7 @@
                           "pattern": "^[1-9][0-9]*$",
                           "maxLength": 19
                         },
-                        "observacion_id": {
-                          "type": "string",
-                          "pattern": "^[1-9][0-9]*$",
-                          "maxLength": 19
-                        },
                         "recepcion_id": {
-                          "type": "string",
-                          "pattern": "^[1-9][0-9]*$",
-                          "maxLength": 19,
-                          "nullable": true
-                        },
-                        "incidencia_id": {
                           "type": "string",
                           "pattern": "^[1-9][0-9]*$",
                           "maxLength": 19,
@@ -1365,20 +1285,23 @@
                           "maxLength": 19
                         },
                         "cantidad_recibida": {
-                          "type": "number"
+                          "type": "number",
+                          "nullable": true
                         },
                         "unidad_recibida": {
                           "type": "string",
                           "enum": [
                             "G",
                             "UNIDAD"
-                          ]
+                          ],
+                          "nullable": true
                         },
                         "fecha_recepcion": {
                           "type": "string",
-                          "format": "date"
+                          "format": "date",
+                          "nullable": true
                         },
-                        "recibido_por": {
+                        "actor_id": {
                           "type": "string",
                           "pattern": "^[1-9][0-9]*$",
                           "maxLength": 19
@@ -1387,13 +1310,26 @@
                           "type": "number"
                         },
                         "estado_registro": {
-                          "type": "string"
+                          "type": "string",
+                          "enum": [
+                            "VALIDADO",
+                            "RECHAZADO"
+                          ]
                         },
                         "anclaje_externo": {
                           "type": "string",
                           "enum": [
-                            "PENDIENTE_NO_EJECUTADO"
+                            "FUERA_TRANSACCION",
+                            "NO_APLICA"
                           ]
+                        },
+                        "motivo_rechazo": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "registrado_en": {
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "nullable": true
@@ -1430,7 +1366,382 @@
             "bearer": []
           }
         ],
-        "summary": "Recibir y validar atómicamente; diferencia registra incidencia sin aprobación/consumo. Nunca autorrecepción.",
+        "summary": "Confirma recepción física y validación en una transacción. Cantidad y unidad deben ser conformes. Nunca autorrecepción.",
+        "tags": [
+          "recepcion-semillas-v1"
+        ]
+      }
+    },
+    "/api/v1/recepcion-semillas/{id}/rechazar": {
+      "post": {
+        "operationId": "RecoleccionRecepcionController_rechazar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "comando_id",
+                  "revision_esperada",
+                  "motivo_rechazo"
+                ],
+                "properties": {
+                  "comando_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "UUID v4 por intención; conservar ante respuesta incierta."
+                  },
+                  "revision_esperada": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$",
+                    "maxLength": 19,
+                    "description": "revision_captura exacta; no convertir a Number."
+                  },
+                  "motivo_rechazo": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Comando CONFIRMADO; ficha RECHAZADO para corregir y reenviar el mismo código.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "comando_id",
+                    "estado",
+                    "resultado",
+                    "error",
+                    "finalizado_en"
+                  ],
+                  "properties": {
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "estado": {
+                      "type": "string",
+                      "enum": [
+                        "CONFIRMADO",
+                        "RECHAZADO",
+                        "SIN_RESULTADO",
+                        "CONFLICTO_CLAVE"
+                      ],
+                      "description": "CONFIRMADO incluye la decisión de rechazar la ficha. RECHAZADO representa un error del comando."
+                    },
+                    "resultado": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "accion",
+                        "recoleccion_id",
+                        "vivero_id",
+                        "recepcion_id",
+                        "revision_anterior",
+                        "revision_nueva",
+                        "cantidad_recibida",
+                        "unidad_recibida",
+                        "fecha_recepcion",
+                        "actor_id",
+                        "saldo_actual",
+                        "estado_registro",
+                        "anclaje_externo",
+                        "motivo_rechazo",
+                        "registrado_en"
+                      ],
+                      "properties": {
+                        "accion": {
+                          "type": "string",
+                          "enum": [
+                            "RECIBIR",
+                            "RECHAZAR"
+                          ]
+                        },
+                        "recoleccion_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19
+                        },
+                        "vivero_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19
+                        },
+                        "recepcion_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "nullable": true
+                        },
+                        "revision_anterior": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19
+                        },
+                        "revision_nueva": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19
+                        },
+                        "cantidad_recibida": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "unidad_recibida": {
+                          "type": "string",
+                          "enum": [
+                            "G",
+                            "UNIDAD"
+                          ],
+                          "nullable": true
+                        },
+                        "fecha_recepcion": {
+                          "type": "string",
+                          "format": "date",
+                          "nullable": true
+                        },
+                        "actor_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19
+                        },
+                        "saldo_actual": {
+                          "type": "number"
+                        },
+                        "estado_registro": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDADO",
+                            "RECHAZADO"
+                          ]
+                        },
+                        "anclaje_externo": {
+                          "type": "string",
+                          "enum": [
+                            "FUERA_TRANSACCION",
+                            "NO_APLICA"
+                          ]
+                        },
+                        "motivo_rechazo": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "registrado_en": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "finalizado_en": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revisión obsoleta, estado incompatible o clave reutilizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "comando_id",
+                    "estado",
+                    "resultado",
+                    "error",
+                    "finalizado_en"
+                  ],
+                  "properties": {
+                    "comando_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "estado": {
+                      "type": "string",
+                      "enum": [
+                        "CONFIRMADO",
+                        "RECHAZADO",
+                        "SIN_RESULTADO",
+                        "CONFLICTO_CLAVE"
+                      ],
+                      "description": "CONFIRMADO incluye la decisión de rechazar la ficha. RECHAZADO representa un error del comando."
+                    },
+                    "resultado": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "accion",
+                        "recoleccion_id",
+                        "vivero_id",
+                        "recepcion_id",
+                        "revision_anterior",
+                        "revision_nueva",
+                        "cantidad_recibida",
+                        "unidad_recibida",
+                        "fecha_recepcion",
+                        "actor_id",
+                        "saldo_actual",
+                        "estado_registro",
+                        "anclaje_externo",
+                        "motivo_rechazo",
+                        "registrado_en"
+                      ],
+                      "properties": {
+                        "accion": {
+                          "type": "string",
+                          "enum": [
+                            "RECIBIR",
+                            "RECHAZAR"
+                          ]
+                        },
+                        "recoleccion_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19
+                        },
+                        "vivero_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19
+                        },
+                        "recepcion_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "nullable": true
+                        },
+                        "revision_anterior": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19
+                        },
+                        "revision_nueva": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "maxLength": 19
+                        },
+                        "cantidad_recibida": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "unidad_recibida": {
+                          "type": "string",
+                          "enum": [
+                            "G",
+                            "UNIDAD"
+                          ],
+                          "nullable": true
+                        },
+                        "fecha_recepcion": {
+                          "type": "string",
+                          "format": "date",
+                          "nullable": true
+                        },
+                        "actor_id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19
+                        },
+                        "saldo_actual": {
+                          "type": "number"
+                        },
+                        "estado_registro": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDADO",
+                            "RECHAZADO"
+                          ]
+                        },
+                        "anclaje_externo": {
+                          "type": "string",
+                          "enum": [
+                            "FUERA_TRANSACCION",
+                            "NO_APLICA"
+                          ]
+                        },
+                        "motivo_rechazo": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "registrado_en": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "codigo"
+                      ],
+                      "properties": {
+                        "codigo": {
+                          "type": "string"
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "finalizado_en": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Resultado no determinado: recuperar misma clave; no reenviar automáticamente."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rechaza la versión revisada con motivo y conserva su snapshot. No requiere fotos; misma autoridad que recibir.",
         "tags": [
           "recepcion-semillas-v1"
         ]
@@ -1439,8 +1750,8 @@
   },
   "info": {
     "title": "R3Foresta · Recepción de semillas T4",
-    "description": "Contrato local 096. Recepción conforme y validación atómicas por M2 de custodia, sin autorrecepción. Incidencia sin consumo; recuperación propia. SQL remoto y despliegue pendientes.",
-    "version": "1.0.0",
+    "description": "Contrato local de decisión única. ADMIN o VALIDADOR con asignación vigente al vivero confirma recepción conforme y validación atómicas, sin autorrecepción, o rechaza con motivo. Corrección sobre la misma ficha. Recuperación propia; SQL remoto y despliegue pendientes.",
+    "version": "2.0.0",
     "contact": {}
   },
   "tags": [],

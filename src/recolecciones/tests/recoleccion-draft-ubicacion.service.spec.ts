@@ -222,8 +222,8 @@ describe('ubicación al corregir una recolección', () => {
     expect(updates).toHaveBeenCalledWith({
       fecha: fechaNueva,
       estado_registro: 'BORRADOR',
-      nombre_comunidad_snapshot: 'Comunidad original',
     });
+    expect(snapshots.resolve).not.toHaveBeenCalled();
     expect(evidencias.appendDraftFotosAsEvidencias).not.toHaveBeenCalled();
     expect(ubicaciones.get(8)).toEqual(oldUbicacion);
   });
@@ -271,6 +271,48 @@ describe('ubicación al corregir una recolección', () => {
     expect(registro.ubicacion_id).toBe(8);
     expect(adminFrom).not.toHaveBeenCalledWith('ubicacion');
     expect(ubicacionInserts).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])(
+    'corrige una ficha envejecida conservando fecha y lugar (fecha explícita: %s)',
+    async (explicita) => {
+      const antigua = FechaRecoleccionPolicy.addDaysToIsoDate(
+        FechaRecoleccionPolicy.getCurrentBusinessDate(),
+        -90,
+      );
+      registro.fecha = antigua;
+      await service.updateDraft(
+        99,
+        {
+          observaciones: 'Cantidad revisada por el recolector',
+          ...(explicita ? { fecha: antigua } : {}),
+        },
+        'actor-verificado',
+        'GENERAL',
+      );
+      expect(registro.fecha).toBe(antigua);
+      expect(registro.ubicacion_id).toBe(8);
+      expect(ubicaciones.get(8)).toEqual(oldUbicacion);
+      expect(snapshots.resolve).not.toHaveBeenCalled();
+      expect(ubicacionInserts).not.toHaveBeenCalled();
+      expect(adminFrom).not.toHaveBeenCalledWith('ubicacion');
+    },
+  );
+
+  it('un cambio real de fecha debe cumplir la ventana de captura', async () => {
+    const antigua = FechaRecoleccionPolicy.addDaysToIsoDate(
+      FechaRecoleccionPolicy.getCurrentBusinessDate(),
+      -90,
+    );
+    await expect(
+      service.updateDraft(
+        99,
+        { fecha: antigua },
+        'actor-verificado',
+        'GENERAL',
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(updates).not.toHaveBeenCalled();
   });
 
   it('rechaza división de otro país antes de escribir', async () => {

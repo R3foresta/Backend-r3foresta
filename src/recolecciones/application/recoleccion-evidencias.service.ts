@@ -370,19 +370,23 @@ export class RecoleccionEvidenciasService {
     }
   }
 
-  async getEvidenciasByRecoleccionId(recoleccionId: number) {
+  async getEvidenciasByRecoleccionId(recoleccionId: number | string) {
     const evidenciasMap = await this.getEvidenciasMapByRecoleccionIds([
       recoleccionId,
     ]);
     return evidenciasMap.get(recoleccionId) || [];
   }
 
-  async getEvidenciasMapByRecoleccionIds(recoleccionIds: number[]) {
+  async getEvidenciasMapByRecoleccionIds(recoleccionIds: (number | string)[]) {
     const supabase = this.supabaseService.getAdminClient();
-    const map = new Map<number, any[]>();
+    const map = new Map<number | string, any[]>();
     const ids = Array.from(
       new Set(
-        recoleccionIds.filter((id) => Number.isInteger(id) && Number(id) > 0),
+        recoleccionIds.filter((id) =>
+          typeof id === 'string'
+            ? /^[1-9][0-9]*$/.test(id)
+            : Number.isSafeInteger(id) && id > 0,
+        ),
       ),
     );
 
@@ -398,7 +402,7 @@ export class RecoleccionEvidenciasService {
         `
         id,
         tipo_entidad_id,
-        entidad_id,
+        entidad_id::text,
         codigo_trazabilidad,
         bucket,
         ruta_archivo,
@@ -437,7 +441,10 @@ export class RecoleccionEvidenciasService {
     }
 
     for (const evidencia of data || []) {
-      const recoleccionId = Number((evidencia as any).entidad_id);
+      const recoleccionId = ids.find(
+        (value) => String(value) === String((evidencia as any).entidad_id),
+      );
+      if (recoleccionId === undefined) continue;
       if (!map.has(recoleccionId)) {
         map.set(recoleccionId, []);
       }

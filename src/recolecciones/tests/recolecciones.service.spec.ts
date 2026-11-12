@@ -400,7 +400,7 @@ describe('RecoleccionesService', () => {
       data: {
         id: 9,
         estado_registro: 'VALIDADO', // Recolección está validada
-        m2_estado_habilitacion: 'CONCILIACION_CONFORME',
+        m2_estado_habilitacion: 'RECEPCION_CONFORME',
         estado_operativo: 'ABIERTO', // Todavía abierta para operaciones
         saldo_actual: 40, // Pero solo quedan 40 unidades
         cantidad_inicial_canonica: 50, // Se recolectaron 50 inicialmente
@@ -509,7 +509,7 @@ describe('RecoleccionesService', () => {
     expect(response.data.saldo_actual).toBe(40);
     expect(response.data.estado_operativo).toBe('ABIERTO');
     expect(response.data.recepcion_conforme).toBe(false);
-    expect(response.data.m2_estado_habilitacion).toBe('CONCILIACION_CONFORME');
+    expect(response.data.m2_estado_habilitacion).toBe('RECEPCION_CONFORME');
 
     // Verificar que PRIORIZA snapshots (no usa datos de la tabla planta)
     expect(response.data.nombre_cientifico).toBe(
@@ -571,7 +571,11 @@ describe('RecoleccionesService', () => {
           id: 2,
           vivero_id: 3,
           estado_registro: 'VALIDADO', // ✅ VALIDADA Y RECIBIDA
-          recepcion: { id: '12', fecha_recepcion: '2026-11-06', recibido_por: '7' },
+          recepcion: {
+            id: '12',
+            fecha_recepcion: '2026-11-06',
+            recibido_por: '7',
+          },
           estado_operativo: 'ABIERTO',
           saldo_actual: 20,
           cantidad_inicial_canonica: 20,
@@ -926,78 +930,6 @@ describe('RecoleccionesService', () => {
     ).rejects.toThrow(BadRequestException);
 
     expect(recoleccionQuery.update).not.toHaveBeenCalled();
-  });
-
-  it('bloquea approve si la solicitud no tiene evidencia minima completa', async () => {
-    const usuarioQuery = createQueryBuilder({
-      data: { id: 8, nombre: 'Validador', rol: 'VALIDADOR' },
-      error: null,
-    });
-    const recoleccionQuery = createQueryBuilder({
-      data: {
-        id: 9,
-        fecha: '2026-03-04',
-        estado_registro: 'PENDIENTE_VALIDACION',
-        usuario_id: 7,
-        ubicacion_id: 100,
-        vivero_id: 3,
-        metodo_id: 1,
-        planta_id: 12,
-        tipo_material: 'SEMILLA',
-        cantidad_inicial_canonica: 500,
-        unidad_canonica: 'G',
-      },
-      error: null,
-    });
-    const ubicacionQuery = createQueryBuilder({
-      data: { latitud: -16.5, longitud: -68.15 },
-      error: null,
-    });
-    const evidenciasQuery = createQueryBuilder({
-      data: null,
-      error: null,
-      count: 1,
-    });
-    const client = {
-      from: jest.fn((table: string) => {
-        if (table === 'tipos_entidad_evidencia') {
-          return createTipoEntidadRecoleccionQuery();
-        }
-
-        if (table === 'usuario') return usuarioQuery;
-        if (table === 'recoleccion') return recoleccionQuery;
-        if (table === 'ubicacion') return ubicacionQuery;
-        if (table === 'evidencias_trazabilidad') return evidenciasQuery;
-        throw new Error(`Tabla no esperada en test: ${table}`);
-      }),
-    };
-
-    supabaseService.getClient.mockReturnValue(client);
-
-    await expect(
-      service.approveValidation(9, 'auth-validador', 'VALIDADOR'),
-    ).rejects.toThrow(BadRequestException);
-
-    expect(recoleccionQuery.update).not.toHaveBeenCalled();
-  });
-
-  it('usa el rol de base de datos para aprobar aunque el header venga elevado', async () => {
-    const usuarioQuery = createQueryBuilder({
-      data: { id: 7, nombre: 'Recolector', rol: 'GENERAL' },
-      error: null,
-    });
-    const client = {
-      from: jest.fn((table: string) => {
-        if (table === 'usuario') return usuarioQuery;
-        throw new Error(`Tabla no esperada en test: ${table}`);
-      }),
-    };
-
-    supabaseService.getClient.mockReturnValue(client);
-
-    await expect(
-      service.approveValidation(9, 'auth-general', 'ADMIN'),
-    ).rejects.toThrow(ForbiddenException);
   });
 
   it('usa el rol de base de datos para crear aunque el header venga elevado', async () => {

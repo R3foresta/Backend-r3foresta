@@ -796,7 +796,7 @@ describe('T2 HTTP → JWT real → alcance de vivero → RPC PostgreSQL reales',
       loteB,
     );
   });
-  it('revisión legada acotada conserva revisor autorizado y veto de aprobación propia', async () => {
+  it('lectura local conserva alcance; aprobación/rechazo documental retirados devuelven404', async () => {
     expect(
       (await get('/api/recolecciones/pending-validation', 'sin').expect(200))
         .body.pagination.total,
@@ -808,15 +808,15 @@ describe('T2 HTTP → JWT real → alcance de vivero → RPC PostgreSQL reales',
     expect(rows.body.data.every((x: any) => Number(x.vivero_id) === 1)).toBe(
       true,
     );
-    await patch('/api/recolecciones/1103/approve', 'val').expect(403);
-    await patch('/api/recolecciones/1104/approve', 'val').expect(403);
-    await patch('/api/recolecciones/1102/approve', 'a').expect(403);
-    await patch('/api/recolecciones/1102/approve', 'val').expect(200);
+    await patch('/api/recolecciones/1103/approve', 'val').expect(404);
+    await patch('/api/recolecciones/1104/approve', 'val').expect(404);
+    await patch('/api/recolecciones/1102/approve', 'a').expect(404);
+    await patch('/api/recolecciones/1102/approve', 'val').expect(404);
     await patch('/api/recolecciones/1103/reject', 'sin')
       .send({ motivo_rechazo: 'Ficha incorrecta sintética' })
-      .expect(403);
+      .expect(404);
   });
-  it('M1 autoriza ficha/fotos/revisión con el almacenamiento BIGINT exacto, sin prestar el vivero vecino', async () => {
+  it('M1 autoriza ficha/fotos con almacenamiento BIGINT exacto, sin prestar vivero vecino ni restaurar aprobación', async () => {
     const asignado = '9007199254740992';
     const ajeno = '9007199254740993';
     await sql(`INSERT INTO public.usuario(id,auth_id,nombre,rol,activo) VALUES(828,'t2-http-big','Validador BIGINT','VALIDADOR',true);
@@ -861,11 +861,11 @@ describe('T2 HTTP → JWT real → alcance de vivero → RPC PostgreSQL reales',
       'big',
     ).expect(200);
     expect(filtroPropio.body.data.map((r: any) => r.id)).toEqual([1110]);
-    await patch('/api/recolecciones/1111/approve', 'big').expect(403);
+    await patch('/api/recolecciones/1111/approve', 'big').expect(404);
     expect(
       await sql('SELECT estado_registro FROM public.recoleccion WHERE id=1111'),
     ).toBe('PENDIENTE_VALIDACION');
-    await patch('/api/recolecciones/1110/approve', 'big').expect(200);
+    await patch('/api/recolecciones/1110/approve', 'big').expect(404);
     for (const id of ['01', '9223372036854775808']) {
       await get('/api/recolecciones/vivero/' + id, 'big').expect(422);
       await get(
@@ -943,7 +943,7 @@ describe('T2 HTTP → JWT real → alcance de vivero → RPC PostgreSQL reales',
     expect(propios.body.data.map((r: any) => r.id)).toEqual([1121, 1120]);
     expect(propios.body.pagination.total).toBe(2);
     await get('/api/recolecciones/1120', 'sin').expect(200);
-    await patch('/api/recolecciones/1121/approve', 'sin').expect(403);
+    await patch('/api/recolecciones/1121/approve', 'sin').expect(404);
     await change('824', '1', '0').expect(200);
     const union = await get(path, 'sin').expect(200);
     expect(union.body.data.map((r: any) => r.id)).toEqual([1122, 1121, 1120]);
@@ -960,7 +960,7 @@ describe('T2 HTTP → JWT real → alcance de vivero → RPC PostgreSQL reales',
     const fuera = await get(path + '&vivero_id=2', 'sin').expect(200);
     expect(fuera.body.data.map((r: any) => r.id)).toEqual([1120]);
     await get('/api/recolecciones/1123', 'sin').expect(403);
-    await patch('/api/recolecciones/1121/approve', 'sin').expect(403);
+    await patch('/api/recolecciones/1121/approve', 'sin').expect(404);
     await post('/api/v1/usuarios/824/acceso-recoleccion/retiros', 'admin')
       .send({
         comando_id: randomUUID(),
