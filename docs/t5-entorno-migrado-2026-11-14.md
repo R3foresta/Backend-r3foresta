@@ -41,8 +41,11 @@ entera positiva y unidad UNIDAD. Ambas restricciones figuran validadas.
 
 Esto no acredita107 por el solo reporte de aplicación. Tampoco basta cambiar
 el CHECK para exigir cero:019/095 generan NULL. PostgreSQL acepta un CHECK cuyo
-resultado es NULL, por lo que esa expresión antigua no garantiza por sí sola la
-igualdad de cantidad y saldo cuando el saldo anterior es NULL.
+resultado es NULL. La comprobación aislada posterior precisó el alcance:
+la expresión antigua sí rechaza cantidad distinta del saldo (`NULL AND FALSE`
+es FALSE), pero permite cantidad cero y unidad ausente o distinta de UNIDAD
+cuando la cantidad coincide con el saldo.108 cierra esos casos; la primera
+interpretación sobre pérdida de igualdad fue corregida tras el ensayo.
 
 Al revisar Studio, el snippet compartido llamado
 `107_vivero_embolsado_saldo_naciente.sql` (ID

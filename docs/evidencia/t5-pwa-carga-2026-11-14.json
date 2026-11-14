@@ -1,0 +1,69 @@
+{
+  "fecha": "2026-11-14",
+  "repositorio": "pwa-r3foresta",
+  "revision": "0007ee0",
+  "ruta": "http://localhost:5173/app/vivero",
+  "codigo_modificado": false,
+  "diagnostico": {
+    "sintoma_inicial": "Suspense Preparando tu espacio; tras recargar se observó pantalla en blanco.",
+    "estado_final": "Carga recuperada sin cambios de código ni reinicio del servidor por este agente.",
+    "causa_raiz": "No determinada; el fallo dejó de reproducirse. No se atribuye sin evidencia a SQL, API, caché o prebundling.",
+    "verificacion_navegador": {
+      "origen": "Observación CUA comunicada por el agente coordinador /root; no ejecución de navegador por este agente.",
+      "sesion": "ADMIN de pruebas autenticada; sin exportar identidad ni credenciales.",
+      "resultado": "Vivero muestra encabezado Lotes de vivero y dos filas; recarga completa pasa por Verificando sesión y vuelve a la lista con acciones de EMBOLSADO."
+    }
+  },
+  "comprobaciones": [
+    {
+      "metodo": "GET de recursos públicos al servidor Vite existente",
+      "rutas_iniciales": [
+        "/app/vivero",
+        "/src/main.tsx",
+        "/src/App.tsx",
+        "/src/modules/vivero/screens/ViveroScreen.tsx"
+      ],
+      "resultado": "Todas HTTP200, entre2 y115ms."
+    },
+    {
+      "metodo": "GET recursivo del grafo de imports del shell y Vivero; sin ejecutar JavaScript de la página ni acceder a sesión",
+      "peticiones": 385,
+      "urls_unicas": 378,
+      "errores_http_o_timeout": 0
+    },
+    {
+      "comando": "npm run build",
+      "resultado": "APROBADO: TypeScript tsc -b y Vite; advertencia de chunk MapLibre mayor a1000KB.",
+      "entorno": "El primer intento dentro del sandbox falló EPERM al escribir tsbuildinfo; repetición autorizada fuera del sandbox finalizó exit_code0.",
+      "runtime": "Node24.5.0 (predeterminado); ver repetición con Node24.19 documentada aparte"
+    },
+    {
+      "comando": "npm run test -- src/modules/vivero",
+      "resultado": "91/92 pruebas aprobadas;9/10 archivos aprobados.",
+      "fallo": {
+        "archivo": "src/modules/vivero/recepcion/recepcion.test.tsx",
+        "linea": 228,
+        "caso": "historial de tarjeta: conserva snapshot rechazado de100 ante ficha corregida a90 y distingue día de instante",
+        "detalle": "La fecha locale exacta contiene espacio no separable en p. m.; Testing Library normaliza el texto. Solo falló con Node24.5.0. La misma prueba sin cambios pasa con Node24.19.0 recomendado; no se alteró el matcher."
+      },
+      "runtime": "Node24.5.0, inferior al mínimo24.15 documentado para la PWA"
+    },
+    {
+      "comando": "PATH=/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin:$PATH npm run test -- src/modules/vivero",
+      "runtime": "Node24.19.0",
+      "resultado": "APROBADO:92/92 pruebas;10/10 archivos. Sin cambios de código ni tests entre ambas ejecuciones."
+    },
+    {
+      "comando": "PATH=/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin:$PATH npm run build",
+      "runtime": "Node24.19.0",
+      "resultado": "APROBADO: tsc -b, Vite7.3.6 y generaciónSW; advertencia de chunkMapLibre>1000KB. exit_code0."
+    }
+  ],
+  "limites": [
+    "No se implementó la UI T5 de incorporación; esta verificación se refiere a la carga del módulo existente.",
+    "No se cambiaron reglas de negocio, guards, transporte, dependencias, caché ni archivos de la PWA.",
+    "Sin altas ni subidas de fotos desde esta comprobación; el coordinador ejecuta la prueba T5 por separado.",
+    "Carga recuperada y build correcto no demuestran una causa raíz del síntoma transitorio ni garantizan ausencia de errores futuros."
+  ],
+  "runtime_verificado": "Node24.19.0"
+}

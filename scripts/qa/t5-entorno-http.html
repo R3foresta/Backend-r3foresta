@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src http://localhost:3000 https://vyrjlehkhabydkhjxagx.supabase.co; base-uri 'none'; form-action 'none'">
+<title>QA temporal T5 · entorno de pruebas</title>
+<style>
+body{font:16px system-ui;max-width:900px;margin:32px auto;padding:0 20px;color:#172a21;background:#f6f8f5}h1{font-size:26px}fieldset{margin:20px 0;padding:20px;border:1px solid #bac8bd;border-radius:8px}label{display:block;margin:12px 0}select,button{font:inherit;padding:9px;margin-top:6px;max-width:100%}button{cursor:pointer}button:disabled{cursor:default;opacity:.5}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:white;padding:16px;border:1px solid #ddd}.note{background:#fff2ce;padding:15px}#status{font-weight:bold}code{overflow-wrap:anywhere}
+</style>
+<h1>QA temporal T5 · entorno de pruebas</h1>
+<p class="note">Herramienta de verificación, ajena al frontend de producto. Creará un lote de <strong>3 plantas de prueba</strong> y una imagen PNG sintética marcada como QA. Conserva el hecho y el historial; no ejecuta limpieza. API fija: <code>http://localhost:3000</code>.</p>
+<p>Usa la sesión actual de esta PWA sólo en memoria. No muestra ni exporta el JWT, el perfil de la cuenta o enlaces firmados.</p>
+<button id="catalogs">1. Verificar sesión ADMIN y cargar catálogos</button>
+<fieldset id="selection" disabled><legend>Selección explícita del fixture</legend>
+<label>Vivero físico<select id="nursery"><option value="">Seleccionar vivero</option></select></label>
+<label>Especie activa<select id="plant"><option value="">Seleccionar especie</option></select></label>
+<p>Modalidad: SALDO_INICIAL. Procedencia: DONACION. Cantidad: 3. Día: hoy en America/La_Paz. La imagen generada no acredita recepción ni conteo real.</p>
+<button id="prepare">2. Conservar solicitud y revisar</button></fieldset>
+<pre id="review">No hay intención preparada.</pre>
+<label><input type="checkbox" id="confirmation"> Confirmo el alta pequeña de prueba en el vivero y especie seleccionados.</label>
+<button id="execute" disabled>3. Ejecutar / reintentar la misma intención</button>
+<button id="download" disabled>Descargar informe sin credenciales</button>
+<p id="status" role="status">Sin ejecutar.</p><pre id="report"></pre>
+<script>
+'use strict';
+const API='http://localhost:3000';
+const PROJECT='vyrjlehkhabydkhjxagx.supabase.co';
+const STORE='r3foresta:qa:t5:20261114:v1';
+const $=id=>document.getElementById(id);
+let state=null, busy=false;
+let report={informe:'T5_HTTP_STORAGE_REAL',destino:PROJECT,api:API,fecha_inicio:null,comprobaciones:[],limites:['Fixture sintético conservado, sin limpieza ni cambios de permisos.','No acredita consumo M3, otros roles, WebAuthn de alta ni frontend T5 de producto.']};
+function show(){ $('report').textContent=JSON.stringify(report,null,2); $('download').disabled=!report.fecha_inicio; }
+function mark(nombre,detalles={}){report.comprobaciones.push({nombre,cumple:true,...detalles});show();}
+function ensure(value,code){if(!value)throw new Error(code);}
+function persist(){localStorage.setItem(STORE,JSON.stringify(state));review();}
+function review(){if(state){$('review').textContent=JSON.stringify({solicitud_id:state.solicitud_id,...state.payload},null,2);$('selection').disabled=true;$('execute').disabled=busy||!$('confirmation').checked;}else $('execute').disabled=true;}
+function token(){const value=localStorage.getItem('authToken');ensure(value,'SESION_AUSENTE: iniciar sesión en la PWA.');return value;}
+function exact(value){if(typeof value==='string'&&/^[1-9][0-9]*$/.test(value))return value;if(typeof value==='number'&&Number.isSafeInteger(value)&&value>0)return String(value);throw new Error('ID_NO_EXACTO');}
+function today(){const p=new Intl.DateTimeFormat('en-CA',{timeZone:'America/La_Paz',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());return ['year','month','day'].map(k=>p.find(x=>x.type===k).value).join('-');}
+async function request(path,{method='GET',body,anonymous=false,expected=200}={}){
+ const headers={};if(!anonymous)headers.Authorization='Bearer '+token();if(body&&!(body instanceof FormData))headers['Content-Type']='application/json';
+ let response;try{response=await fetch(API+path,{method,headers,body:body instanceof FormData?body:body?JSON.stringify(body):undefined,cache:'no-store',signal:AbortSignal.timeout(45000)});}catch{throw new Error('TRANSPORTE_INCONCLUSO: conservar solicitud y reintentar recuperación.');}
+ ensure(response.status===expected,'HTTP_'+response.status+'_ESPERADO_'+expected+'_'+method+'_'+path.split('?')[0]);
+ const data=await response.json();
+ if(!anonymous&&path.includes('/lotes-vivero'))ensure((response.headers.get('cache-control')||'').includes('private')&&(response.headers.get('cache-control')||'').includes('no-store'),'RESPUESTA_PRIVADA_SIN_NO_STORE');
+ return data;
+}
+function signedUrl(foto){ensure(!('public_url' in foto)&&foto.url_expira_en_segundos===300,'FOTO_NO_PRIVADA_O_TTL_INCORRECTO');const url=new URL(foto.signed_url);ensure(url.protocol==='https:'&&url.host===PROJECT&&url.pathname.startsWith('/storage/v1/object/sign/vivero_incorporaciones/'),'URL_FIRMADA_DESTINO_INCORRECTO');return url;}
+async function digest(bytes){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');}
+async function image(){const canvas=document.createElement('canvas');canvas.width=640;canvas.height=480;const c=canvas.getContext('2d');c.fillStyle='#e6f0df';c.fillRect(0,0,640,480);c.fillStyle='#23462f';c.font='bold 30px sans-serif';c.fillText('QA T5 · IMAGEN SINTETICA',35,70);c.font='22px sans-serif';c.fillText('NO ES EVIDENCIA DE CONTEO REAL',35,115);c.fillText('Fixture: 3 plantas de prueba',35,160);c.font='15px monospace';c.fillText(state.solicitud_id,35,410);return await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));}
+function sameReceipt(a,b){ensure(a?.estado==='CONFIRMADO'&&b?.estado==='CONFIRMADO','RECIBO_NO_CONFIRMADO');for(const k of ['solicitud_id','lote_vivero_id','evento_incorporacion_id','cantidad','saldo_vivo_despues'])ensure(a.data[k]===b.data[k],'RECIBO_DISTINTO_'+k);ensure(JSON.stringify(a.data.evidencia_ids_vinculadas)===JSON.stringify(b.data.evidencia_ids_vinculadas),'RECIBO_FOTOS_DISTINTAS');}
+async function validatePhoto(foto){
+ const url=signedUrl(foto);let response;try{response=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(45000)});}catch{throw new Error('LECTURA_FOTO_FIRMADA_INCONCLUSA');}
+ ensure(response.status===200,'FOTO_FIRMADA_HTTP_'+response.status);const bytes=await response.arrayBuffer();const sha=await digest(bytes);ensure(typeof foto.hash_sha256==='string'||typeof state.image_sha256==='string','SIN_HASH_DE_REFERENCIA');if(foto.hash_sha256)ensure(sha===foto.hash_sha256,'HASH_FOTO_DIFERENTE');if(state.image_sha256)ensure(sha===state.image_sha256,'BYTES_ORIGINALES_CAMBIARON');mark('Foto firmada legible y SHA256 coincide',{bytes:bytes.byteLength,mime:response.headers.get('content-type'),sha256:sha});
+ url.pathname=url.pathname.replace('/object/sign/','/object/public/');url.search='';let anonymous;try{anonymous=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(15000)});}catch{throw new Error('PRIVACIDAD_STORAGE_INCONCLUSA_POR_TRANSPORTE');}
+ ensure([400,401,403,404].includes(anonymous.status),'FOTO_EXPUESTA_POR_RUTA_PUBLICA');mark('Acceso público sin firma denegado',{http:anonymous.status});
+}
+$('catalogs').onclick=async()=>{try{$('status').textContent='Verificando sesión y catálogos…';const profile=await request('/api/users/profile');ensure(profile.rol==='ADMIN','REQUIERE_SESION_ADMIN');const [viveros,plantas]=await Promise.all([request('/api/viveros'),request('/api/plantas?limit=100')]);
+ for(const [id,rows,name]of [['nursery',viveros.data,x=>x.nombre],['plant',plantas.data.filter(x=>x.activo&&x.nombre_cientifico?.trim()),x=>x.nombre_cientifico]]){const select=$(id);select.replaceChildren(new Option('Seleccionar',''));for(const row of rows){try{const value=exact(row.id);select.add(new Option(name(row)+' · ID '+value,value));}catch{}}}
+ ensure($('nursery').options.length>1&&$('plant').options.length>1,'CATALOGOS_SIN_FIXTURE_VALIDO');$('selection').disabled=!!state;$('status').textContent='Sesión ADMIN verificada. Selecciona vivero y especie para revisar.';review();
+ }catch(e){$('status').textContent=e.message;}};
+$('prepare').onclick=()=>{try{ensure(!state,'YA_EXISTE_SOLICITUD_CONSERVADA');const vivero=exact($('nursery').value),planta=exact($('plant').value),solicitud=crypto.randomUUID();state={solicitud_id:solicitud,payload:{solicitud_id:solicitud,vivero_id:vivero,planta_id:planta,modalidad:'SALDO_INICIAL',procedencia:'DONACION',fecha_evento:today(),cantidad:3,referencia_documental:'QA-T5-'+solicitud,observaciones:'PRUEBA FUNCIONAL T5: fixture sintético de 3 plantas; no representa conteo ni recepción real.',evidencia_ids:[]}};persist();$('status').textContent='Intención conservada antes de subir. Revisa y confirma.';}catch(e){$('status').textContent=e.message;}};
+$('confirmation').onchange=review;
+$('execute').onclick=async()=>{
+ if(busy)return;busy=true;review();$('catalogs').disabled=true;
+ report={...report,fecha_inicio:new Date().toISOString(),solicitud_id:state.solicitud_id,comprobaciones:[]};show();
+ const root='/api/lotes-vivero/incorporaciones',resource=root+'/'+state.solicitud_id,pending=resource+'/evidencias-pendientes?vivero_id='+state.payload.vivero_id;
+ try{ensure($('confirmation').checked,'CONFIRMACION_REQUERIDA');const profile=await request('/api/users/profile');ensure(profile.rol==='ADMIN','REQUIERE_SESION_ADMIN');mark('Cuenta activa ADMIN verificada sin exportar perfil');
+ await request(resource,{anonymous:true,expected:401});await request(pending,{anonymous:true,expected:401});mark('Recuperación y fotos sin Bearer denegadas',{http:401});
+ let receipt=await request(resource);ensure(['CONFIRMADO','SIN_RESULTADO'].includes(receipt.estado),'ESTADO_RECUPERACION_INVALIDO');mark('Recuperación previa consultada',{estado:receipt.estado});
+ if(receipt.estado==='SIN_RESULTADO'){
+  let fotos=await request(pending);ensure(Array.isArray(fotos.data),'PENDIENTES_INVALIDAS');
+  if(!fotos.data.length){ensure(!state.payload.evidencia_ids.length,'FOTOS_CONSERVADAS_NO_ENCONTRADAS_NO_RESUBIR');const blob=await image();ensure(blob,'PNG_NO_GENERADO');state.image_sha256=await digest(await blob.arrayBuffer());persist();const form=new FormData();form.append('vivero_id',state.payload.vivero_id);form.append('titulo','QA T5 sintética');form.append('descripcion','Imagen generada para ensayo; no acredita hecho físico.');form.append('fotos',blob,'qa-t5-sintetica.png');fotos=await request(resource+'/evidencias-pendientes',{method:'POST',body:form,expected:201});mark('Carga multipart real completada',{cantidad_fotos:fotos.data?.length});}
+  ensure(fotos.data.length===1&&fotos.evidencia_ids.length===1,'CONTEXTO_QA_DEBE_TENER_UNA_FOTO');const id=exact(fotos.evidencia_ids[0]);if(state.payload.evidencia_ids.length)ensure(state.payload.evidencia_ids[0]===id,'FOTO_CONTEXTO_DISTINTA');state.payload.evidencia_ids=[id];persist();await validatePhoto(fotos.data[0]);
+  const recovered=await request(pending);ensure(JSON.stringify(recovered.evidencia_ids)===JSON.stringify(state.payload.evidencia_ids),'RECUPERACION_FOTOS_DISTINTA');mark('Fotos pendientes recuperadas con ID exacto');
+  receipt=await request(root,{method:'POST',body:state.payload,expected:201});
+ }
+ ensure(receipt.estado==='CONFIRMADO'&&receipt.data.cantidad===3&&receipt.data.saldo_vivo_despues===3,'ALTA_NO_CONFIRMADA_CON_3');ensure(typeof receipt.data.lote_vivero_id==='string'&&typeof receipt.data.evento_incorporacion_id==='string','IDS_RECIBO_NO_STRING');const lote=exact(receipt.data.lote_vivero_id),evento=exact(receipt.data.evento_incorporacion_id);state.receipt={lote_vivero_id:lote,evento_incorporacion_id:evento};persist();report.fixture={lote_vivero_id:lote,evento_incorporacion_id:evento,vivero_id:state.payload.vivero_id,planta_id:state.payload.planta_id,evidencia_ids:state.payload.evidencia_ids,cantidad:3,modalidad:'SALDO_INICIAL',procedencia:'DONACION'};mark('Alta confirmada con lote y evento exactos');
+ sameReceipt(receipt,await request(resource));mark('Recuperación devuelve mismo hecho inicial');sameReceipt(receipt,await request(root,{method:'POST',body:state.payload,expected:201}));mark('Replay de la misma intención devuelve mismo lote/evento');await request(root,{method:'POST',body:{...state.payload,cantidad:4},expected:409});mark('Misma clave con cantidad distinta rechazada',{http:409});
+ const detail=await request('/api/lotes-vivero/'+lote);ensure(detail.data.recoleccion_id===null&&detail.data.saldo_vivo_actual===3,'DETALLE_SALDO_O_ORIGEN_INVALIDO');const saldos=await request('/api/lotes-vivero/'+lote+'/saldos');ensure(saldos.data.saldo_vivo_actual===3&&saldos.data.saldo_asignado_subcampanias===0,'SALDO_DUPLICADO_O_ASIGNACION_INESPERADA');mark('Saldo físico 3 y asignado 0 tras replay, sin Recolección ficticia');
+ const timeline=await request('/api/lotes-vivero/'+lote+'/timeline');const events=timeline.data.eventos;ensure(events.length===1&&events[0].tipo_evento==='INCORPORACION'&&exact(events[0].id)===evento,'TIMELINE_DUPLICADO_O_INVALIDO');ensure(events[0].evidencias.length===1&&exact(events[0].evidencias[0].id)===state.payload.evidencia_ids[0],'TIMELINE_FOTO_INVALIDA');await validatePhoto(events[0].evidencias[0]);mark('Timeline conserva un único evento y su foto privada');
+ const after=await request(pending);ensure(after.data.length===0,'FOTO_SIGUE_PENDIENTE_TRAS_VINCULAR');mark('Foto vinculada deja de estar pendiente');await request('/api/evidencias-trazabilidad/'+state.payload.evidencia_ids[0],{expected:404});mark('Ruta genérica de evidencias excluye foto privada',{http:404});
+ report.resultado='APROBADO';report.fecha_fin=new Date().toISOString();$('status').textContent='Ensayo aprobado. Fixture conservado; descarga el informe.';show();
+ }catch(e){report.resultado='INCOMPLETO';report.error=e.message;report.fecha_fin=new Date().toISOString();$('status').textContent='Ensayo detenido: '+e.message+' Conserva esta solicitud; no genera otra clave.';show();}finally{busy=false;$('catalogs').disabled=false;review();}
+};
+$('download').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)+'\n'],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='t5-http-storage-real-'+(state?.solicitud_id||'informe')+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+try{ensure(location.origin==='http://localhost:5173','ORIGEN_QA_INCORRECTO');const saved=localStorage.getItem(STORE);if(saved){state=JSON.parse(saved);ensure(state.solicitud_id===state.payload.solicitud_id,'ESTADO_LOCAL_INVALIDO');review();$('status').textContent='Solicitud previa recuperada. Verifica sesión y reintenta la misma intención.';}}catch(e){$('status').textContent=e.message;$('catalogs').disabled=true;}
+</script>
+</html>
