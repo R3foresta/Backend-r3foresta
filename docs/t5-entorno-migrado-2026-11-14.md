@@ -1,5 +1,8 @@
 # Cotejo del entorno migrado · 14 de noviembre de 2026
 
+Este informe conserva el diagnóstico previo. Los bloqueos se resolvieron en la
+[corrección y ensayo posterior](t5-correcciones-pruebas-2026-11-14.md).
+
 Resultado: **verificación parcial; todavía no habilita el ensayo funcional**.
 Fuente local `7984368`; destino `vyrjlehkhabydkhjxagx.supabase.co`, PostgreSQL17.6.
 Supabase Studio muestra la rama `main / PRODUCTION`; Pablo confirmó después del

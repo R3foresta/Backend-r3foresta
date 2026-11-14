@@ -5,7 +5,10 @@ Actualización T5 local del13 de noviembre de2026:
 [procedencia consumida por audiencia propia](docs/t5-m3-procedencia.md).
 La revisión del14 añade106 (IDs exactos en reposición interna) y107 (coherencia
 del CHECK010 de EMBOLSADO con la RPC095). [Correcciones y límites](docs/t5-revision-2026-11-14.md).
-101–107 son migraciones aditivas pendientes de aplicación/cotejo en destino.
+108 cierra aditivamente la variante de CHECKs observada en el entorno de pruebas.
+Su aplicación, el bucket privado y el alta ADMIN con foto están
+[verificados en ese entorno](docs/t5-correcciones-pruebas-2026-11-14.md);
+frontend T5 y despliegue externo siguen separados.
 
 **Corte documental: 21 de octubre de 2026. INT05 verificada localmente; INT07 añade084 de motor y observaciones con verificación aislada.**
 [Entrega y consolidación INT05](docs/pa-int05-entrega-local.md), [versiones de entrega](../r3foresta-docs/ESTADO.md): lectura pública y propia verificadas localmente; push, SQL remoto y despliegue pendientes. Los cortes de pruebas INT05 y D conservan sus bases y entornos originales.

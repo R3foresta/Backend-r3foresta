@@ -2,9 +2,9 @@
 
 T5 implementa localmente la [incorporación de plantas vivas con procedencia](docs/t5-incorporacion-plantas.md):
 recepción o saldo inicial en un vivero real, alta atómica recuperable y continuidad
-M2/M3 sin doble descuento. Requiere101–107 y configuración del nuevo bucket privado;
-[revisión, pruebas y límites](docs/t5-revision-2026-11-14.md). SQL remoto, Storage, PWA
-y despliegue conservan verificación separada.
+M2/M3 sin doble descuento. El entorno de pruebas recibió el cierre aditivo108
+y el bucket privado; [alta con foto, recuperación y replay verificados](docs/t5-correcciones-pruebas-2026-11-14.md).
+La interfaz T5 de producto y el despliegue externo siguen pendientes.
 
 API NestJS/Supabase para trazabilidad: **Recolección → Vivero → entrega física → Plantación**.
 Estado documental al **19 de octubre de 2026**: INT05 BE01–BE06 implementadas y verificadas localmente; el corte original de pruebas conserva la base `10e5dc5`.

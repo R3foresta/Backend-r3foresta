@@ -1,0 +1,108 @@
+{
+  "informe": "T5_HTTP_STORAGE_REAL",
+  "destino": "vyrjlehkhabydkhjxagx.supabase.co",
+  "api": "http://localhost:3000",
+  "fecha_inicio": "2026-11-14T16:10:13.737Z",
+  "comprobaciones": [
+    {
+      "nombre": "Cuenta activa ADMIN verificada sin exportar perfil",
+      "cumple": true
+    },
+    {
+      "nombre": "Recuperación y fotos sin Bearer denegadas",
+      "cumple": true,
+      "http": 401
+    },
+    {
+      "nombre": "Recuperación previa consultada",
+      "cumple": true,
+      "estado": "SIN_RESULTADO"
+    },
+    {
+      "nombre": "Carga multipart real completada",
+      "cumple": true,
+      "cantidad_fotos": 1
+    },
+    {
+      "nombre": "Foto firmada legible y SHA256 coincide",
+      "cumple": true,
+      "bytes": 34025,
+      "mime": "image/png",
+      "sha256": "8bf5cbeb8e264d3ddc79432e4ee6a28ce86a85e771f16e1af5aee6bfdb96c626"
+    },
+    {
+      "nombre": "Acceso público sin firma denegado",
+      "cumple": true,
+      "http": 400
+    },
+    {
+      "nombre": "Fotos pendientes recuperadas con ID exacto",
+      "cumple": true
+    },
+    {
+      "nombre": "Alta confirmada con lote y evento exactos",
+      "cumple": true
+    },
+    {
+      "nombre": "Recuperación devuelve mismo hecho inicial",
+      "cumple": true
+    },
+    {
+      "nombre": "Replay de la misma intención devuelve mismo lote/evento",
+      "cumple": true
+    },
+    {
+      "nombre": "Misma clave con cantidad distinta rechazada",
+      "cumple": true,
+      "http": 409
+    },
+    {
+      "nombre": "Saldo físico 3 y asignado 0 tras replay, sin Recolección ficticia",
+      "cumple": true
+    },
+    {
+      "nombre": "Foto firmada legible y SHA256 coincide",
+      "cumple": true,
+      "bytes": 34025,
+      "mime": "image/png",
+      "sha256": "8bf5cbeb8e264d3ddc79432e4ee6a28ce86a85e771f16e1af5aee6bfdb96c626"
+    },
+    {
+      "nombre": "Acceso público sin firma denegado",
+      "cumple": true,
+      "http": 400
+    },
+    {
+      "nombre": "Timeline conserva un único evento y su foto privada",
+      "cumple": true
+    },
+    {
+      "nombre": "Foto vinculada deja de estar pendiente",
+      "cumple": true
+    },
+    {
+      "nombre": "Ruta genérica de evidencias excluye foto privada",
+      "cumple": true,
+      "http": 404
+    }
+  ],
+  "limites": [
+    "Fixture sintético conservado, sin limpieza ni cambios de permisos.",
+    "No acredita consumo M3, otros roles, WebAuthn de alta ni frontend T5 de producto."
+  ],
+  "solicitud_id": "41e54f26-f8a2-422b-8ef8-b029aedf1edc",
+  "fixture": {
+    "lote_vivero_id": "124",
+    "evento_incorporacion_id": "338",
+    "vivero_id": "1",
+    "planta_id": "46",
+    "evidencia_ids": [
+      "779"
+    ],
+    "cantidad": 3,
+    "modalidad": "SALDO_INICIAL",
+    "procedencia": "DONACION"
+  },
+  "resultado": "APROBADO",
+  "fecha_fin": "2026-11-14T16:10:27.282Z"
+}

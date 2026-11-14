@@ -1,0 +1,28 @@
+{
+  "fecha_utc": "2026-11-14T16:09:29.960313+00:00",
+  "destino": "vyrjlehkhabydkhjxagx.supabase.co",
+  "revision_fuente": "db95e70",
+  "migracion": "108_vivero_embolsado_cierre_catalogo.sql",
+  "sha256_archivo_fuente": "8fff9297987efd90348db0acbdd02234d2652d5d2de461636aa8d1c75ac91713",
+  "metodo": "Supabase Studio SQL Editor mediante interfaz nativa",
+  "consulta_id": "a9581b66-bdf5-456b-8db6-2e9200880004",
+  "ejecucion": "SQL operativo de108 y postflight READ ONLY en mismo envío; cabecera/comentarios de presentación abreviados",
+  "resultado": "APLICADA_Y_COTEJADA",
+  "postflight": [
+    {
+      "nombre": "chk_evento_lote_vivero_embolsado_consistente",
+      "validada": true,
+      "observado": "EMBOLSADO: saldo previo NULL o0, cantidad entera1..2147483647, saldo posterior igual, unidad UNIDAD no nula."
+    },
+    {
+      "nombre": "chk_evento_lote_vivero_saldos_eventos_vivos_requeridos",
+      "validada": true,
+      "observado": "MERMA/DESPACHO: ambos saldos obligatorios y no negativos."
+    }
+  ],
+  "limites": [
+    "Resultado de catálogo observado en la tabla UI de dos filas; no exportación CSV.",
+    "No modifica RPC, ACL ni hechos operativos.",
+    "Git no revierte por sí mismo los cambios remotos."
+  ]
+}

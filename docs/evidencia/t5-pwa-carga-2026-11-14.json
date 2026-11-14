@@ -65,5 +65,15 @@
     "Sin altas ni subidas de fotos desde esta comprobación; el coordinador ejecuta la prueba T5 por separado.",
     "Carga recuperada y build correcto no demuestran una causa raíz del síntoma transitorio ni garantizan ausencia de errores futuros."
   ],
-  "runtime_verificado": "Node24.19.0"
+  "runtime_verificado": "Node24.19.0",
+  "verificacion_posterior_al_alta": {
+    "origen": "CUA coordinador; GET normal de /app/vivero en Chrome",
+    "resultado": "Lista carga con tres lotes, incluido124 y saldo físico3.",
+    "parche_pwa": false,
+    "pendiente_frontend_T5": [
+      "Tarjeta existente llama Embolsado a la incorporación SALDO_INICIAL.",
+      "Muestra Supervivencia100% y Disponible para entregar; no son afirmaciones acreditadas por ese alta.",
+      "Adaptar presentación/procedencia en el frontend T5 antes de aceptación del producto."
+    ]
+  }
 }
