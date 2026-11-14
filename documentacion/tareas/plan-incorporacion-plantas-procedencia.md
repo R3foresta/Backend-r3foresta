@@ -1,5 +1,14 @@
 # Plan de incorporación de plantas y trazabilidad de procedencia
 
+**Actualización del13 de noviembre de2026:** se implementa localmente el
+[núcleo T5 simplificado](../../docs/t5-incorporacion-plantas.md), con recepción
+en vivero o saldo inicial y una única extensión del evento INCORPORACION.
+[Verificación y límites](../../docs/t5-validacion-local.md). El texto siguiente
+conserva propuestas/revisiones históricas de mayor alcance: recepción directa,
+aptitud, merma en campo, cambios de cancelación/corrección y selección física
+del lote no quedan aprobados ni implementados por esta entrega. Tampoco acredita
+aplicación SQL, Storage, PWA o despliegue.
+
 Fecha: 9 de septiembre de 2026. Estado: propuesta para revisión; no implementada.
 
 Este documento parte de la conversación y de la lectura del backend, sus migraciones, el frontend local y los contratos de `r3foresta-docs`. No se consultó ni modificó la base de datos desplegada. Las observaciones sobre implementación describen estos repositorios, no certifican el estado de producción.

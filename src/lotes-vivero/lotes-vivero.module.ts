@@ -18,12 +18,15 @@ import { ViveroInicioService } from './application/vivero-inicio.service';
 import { ViveroMermaService } from './application/vivero-merma.service';
 import { ViveroSaldosService } from './application/vivero-saldos.service';
 import { ViveroTimelineService } from './application/vivero-timeline.service';
+import { ViveroIncorporacionController } from './api/vivero-incorporacion.controller';
+import { ViveroIncorporacionService } from './application/vivero-incorporacion.service';
 
 @Module({
   imports: [ActorModule, SupabaseModule, ViveroAccesoModule],
-  controllers: [LotesViveroController],
+  controllers: [ViveroIncorporacionController, LotesViveroController],
   providers: [
     LotesViveroService,
+    ViveroIncorporacionService,
     EvidenceFileService,
     ViveroAdaptabilidadService,
     ViveroAsignacionesService,

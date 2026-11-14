@@ -1,3 +1,4 @@
+import { compatibleDatabaseId, exactId } from '../../common/dto/bigint-id';
 import { throwViveroMutationFailure } from './vivero-rpc-error';
 import {
   BadRequestException,
@@ -19,16 +20,16 @@ import {
 } from './vivero-evidencias.service';
 
 type RpcAdaptabilidadResult = {
-  evento_adaptabilidad_id: number;
-  lote_vivero_id: number;
+  evento_adaptabilidad_id: number | string;
+  lote_vivero_id: number | string;
   codigo_trazabilidad: string;
   subetapa_destino: SubetapaAdaptabilidad;
   saldo_vivo_actual: number;
-  evidencia_ids_vinculadas: number[];
+  evidencia_ids_vinculadas: (number | string)[];
 };
 
 type EventoAdaptabilidadRow = {
-  id: number;
+  id: number | string;
   tipo_evento: string;
   fecha_evento: string;
   cantidad_afectada: number | null;
@@ -37,19 +38,19 @@ type EventoAdaptabilidadRow = {
   saldo_vivo_antes: number | null;
   saldo_vivo_despues: number | null;
   observaciones: string | null;
-  responsable_id: number;
+  responsable_id: number | string;
   created_at: string;
 };
 
 type EvidenciaPendienteRow = {
-  id: number;
-  entidad_id: number;
+  id: number | string;
+  entidad_id: number | string;
   ruta_archivo: string;
   mime_type: string;
 };
 
 type EvidenciaRow = {
-  id: number;
+  id: number | string;
   ruta_archivo: string;
   mime_type: string;
   tipo_archivo: string;
@@ -83,7 +84,7 @@ export class ViveroAdaptabilidadService {
 
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')
-      .select('id, codigo_trazabilidad, estado_lote')
+      .select('id::text, codigo_trazabilidad, estado_lote')
       .eq('id', loteId)
       .maybeSingle();
 
@@ -112,7 +113,7 @@ export class ViveroAdaptabilidadService {
       { eventoTipo: TipoEventoVivero.ADAPTABILIDAD, loteId },
     );
 
-    const evidenciaIds: number[] = resultado.evidencia_ids;
+    const evidenciaIds = resultado.evidencia_ids;
 
     if (evidenciaIds.length > 0) {
       const { error: updateError } = await supabase
@@ -130,7 +131,7 @@ export class ViveroAdaptabilidadService {
 
     const evidencias = (resultado.data as EvidenciaPendienteRow[]).map(
       (ev) => ({
-        id: Number(ev.id),
+        id: compatibleDatabaseId(ev.id),
         codigo_trazabilidad: lote.codigo_trazabilidad,
         entidad_id: ev.entidad_id ?? 0,
         ruta_archivo: ev.ruta_archivo,
@@ -172,7 +173,7 @@ export class ViveroAdaptabilidadService {
     const supabase = this.supabaseService.getAdminClient();
 
     const { data, error } = await supabase
-      .rpc('fn_vivero_registrar_adaptabilidad', {
+      .rpc('fn_vivero_registrar_adaptabilidad_exacto', {
         p_lote_id: loteId,
         p_fecha_evento: dto.fecha_evento,
         p_responsable_id: usuario.id,
@@ -196,13 +197,15 @@ export class ViveroAdaptabilidadService {
       success: true,
       message: `ADAPTABILIDAD registrada. Subetapa actualizada a ${row.subetapa_destino}.`,
       data: {
-        evento_adaptabilidad_id: Number(row.evento_adaptabilidad_id),
-        lote_vivero_id: Number(row.lote_vivero_id),
+        evento_adaptabilidad_id: compatibleDatabaseId(
+          row.evento_adaptabilidad_id,
+        ),
+        lote_vivero_id: compatibleDatabaseId(row.lote_vivero_id),
         codigo_trazabilidad: row.codigo_trazabilidad,
         subetapa_destino: row.subetapa_destino,
         saldo_vivo_actual: Number(row.saldo_vivo_actual),
         evidencia_ids_vinculadas: (row.evidencia_ids_vinculadas ?? []).map(
-          Number,
+          compatibleDatabaseId,
         ),
       },
     };
@@ -217,7 +220,7 @@ export class ViveroAdaptabilidadService {
 
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')
-      .select('id, saldo_vivo_actual, subetapa_actual')
+      .select('id::text, saldo_vivo_actual, subetapa_actual')
       .eq('id', loteId)
       .maybeSingle();
 
@@ -236,7 +239,7 @@ export class ViveroAdaptabilidadService {
     const { data: eventos, error: eventosError } = await supabase
       .from('evento_lote_vivero')
       .select(
-        'id, tipo_evento, fecha_evento, cantidad_afectada, unidad_medida_evento, subetapa_destino, saldo_vivo_antes, saldo_vivo_despues, observaciones, responsable_id, created_at',
+        'id::text, tipo_evento, fecha_evento, cantidad_afectada, unidad_medida_evento, subetapa_destino, saldo_vivo_antes, saldo_vivo_despues, observaciones, responsable_id::text, created_at',
       )
       .eq('lote_id', loteId)
       .eq('tipo_evento', 'ADAPTABILIDAD')
@@ -256,7 +259,7 @@ export class ViveroAdaptabilidadService {
 
     const adaptabilidadesConEvidencias = await Promise.all(
       eventosList.map(async (evento) => {
-        const eventoId = Number(evento.id);
+        const eventoId = compatibleDatabaseId(evento.id);
         const evidencias = await this.obtenerEvidenciasDelEvento(
           supabase,
           eventoId,
@@ -280,7 +283,7 @@ export class ViveroAdaptabilidadService {
               ? Number(evento.saldo_vivo_despues)
               : null,
           observaciones: evento.observaciones ?? null,
-          responsable_id: Number(evento.responsable_id),
+          responsable_id: compatibleDatabaseId(evento.responsable_id),
           created_at: evento.created_at,
           evidencias,
         };
@@ -307,16 +310,16 @@ export class ViveroAdaptabilidadService {
   // ---------------------------------------------------------------------------
   private async obtenerEvidenciasDelEvento(
     supabase: SupabaseClient,
-    eventoId: number,
+    eventoId: number | string,
   ): Promise<(EvidenciaRow & { public_url: string })[]> {
     const { data: tipoEntidadData } = await supabase
       .from('tipos_entidad_evidencia')
-      .select('id')
+      .select('id::text')
       .ilike('codigo', 'EVENTO_LOTE_VIVERO')
       .eq('activo', true)
       .maybeSingle();
 
-    const tipoEntidad = tipoEntidadData as { id: number } | null;
+    const tipoEntidad = tipoEntidadData as { id: number | string } | null;
 
     if (!tipoEntidad) {
       return [];
@@ -324,8 +327,10 @@ export class ViveroAdaptabilidadService {
 
     const { data: evidenciasData, error: evError } = await supabase
       .from('evidencias_trazabilidad')
-      .select('id, ruta_archivo, mime_type, tipo_archivo, es_principal, orden')
-      .eq('tipo_entidad_id', Number(tipoEntidad.id))
+      .select(
+        'id::text, ruta_archivo, mime_type, tipo_archivo, es_principal, orden',
+      )
+      .eq('tipo_entidad_id', compatibleDatabaseId(tipoEntidad.id))
       .eq('entidad_id', eventoId)
       .is('eliminado_en', null);
 
@@ -345,7 +350,7 @@ export class ViveroAdaptabilidadService {
         .getPublicUrl(ev.ruta_archivo);
 
       return {
-        id: Number(ev.id),
+        id: compatibleDatabaseId(ev.id),
         ruta_archivo: ev.ruta_archivo,
         mime_type: ev.mime_type,
         tipo_archivo: ev.tipo_archivo,

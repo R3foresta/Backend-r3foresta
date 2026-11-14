@@ -1,4 +1,4 @@
-import { exactId } from '../../common/dto/bigint-id';
+import { compatibleId, exactId } from '../../common/dto/bigint-id';
 import {
   Injectable,
   InternalServerErrorException,
@@ -18,10 +18,10 @@ import { UnidadMedidaVivero } from '../domain/enums/unidad-medida-vivero.enum';
 import { ViveroTimelineService } from './vivero-timeline.service';
 
 type EventoSnapshot = {
-  id: number;
+  id: number | string;
   fecha_evento: string;
   created_at: string;
-  responsable_id: number;
+  responsable_id: number | string;
   cantidad_afectada: number | null;
   unidad_medida_evento: UnidadMedidaVivero | null;
   saldo_vivo_antes: number | null;
@@ -87,11 +87,11 @@ export class ViveroConsultasService {
     if (filters.subcampania_id) {
       const { data: asigData } = await supabase
         .from('asignacion_vivero_subcampania')
-        .select('lote_vivero_id')
+        .select('lote_vivero_id::text')
         .eq('subcampania_id', filters.subcampania_id)
         .eq('estado', 'ACTIVA');
       const loteIds = (asigData || []).map((a: any) =>
-        Number(a.lote_vivero_id),
+        exactId(a.lote_vivero_id),
       );
       if (loteIds.length === 0) {
         query = query.in('id', [-1]);
@@ -113,28 +113,31 @@ export class ViveroConsultasService {
     const total = count || 0;
     const totalPages = Math.ceil(total / limit);
 
-    const loteIds = (data || []).map((row: any) => Number(row.id));
+    const loteIds = (data || []).map((row: any) => exactId(row.id));
+    const origenes = await this.cargarIncorporaciones(
+      (data || []).filter((row: any) => row.recoleccion_id === null).map((row: any) => exactId(row.id)),
+    );
     // Contrato fisico M2-M3 (RN-VIV-57): saldo_vivo_actual del lote es el
     // saldo fisico en vivero; saldo_asignado_subcampanias es stock ya
     // entregado a subcampanias (informativo, NO resta disponibilidad).
     const saldosMap = new Map<
-      number,
+      string,
       {
         saldo_asignado_subcampanias: number;
       }
     >();
-    const countsMap = new Map<number, number>();
+    const countsMap = new Map<string, number>();
 
     if (loteIds.length > 0) {
       // 1. Cargar saldos
       const { data: saldosData, error: saldosError } = await supabase
         .from('v_lote_vivero_saldos')
-        .select('lote_id, saldo_asignado_subcampanias')
+        .select('lote_id::text, saldo_asignado_subcampanias')
         .in('lote_id', loteIds);
 
       if (!saldosError && saldosData) {
         saldosData.forEach((s: any) => {
-          saldosMap.set(Number(s.lote_id), {
+          saldosMap.set(exactId(s.lote_id), {
             saldo_asignado_subcampanias: Number(
               s.saldo_asignado_subcampanias || 0,
             ),
@@ -145,13 +148,13 @@ export class ViveroConsultasService {
       // 2. Cargar cantidad de asignaciones activas
       const { data: asigData, error: asigError } = await supabase
         .from('asignacion_vivero_subcampania')
-        .select('lote_vivero_id')
+        .select('lote_vivero_id::text')
         .eq('estado', 'ACTIVA')
         .in('lote_vivero_id', loteIds);
 
       if (!asigError && asigData) {
         asigData.forEach((a: any) => {
-          const lid = Number(a.lote_vivero_id);
+          const lid = exactId(a.lote_vivero_id);
           countsMap.set(lid, (countsMap.get(lid) || 0) + 1);
         });
       }
@@ -161,10 +164,11 @@ export class ViveroConsultasService {
       success: true,
       data: (data || []).map((row: any) => {
         const mapped = this.mapLoteRow(row);
-        const saldos = saldosMap.get(mapped.id);
-        const activeAsigCount = countsMap.get(mapped.id) || 0;
+        const saldos = saldosMap.get(exactId(mapped.id));
+        const activeAsigCount = countsMap.get(exactId(mapped.id)) || 0;
         return {
           ...mapped,
+          origen: row.recoleccion_id === null ? origenes.get(exactId(row.id)) ?? null : { tipo: 'RECOLECCION', recoleccion_id: mapped.recoleccion_id },
           saldo_asignado_subcampanias: saldos
             ? saldos.saldo_asignado_subcampanias
             : 0,
@@ -249,11 +253,11 @@ export class ViveroConsultasService {
       .from('evento_lote_vivero')
       .select(
         [
-          'id',
+          'id::text',
           'tipo_evento',
           'fecha_evento',
           'created_at',
-          'responsable_id',
+          'responsable_id::text',
           'cantidad_afectada',
           'unidad_medida_evento',
           'saldo_vivo_antes',
@@ -286,10 +290,12 @@ export class ViveroConsultasService {
     );
 
     const mapped = this.mapLoteRow(loteRow);
+    const origenes = await this.cargarIncorporaciones(mapped.recoleccion_id === null ? [exactId(mapped.id)] : []);
     return {
       success: true,
       data: {
         ...mapped,
+        origen: mapped.recoleccion_id === null ? origenes.get(exactId(mapped.id)) ?? null : { tipo: 'RECOLECCION', recoleccion_id: mapped.recoleccion_id },
         saldo_asignado_subcampanias: saldoAsignadoSubcampanias,
         cantidad_asignaciones_activas: activeAsigCount,
         ultimo_evento_por_tipo: ultimoEventoPorTipo,
@@ -302,6 +308,7 @@ export class ViveroConsultasService {
   ): UltimoEventoPorTipo {
     const result: UltimoEventoPorTipo = {
       [TipoEventoVivero.INICIO]: null,
+      [TipoEventoVivero.INCORPORACION]: null,
       [TipoEventoVivero.EMBOLSADO]: null,
       [TipoEventoVivero.DESCARTE_PRE_EMBOLSADO]: null,
       [TipoEventoVivero.ADAPTABILIDAD]: null,
@@ -327,10 +334,10 @@ export class ViveroConsultasService {
       v === null || v === undefined ? null : Number(v);
 
     return {
-      id: Number(ev.id),
+      id: compatibleId(ev.id),
       fecha_evento: ev.fecha_evento,
       created_at: ev.created_at,
-      responsable_id: Number(ev.responsable_id),
+      responsable_id: compatibleId(ev.responsable_id),
       cantidad_afectada: num(ev.cantidad_afectada),
       unidad_medida_evento: ev.unidad_medida_evento ?? null,
       saldo_vivo_antes: num(ev.saldo_vivo_antes),
@@ -395,14 +402,14 @@ export class ViveroConsultasService {
 
   private getLoteViveroSelect(): string {
     return `
-      id,
+      id::text,
       codigo_trazabilidad,
       estado_lote,
       motivo_cierre,
-      recoleccion_id,
-      planta_id,
+      recoleccion_id::text,
+      planta_id::text,
       vivero_id::text,
-      responsable_id,
+      responsable_id::text,
       nombre_cientifico_snapshot,
       nombre_comercial_snapshot,
       tipo_material_snapshot,
@@ -423,7 +430,7 @@ export class ViveroConsultasService {
         nombre
       ),
       recoleccion:recoleccion_id (
-        id,
+        id::text,
         codigo_trazabilidad,
         fecha,
         tipo_material,
@@ -433,7 +440,7 @@ export class ViveroConsultasService {
         unidad_canonica
       ),
       planta:planta_id (
-        id,
+        id::text,
         especie,
         nombre_cientifico,
         nombre_comun_principal,
@@ -441,7 +448,7 @@ export class ViveroConsultasService {
         imagen_url
       ),
       responsable:responsable_id (
-        id,
+        id::text,
         nombre,
         apellido,
         username,
@@ -457,14 +464,14 @@ export class ViveroConsultasService {
         : Number(row.saldo_vivo_actual);
 
     return {
-      id: Number(row.id),
+      id: compatibleId(row.id),
       codigo_trazabilidad: row.codigo_trazabilidad,
       estado_lote: row.estado_lote,
       motivo_cierre: row.motivo_cierre,
-      recoleccion_id: Number(row.recoleccion_id),
-      planta_id: Number(row.planta_id),
+      recoleccion_id: row.recoleccion_id == null ? null : compatibleId(row.recoleccion_id),
+      planta_id: compatibleId(row.planta_id),
       vivero_id: exactId(row.vivero_id),
-      responsable_id: Number(row.responsable_id),
+      responsable_id: compatibleId(row.responsable_id),
       nombre_cientifico_snapshot: row.nombre_cientifico_snapshot,
       nombre_comercial_snapshot: row.nombre_comercial_snapshot,
       tipo_material_snapshot: row.tipo_material_snapshot,
@@ -472,7 +479,7 @@ export class ViveroConsultasService {
       nombre_comunidad_origen_snapshot: row.nombre_comunidad_origen_snapshot,
       nombre_responsable_snapshot: row.nombre_responsable_snapshot,
       fecha_inicio: row.fecha_inicio,
-      cantidad_inicial_en_proceso: Number(row.cantidad_inicial_en_proceso),
+      cantidad_inicial_en_proceso: row.cantidad_inicial_en_proceso == null ? null : Number(row.cantidad_inicial_en_proceso),
       unidad_medida_inicial: row.unidad_medida_inicial,
       plantas_vivas_iniciales:
         row.plantas_vivas_iniciales === null ||
@@ -493,5 +500,27 @@ export class ViveroConsultasService {
 
   private escapePostgrestOrTerm(term: string): string {
     return term.replace(/[%_,()]/g, '\\$&');
+  }
+
+  private async cargarIncorporaciones(loteIds: string[]) {
+    const result = new Map<string, Record<string, unknown>>();
+    if (!loteIds.length) return result;
+    const { data, error } = await this.supabaseService.getAdminClient()
+      .from('evento_lote_vivero')
+      .select('id::text,lote_id::text,fecha_evento,cantidad_afectada,observaciones,incorporacion:vivero_incorporacion(modalidad,procedencia,tercero_origen,referencia_documental)')
+      .in('lote_id', loteIds).eq('tipo_evento', 'INCORPORACION');
+    if (error) throw new InternalServerErrorException('No se pudo consultar la procedencia del lote.');
+    for (const evento of data ?? []) {
+      const extension = Array.isArray(evento.incorporacion) ? evento.incorporacion[0] : evento.incorporacion;
+      if (!extension) throw new InternalServerErrorException('Incorporación incompleta.');
+      result.set(exactId(evento.lote_id), {
+        tipo: 'INCORPORACION', evento_id: compatibleId(evento.id), ...extension,
+        fecha_evento: evento.fecha_evento, cantidad: Number(evento.cantidad_afectada),
+        observaciones: evento.observaciones,
+        historia_previa_no_registrada: extension.modalidad === 'SALDO_INICIAL',
+      });
+    }
+    if (result.size !== loteIds.length) throw new InternalServerErrorException('Origen de incorporación no disponible.');
+    return result;
   }
 }

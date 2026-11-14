@@ -698,6 +698,53 @@ schemas.DetallePropio = obj({
   evidencia_ids: array(id, 0, 10),
   observaciones_autor: nullableText,
 });
+schemas.OrigenConsumoPropio = {
+  oneOf: [
+    obj({
+      tipo: { ...text, enum: ['RECOLECCION'] },
+      recoleccion_id: id,
+      modalidad: { ...text, nullable: true, enum: [null] },
+      procedencia: { ...text, nullable: true, enum: [null] },
+    }),
+    obj({
+      tipo: { ...text, enum: ['INCORPORACION'] },
+      recoleccion_id: { ...text, nullable: true, enum: [null] },
+      modalidad: { ...text, enum: ['RECEPCION'] },
+      procedencia: { ...text, enum: ['COMPRA', 'DONACION'] },
+    }),
+    obj({
+      tipo: { ...text, enum: ['INCORPORACION'] },
+      recoleccion_id: { ...text, nullable: true, enum: [null] },
+      modalidad: { ...text, enum: ['SALDO_INICIAL'] },
+      procedencia: { ...text, enum: ['COMPRA', 'DONACION', 'PRODUCCION_PROPIA', 'DESCONOCIDA'] },
+    }),
+    obj({
+      tipo: { ...text, enum: ['HISTORICO_SIN_ORIGEN'] },
+      recoleccion_id: { ...text, nullable: true, enum: [null] },
+      modalidad: { ...text, nullable: true, enum: [null] },
+      procedencia: { ...text, nullable: true, enum: [null] },
+    }),
+  ],
+};
+schemas.ConsumoProcedenciaPropia = obj({
+  detalle_id: id,
+  asignacion_id: id,
+  lote_vivero_id: id,
+  codigo_lote: text,
+  planta_id: id,
+  cantidad: quantity,
+  nombre_cientifico_snapshot: nullableText,
+  nombre_comercial_snapshot: nullableText,
+  variedad_snapshot: nullableText,
+  origen: ref('OrigenConsumoPropio'),
+});
+schemas.ProcedenciaPropia = obj({
+  registro_plantacion_id: id,
+  cantidad_total_plantada: quantity,
+  criterio_atribucion: { ...text, enum: ['CONSUMOS_PERSISTIDOS'] },
+  consumos: array(ref('ConsumoProcedenciaPropia'), 1),
+});
+schemas.ProcedenciaPropiaLectura = obj({ data: ref('ProcedenciaPropia'), observado_en: instant });
 schemas.PreparacionEntrada = obj({
   comando_id: uuid,
   operacion: initialOperation,
@@ -796,6 +843,16 @@ add(
   'DetallePropioLectura',
   [param('id', 'path', id, true)],
 );
+add(
+  '/api/v1/plantaciones/{id}/procedencia-propia',
+  'get',
+  'Procedencia mínima del consumo persistido',
+  null,
+  'ProcedenciaPropiaLectura',
+  [param('id', 'path', id, true)],
+);
+paths['/api/v1/plantaciones/{id}/procedencia-propia'].get.description =
+  'T5/103. JWT y cuenta activa; autor o participante efectivo revalidado según085, incluso para ADMIN. Sin permiso M2. Una fila por detalle persistido, con su asignación/lote y cantidad original: no recalcula LIFO ni usa saldo actual. Snapshots del detalle, null históricos conservados. Origen mínimo de Recolección o incorporación, sin tercero, referencia documental, observaciones ni evidencias M2. Atribución registrada: no acredita selección física del lote ni edad biológica. Sin query. Impacto público conserva su contrato.';
 add(
   '/api/v1/participacion/comandos/preparaciones',
   'post',
@@ -1601,9 +1658,9 @@ const document = {
   info: {
     title:
       'R3Foresta Participación aliada — INT02-C / INT03-A / INT02-D / INT05 / INT07',
-    version: '1.7.0',
+    version: '1.8.0',
     description:
-      'Gestión C, listado administrativo de usuarios y roles globales, registro inicial INT03-A, consulta INT05 y correcciones INT07 de observaciones/participantes con recuperación durable, contexto/historial privados, búsqueda histórica y estado propio/público. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada.',
+      'Gestión C, listado administrativo de usuarios y roles globales, registro inicial INT03-A, consulta INT05, procedencia propia T5 y correcciones INT07 de observaciones/participantes con recuperación durable, contexto/historial privados, búsqueda histórica y estado propio/público. IDs/revisiones BIGINT en cadenas. Campos desconocidos rechazados. 404 COMANDO_NO_CONFIRMADO y 503 RESULTADO_NO_DETERMINADO son inconclusos. INT02-D retira inicial/contexto legados y añade JPEG público sanitizado. SQL/corte remotos y habilitación real conservan su evidencia separada.',
   },
   servers: [{ url: 'http://localhost:3000' }],
   paths,

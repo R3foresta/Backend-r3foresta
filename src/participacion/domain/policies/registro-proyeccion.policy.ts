@@ -262,3 +262,78 @@ export function detallePropio(
   if (!relations.includes('AUTOR')) check(row.observaciones_autor === null);
   return row;
 }
+
+/** Procedencia del consumo registrado: no concede lectura de la ficha M2. */
+export function procedenciaPropia(value: unknown, registroId: string) {
+  const row = exact(value, [
+    'registro_plantacion_id',
+    'cantidad_total_plantada',
+    'criterio_atribucion',
+    'consumos',
+  ]);
+  check(id(row.registro_plantacion_id) === registroId);
+  integer(row.cantidad_total_plantada, 1);
+  check(row.criterio_atribucion === 'CONSUMOS_PERSISTIDOS');
+  check(Array.isArray(row.consumos) && row.consumos.length > 0);
+  const detalles = new Set<string>();
+  let total = 0;
+  row.consumos.forEach((value: unknown) => {
+    const detail = exact(value, [
+      'detalle_id',
+      'asignacion_id',
+      'lote_vivero_id',
+      'codigo_lote',
+      'planta_id',
+      'cantidad',
+      'nombre_cientifico_snapshot',
+      'nombre_comercial_snapshot',
+      'variedad_snapshot',
+      'origen',
+    ]);
+    const detailId = id(detail.detalle_id);
+    check(!detalles.has(detailId));
+    detalles.add(detailId);
+    id(detail.asignacion_id);
+    id(detail.lote_vivero_id);
+    id(detail.planta_id);
+    text(detail.codigo_lote);
+    integer(detail.cantidad, 1);
+    total += detail.cantidad as number;
+    [
+      'nombre_cientifico_snapshot',
+      'nombre_comercial_snapshot',
+      'variedad_snapshot',
+    ].forEach((key) => text(detail[key], true));
+    const origin = exact(detail.origen, [
+      'tipo',
+      'recoleccion_id',
+      'modalidad',
+      'procedencia',
+    ]);
+    if (origin.tipo === 'RECOLECCION') {
+      id(origin.recoleccion_id);
+      check(origin.modalidad === null && origin.procedencia === null);
+    } else {
+      check(origin.recoleccion_id === null);
+      if (origin.tipo === 'INCORPORACION') {
+        check(
+          ['RECEPCION', 'SALDO_INICIAL'].includes(origin.modalidad as string),
+        );
+        check(
+          (origin.modalidad === 'RECEPCION'
+            ? ['COMPRA', 'DONACION']
+            : ['COMPRA', 'DONACION', 'PRODUCCION_PROPIA', 'DESCONOCIDA']
+          ).includes(origin.procedencia as string),
+        );
+      } else {
+        check(
+          origin.tipo === 'HISTORICO_SIN_ORIGEN' &&
+            origin.modalidad === null &&
+            origin.procedencia === null,
+        );
+      }
+    }
+  });
+  check(total === row.cantidad_total_plantada);
+  return row;
+}

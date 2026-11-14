@@ -109,7 +109,7 @@ describe('EvidenciasTrazabilidadService', () => {
     );
   });
 
-  it.each(['participacion_evidencias', 'r3foresta-conciliacion'])(
+  it.each(['participacion_evidencias', 'r3foresta-conciliacion', 'vivero_incorporaciones'])(
     'la ruta general excluye evidencias privadas de %s, incluso por ID',
     async (bucket) => {
       from.mockReturnValue(

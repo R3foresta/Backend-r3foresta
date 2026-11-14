@@ -3366,6 +3366,162 @@ export const participacionOpenApi = {
         }
       }
     },
+    "/api/v1/plantaciones/{id}/procedencia-propia": {
+      "get": {
+        "summary": "Procedencia mínima del consumo persistido",
+        "operationId": "Procedenciamnimadelconsumopersistido",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lectura privada.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcedenciaPropiaLectura"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        },
+        "description": "T5/103. JWT y cuenta activa; autor o participante efectivo revalidado según085, incluso para ADMIN. Sin permiso M2. Una fila por detalle persistido, con su asignación/lote y cantidad original: no recalcula LIFO ni usa saldo actual. Snapshots del detalle, null históricos conservados. Origen mínimo de Recolección o incorporación, sin tercero, referencia documental, observaciones ni evidencias M2. Atribución registrada: no acredita selección física del lote ni edad biológica. Sin query. Impacto público conserva su contrato."
+      }
+    },
     "/api/v1/participacion/comandos/preparaciones": {
       "post": {
         "summary": "Preparar cargas propias",
@@ -8729,6 +8885,266 @@ export const participacionOpenApi = {
           "participantes",
           "evidencia_ids",
           "observaciones_autor"
+        ]
+      },
+      "OrigenConsumoPropio": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "tipo": {
+                "type": "string",
+                "enum": [
+                  "RECOLECCION"
+                ]
+              },
+              "recoleccion_id": {
+                "$ref": "#/components/schemas/Id"
+              },
+              "modalidad": {
+                "type": "string",
+                "nullable": true,
+                "enum": [
+                  null
+                ]
+              },
+              "procedencia": {
+                "type": "string",
+                "nullable": true,
+                "enum": [
+                  null
+                ]
+              }
+            },
+            "required": [
+              "tipo",
+              "recoleccion_id",
+              "modalidad",
+              "procedencia"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "tipo": {
+                "type": "string",
+                "enum": [
+                  "INCORPORACION"
+                ]
+              },
+              "recoleccion_id": {
+                "type": "string",
+                "nullable": true,
+                "enum": [
+                  null
+                ]
+              },
+              "modalidad": {
+                "type": "string",
+                "enum": [
+                  "RECEPCION"
+                ]
+              },
+              "procedencia": {
+                "type": "string",
+                "enum": [
+                  "COMPRA",
+                  "DONACION"
+                ]
+              }
+            },
+            "required": [
+              "tipo",
+              "recoleccion_id",
+              "modalidad",
+              "procedencia"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "tipo": {
+                "type": "string",
+                "enum": [
+                  "INCORPORACION"
+                ]
+              },
+              "recoleccion_id": {
+                "type": "string",
+                "nullable": true,
+                "enum": [
+                  null
+                ]
+              },
+              "modalidad": {
+                "type": "string",
+                "enum": [
+                  "SALDO_INICIAL"
+                ]
+              },
+              "procedencia": {
+                "type": "string",
+                "enum": [
+                  "COMPRA",
+                  "DONACION",
+                  "PRODUCCION_PROPIA",
+                  "DESCONOCIDA"
+                ]
+              }
+            },
+            "required": [
+              "tipo",
+              "recoleccion_id",
+              "modalidad",
+              "procedencia"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "tipo": {
+                "type": "string",
+                "enum": [
+                  "HISTORICO_SIN_ORIGEN"
+                ]
+              },
+              "recoleccion_id": {
+                "type": "string",
+                "nullable": true,
+                "enum": [
+                  null
+                ]
+              },
+              "modalidad": {
+                "type": "string",
+                "nullable": true,
+                "enum": [
+                  null
+                ]
+              },
+              "procedencia": {
+                "type": "string",
+                "nullable": true,
+                "enum": [
+                  null
+                ]
+              }
+            },
+            "required": [
+              "tipo",
+              "recoleccion_id",
+              "modalidad",
+              "procedencia"
+            ]
+          }
+        ]
+      },
+      "ConsumoProcedenciaPropia": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "detalle_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "asignacion_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "lote_vivero_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "codigo_lote": {
+            "type": "string"
+          },
+          "planta_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "cantidad": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "nombre_cientifico_snapshot": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre_comercial_snapshot": {
+            "type": "string",
+            "nullable": true
+          },
+          "variedad_snapshot": {
+            "type": "string",
+            "nullable": true
+          },
+          "origen": {
+            "$ref": "#/components/schemas/OrigenConsumoPropio"
+          }
+        },
+        "required": [
+          "detalle_id",
+          "asignacion_id",
+          "lote_vivero_id",
+          "codigo_lote",
+          "planta_id",
+          "cantidad",
+          "nombre_cientifico_snapshot",
+          "nombre_comercial_snapshot",
+          "variedad_snapshot",
+          "origen"
+        ]
+      },
+      "ProcedenciaPropia": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registro_plantacion_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "cantidad_total_plantada": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "criterio_atribucion": {
+            "type": "string",
+            "enum": [
+              "CONSUMOS_PERSISTIDOS"
+            ]
+          },
+          "consumos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsumoProcedenciaPropia"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "registro_plantacion_id",
+          "cantidad_total_plantada",
+          "criterio_atribucion",
+          "consumos"
+        ]
+      },
+      "ProcedenciaPropiaLectura": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ProcedenciaPropia"
+          },
+          "observado_en": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          }
+        },
+        "required": [
+          "data",
+          "observado_en"
         ]
       },
       "PreparacionEntrada": {

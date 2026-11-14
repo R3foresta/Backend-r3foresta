@@ -91,4 +91,17 @@ export class ParticipacionRegistroController {
     strictObject(query, [], 'query');
     return this.service.detalle(req.actor, id(registro));
   }
+  @Get('plantaciones/:id/procedencia-propia')
+  @ApiOperation({
+    summary:
+      'Procedencia mínima del consumo persistido para autor o participante',
+  })
+  procedencia(
+    @Req() req: ActorRequest,
+    @Param('id') registro: string,
+    @Query() query: unknown,
+  ) {
+    strictObject(query, [], 'query');
+    return this.service.procedencia(req.actor, id(registro));
+  }
 }

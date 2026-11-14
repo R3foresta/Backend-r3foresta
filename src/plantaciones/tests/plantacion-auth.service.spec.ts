@@ -1,4 +1,8 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { PlantacionAuthService } from '../application/plantacion-auth.service';
 
@@ -16,7 +20,7 @@ function createSupabase(result: { data: any; error: any }): SupabaseService {
 describe('PlantacionAuthService', () => {
   it('resuelve usuario por auth_id', async () => {
     const supabase = createSupabase({
-      data: { id: 7, nombre: 'Andy', rol: 'GENERAL' },
+      data: { id: '7', nombre: 'Andy', rol: 'GENERAL', activo: true },
       error: null,
     });
     const service = new PlantacionAuthService(supabase);
@@ -25,6 +29,7 @@ describe('PlantacionAuthService', () => {
       id: 7,
       nombre: 'Andy',
       rol: 'GENERAL',
+      activo: true,
     });
   });
 
@@ -43,6 +48,47 @@ describe('PlantacionAuthService', () => {
 
     await expect(service.getUserByAuthId('x')).rejects.toThrow(
       NotFoundException,
+    );
+  });
+
+  it('conserva la identidad BIGINT exacta de una cuenta activa', async () => {
+    const service = new PlantacionAuthService(
+      createSupabase({
+        data: {
+          id: '9007199255741001',
+          nombre: 'Actor sintético',
+          rol: 'GENERAL',
+          activo: true,
+        },
+        error: null,
+      }),
+    );
+    expect((await service.getUserByAuthId('auth-fixture')).id).toBe(
+      '9007199255741001',
+    );
+  });
+
+  it('rechaza una identidad que el transporte haya redondeado', async () => {
+    const service = new PlantacionAuthService(
+      createSupabase({
+        data: { id: 9007199255741000, rol: 'GENERAL', activo: true },
+        error: null,
+      }),
+    );
+    await expect(service.getUserByAuthId('auth-fixture')).rejects.toThrow(
+      ServiceUnavailableException,
+    );
+  });
+
+  it('no presta autoridad a una cuenta inactiva aunque conserve rol interno', async () => {
+    const service = new PlantacionAuthService(
+      createSupabase({
+        data: { id: '7', rol: 'ADMIN', activo: false },
+        error: null,
+      }),
+    );
+    await expect(service.getUserByAuthId('auth-fixture')).rejects.toThrow(
+      ForbiddenException,
     );
   });
 

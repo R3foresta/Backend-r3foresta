@@ -1,3 +1,4 @@
+import { compatibleDatabaseId, exactId } from '../../common/dto/bigint-id';
 import { throwSharedMutationFailure } from '../../common/db/pa-shared-rpc-error';
 import {
   BadRequestException,
@@ -22,8 +23,8 @@ import {
 import { PlantacionAuthService } from './plantacion-auth.service';
 
 type ConsumoAsignacionRow = {
-  asignacion_id: number;
-  lote_vivero_id: number;
+  asignacion_id: number | string;
+  lote_vivero_id: number | string;
   cantidad_consumida: number;
   saldo_asignado_antes: number;
   saldo_asignado_despues: number;
@@ -31,14 +32,14 @@ type ConsumoAsignacionRow = {
 };
 
 type RpcRegistrarPlantacionResult = {
-  registro_plantacion_id: number;
+  registro_plantacion_id: number | string;
   codigo_trazabilidad: string;
   cantidad_total_plantada: number;
   gps_dentro_poligono: boolean;
   gps_distancia_a_poligono_m: number | null;
   consumos: ConsumoAsignacionRow[];
-  coresponsable_ids_vinculados: number[];
-  evidencia_ids_vinculadas: number[];
+  coresponsable_ids_vinculados: (number | string)[];
+  evidencia_ids_vinculadas: (number | string)[];
 };
 
 @Injectable()
@@ -79,7 +80,7 @@ export class PlantacionCreationService {
       throw err;
     }
 
-    let coresponsableIds: number[];
+    let coresponsableIds: (number | string)[];
     try {
       coresponsableIds = CoresponsablesPolicy.normalizar(
         dto.coresponsable_ids,
@@ -92,10 +93,15 @@ export class PlantacionCreationService {
       throw err;
     }
 
+    exactId(dto.subcampania_id);
+    if (!Array.isArray(dto.evidencia_ids) || dto.evidencia_ids.length === 0)
+      throw new BadRequestException('Debe vincularse al menos una evidencia.');
+    dto.evidencia_ids.forEach(exactId);
+
     const supabase = this.supabaseService.getAdminClient();
 
     const { data, error } = await supabase
-      .rpc('fn_m3_registrar_plantacion', {
+      .rpc('fn_m3_registrar_plantacion_exacto', {
         p_subcampania_id: dto.subcampania_id,
         p_es_reposicion: esReposicion,
         p_registro_plantacion_origen_id: registroOrigenId,
@@ -129,7 +135,9 @@ export class PlantacionCreationService {
       success: true,
       data: {
         message: 'Plantacion registrada correctamente.',
-        registro_plantacion_id: Number(row.registro_plantacion_id),
+        registro_plantacion_id: compatibleDatabaseId(
+          row.registro_plantacion_id,
+        ),
         codigo_trazabilidad: row.codigo_trazabilidad,
         cantidad_total_plantada: Number(row.cantidad_total_plantada),
         gps_dentro_poligono: row.gps_dentro_poligono,
@@ -140,8 +148,8 @@ export class PlantacionCreationService {
         // Contrato fisico M2-M3: plantar consume asignaciones, no genera
         // despachos M2 ni toca el saldo del lote (RN-VIV-52).
         consumos: (row.consumos ?? []).map((c) => ({
-          asignacion_id: Number(c.asignacion_id),
-          lote_vivero_id: Number(c.lote_vivero_id),
+          asignacion_id: compatibleDatabaseId(c.asignacion_id),
+          lote_vivero_id: compatibleDatabaseId(c.lote_vivero_id),
           cantidad_consumida: Number(c.cantidad_consumida),
           saldo_asignado_antes: Number(c.saldo_asignado_antes),
           saldo_asignado_despues: Number(c.saldo_asignado_despues),
@@ -149,9 +157,9 @@ export class PlantacionCreationService {
         })),
         coresponsable_ids_vinculados: (
           row.coresponsable_ids_vinculados ?? []
-        ).map(Number),
+        ).map(compatibleDatabaseId),
         evidencia_ids_vinculadas: (row.evidencia_ids_vinculadas ?? []).map(
-          Number,
+          compatibleDatabaseId,
         ),
       },
     };

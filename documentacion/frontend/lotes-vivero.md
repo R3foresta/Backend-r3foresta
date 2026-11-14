@@ -1,5 +1,15 @@
 # Consumo frontend - Lotes de vivero
 
+> **Integración T5 pendiente en PWA:** [contrato de incorporación](../../docs/t5-incorporacion-plantas.md)
+> y [consumos propios/procedencia y cambios de UI](../../docs/t5-m3-procedencia.md).
+> Usar origen explícito, respetar nulos, snapshots y enlaces temporales de fotos
+> privadas. INCORPORACION y DEVOLUCION_PLANTACION deben entrar en VALID_KINDS.
+> Esta entrega implementa backend; los ejemplos siguientes siguen siendo del camino M1.
+
+La [revisión del14](../../docs/t5-revision-2026-11-14.md) cierra IDs exactos en
+reposición y excluye fotos T5 de las rutas genéricas de evidencias. Consultar
+las vinculadas por el timeline autorizado y conservar su `signed_url` temporal.
+
 > [Recepción única](../../docs/t4-recepcion-semillas.md) con100: INICIO y DESECHO requieren material VALIDADO con recepción conforme. ADMIN global o VALIDADOR con vigencia explícita recibe o rechaza; GENERAL con M2 sigue operando lo recibido. INICIO no precede a la recepción. Plantación consume su asignación sin otro débito M1/M2. Aplicación/corte remoto pendientes.
 
 Documento operativo para que una IA/frontend consuma el backend actual sin inventar campos ni llamar rutas incompletas.
@@ -111,7 +121,7 @@ Todos los eventos también respetan la **ventana retroactiva de 10 días** (back
 
 ### Autenticación
 
-No requiere `x-auth-id` por ahora (consistente con el resto de GET). Esto está bajo revisión — ver TODO en el controller y `documentacion/README.md` sección Pendientes.
+Requiere Bearer JWT verificado y ámbito M2 vigente sobre el vivero. `x-auth-id` no autentica; las fotos privadas T5 se consultan por el timeline autorizado con URL firmada, según el contrato enlazado al inicio de esta guía.
 
 El ciclo de inicio, embolsado, descarte pre-embolsado, adaptabilidad, merma,
 despacho manual, asignación física, devolución y timeline está implementado.

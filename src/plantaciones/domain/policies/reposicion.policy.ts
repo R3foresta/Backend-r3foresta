@@ -1,9 +1,11 @@
+import { identificadorExacto } from './identificador.policy';
+
 export class ReposicionPolicyError extends Error {}
 
 export class ReposicionPolicy {
   static assertCoherencia(
     esReposicion: boolean,
-    registroOrigenId: number | null | undefined,
+    registroOrigenId: number | string | null | undefined,
   ): void {
     if (
       esReposicion &&
@@ -29,7 +31,7 @@ export class ReposicionPolicy {
       registroOrigenId !== undefined &&
       registroOrigenId !== null
     ) {
-      if (!Number.isInteger(registroOrigenId) || registroOrigenId <= 0) {
+      if (identificadorExacto(registroOrigenId) === null) {
         throw new ReposicionPolicyError(
           'registro_plantacion_origen_id debe ser un entero positivo.',
         );

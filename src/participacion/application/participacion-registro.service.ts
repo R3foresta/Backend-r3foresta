@@ -18,6 +18,7 @@ import {
   exact,
   instant,
   personaMinima,
+  procedenciaPropia,
 } from '../domain/policies/registro-proyeccion.policy';
 
 type RegistroRpcResponse = {
@@ -150,6 +151,21 @@ export class ParticipacionRegistroService {
       return {
         ...envelope,
         data: detallePropio(envelope.data, actor.usuario_id, registro),
+      };
+    } catch {
+      return this.inconcluso(null);
+    }
+  }
+  async procedencia(actor: VerifiedActor, registro: string) {
+    const envelope = await this.lectura(
+      actor,
+      'pa_registro_procedencia_propia_leer',
+      { p_registro_id: registro },
+    );
+    try {
+      return {
+        ...envelope,
+        data: procedenciaPropia(envelope.data, registro),
       };
     } catch {
       return this.inconcluso(null);

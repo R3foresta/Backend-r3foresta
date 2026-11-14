@@ -1,3 +1,5 @@
+import { compatibleDatabaseId } from '../../common/dto/bigint-id';
+import { identificadorExacto } from '../domain/policies/identificador.policy';
 import {
   BadRequestException,
   ConflictException,
@@ -111,7 +113,7 @@ export class PlantacionEvidenciasService {
       return {
         success: true,
         data: evidencias,
-        evidencia_ids: evidencias.map((row) => Number(row.id)),
+        evidencia_ids: evidencias.map((row) => compatibleDatabaseId(row.id)),
       };
     } catch (error) {
       if (!confirmacionIncierta && uploaded.length) {
@@ -131,14 +133,20 @@ export class PlantacionEvidenciasService {
     if (
       !Array.isArray(dto.evidencia_ids) ||
       !dto.evidencia_ids.length ||
-      dto.evidencia_ids.some((id) => !Number.isSafeInteger(id) || id <= 0)
+      dto.evidencia_ids.some((id) => identificadorExacto(id) === null)
     )
       throw new BadRequestException(
         'evidencia_ids debe contener enteros positivos.',
       );
     const usuario = await this.authService.getUserByAuthId(authId);
     this.authService.assertCanWrite(usuario.rol);
-    const ids = [...new Set(dto.evidencia_ids)].sort((a, b) => a - b);
+    const ids = [
+      ...new Map(
+        dto.evidencia_ids.map((id) => [identificadorExacto(id)!, id]),
+      ).values(),
+    ].sort((a, b) =>
+      BigInt(a) < BigInt(b) ? -1 : BigInt(a) > BigInt(b) ? 1 : 0,
+    );
     const reply = await this.operar(
       usuario.id,
       dto.subcampania_id!,
@@ -165,26 +173,30 @@ export class PlantacionEvidenciasService {
           'Descarte registrado; la limpieza debe reintentarse.',
         );
     }
-    const descartadasIds = descartadas.map((row) => Number(row.id));
+    const descartadasIds = descartadas.map((row) =>
+      compatibleDatabaseId(row.id),
+    );
     return {
       success: true,
       data: {
         evidencia_ids_descartadas: descartadasIds,
         evidencia_ids_ignoradas: ids.filter(
-          (id) => !descartadasIds.includes(id),
+          (id) =>
+            !descartadasIds.some(
+              (discarded) => String(discarded) === String(id),
+            ),
         ),
       },
     };
   }
 
   private exigirContrato(dto: {
-    subcampania_id?: number;
+    subcampania_id?: number | string;
     es_reposicion?: boolean;
   }): void {
     if (
       dto.es_reposicion !== true ||
-      !Number.isSafeInteger(dto.subcampania_id) ||
-      dto.subcampania_id! <= 0
+      identificadorExacto(dto.subcampania_id) === null
     )
       throw new ConflictException({
         error: {
@@ -195,15 +207,15 @@ export class PlantacionEvidenciasService {
       });
   }
   private async operar(
-    actorId: number,
-    scope: number,
+    actorId: number | string,
+    scope: number | string,
     accion: string,
     payload = {},
     permitirRechazo = false,
   ): Promise<RpcReply> {
     const { data, error } = await this.supabaseService
       .getAdminClient()
-      .rpc('pa_d_evidencias_reposicion', {
+      .rpc('pa_d_evidencias_reposicion_exacto', {
         p_actor_id: actorId,
         p_subcampania_id: scope,
         p_accion: accion,

@@ -1,5 +1,15 @@
 # 📚 Documentación de Endpoints — Módulo Lotes de Vivero
 
+> **T5 local,13 de noviembre:** [alta de plantas vivas y contrato completo](../../docs/t5-incorporacion-plantas.md).
+> El origen también puede ser INCORPORACION sin Recolección, con campos de material
+> en proceso nulos. Adaptabilidad/merma/entrega aceptan la base viva correspondiente;
+> no se valida aptitud por este hecho. [Procedencia mínima propia M3](../../docs/t5-m3-procedencia.md).
+> Los ejemplos anteriores de esta guía describen el camino M1, no el nuevo ingreso.
+
+La [corrección del14](../../docs/t5-revision-2026-11-14.md) añade106/107:
+IDs exactos de reposición HTTP→SQL y coherencia del CHECK de EMBOLSADO. Las fotos
+T5 privadas se excluyen de consultas genéricas y permanecen en el timeline M2.
+
 > **Contrato vigente local T2 (5 de noviembre de2026):** [API, ámbitos, errores, recuperación y límites](../../docs/t2-acceso-viveros.md), [OpenAPI real](../../docs/vivero-acceso-openapi.json). Todas las rutas operativas requieren Bearer JWT verificado y ámbito de vivero; ADMIN deriva alcance global. La carga multipart previa a INICIO exige `vivero_id`; las demás usan el lote de la ruta. Entrega/devolución explícitas requieren ADMIN o M2 + COORDINADOR. Los ejemplos numéricos seguros siguen admitidos; usar cadenas para BIGINT. Aplicación hasta095 reportada por el usuario; cotejo de catálogo y despliegue pendientes.
 
 

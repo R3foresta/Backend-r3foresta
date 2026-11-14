@@ -24,6 +24,7 @@ PORT = '55435'
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--pg-bin', help='Directorio bin de un runtime PostgreSQL con PostGIS real.')
+    parser.add_argument('--evidence', type=Path, help='Archivo nuevo de evidencia; conserva cortes históricos.')
     parser.add_argument('--sql-only', action='store_true', help='No ejecutar HTTP/Storage; queda pendiente explícito.')
     parser.add_argument('--serve', action='store_true', help='Mantener API/DB/Storage sintéticos para INT04, en localhost:3303.')
     parser.add_argument('--check', action='store_true', help='Comprobar y detener launcher --serve sin dejar procesos.')
@@ -35,7 +36,9 @@ def main():
     binaries = {name: str(Path(args.pg_bin) / name) if args.pg_bin else shutil.which(name)
                 for name in ('initdb', 'pg_ctl', 'psql', 'createdb', 'pg_config')}
     missing = [name for name, path in binaries.items() if not path or not Path(path).is_file()]
-    evidence_path = ROOT / ('docs/evidencia/pa-int02d-preview-local.json' if args.serve else 'docs/evidencia/pa-int02d-local.json')
+    evidence_path = args.evidence or ROOT / ('docs/evidencia/pa-int02d-preview-local.json' if args.serve else 'docs/evidencia/pa-int02d-local.json')
+    if args.evidence and evidence_path.exists():
+        parser.error('La evidencia explícita debe ser nueva.')
     evidence = {'tarea': 'PA-T-INT02-D', 'estado': 'EN_EJECUCION',
                 'fecha_utc': datetime.now(timezone.utc).isoformat(),
                 'comando': 'python3 scripts/qa/pa-int02d-db-test.py' + (' --pg-bin ' + args.pg_bin if args.pg_bin else ''),
@@ -113,6 +116,13 @@ def main():
         for migration in shared_migrations:
             psql('-f', str(migration))
         new_migrations += shared_migrations
+        # El backend de reposición actual consume las proyecciones106; conserva
+        # 077/079 reales y su preflight, sin simular precisión en el transporte.
+        exactos106 = ROOT / 'migrations/106_m3_reposicion_ids_exactos.sql'
+        psql('-f', str(exactos106))
+        psql('-f', str(exactos106))
+        new_migrations.append(exactos106)
+        evidence['limites'].append('La regresión077–080 instala/repite106 para el contrato HTTP exacto actual; no instala100–105 ni107 y no acredita T5 completo.')
         evidence['migraciones'] = [str(path.relative_to(ROOT)) for path in migrations + new_migrations]
         evidence['entorno'].update(postgresql=psql('-c', 'SHOW server_version'),
                                    postgis=psql('-c', 'SELECT postgis_full_version()'),
@@ -172,8 +182,13 @@ def main():
                 raise RuntimeError('Falló prueba de expiración inline/rollback INT03-A.')
             evidence = json.loads(evidence_path.read_text())
             if not args.sql_only:
+                psql('-f', str(ROOT / 'test/db/pa-int03a-contexto-http-fixture.sql'))
+                evidence['limites'].append('HTTP instala086 real sobre dos tablas vacías representativas del ledger082; no acredita082 completo.')
+                evidence_path.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + '\n')
                 http_env = dict(env, PA_A_DB_SOCKET=str(socket), PA_A_DB_PORT=PORT, PA_A_DB_NAME=DATABASE,
-                                PA_A_DB_PSQL=binaries['psql'], PA_A_STORAGE_DIR=str(storage), NODE_ENV='test')
+                                PA_A_DB_PSQL=binaries['psql'], PA_A_STORAGE_DIR=str(storage), NODE_ENV='test',
+                                PA_A_QA_EVIDENCE=str(evidence_path.resolve()),
+                                PA_A_QA_EXAMPLES=str(evidence_path.with_name(evidence_path.stem+'-ejemplos.json').resolve()) if args.evidence else str(ROOT/'docs/pa-int03a-ejemplos.json'))
                 result = subprocess.run(['node', str(ROOT / 'node_modules/jest/bin/jest.js'), '--config',
                                          str(ROOT / 'test/jest-participacion-compartida-db.json'), '--runInBand',
                                          '--cacheDirectory', '/private/tmp/pa-int03a-jest'], cwd=ROOT, env=http_env, timeout=180)

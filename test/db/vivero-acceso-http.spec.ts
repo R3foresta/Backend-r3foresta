@@ -242,7 +242,7 @@ function from(table: string) {
       castId = /(?:^|,)\s*id::text/.test(_s);
       ownerAlias = _s.includes('usuario_id_exacto:usuario_id::text');
       viveroAlias = _s.includes('vivero_id_exacto:vivero_id::text');
-      castOwner = !ownerAlias && _s.includes('usuario_id::text');
+      castOwner = !ownerAlias && /(?<![a-z_:])usuario_id::text/.test(_s);
       count = !!opts?.count;
       head = !!opts?.head;
       return q;

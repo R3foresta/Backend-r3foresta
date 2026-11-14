@@ -1,3 +1,4 @@
+import { compatibleDatabaseId, exactId } from '../../common/dto/bigint-id';
 import { throwViveroMutationFailure } from './vivero-rpc-error';
 import {
   BadRequestException,
@@ -20,20 +21,20 @@ import {
 } from './vivero-evidencias.service';
 
 type RpcMermaResult = {
-  evento_merma_id: number;
-  lote_vivero_id: number;
+  evento_merma_id: number | string;
+  lote_vivero_id: number | string;
   codigo_trazabilidad: string;
   cantidad_perdida: number;
   causa_merma: CausaMermaVivero;
   saldo_vivo_antes: number;
   saldo_vivo_despues: number;
-  evidencia_ids_vinculadas: number[];
+  evidencia_ids_vinculadas: (number | string)[];
   lote_finalizado: boolean;
   motivo_cierre: MotivoCierreLote | null;
 };
 
 type EventoMermaRow = {
-  id: number;
+  id: number | string;
   tipo_evento: string;
   fecha_evento: string;
   cantidad_afectada: number;
@@ -41,19 +42,19 @@ type EventoMermaRow = {
   saldo_vivo_antes: number | null;
   saldo_vivo_despues: number | null;
   observaciones: string | null;
-  responsable_id: number;
+  responsable_id: number | string;
   created_at: string;
 };
 
 type EvidenciaPendienteRow = {
-  id: number;
-  entidad_id: number;
+  id: number | string;
+  entidad_id: number | string;
   ruta_archivo: string;
   mime_type: string;
 };
 
 type EvidenciaRow = {
-  id: number;
+  id: number | string;
   ruta_archivo: string;
   mime_type: string;
   tipo_archivo: string;
@@ -87,7 +88,7 @@ export class ViveroMermaService {
 
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')
-      .select('id, codigo_trazabilidad, estado_lote')
+      .select('id::text, codigo_trazabilidad, estado_lote')
       .eq('id', loteId)
       .maybeSingle();
 
@@ -116,7 +117,7 @@ export class ViveroMermaService {
       { eventoTipo: TipoEventoVivero.MERMA, loteId },
     );
 
-    const evidenciaIds: number[] = resultado.evidencia_ids;
+    const evidenciaIds = resultado.evidencia_ids;
 
     if (evidenciaIds.length > 0) {
       const { error: updateError } = await supabase
@@ -134,7 +135,7 @@ export class ViveroMermaService {
 
     const evidencias = (resultado.data as EvidenciaPendienteRow[]).map(
       (ev) => ({
-        id: Number(ev.id),
+        id: compatibleDatabaseId(ev.id),
         codigo_trazabilidad: lote.codigo_trazabilidad,
         entidad_id: ev.entidad_id ?? 0,
         ruta_archivo: ev.ruta_archivo,
@@ -166,7 +167,7 @@ export class ViveroMermaService {
     const supabase = this.supabaseService.getAdminClient();
 
     const { data, error } = await supabase
-      .rpc('fn_vivero_registrar_merma', {
+      .rpc('fn_vivero_registrar_merma_exacto', {
         p_lote_id: loteId,
         p_fecha_evento: dto.fecha_evento,
         p_responsable_id: usuario.id,
@@ -195,15 +196,15 @@ export class ViveroMermaService {
       success: true,
       data: {
         message,
-        evento_merma_id: Number(row.evento_merma_id),
-        lote_vivero_id: Number(row.lote_vivero_id),
+        evento_merma_id: compatibleDatabaseId(row.evento_merma_id),
+        lote_vivero_id: compatibleDatabaseId(row.lote_vivero_id),
         codigo_trazabilidad: row.codigo_trazabilidad,
         cantidad_perdida: Number(row.cantidad_perdida),
         causa_merma: row.causa_merma,
         saldo_vivo_antes: Number(row.saldo_vivo_antes),
         saldo_vivo_despues: Number(row.saldo_vivo_despues),
         evidencia_ids_vinculadas: (row.evidencia_ids_vinculadas ?? []).map(
-          Number,
+          compatibleDatabaseId,
         ),
         lote_finalizado: row.lote_finalizado,
         motivo_cierre: row.motivo_cierre ?? null,
@@ -220,7 +221,7 @@ export class ViveroMermaService {
 
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')
-      .select('id, saldo_vivo_actual')
+      .select('id::text, saldo_vivo_actual')
       .eq('id', loteId)
       .maybeSingle();
 
@@ -236,7 +237,7 @@ export class ViveroMermaService {
     const { data: eventos, error: eventosError } = await supabase
       .from('evento_lote_vivero')
       .select(
-        'id, tipo_evento, fecha_evento, cantidad_afectada, causa_merma, saldo_vivo_antes, saldo_vivo_despues, observaciones, responsable_id, created_at',
+        'id::text, tipo_evento, fecha_evento, cantidad_afectada, causa_merma, saldo_vivo_antes, saldo_vivo_despues, observaciones, responsable_id::text, created_at',
       )
       .eq('lote_id', loteId)
       .eq('tipo_evento', 'MERMA')
@@ -253,7 +254,7 @@ export class ViveroMermaService {
 
     const mermasConEvidencias = await Promise.all(
       eventosList.map(async (evento) => {
-        const eventoId = Number(evento.id);
+        const eventoId = compatibleDatabaseId(evento.id);
         const evidencias = await this.obtenerEvidenciasDelEvento(
           supabase,
           eventoId,
@@ -273,7 +274,7 @@ export class ViveroMermaService {
               ? Number(evento.saldo_vivo_despues)
               : null,
           observaciones: evento.observaciones ?? null,
-          responsable_id: Number(evento.responsable_id),
+          responsable_id: compatibleDatabaseId(evento.responsable_id),
           created_at: evento.created_at,
           evidencias,
         };
@@ -299,16 +300,16 @@ export class ViveroMermaService {
   // ---------------------------------------------------------------------------
   private async obtenerEvidenciasDelEvento(
     supabase: SupabaseClient,
-    eventoId: number,
+    eventoId: number | string,
   ): Promise<(EvidenciaRow & { public_url: string })[]> {
     const { data: tipoEntidadData } = await supabase
       .from('tipos_entidad_evidencia')
-      .select('id')
+      .select('id::text')
       .ilike('codigo', 'EVENTO_LOTE_VIVERO')
       .eq('activo', true)
       .maybeSingle();
 
-    const tipoEntidad = tipoEntidadData as { id: number } | null;
+    const tipoEntidad = tipoEntidadData as { id: number | string } | null;
 
     if (!tipoEntidad) {
       return [];
@@ -316,8 +317,10 @@ export class ViveroMermaService {
 
     const { data: evidenciasData, error: evError } = await supabase
       .from('evidencias_trazabilidad')
-      .select('id, ruta_archivo, mime_type, tipo_archivo, es_principal, orden')
-      .eq('tipo_entidad_id', Number(tipoEntidad.id))
+      .select(
+        'id::text, ruta_archivo, mime_type, tipo_archivo, es_principal, orden',
+      )
+      .eq('tipo_entidad_id', compatibleDatabaseId(tipoEntidad.id))
       .eq('entidad_id', eventoId)
       .is('eliminado_en', null);
 
@@ -337,7 +340,7 @@ export class ViveroMermaService {
         .getPublicUrl(ev.ruta_archivo);
 
       return {
-        id: Number(ev.id),
+        id: compatibleDatabaseId(ev.id),
         ruta_archivo: ev.ruta_archivo,
         mime_type: ev.mime_type,
         tipo_archivo: ev.tipo_archivo,

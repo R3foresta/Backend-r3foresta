@@ -87,7 +87,8 @@ describe('ViveroConsultasService', () => {
       error: null,
       count: 1,
     });
-    from = jest.fn().mockReturnValue(query);
+    from = jest.fn((table: string) => table === 'lote_vivero'
+      ? query : createQueryMock({ data: [], error: null }));
 
     const supabaseService = {
       getAdminClient: jest.fn().mockReturnValue({ from }),
@@ -188,6 +189,24 @@ describe('ViveroConsultasService', () => {
     await expect(service.listarLotes({})).rejects.toThrow(
       InternalServerErrorException,
     );
+  });
+
+  it('conserva los nulos de un lote incorporado y su origen histórico con IDs exactos', async () => {
+    const id = '9007199254740993';
+    query = createQueryMock({ data: [{ id, recoleccion_id: null, planta_id: '10', vivero_id: '2', responsable_id: '77',
+      cantidad_inicial_en_proceso: null, tipo_material_snapshot: null, unidad_medida_inicial: null,
+      plantas_vivas_iniciales: 210, saldo_vivo_actual: 0, variedad_snapshot: 'Variedad histórica',
+    }], error: null, count: 1 });
+    from.mockImplementation((table: string) => table === 'lote_vivero' ? query
+      : createQueryMock({ data: table === 'evento_lote_vivero' ? [{ id: '9007199254740995', lote_id: id,
+        fecha_evento: '2026-11-13', cantidad_afectada: '210', observaciones: 'Compra antigua300, conteo210.',
+        incorporacion: { modalidad: 'SALDO_INICIAL', procedencia: 'COMPRA', tercero_origen: 'Proveedor histórico', referencia_documental: null },
+      }] : [], error: null }));
+    const result = await service.listarLotes({});
+    expect(result.data[0]).toMatchObject({ id, recoleccion_id: null, cantidad_inicial_en_proceso: null,
+      tipo_material_snapshot: null, unidad_medida_inicial: null, saldo_vivo_actual: 0,
+      origen: { tipo: 'INCORPORACION', evento_id: '9007199254740995', modalidad: 'SALDO_INICIAL', procedencia: 'COMPRA', cantidad: 210, historia_previa_no_registrada: true },
+    });
   });
 });
 
@@ -420,6 +439,7 @@ describe('ViveroConsultasService.obtenerDetalle', () => {
 
     expect(result.data.ultimo_evento_por_tipo).toEqual({
       INICIO: null,
+      INCORPORACION: null,
       EMBOLSADO: null,
       DESCARTE_PRE_EMBOLSADO: null,
       ADAPTABILIDAD: null,

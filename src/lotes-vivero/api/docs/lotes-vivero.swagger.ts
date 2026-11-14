@@ -16,6 +16,7 @@ import { SubetapaAdaptabilidad } from '../../domain/enums/subetapa-adaptabilidad
 import { TipoEventoVivero } from '../../domain/enums/tipo-evento-vivero.enum';
 import { UnidadMedidaVivero } from '../../domain/enums/unidad-medida-vivero.enum';
 import { CANTIDAD_INICIO_DECIMAL } from '../dto/crear-lote-vivero.dto';
+import { ORIGEN_LOTE_SCHEMA } from './incorporacion.swagger';
 
 // Entradas operativas: cadenas exactas y compatibilidad con números legados seguros.
 const OPERATION_ID_SCHEMA = {
@@ -330,7 +331,7 @@ export function ApiRegistrarAdaptabilidad() {
     ApiResponse({
       status: 400,
       description:
-        'Datos invalidos, lote sin EMBOLSADO previo, lote FINALIZADO, fecha invalida o evidencia ya vinculada.',
+        'Datos invalidos, lote sin base viva EMBOLSADO/INCORPORACION, lote FINALIZADO, fecha invalida o evidencia ya vinculada.',
     }),
     ApiResponse({
       status: 401,
@@ -408,7 +409,7 @@ export function ApiRegistrarMerma() {
     ApiResponse({
       status: 400,
       description:
-        'Datos invalidos, lote sin EMBOLSADO previo, cantidad supera saldo, evidencia ya vinculada o eliminada.',
+        'Datos invalidos, lote sin base viva EMBOLSADO/INCORPORACION, cantidad supera saldo, evidencia ya vinculada o eliminada.',
     }),
     ApiResponse({
       status: 401,
@@ -513,7 +514,7 @@ export function ApiRegistrarDespacho() {
     ApiOperation({
       summary: 'Registrar despacho manual de plantas',
       description:
-        'Registra la salida de plantas del vivero hacia un destino distinto de una subcampania, llamando la RPC fn_vivero_registrar_despacho en una sola transaccion. El responsable_id sale del usuario verificado por JWT, nunca del body. Requiere EMBOLSADO previo y al menos una evidencia. Valida contra el saldo vivo FISICO del lote (RN-VIV-56): las asignaciones a subcampanias ya descontaron el saldo, no existe stock reservado que restar. Si el stock llega a cero, el lote se cierra automaticamente. El destino PLANTACION_CAMPANIA se rechaza aqui: las salidas hacia subcampanias se registran con POST /lotes-vivero/:id/asignaciones (asignacion fisica).',
+        'Registra la salida de plantas del vivero hacia un destino distinto de una subcampania, llamando la RPC fn_vivero_registrar_despacho en una sola transaccion. El responsable_id sale del usuario verificado por JWT, nunca del body. Requiere base viva EMBOLSADO o INCORPORACION y al menos una evidencia. Valida contra el saldo vivo FISICO del lote (RN-VIV-56): las asignaciones a subcampanias ya descontaron el saldo, no existe stock reservado que restar. Si el stock llega a cero, el lote se cierra automaticamente. El destino PLANTACION_CAMPANIA se rechaza aqui: las salidas hacia subcampanias se registran con POST /lotes-vivero/:id/asignaciones (asignacion fisica).',
     }),
     ApiParam({
       name: 'id',
@@ -587,7 +588,7 @@ export function ApiRegistrarDespacho() {
     ApiResponse({
       status: 400,
       description:
-        'Datos invalidos, lote sin EMBOLSADO previo, cantidad supera saldo, destino PLANTACION_CAMPANIA usado, evidencia ya vinculada o eliminada.',
+        'Datos invalidos, lote sin base viva EMBOLSADO/INCORPORACION, cantidad supera saldo, destino PLANTACION_CAMPANIA usado, evidencia ya vinculada o eliminada.',
     }),
     ApiResponse({
       status: 401,
@@ -682,7 +683,7 @@ export function ApiObtenerDetalleLote() {
     ApiOperation({
       summary: 'Detalle del lote con snapshot del ultimo evento por tipo',
       description:
-        'Devuelve los campos del lote, sus relaciones (vivero, recoleccion, planta, responsable) y un mapa ultimo_evento_por_tipo con el evento mas reciente de cada tipo (INICIO, EMBOLSADO, DESCARTE_PRE_EMBOLSADO, ADAPTABILIDAD, MERMA, DESPACHO, CIERRE_AUTOMATICO). Pensado para que los formularios de eventos validen fechas contra el evento previo (RN-VIV-10/RN-VIV-33) sin disparar N+1 calls.',
+        'Devuelve los campos del lote, sus relaciones (vivero, recoleccion, planta, responsable) y un mapa ultimo_evento_por_tipo con el evento mas reciente de cada tipo (INICIO, INCORPORACION, EMBOLSADO, DESCARTE_PRE_EMBOLSADO, ADAPTABILIDAD, MERMA, DESPACHO, DEVOLUCION_PLANTACION, CIERRE_AUTOMATICO). Pensado para que los formularios de eventos validen fechas contra el evento previo (RN-VIV-10/RN-VIV-33) sin disparar N+1 calls.',
     }),
     ApiParam({
       name: 'id',
@@ -693,6 +694,12 @@ export function ApiObtenerDetalleLote() {
       status: 200,
       description:
         'Devuelve { success: true, data } con el lote, sus relaciones y ultimo_evento_por_tipo (null por tipo si todavia no ocurrio).',
+      schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object', properties: {
+        origen: ORIGEN_LOTE_SCHEMA, recoleccion_id: { nullable: true, oneOf: [{ type: 'string' }, { type: 'integer' }] },
+        cantidad_inicial_en_proceso: { type: 'number', nullable: true }, tipo_material_snapshot: { type: 'string', nullable: true },
+        unidad_medida_inicial: { type: 'string', nullable: true }, plantas_vivas_iniciales: { type: 'integer', nullable: true }, saldo_vivo_actual: { type: 'integer', nullable: true },
+        ultimo_evento_por_tipo: { type: 'object', description: 'Incluye INCORPORACION y DEVOLUCION_PLANTACION; null por tipo aún ausente.' },
+      } } } },
     }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
@@ -704,7 +711,7 @@ export function ApiListarLotes() {
     ApiOperation({
       summary: 'Listar lotes de vivero',
       description:
-        'Devuelve lotes de vivero con filtros opcionales por estado, vivero, recoleccion, fecha y busqueda libre. Soporta paginacion.',
+        'Devuelve lotes por ámbito M2 con origen RECOLECCION o INCORPORACION, snapshots y nulos conservados. Filtros por estado (incluye FINALIZADO para historial agotado), vivero, recoleccion, fecha y búsqueda; paginación. El saldo físico no acredita supervivencia ni aptitud.',
     }),
     ApiQuery({ name: 'page', required: false, type: Number, example: 1 }),
     ApiQuery({ name: 'limit', required: false, type: Number, example: 20 }),
@@ -1144,7 +1151,7 @@ export function ApiCrearAsignacion() {
     ApiOperation({
       summary: 'Asignación física de lote a subcampaña (entrega real)',
       description:
-        'Registra la ENTREGA FÍSICA de plantas del lote a una subcampaña (RF-VIV-11) llamando la RPC fn_vivero_asignar_stock_subcampania en una sola transacción: crea la asignación, registra el evento DESPACHO con origen ASIGNACION_SUBCAMPANIA, DESCUENTA LOTE_VIVERO.saldo_vivo_actual, vincula la evidencia obligatoria de entrega (RN-VIV-54) y registra ASIGNACION_VIVERO en la línea de tiempo de M3. Valida contra el saldo físico del lote sin restar asignaciones previas (RN-VIV-47/57). Requiere lote ACTIVO con EMBOLSADO y saldo vivo positivo (RN-VIV-61). Para PLANTACION_INICIAL, la especie del lote debe pertenecer al plan de especies de la subcampaña; se rechaza antes de entregar si no pertenece. Permisos: ADMIN o COORDINADOR de la subcampaña con acceso vigente al vivero del lote. No es una reserva lógica: las plantas salen del vivero al asignar.',
+        'Registra la ENTREGA FÍSICA de plantas del lote a una subcampaña (RF-VIV-11) llamando la RPC fn_vivero_asignar_stock_subcampania en una sola transacción: crea la asignación, registra el evento DESPACHO con origen ASIGNACION_SUBCAMPANIA, DESCUENTA LOTE_VIVERO.saldo_vivo_actual, vincula la evidencia obligatoria de entrega (RN-VIV-54) y registra ASIGNACION_VIVERO en la línea de tiempo de M3. Valida contra el saldo físico del lote sin restar asignaciones previas (RN-VIV-47/57). Requiere lote ACTIVO con base viva EMBOLSADO o INCORPORACION y saldo vivo positivo (RN-VIV-61). Para PLANTACION_INICIAL, la especie del lote debe pertenecer al plan de especies de la subcampaña; se rechaza antes de entregar si no pertenece. Permisos: ADMIN o COORDINADOR de la subcampaña con acceso vigente al vivero del lote. No es una reserva lógica: las plantas salen del vivero al asignar.',
     }),
     ApiParam({
       name: 'id',
@@ -1206,7 +1213,7 @@ export function ApiCrearAsignacion() {
     ApiResponse({
       status: 422,
       description:
-        'Lote no ACTIVO, sin EMBOLSADO, saldo físico insuficiente, evidencia faltante, estado de subcampaña incompatible con el propósito o especie fuera del plan para PLANTACION_INICIAL',
+        'Lote no ACTIVO, sin base viva EMBOLSADO/INCORPORACION, saldo físico insuficiente, evidencia faltante, estado de subcampaña incompatible con el propósito o especie fuera del plan para PLANTACION_INICIAL',
     }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );

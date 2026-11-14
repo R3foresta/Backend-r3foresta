@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { compatibleId, exactId } from '../../common/dto/bigint-id';
 import { FiltrarTimelineLoteDto } from '../api/dto/filtrar-timeline-lote.dto';
 import { CausaDescartePreEmbolsado } from '../domain/enums/causa-descarte-pre-embolsado.enum';
 import { CausaMermaVivero } from '../domain/enums/causa-merma-vivero.enum';
@@ -20,9 +21,10 @@ import { UnidadMedidaVivero } from '../domain/enums/unidad-medida-vivero.enum';
 // ---------------------------------------------------------------------------
 
 type LoteResumenRow = {
-  id: number;
+  id: number | string;
   codigo_trazabilidad: string;
   estado_lote: string;
+  nombre_responsable_snapshot: string;
 };
 
 type UsuarioRow = {
@@ -32,12 +34,12 @@ type UsuarioRow = {
 };
 
 type EventoTimelineRow = {
-  id: number;
-  lote_id: number;
+  id: number | string;
+  lote_id: number | string;
   tipo_evento: TipoEventoVivero;
   fecha_evento: string;
   created_at: string;
-  responsable_id: number;
+  responsable_id: number | string;
   cantidad_afectada: number | null;
   unidad_medida_evento: UnidadMedidaVivero | null;
   causa_merma: CausaMermaVivero | null;
@@ -50,11 +52,13 @@ type EventoTimelineRow = {
   motivo_cierre_calculado: MotivoCierreLote | null;
   observaciones: string | null;
   usuario: UsuarioRow | null;
+  incorporacion?: Record<string, unknown> | Record<string, unknown>[] | null;
 };
 
 type EvidenciaTimelineRow = {
-  id: number;
-  entidad_id: number;
+  id: number | string;
+  entidad_id: number | string;
+  bucket: string;
   ruta_archivo: string;
   mime_type: string;
   tipo_archivo: string;
@@ -75,6 +79,11 @@ type PayloadInicio = {
 type PayloadEmbolsado = {
   tipo: TipoEventoVivero.EMBOLSADO;
   plantas_vivas_iniciales: number | null;
+};
+type PayloadIncorporacion = {
+  tipo: TipoEventoVivero.INCORPORACION;
+  cantidad: number | null;
+  procedencia: Record<string, unknown> | null;
 };
 
 type PayloadAdaptabilidad = {
@@ -123,6 +132,7 @@ type PayloadCierreAutomatico = {
 
 type EventoPayload =
   | PayloadInicio
+  | PayloadIncorporacion
   | PayloadEmbolsado
   | PayloadDescartePreEmbolsado
   | PayloadAdaptabilidad
@@ -136,12 +146,12 @@ type EventoPayload =
 // ---------------------------------------------------------------------------
 
 const EVENTO_COLUMNS = [
-  'id',
-  'lote_id',
+  'id::text',
+  'lote_id::text',
   'tipo_evento',
   'fecha_evento',
   'created_at',
-  'responsable_id',
+  'responsable_id::text',
   'cantidad_afectada',
   'unidad_medida_evento',
   'causa_merma',
@@ -153,7 +163,8 @@ const EVENTO_COLUMNS = [
   'saldo_vivo_despues',
   'motivo_cierre_calculado',
   'observaciones',
-  'usuario:responsable_id (id, nombre, apellido)',
+  'usuario:responsable_id (id::text, nombre, apellido)',
+  'incorporacion:vivero_incorporacion(modalidad,procedencia,tercero_origen,referencia_documental)',
 ].join(', ');
 
 // ---------------------------------------------------------------------------
@@ -228,25 +239,30 @@ export class ViveroTimelineService {
     }
 
     // 3. Cargar evidencias en una sola consulta (evita N+1)
-    const eventoIds = eventos.map((e) => Number(e.id));
+    const eventoIds = eventos.map((e) => exactId(e.id));
     const evidenciasPorEvento = await this.cargarEvidenciasBatch(
       supabase,
       eventoIds,
     );
 
     // 4. Mapear eventos al formato de respuesta
-    const eventosMapeados = eventos.map((evento) => {
-      const eventoId = Number(evento.id);
+    const eventosMapeados = await Promise.all(eventos.map(async (evento) => {
+      const eventoId = compatibleId(evento.id);
 
-      const evidencias = (evidenciasPorEvento.get(eventoId) ?? []).map((ev) => {
+      const evidencias = await Promise.all((evidenciasPorEvento.get(exactId(eventoId)) ?? []).map(async (ev) => {
+        if (ev.bucket === 'vivero_incorporaciones') {
+          const { data: signed, error } = await supabase.storage.from(ev.bucket).createSignedUrl(ev.ruta_archivo, 300);
+          if (error || !signed?.signedUrl) throw new InternalServerErrorException('No se pudo acceder a la evidencia privada.');
+          return { ...ev, id: compatibleId(ev.id), signed_url: signed.signedUrl, url_expira_en_segundos: 300 };
+        }
         // TODO(vivero-mvp): bucket hardcoded. Ver decisión pendiente en
         //   vivero-evidencias.service.ts. Si se migra a bucket dedicado, sincronizar.
         const { data: urlData } = supabase.storage
-          .from('recoleccion_fotos')
+          .from(ev.bucket || 'recoleccion_fotos')
           .getPublicUrl(ev.ruta_archivo);
 
         return {
-          id: ev.id,
+          id: compatibleId(ev.id),
           ruta_archivo: ev.ruta_archivo,
           mime_type: ev.mime_type,
           tipo_archivo: ev.tipo_archivo,
@@ -254,23 +270,25 @@ export class ViveroTimelineService {
           orden: ev.orden,
           public_url: urlData.publicUrl,
         };
-      });
+      }));
 
-      const responsable_nombre = this.buildNombreResponsable(evento.usuario);
+      const responsable_nombre = evento.tipo_evento === TipoEventoVivero.INCORPORACION
+        ? lote.nombre_responsable_snapshot
+        : this.buildNombreResponsable(evento.usuario);
 
       return {
         id: eventoId,
-        lote_vivero_id: Number(evento.lote_id),
+        lote_vivero_id: compatibleId(evento.lote_id),
         tipo_evento: evento.tipo_evento,
         fecha_evento: evento.fecha_evento,
         created_at: evento.created_at,
-        responsable_id: Number(evento.responsable_id),
+        responsable_id: compatibleId(evento.responsable_id),
         responsable_nombre,
         observaciones: evento.observaciones ?? null,
         payload: this.buildPayload(evento),
         evidencias,
       };
-    });
+    }));
 
     return {
       success: true,
@@ -294,7 +312,7 @@ export class ViveroTimelineService {
   ): Promise<LoteResumenRow> {
     const { data, error } = await supabase
       .from('lote_vivero')
-      .select('id, codigo_trazabilidad, estado_lote')
+      .select('id::text, codigo_trazabilidad, estado_lote, nombre_responsable_snapshot')
       .eq('id', loteId)
       .maybeSingle();
 
@@ -315,8 +333,8 @@ export class ViveroTimelineService {
 
   private async cargarEvidenciasBatch(
     supabase: SupabaseClient,
-    eventoIds: number[],
-  ): Promise<Map<number, EvidenciaTimelineRow[]>> {
+    eventoIds: string[],
+  ): Promise<Map<string, EvidenciaTimelineRow[]>> {
     if (eventoIds.length === 0) {
       return new Map();
     }
@@ -338,7 +356,7 @@ export class ViveroTimelineService {
     const { data: evidenciasRaw, error } = await supabase
       .from('evidencias_trazabilidad')
       .select(
-        'id, entidad_id, ruta_archivo, mime_type, tipo_archivo, es_principal, orden',
+        'id::text, entidad_id::text, bucket, ruta_archivo, mime_type, tipo_archivo, es_principal, orden',
       )
       .eq('tipo_entidad_id', Number(tipoEntidad.id))
       .in('entidad_id', eventoIds)
@@ -355,10 +373,10 @@ export class ViveroTimelineService {
     }
 
     const filas = (evidenciasRaw ?? []) as EvidenciaTimelineRow[];
-    const mapa = new Map<number, EvidenciaTimelineRow[]>();
+    const mapa = new Map<string, EvidenciaTimelineRow[]>();
 
     for (const ev of filas) {
-      const key = Number(ev.entidad_id);
+      const key = exactId(ev.entidad_id);
       const lista = mapa.get(key) ?? [];
       lista.push(ev);
       mapa.set(key, lista);
@@ -385,6 +403,13 @@ export class ViveroTimelineService {
           tipo: TipoEventoVivero.INICIO,
           cantidad_inicial: num(evento.cantidad_afectada),
           unidad_medida: evento.unidad_medida_evento ?? null,
+        };
+
+      case TipoEventoVivero.INCORPORACION:
+        return {
+          tipo: TipoEventoVivero.INCORPORACION,
+          cantidad: num(evento.cantidad_afectada),
+          procedencia: (Array.isArray(evento.incorporacion) ? evento.incorporacion[0] : evento.incorporacion) ?? null,
         };
 
       case TipoEventoVivero.EMBOLSADO:

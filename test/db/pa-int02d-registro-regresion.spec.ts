@@ -110,7 +110,7 @@ describe('PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reale
   });
   afterAll(async () => {
     await harness?.app.close();
-    const path = resolve('docs/evidencia/pa-int02d-local.json');
+    const path = resolve(process.env.PA_A_QA_EVIDENCE || 'docs/evidencia/pa-int02d-local.json');
     const evidence = JSON.parse(readFileSync(path, 'utf8'));
     evidence.http_casos = cases;
     evidence.storage = {
@@ -131,7 +131,7 @@ describe('PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reale
     };
     writeFileSync(path, JSON.stringify(evidence, null, 2) + '\n');
     writeFileSync(
-      resolve('docs/pa-int02d-registro-ejemplos.json'),
+      resolve(process.env.PA_A_QA_EXAMPLES || 'docs/pa-int02d-registro-ejemplos.json'),
       JSON.stringify(
         {
           origen:

@@ -431,6 +431,7 @@ export class EvidenciasTrazabilidadService {
       // Las cargas privadas se consultan por su flujo y autorización de objeto.
       .neq('bucket', 'participacion_evidencias')
       .neq('bucket', 'r3foresta-conciliacion')
+      .neq('bucket', 'vivero_incorporaciones')
       .not('ruta_archivo', 'like', 'plantaciones/registros/pendientes/%')
       .not('ruta_archivo', 'like', 'recepcion/pendientes/%')
       .gt('entidad_id', 0)
@@ -494,6 +495,7 @@ export class EvidenciasTrazabilidadService {
         return (
           evidence.bucket !== 'participacion_evidencias' &&
           evidence.bucket !== 'r3foresta-conciliacion' &&
+          evidence.bucket !== 'vivero_incorporaciones' &&
           Boolean(evidence.entidad_id) &&
           !evidence.ruta_archivo?.startsWith(
             'plantaciones/registros/pendientes/',
@@ -562,6 +564,7 @@ export class EvidenciasTrazabilidadService {
       !data ||
       (data as EvidenciaRow).bucket === 'participacion_evidencias' ||
       (data as EvidenciaRow).bucket === 'r3foresta-conciliacion' ||
+      (data as EvidenciaRow).bucket === 'vivero_incorporaciones' ||
       (data as EvidenciaRow).ruta_archivo?.startsWith(
         'plantaciones/registros/pendientes/',
       ) ||
@@ -690,6 +693,11 @@ export class EvidenciasTrazabilidadService {
   }
 
   private mapEvidencia(row: EvidenciaRow) {
+    // T5 se lee por timeline M2 autorizado o por su contexto pendiente propio.
+    // Nunca construir una URL pública para el bucket privado, incluso si un
+    // consumidor interno futuro omite el filtro de la consulta genérica.
+    if (row.bucket === 'vivero_incorporaciones')
+      throw new NotFoundException('Evidencia de trazabilidad no encontrada');
     const supabase = this.supabaseService.getAdminClient();
     const { data: publicUrlData } = supabase.storage
       .from(row.bucket)

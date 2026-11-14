@@ -1,3 +1,4 @@
+import { compatibleDatabaseId, exactId } from '../../common/dto/bigint-id';
 import {
   Injectable,
   InternalServerErrorException,
@@ -17,14 +18,14 @@ import { SupabaseService } from '../../supabase/supabase.service';
  * fisica ya desconto el saldo del lote (RN-VIV-47).
  */
 type SaldosVistaRow = {
-  lote_id: number;
+  lote_id: number | string;
   saldo_vivo_actual: number | null;
   saldo_asignado_subcampanias: number;
 };
 
 type AsignacionRow = {
-  id: number;
-  subcampania_id: number;
+  id: number | string;
+  subcampania_id: number | string;
   proposito: string;
   cantidad_asignada: number;
   cantidad_consumida: number;
@@ -34,30 +35,30 @@ type AsignacionRow = {
 };
 
 type PlantaStockRow = {
-  id: number;
+  id: number | string;
   especie: string | null;
   nombre_cientifico: string | null;
   nombre_comun_principal: string | null;
 };
 
 type LoteStockRow = {
-  id: number;
+  id: number | string;
   codigo_trazabilidad: string;
-  planta_id: number;
+  planta_id: number | string;
   saldo_vivo_actual: number | null;
   estado_lote: string;
   planta: PlantaStockRow | PlantaStockRow[] | null;
 };
 
 type StockDisponibleEspecie = {
-  planta_id: number;
+  planta_id: number | string;
   especie: string | null;
   nombre_cientifico: string | null;
   nombre_comun_principal: string | null;
   saldo_vivo_actual_total: number;
   saldo_asignado_subcampanias_total: number;
   lotes: {
-    lote_id: number;
+    lote_id: number | string;
     codigo_trazabilidad: string;
     saldo_vivo_actual: number;
     saldo_asignado_subcampanias: number;
@@ -77,7 +78,7 @@ export class ViveroSaldosService {
     const { data: asignacionesData, error: asignacionesError } = await supabase
       .from('asignacion_vivero_subcampania')
       .select(
-        'id, subcampania_id, proposito, cantidad_asignada, cantidad_consumida, cantidad_devuelta, cantidad_mermada, saldo_asignado_disponible',
+        'id::text, subcampania_id::text, proposito, cantidad_asignada, cantidad_consumida, cantidad_devuelta, cantidad_mermada, saldo_asignado_disponible',
       )
       .eq('lote_vivero_id', loteId)
       .eq('estado', 'ACTIVA')
@@ -98,16 +99,19 @@ export class ViveroSaldosService {
     const subcampaniaIds = [
       ...new Set(asignaciones.map((a) => a.subcampania_id)),
     ];
-    const subcampaniaNombres: Record<number, string> = {};
+    const subcampaniaNombres: Record<string, string> = {};
 
     if (subcampaniaIds.length > 0) {
       const { data: subData } = await supabase
         .from('subcampania')
-        .select('id, nombre')
+        .select('id::text, nombre')
         .in('id', subcampaniaIds);
 
       if (subData) {
-        for (const sub of subData as { id: number; nombre: string }[]) {
+        for (const sub of subData as {
+          id: number | string;
+          nombre: string;
+        }[]) {
           subcampaniaNombres[sub.id] = sub.nombre;
         }
       }
@@ -116,7 +120,7 @@ export class ViveroSaldosService {
     return {
       success: true,
       data: {
-        lote_id: Number(saldos.lote_id),
+        lote_id: compatibleDatabaseId(saldos.lote_id),
         // Saldo fisico: plantas que siguen dentro del vivero.
         saldo_vivo_actual:
           saldos.saldo_vivo_actual !== null
@@ -125,8 +129,8 @@ export class ViveroSaldosService {
         // Stock ya entregado a subcampanias, disponible para consumo en M3.
         saldo_asignado_subcampanias: Number(saldos.saldo_asignado_subcampanias),
         asignaciones_activas: asignaciones.map((a) => ({
-          id: Number(a.id),
-          subcampania_id: Number(a.subcampania_id),
+          id: compatibleDatabaseId(a.id),
+          subcampania_id: compatibleDatabaseId(a.subcampania_id),
           subcampania_nombre: subcampaniaNombres[a.subcampania_id] ?? null,
           proposito: a.proposito,
           cantidad_asignada: Number(a.cantidad_asignada),
@@ -145,7 +149,7 @@ export class ViveroSaldosService {
     let query = supabase
       .from('lote_vivero')
       .select(
-        'id, codigo_trazabilidad, planta_id, saldo_vivo_actual, estado_lote, planta:planta_id(id, especie, nombre_cientifico, nombre_comun_principal)',
+        'id::text, codigo_trazabilidad, planta_id::text, saldo_vivo_actual, estado_lote, planta:planta_id(id::text, especie, nombre_cientifico, nombre_comun_principal)',
       )
       .eq('estado_lote', 'ACTIVO')
       .not('saldo_vivo_actual', 'is', null)
@@ -171,10 +175,10 @@ export class ViveroSaldosService {
     }
 
     const saldosMap = await this.cargarSaldosDisponibles(
-      loteRows.map((lote) => Number(lote.id)),
+      loteRows.map((lote) => exactId(lote.id)),
     );
 
-    const especiesMap = new Map<number, StockDisponibleEspecie>();
+    const especiesMap = new Map<string, StockDisponibleEspecie>();
 
     for (const lote of loteRows) {
       // Disponible para asignar = saldo fisico del lote (RN-VIV-56/57).
@@ -182,14 +186,13 @@ export class ViveroSaldosService {
       if (saldoVivoActual <= 0) continue;
 
       const planta = this.unwrapRelation(lote.planta);
-      const plantaId = Number(lote.planta_id ?? planta?.id);
-      if (!Number.isFinite(plantaId)) continue;
+      const plantaId = exactId(lote.planta_id ?? planta?.id);
 
-      const saldos = saldosMap.get(Number(lote.id));
+      const saldos = saldosMap.get(exactId(lote.id));
       const saldoAsignado = Number(saldos?.saldo_asignado_subcampanias ?? 0);
 
       const current: StockDisponibleEspecie = especiesMap.get(plantaId) ?? {
-        planta_id: plantaId,
+        planta_id: compatibleDatabaseId(plantaId),
         especie: planta?.especie ?? null,
         nombre_cientifico: planta?.nombre_cientifico ?? null,
         nombre_comun_principal: planta?.nombre_comun_principal ?? null,
@@ -201,7 +204,7 @@ export class ViveroSaldosService {
       current.saldo_vivo_actual_total += saldoVivoActual;
       current.saldo_asignado_subcampanias_total += saldoAsignado;
       current.lotes.push({
-        lote_id: Number(lote.id),
+        lote_id: compatibleDatabaseId(lote.id),
         codigo_trazabilidad: lote.codigo_trazabilidad,
         saldo_vivo_actual: saldoVivoActual,
         saldo_asignado_subcampanias: saldoAsignado,
@@ -254,7 +257,7 @@ export class ViveroSaldosService {
     const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('v_lote_vivero_saldos')
-      .select('lote_id, saldo_vivo_actual, saldo_asignado_subcampanias')
+      .select('lote_id::text, saldo_vivo_actual, saldo_asignado_subcampanias')
       .eq('lote_id', loteId)
       .maybeSingle();
 
@@ -286,7 +289,7 @@ export class ViveroSaldosService {
 
     const { data: loteData, error: loteError } = await supabase
       .from('lote_vivero')
-      .select('id, saldo_vivo_actual')
+      .select('id::text, saldo_vivo_actual')
       .eq('id', loteId)
       .maybeSingle();
 
@@ -327,25 +330,25 @@ export class ViveroSaldosService {
     );
 
     return {
-      lote_id: Number(loteData.id),
+      lote_id: compatibleDatabaseId(loteData.id),
       saldo_vivo_actual: saldoVivoActual,
       saldo_asignado_subcampanias: saldoAsignado,
     };
   }
 
   private async cargarSaldosDisponibles(
-    loteIds: number[],
-  ): Promise<Map<number, SaldosVistaRow>> {
+    loteIds: string[],
+  ): Promise<Map<string, SaldosVistaRow>> {
     const supabase = this.supabaseService.getAdminClient();
     const { data, error } = await supabase
       .from('v_lote_vivero_saldos')
-      .select('lote_id, saldo_vivo_actual, saldo_asignado_subcampanias')
+      .select('lote_id::text, saldo_vivo_actual, saldo_asignado_subcampanias')
       .in('lote_id', loteIds);
 
     if (!error) {
       return new Map(
         ((data ?? []) as SaldosVistaRow[]).map((row) => [
-          Number(row.lote_id),
+          exactId(row.lote_id),
           row,
         ]),
       );

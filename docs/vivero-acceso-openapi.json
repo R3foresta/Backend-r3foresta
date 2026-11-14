@@ -4282,6 +4282,703 @@
         ]
       }
     },
+    "/api/lotes-vivero/incorporaciones/{solicitud_id}/evidencias-pendientes": {
+      "get": {
+        "description": "Exige autoridad M2 actual sobre vivero_id; devuelve solamente el contexto propio de la misma solicitud. No confirma ingreso ni demuestra rollback.",
+        "operationId": "ViveroIncorporacionController_recuperarFotos",
+        "parameters": [
+          {
+            "name": "solicitud_id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vivero_id",
+            "required": true,
+            "in": "query",
+            "description": "Vivero físico del contexto pendiente propio.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fotos pendientes con IDs exactos y enlaces firmados temporales.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data",
+                    "evidencia_ids"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "evidencia_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "bucket",
+                          "ruta_archivo",
+                          "signed_url",
+                          "url_expira_en_segundos"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "bucket": {
+                            "type": "string",
+                            "enum": [
+                              "vivero_incorporaciones"
+                            ]
+                          },
+                          "ruta_archivo": {
+                            "type": "string"
+                          },
+                          "signed_url": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "url_expira_en_segundos": {
+                            "type": "integer",
+                            "enum": [
+                              300
+                            ]
+                          },
+                          "mime_type": {
+                            "type": "string"
+                          },
+                          "tipo_archivo": {
+                            "type": "string",
+                            "enum": [
+                              "FOTO"
+                            ]
+                          },
+                          "es_principal": {
+                            "type": "boolean"
+                          },
+                          "orden": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bearer ausente o inválido."
+          },
+          "403": {
+            "description": "Cuenta inactiva, autoridad M2 insuficiente o solicitud ajena."
+          },
+          "503": {
+            "description": "Resultado inconcluso. Conservar clave, intención y evidencias."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Recuperar las fotos pendientes propias de una carga inconclusa.",
+        "tags": [
+          "lotes-vivero · incorporación"
+        ]
+      },
+      "post": {
+        "description": "ADMIN o GENERAL/VALIDADOR con vigencia M2. No constituye ingreso. No adjuntar documentos sensibles.",
+        "operationId": "ViveroIncorporacionController_cargarFotos",
+        "parameters": [
+          {
+            "name": "solicitud_id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "vivero_id",
+                  "fotos"
+                ],
+                "properties": {
+                  "vivero_id": {
+                    "type": "string"
+                  },
+                  "fotos": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 5,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  },
+                  "titulo": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "descripcion": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "metadata": {
+                    "type": "string",
+                    "description": "Objeto JSON serializado."
+                  },
+                  "tomado_en": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "es_principal": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "evidencia_ids exactos y fotos con URL firmada temporal; no hay public_url.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data",
+                    "evidencia_ids"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "evidencia_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "bucket",
+                          "ruta_archivo",
+                          "signed_url",
+                          "url_expira_en_segundos"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "bucket": {
+                            "type": "string",
+                            "enum": [
+                              "vivero_incorporaciones"
+                            ]
+                          },
+                          "ruta_archivo": {
+                            "type": "string"
+                          },
+                          "signed_url": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "url_expira_en_segundos": {
+                            "type": "integer",
+                            "enum": [
+                              300
+                            ]
+                          },
+                          "mime_type": {
+                            "type": "string"
+                          },
+                          "tipo_archivo": {
+                            "type": "string",
+                            "enum": [
+                              "FOTO"
+                            ]
+                          },
+                          "es_principal": {
+                            "type": "boolean"
+                          },
+                          "orden": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bearer ausente o inválido."
+          },
+          "403": {
+            "description": "Cuenta inactiva, autoridad M2 insuficiente o solicitud ajena."
+          },
+          "503": {
+            "description": "Resultado inconcluso. Conservar clave, intención y evidencias."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cargar fotos privadas de recepción/conteo para una solicitud y vivero.",
+        "tags": [
+          "lotes-vivero · incorporación"
+        ]
+      }
+    },
+    "/api/lotes-vivero/incorporaciones": {
+      "post": {
+        "description": "ADMIN o GENERAL/VALIDADOR con vigencia M2, sin permiso M1 ni doble aprobación. Lote, evento, extensión y fotos se confirman juntos. Misma clave e intención recupera el hecho inicial; no recalcula el saldo actual. No valida aptitud para entrega.",
+        "operationId": "ViveroIncorporacionController_incorporar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncorporarPlantasDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "success",
+                        "estado",
+                        "data"
+                      ],
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "estado": {
+                          "type": "string",
+                          "enum": [
+                            "CONFIRMADO"
+                          ]
+                        },
+                        "data": {
+                          "type": "object",
+                          "required": [
+                            "lote_vivero_id",
+                            "evento_incorporacion_id",
+                            "codigo_trazabilidad",
+                            "cantidad",
+                            "evidencia_ids_vinculadas"
+                          ],
+                          "properties": {
+                            "lote_vivero_id": {
+                              "type": "string"
+                            },
+                            "evento_incorporacion_id": {
+                              "type": "string"
+                            },
+                            "codigo_trazabilidad": {
+                              "type": "string"
+                            },
+                            "solicitud_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "vivero_id": {
+                              "type": "string"
+                            },
+                            "planta_id": {
+                              "type": "string"
+                            },
+                            "tercero_origen": {
+                              "type": "string",
+                              "nullable": true,
+                              "maxLength": 200
+                            },
+                            "referencia_documental": {
+                              "type": "string",
+                              "nullable": true,
+                              "maxLength": 200
+                            },
+                            "observaciones": {
+                              "type": "string",
+                              "nullable": true,
+                              "maxLength": 1000
+                            },
+                            "nombre_cientifico_snapshot": {
+                              "type": "string"
+                            },
+                            "nombre_comercial_snapshot": {
+                              "type": "string"
+                            },
+                            "variedad_snapshot": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "nombre_responsable_snapshot": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "registrado_en": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "cantidad": {
+                              "type": "integer",
+                              "minimum": 1
+                            },
+                            "fecha_evento": {
+                              "type": "string",
+                              "format": "date"
+                            },
+                            "modalidad": {
+                              "type": "string",
+                              "enum": [
+                                "RECEPCION",
+                                "SALDO_INICIAL"
+                              ]
+                            },
+                            "procedencia": {
+                              "type": "string",
+                              "enum": [
+                                "COMPRA",
+                                "DONACION",
+                                "PRODUCCION_PROPIA",
+                                "DESCONOCIDA"
+                              ]
+                            },
+                            "saldo_vivo_antes": {
+                              "type": "integer",
+                              "enum": [
+                                0
+                              ]
+                            },
+                            "saldo_vivo_despues": {
+                              "type": "integer",
+                              "description": "Saldo inicial confirmado, no saldo actual."
+                            },
+                            "evidencia_ids_vinculadas": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "success",
+                        "estado",
+                        "resultado_concluyente"
+                      ],
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "estado": {
+                          "type": "string",
+                          "enum": [
+                            "SIN_RESULTADO"
+                          ]
+                        },
+                        "resultado_concluyente": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Intención, fechas, fotos o combinación de procedencia inválidas."
+          },
+          "401": {
+            "description": "Bearer ausente o inválido."
+          },
+          "403": {
+            "description": "Cuenta inactiva, autoridad M2 insuficiente o solicitud ajena."
+          },
+          "409": {
+            "description": "Clave usada con otra intención o autoría; no crear otra clave automáticamente."
+          },
+          "503": {
+            "description": "Resultado inconcluso. Conservar clave, intención y evidencias."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Incorporar plantas vivas en un lote nuevo con procedencia.",
+        "tags": [
+          "lotes-vivero · incorporación"
+        ]
+      }
+    },
+    "/api/lotes-vivero/incorporaciones/{solicitud_id}": {
+      "get": {
+        "description": "Cuenta activa y misma autoría, incluso sin vigencia M2 o rol interno actuales. SIN_RESULTADO no acredita rollback ni habilita una nueva clave. No persiste PREPARADO ni rechazos de negocio.",
+        "operationId": "ViveroIncorporacionController_recuperar",
+        "parameters": [
+          {
+            "name": "solicitud_id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "success",
+                        "estado",
+                        "data"
+                      ],
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "estado": {
+                          "type": "string",
+                          "enum": [
+                            "CONFIRMADO"
+                          ]
+                        },
+                        "data": {
+                          "type": "object",
+                          "required": [
+                            "lote_vivero_id",
+                            "evento_incorporacion_id",
+                            "codigo_trazabilidad",
+                            "cantidad",
+                            "evidencia_ids_vinculadas"
+                          ],
+                          "properties": {
+                            "lote_vivero_id": {
+                              "type": "string"
+                            },
+                            "evento_incorporacion_id": {
+                              "type": "string"
+                            },
+                            "codigo_trazabilidad": {
+                              "type": "string"
+                            },
+                            "solicitud_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "vivero_id": {
+                              "type": "string"
+                            },
+                            "planta_id": {
+                              "type": "string"
+                            },
+                            "tercero_origen": {
+                              "type": "string",
+                              "nullable": true,
+                              "maxLength": 200
+                            },
+                            "referencia_documental": {
+                              "type": "string",
+                              "nullable": true,
+                              "maxLength": 200
+                            },
+                            "observaciones": {
+                              "type": "string",
+                              "nullable": true,
+                              "maxLength": 1000
+                            },
+                            "nombre_cientifico_snapshot": {
+                              "type": "string"
+                            },
+                            "nombre_comercial_snapshot": {
+                              "type": "string"
+                            },
+                            "variedad_snapshot": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "nombre_responsable_snapshot": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "registrado_en": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "cantidad": {
+                              "type": "integer",
+                              "minimum": 1
+                            },
+                            "fecha_evento": {
+                              "type": "string",
+                              "format": "date"
+                            },
+                            "modalidad": {
+                              "type": "string",
+                              "enum": [
+                                "RECEPCION",
+                                "SALDO_INICIAL"
+                              ]
+                            },
+                            "procedencia": {
+                              "type": "string",
+                              "enum": [
+                                "COMPRA",
+                                "DONACION",
+                                "PRODUCCION_PROPIA",
+                                "DESCONOCIDA"
+                              ]
+                            },
+                            "saldo_vivo_antes": {
+                              "type": "integer",
+                              "enum": [
+                                0
+                              ]
+                            },
+                            "saldo_vivo_despues": {
+                              "type": "integer",
+                              "description": "Saldo inicial confirmado, no saldo actual."
+                            },
+                            "evidencia_ids_vinculadas": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "success",
+                        "estado",
+                        "resultado_concluyente"
+                      ],
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "estado": {
+                          "type": "string",
+                          "enum": [
+                            "SIN_RESULTADO"
+                          ]
+                        },
+                        "resultado_concluyente": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bearer ausente o inválido."
+          },
+          "403": {
+            "description": "Cuenta inactiva, autoridad M2 insuficiente o solicitud ajena."
+          },
+          "503": {
+            "description": "Resultado inconcluso. Conservar clave, intención y evidencias."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Recuperar el éxito propio de una incorporación.",
+        "tags": [
+          "lotes-vivero · incorporación"
+        ]
+      }
+    },
     "/api/lotes-vivero/evidencias-pendientes": {
       "post": {
         "description": "Requiere ADMIN u operario del vivero indicado. Sube fotos y crea evidencias con entidad_id=0 para el tipo EVENTO_LOTE_VIVERO. Luego sus IDs se envian en POST /lotes-vivero para que la RPC de INICIO las vincule atomicamente al evento.",
@@ -4643,7 +5340,7 @@
         ]
       },
       "get": {
-        "description": "Devuelve lotes de vivero con filtros opcionales por estado, vivero, recoleccion, fecha y busqueda libre. Soporta paginacion.",
+        "description": "Devuelve lotes por ámbito M2 con origen RECOLECCION o INCORPORACION, snapshots y nulos conservados. Filtros por estado (incluye FINALIZADO para historial agotado), vivero, recoleccion, fecha y búsqueda; paginación. El saldo físico no acredita supervivencia ni aptitud.",
         "operationId": "LotesViveroController_listarLotes",
         "parameters": [
           {
@@ -5466,7 +6163,7 @@
             "description": "Adaptabilidad registrada. Devuelve { success: true, message, data } con evento_adaptabilidad_id, subetapa_destino, saldo_vivo_actual y evidencia_ids_vinculadas."
           },
           "400": {
-            "description": "Datos invalidos, lote sin EMBOLSADO previo, lote FINALIZADO, fecha invalida o evidencia ya vinculada."
+            "description": "Datos invalidos, lote sin base viva EMBOLSADO/INCORPORACION, lote FINALIZADO, fecha invalida o evidencia ya vinculada."
           },
           "401": {
             "description": "Bearer JWT verificado requerido"
@@ -5723,7 +6420,7 @@
             "description": "Merma registrada. Devuelve { success: true, data } con evento_merma_id, saldo_vivo_antes, saldo_vivo_despues, lote_finalizado y motivo_cierre."
           },
           "400": {
-            "description": "Datos invalidos, lote sin EMBOLSADO previo, cantidad supera saldo, evidencia ya vinculada o eliminada."
+            "description": "Datos invalidos, lote sin base viva EMBOLSADO/INCORPORACION, cantidad supera saldo, evidencia ya vinculada o eliminada."
           },
           "401": {
             "description": "Bearer JWT verificado requerido"
@@ -5885,7 +6582,7 @@
     },
     "/api/lotes-vivero/{id}/despacho": {
       "post": {
-        "description": "Registra la salida de plantas del vivero hacia un destino distinto de una subcampania, llamando la RPC fn_vivero_registrar_despacho en una sola transaccion. El responsable_id sale del usuario verificado por JWT, nunca del body. Requiere EMBOLSADO previo y al menos una evidencia. Valida contra el saldo vivo FISICO del lote (RN-VIV-56): las asignaciones a subcampanias ya descontaron el saldo, no existe stock reservado que restar. Si el stock llega a cero, el lote se cierra automaticamente. El destino PLANTACION_CAMPANIA se rechaza aqui: las salidas hacia subcampanias se registran con POST /lotes-vivero/:id/asignaciones (asignacion fisica).",
+        "description": "Registra la salida de plantas del vivero hacia un destino distinto de una subcampania, llamando la RPC fn_vivero_registrar_despacho en una sola transaccion. El responsable_id sale del usuario verificado por JWT, nunca del body. Requiere base viva EMBOLSADO o INCORPORACION y al menos una evidencia. Valida contra el saldo vivo FISICO del lote (RN-VIV-56): las asignaciones a subcampanias ya descontaron el saldo, no existe stock reservado que restar. Si el stock llega a cero, el lote se cierra automaticamente. El destino PLANTACION_CAMPANIA se rechaza aqui: las salidas hacia subcampanias se registran con POST /lotes-vivero/:id/asignaciones (asignacion fisica).",
         "operationId": "LotesViveroController_registrarDespacho",
         "parameters": [
           {
@@ -5993,7 +6690,7 @@
             "description": "Despacho registrado. Devuelve { success: true, data } con evento_despacho_id, saldo_vivo_antes, saldo_vivo_despues, evidencia_ids_vinculadas, lote_finalizado y motivo_cierre."
           },
           "400": {
-            "description": "Datos invalidos, lote sin EMBOLSADO previo, cantidad supera saldo, destino PLANTACION_CAMPANIA usado, evidencia ya vinculada o eliminada."
+            "description": "Datos invalidos, lote sin base viva EMBOLSADO/INCORPORACION, cantidad supera saldo, destino PLANTACION_CAMPANIA usado, evidencia ya vinculada o eliminada."
           },
           "401": {
             "description": "Bearer JWT verificado requerido"
@@ -6175,6 +6872,7 @@
             "schema": {
               "enum": [
                 "INICIO",
+                "INCORPORACION",
                 "EMBOLSADO",
                 "DESCARTE_PRE_EMBOLSADO",
                 "ADAPTABILIDAD",
@@ -6244,7 +6942,7 @@
     },
     "/api/lotes-vivero/{id}": {
       "get": {
-        "description": "Devuelve los campos del lote, sus relaciones (vivero, recoleccion, planta, responsable) y un mapa ultimo_evento_por_tipo con el evento mas reciente de cada tipo (INICIO, EMBOLSADO, DESCARTE_PRE_EMBOLSADO, ADAPTABILIDAD, MERMA, DESPACHO, CIERRE_AUTOMATICO). Pensado para que los formularios de eventos validen fechas contra el evento previo (RN-VIV-10/RN-VIV-33) sin disparar N+1 calls.",
+        "description": "Devuelve los campos del lote, sus relaciones (vivero, recoleccion, planta, responsable) y un mapa ultimo_evento_por_tipo con el evento mas reciente de cada tipo (INICIO, INCORPORACION, EMBOLSADO, DESCARTE_PRE_EMBOLSADO, ADAPTABILIDAD, MERMA, DESPACHO, DEVOLUCION_PLANTACION, CIERRE_AUTOMATICO). Pensado para que los formularios de eventos validen fechas contra el evento previo (RN-VIV-10/RN-VIV-33) sin disparar N+1 calls.",
         "operationId": "LotesViveroController_obtenerDetalle",
         "parameters": [
           {
@@ -6267,7 +6965,157 @@
         ],
         "responses": {
           "200": {
-            "description": "Devuelve { success: true, data } con el lote, sus relaciones y ultimo_evento_por_tipo (null por tipo si todavia no ocurrio)."
+            "description": "Devuelve { success: true, data } con el lote, sus relaciones y ultimo_evento_por_tipo (null por tipo si todavia no ocurrio).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "origen": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "tipo",
+                                "recoleccion_id"
+                              ],
+                              "properties": {
+                                "tipo": {
+                                  "type": "string",
+                                  "enum": [
+                                    "RECOLECCION"
+                                  ]
+                                },
+                                "recoleccion_id": {
+                                  "oneOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "integer"
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "tipo",
+                                "evento_id",
+                                "modalidad",
+                                "procedencia",
+                                "cantidad",
+                                "fecha_evento",
+                                "historia_previa_no_registrada"
+                              ],
+                              "properties": {
+                                "tipo": {
+                                  "type": "string",
+                                  "enum": [
+                                    "INCORPORACION"
+                                  ]
+                                },
+                                "evento_id": {
+                                  "oneOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "integer"
+                                    }
+                                  ]
+                                },
+                                "modalidad": {
+                                  "type": "string",
+                                  "enum": [
+                                    "RECEPCION",
+                                    "SALDO_INICIAL"
+                                  ]
+                                },
+                                "procedencia": {
+                                  "type": "string",
+                                  "enum": [
+                                    "COMPRA",
+                                    "DONACION",
+                                    "PRODUCCION_PROPIA",
+                                    "DESCONOCIDA"
+                                  ]
+                                },
+                                "cantidad": {
+                                  "type": "integer",
+                                  "minimum": 1
+                                },
+                                "fecha_evento": {
+                                  "type": "string",
+                                  "format": "date"
+                                },
+                                "tercero_origen": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "referencia_documental": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "observaciones": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "historia_previa_no_registrada": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "recoleccion_id": {
+                          "nullable": true,
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "integer"
+                            }
+                          ]
+                        },
+                        "cantidad_inicial_en_proceso": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "tipo_material_snapshot": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "unidad_medida_inicial": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "plantas_vivas_iniciales": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "saldo_vivo_actual": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "ultimo_evento_por_tipo": {
+                          "type": "object",
+                          "description": "Incluye INCORPORACION y DEVOLUCION_PLANTACION; null por tipo aún ausente."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "403": {
             "description": "Sin ámbito operativo vigente para el vivero del recurso o evidencia no autorizada."
@@ -6292,7 +7140,7 @@
     },
     "/api/lotes-vivero/{id}/asignaciones": {
       "post": {
-        "description": "Registra la ENTREGA FÍSICA de plantas del lote a una subcampaña (RF-VIV-11) llamando la RPC fn_vivero_asignar_stock_subcampania en una sola transacción: crea la asignación, registra el evento DESPACHO con origen ASIGNACION_SUBCAMPANIA, DESCUENTA LOTE_VIVERO.saldo_vivo_actual, vincula la evidencia obligatoria de entrega (RN-VIV-54) y registra ASIGNACION_VIVERO en la línea de tiempo de M3. Valida contra el saldo físico del lote sin restar asignaciones previas (RN-VIV-47/57). Requiere lote ACTIVO con EMBOLSADO y saldo vivo positivo (RN-VIV-61). Para PLANTACION_INICIAL, la especie del lote debe pertenecer al plan de especies de la subcampaña; se rechaza antes de entregar si no pertenece. Permisos: ADMIN o COORDINADOR de la subcampaña con acceso vigente al vivero del lote. No es una reserva lógica: las plantas salen del vivero al asignar.",
+        "description": "Registra la ENTREGA FÍSICA de plantas del lote a una subcampaña (RF-VIV-11) llamando la RPC fn_vivero_asignar_stock_subcampania en una sola transacción: crea la asignación, registra el evento DESPACHO con origen ASIGNACION_SUBCAMPANIA, DESCUENTA LOTE_VIVERO.saldo_vivo_actual, vincula la evidencia obligatoria de entrega (RN-VIV-54) y registra ASIGNACION_VIVERO en la línea de tiempo de M3. Valida contra el saldo físico del lote sin restar asignaciones previas (RN-VIV-47/57). Requiere lote ACTIVO con base viva EMBOLSADO o INCORPORACION y saldo vivo positivo (RN-VIV-61). Para PLANTACION_INICIAL, la especie del lote debe pertenecer al plan de especies de la subcampaña; se rechaza antes de entregar si no pertenece. Permisos: ADMIN o COORDINADOR de la subcampaña con acceso vigente al vivero del lote. No es una reserva lógica: las plantas salen del vivero al asignar.",
         "operationId": "LotesViveroController_crearAsignacion",
         "parameters": [
           {
@@ -6412,7 +7260,7 @@
             "description": "Subcampaña cerrada"
           },
           "422": {
-            "description": "Lote no ACTIVO, sin EMBOLSADO, saldo físico insuficiente, evidencia faltante, estado de subcampaña incompatible con el propósito o especie fuera del plan para PLANTACION_INICIAL"
+            "description": "Lote no ACTIVO, sin base viva EMBOLSADO/INCORPORACION, saldo físico insuficiente, evidencia faltante, estado de subcampaña incompatible con el propósito o especie fuera del plan para PLANTACION_INICIAL"
           },
           "500": {
             "description": "Error interno del servidor"
@@ -7812,12 +8660,828 @@
           "recolecciones"
         ]
       }
+    },
+    "/api/evidencias-trazabilidad/recolecciones/{recoleccionId}": {
+      "post": {
+        "description": "Sube 1 a 5 fotos y crea registros en evidencias_trazabilidad para una recolección existente.",
+        "operationId": "EvidenciasTrazabilidadController_createForRecoleccion",
+        "parameters": [
+          {
+            "name": "recoleccionId",
+            "required": true,
+            "in": "path",
+            "description": "ID de la recolección",
+            "schema": {
+              "example": 123,
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Datos y archivos de evidencia (FormData)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fotos"
+                ],
+                "properties": {
+                  "titulo": {
+                    "type": "string",
+                    "example": "Seguimiento de lote"
+                  },
+                  "descripcion": {
+                    "type": "string",
+                    "example": "Registro posterior a la recolección"
+                  },
+                  "metadata": {
+                    "type": "string",
+                    "example": "{\"fuente\":\"app-mobile\",\"dispositivo\":\"android\"}"
+                  },
+                  "tomado_en": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "es_principal": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "fotos": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Evidencias creadas exitosamente"
+          },
+          "400": {
+            "description": "Datos inválidos"
+          },
+          "401": {
+            "description": "Bearer ausente o inválido"
+          },
+          "404": {
+            "description": "Recolección no encontrada"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Agregar evidencias a una recolección",
+        "tags": [
+          "evidencias-trazabilidad"
+        ]
+      },
+      "get": {
+        "description": "Atajo para consultar evidencias de tipo entidad RECOLECCION por ID de recolección.",
+        "operationId": "EvidenciasTrazabilidadController_findByRecoleccion",
+        "parameters": [
+          {
+            "name": "incluir_eliminadas",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "recoleccionId",
+            "required": true,
+            "in": "path",
+            "description": "ID de la recolección",
+            "schema": {
+              "example": 123,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evidencias de recolección obtenidas"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar evidencias de una recolección",
+        "tags": [
+          "evidencias-trazabilidad"
+        ]
+      }
+    },
+    "/api/evidencias-trazabilidad": {
+      "get": {
+        "description": "Lista evidencias con filtros por entidad, tipo de entidad y código de trazabilidad. Excluye los buckets privados de participación, conciliación e incorporación de Vivero. Las fotos T5 se leen por el timeline M2 autorizado o su contexto pendiente propio, con URL firmada temporal.",
+        "operationId": "EvidenciasTrazabilidadController_list",
+        "parameters": [
+          {
+            "name": "tipo_entidad_id",
+            "required": false,
+            "in": "query",
+            "description": "ID del tipo de entidad",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "tipo_entidad_codigo",
+            "required": false,
+            "in": "query",
+            "description": "Código del tipo de entidad (ej. RECOLECCION)",
+            "schema": {
+              "example": "RECOLECCION",
+              "type": "string"
+            }
+          },
+          {
+            "name": "entidad_id",
+            "required": false,
+            "in": "query",
+            "description": "ID BIGINT exacto de la entidad relacionada",
+            "schema": {
+              "example": "123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "codigo_trazabilidad",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por código de trazabilidad",
+            "schema": {
+              "example": "REC-2026-001",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tipo_archivo",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por tipo de archivo (ej. FOTO)",
+            "schema": {
+              "example": "FOTO",
+              "type": "string"
+            }
+          },
+          {
+            "name": "incluir_eliminadas",
+            "required": false,
+            "in": "query",
+            "description": "Incluir evidencias eliminadas lógicamente",
+            "schema": {
+              "default": false,
+              "example": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "es_principal",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por principalidad",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Página (default: 1)",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Límite de registros por página (max: 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de evidencias obtenida"
+          },
+          "400": {
+            "description": "Parámetros inválidos"
+          },
+          "404": {
+            "description": "Tipo de entidad no encontrado"
+          },
+          "500": {
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar evidencias de trazabilidad",
+        "tags": [
+          "evidencias-trazabilidad"
+        ]
+      }
+    },
+    "/api/evidencias-trazabilidad/entidad/{tipoEntidadCodigo}/{entidadId}": {
+      "get": {
+        "description": "Obtiene evidencias por tipo de entidad (código) y entidad_id. Ejemplo: RECOLECCION/123. Excluye vivero_incorporaciones aun con acceso M2: las fotos T5 usan el timeline M2 autorizado, con URL firmada temporal.",
+        "operationId": "EvidenciasTrazabilidadController_findByEntidad",
+        "parameters": [
+          {
+            "name": "tipoEntidadCodigo",
+            "required": true,
+            "in": "path",
+            "description": "Código de tipo_entidad_evidencia (ej. RECOLECCION)",
+            "schema": {
+              "example": "RECOLECCION",
+              "type": "string"
+            }
+          },
+          {
+            "name": "incluir_eliminadas",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "entidadId",
+            "required": true,
+            "in": "path",
+            "description": "ID de la entidad",
+            "schema": {
+              "example": 123,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evidencias de la entidad obtenidas"
+          },
+          "404": {
+            "description": "Tipo de entidad no encontrado"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar evidencias por entidad",
+        "tags": [
+          "evidencias-trazabilidad"
+        ]
+      }
+    },
+    "/api/evidencias-trazabilidad/{id}": {
+      "get": {
+        "description": "Los buckets privados, incluido vivero_incorporaciones, no se sirven por esta ruta (404). Las fotos T5 se acceden por el timeline M2 autorizado o su contexto pendiente propio; no se genera public_url.",
+        "operationId": "EvidenciasTrazabilidadController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de evidencia",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evidencia obtenida"
+          },
+          "404": {
+            "description": "Evidencia no encontrada"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtener evidencia por ID",
+        "tags": [
+          "evidencias-trazabilidad"
+        ]
+      }
+    },
+    "/api/registros-plantacion/evidencias-pendientes": {
+      "post": {
+        "description": "Bearer JWT obligatorio. Requiere rol interno, equipo y subcampania_id + es_reposicion:true. Original privado y JPEG sanitizado, propiedad estricta también para ADMIN. Inicial usa cargas v1; contrato anterior responde 409 CLIENTE_INCOMPATIBLE antes de Storage.",
+        "operationId": "PlantacionesController_crearEvidenciaPendiente",
+        "parameters": [
+          {
+            "name": "x-auth-id",
+            "required": false,
+            "in": "header",
+            "description": "Alias opcional del sub del JWT verificado; debe coincidir.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Datos y archivos de evidencia pendiente del registro de plantacion",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "subcampania_id",
+                  "es_reposicion",
+                  "fotos"
+                ],
+                "properties": {
+                  "subcampania_id": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[1-9][0-9]*$",
+                        "maxLength": 19,
+                        "example": "9007199255741001"
+                      },
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      }
+                    ],
+                    "description": "ID BIGINT decimal canónico hasta 9223372036854775807; JSON number sólo si es seguro. No convertir cadenas a Number."
+                  },
+                  "es_reposicion": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  },
+                  "titulo": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "example": "Plantacion sector A"
+                  },
+                  "descripcion": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "example": "Fotos del grupo plantado en la subcampania"
+                  },
+                  "tomado_en": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2026-05-24T10:00:00Z"
+                  },
+                  "es_principal": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Indica si esta foto es la principal del registro"
+                  },
+                  "fotos": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "Archivos de imagen (max 10)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Evidencias pendientes creadas. Usar evidencia_ids en POST /registros-plantacion."
+          },
+          "400": {
+            "description": "Datos invalidos o formato de archivo no permitido"
+          },
+          "401": {
+            "description": "Bearer JWT ausente/inválido o header discordante"
+          },
+          "404": {
+            "description": "Falta tipo_entidad_evidencia REGISTRO_PLANTACION"
+          },
+          "409": {
+            "description": "CLIENTE_INCOMPATIBLE: contrato inicial o upload sin ámbito/propósito"
+          },
+          "500": {
+            "description": "Error interno del servidor"
+          },
+          "503": {
+            "description": "Resultado inconcluso o respuesta con ID inexacto; no presume rechazo de negocio ni habilita repetir a ciegas."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Crear evidencias privadas pendientes de reposición interna",
+        "tags": [
+          "plantaciones"
+        ]
+      },
+      "delete": {
+        "description": "Marca como eliminadas evidencias pendientes (entidad_id NULL/0) de tipo REGISTRO_PLANTACION y elimina sus archivos de Storage. Es idempotente: los IDs inexistentes, ya eliminados, ya vinculados o no pertenecientes al usuario se devuelven como ignorados.",
+        "operationId": "PlantacionesController_descartarEvidenciasPendientes",
+        "parameters": [
+          {
+            "name": "x-auth-id",
+            "required": false,
+            "in": "header",
+            "description": "Alias opcional del sub del JWT verificado; debe coincidir.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "IDs devueltos por POST /registros-plantacion/evidencias-pendientes que deben descartarse porque el registro fue cancelado o no se completara.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "subcampania_id",
+                  "es_reposicion",
+                  "evidencia_ids"
+                ],
+                "properties": {
+                  "subcampania_id": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[1-9][0-9]*$",
+                        "maxLength": 19,
+                        "example": "9007199255741001"
+                      },
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      }
+                    ],
+                    "description": "ID BIGINT decimal canónico hasta 9223372036854775807; JSON number sólo si es seguro. No convertir cadenas a Number."
+                  },
+                  "es_reposicion": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  },
+                  "evidencia_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "example": "9007199255741001"
+                        },
+                        {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      ],
+                      "description": "ID BIGINT decimal canónico hasta 9223372036854775807; JSON number sólo si es seguro. No convertir cadenas a Number."
+                    },
+                    "example": [
+                      101,
+                      102
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Evidencias pendientes descartadas. Devuelve evidencia_ids_descartadas y evidencia_ids_ignoradas."
+          },
+          "400": {
+            "description": "IDs invalidos"
+          },
+          "401": {
+            "description": "Bearer JWT ausente/inválido o header discordante"
+          },
+          "403": {
+            "description": "Rol global insuficiente"
+          },
+          "404": {
+            "description": "Usuario no encontrado o falta tipo_entidad_evidencia REGISTRO_PLANTACION"
+          },
+          "409": {
+            "description": "CLIENTE_INCOMPATIBLE: contrato inicial o upload sin ámbito/propósito"
+          },
+          "500": {
+            "description": "Error interno del servidor"
+          },
+          "503": {
+            "description": "Resultado inconcluso o respuesta con ID inexacto; no presume rechazo de negocio ni habilita repetir a ciegas."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Descartar evidencias pendientes de REGISTRO_PLANTACION",
+        "tags": [
+          "plantaciones"
+        ]
+      }
+    },
+    "/api/registros-plantacion": {
+      "post": {
+        "description": "Solo es_reposicion:true; inicial legada responde 409 CLIENTE_INCOMPATIBLE. Conserva rol ADMIN/GENERAL/VALIDADOR, equipo COORDINADOR/OPERARIO y estado ACTIVA/COMPLETADA/FINALIZADA_PARCIAL. La RPC comprueba origen inicial del mismo ámbito y evidencias propias privadas del mismo propósito antes de consumir stock M3. No vuelve a descontar Vivero. Los IDs aceptan cadenas BIGINT canónicas o números seguros; las cadenas no se redondean. Requiere106 para proyectar IDs y consumos exactos antes del transporte JSON.",
+        "operationId": "PlantacionesController_registrar",
+        "parameters": [
+          {
+            "name": "x-auth-id",
+            "required": false,
+            "in": "header",
+            "description": "Alias opcional del sub del JWT verificado; debe coincidir.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Datos del registro de plantacion",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "subcampania_id",
+                  "es_reposicion",
+                  "registro_plantacion_origen_id",
+                  "fecha_plantacion",
+                  "latitud",
+                  "longitud",
+                  "detalles",
+                  "evidencia_ids"
+                ],
+                "properties": {
+                  "subcampania_id": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[1-9][0-9]*$",
+                        "maxLength": 19,
+                        "example": "9007199255741001"
+                      },
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      }
+                    ],
+                    "description": "ID BIGINT decimal canónico hasta 9223372036854775807; JSON number sólo si es seguro. No convertir cadenas a Number."
+                  },
+                  "es_reposicion": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ],
+                    "example": true
+                  },
+                  "registro_plantacion_origen_id": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[1-9][0-9]*$",
+                        "maxLength": 19,
+                        "example": "9007199255741001"
+                      },
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      }
+                    ],
+                    "description": "ID exacto del grupo origen al que se repone material, obligatorio para reposición."
+                  },
+                  "fecha_plantacion": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-05-24"
+                  },
+                  "latitud": {
+                    "type": "number",
+                    "example": -16.5
+                  },
+                  "longitud": {
+                    "type": "number",
+                    "example": -68.15
+                  },
+                  "observaciones": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "nullable": true
+                  },
+                  "coresponsable_ids": {
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "example": "9007199255741001"
+                        },
+                        {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      ],
+                      "description": "ID BIGINT decimal canónico hasta 9223372036854775807; JSON number sólo si es seguro. No convertir cadenas a Number."
+                    },
+                    "description": "Usuarios adicionales (subset del SUBCAMPANIA_EQUIPO).",
+                    "example": []
+                  },
+                  "detalles": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "asignacion_id",
+                        "lote_vivero_id",
+                        "planta_id",
+                        "cantidad"
+                      ],
+                      "properties": {
+                        "asignacion_id": {
+                          "oneOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$",
+                              "maxLength": 19,
+                              "example": "9007199255741001"
+                            },
+                            {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            }
+                          ],
+                          "description": "ID BIGINT decimal canónico hasta 9223372036854775807; JSON number sólo si es seguro. No convertir cadenas a Number."
+                        },
+                        "lote_vivero_id": {
+                          "oneOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$",
+                              "maxLength": 19,
+                              "example": "9007199255741001"
+                            },
+                            {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            }
+                          ],
+                          "description": "ID BIGINT decimal canónico hasta 9223372036854775807; JSON number sólo si es seguro. No convertir cadenas a Number."
+                        },
+                        "planta_id": {
+                          "oneOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$",
+                              "maxLength": 19,
+                              "example": "9007199255741001"
+                            },
+                            {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            }
+                          ],
+                          "description": "ID BIGINT decimal canónico hasta 9223372036854775807; JSON number sólo si es seguro. No convertir cadenas a Number."
+                        },
+                        "cantidad": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 2147483647,
+                          "example": 50
+                        }
+                      }
+                    }
+                  },
+                  "evidencia_ids": {
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]*$",
+                          "maxLength": 19,
+                          "example": "9007199255741001"
+                        },
+                        {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      ],
+                      "description": "ID BIGINT decimal canónico hasta 9223372036854775807; JSON number sólo si es seguro. No convertir cadenas a Number."
+                    },
+                    "minItems": 1,
+                    "description": "IDs de evidencias previamente subidas via POST /registros-plantacion/evidencias-pendientes.",
+                    "example": [
+                      101,
+                      102
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Plantacion registrada. Devuelve registro_plantacion_id, codigo_trazabilidad, cantidad_total_plantada y `consumos` (por asignacion: cantidad_consumida, saldo_asignado_antes/despues y estado_final). IDs seguros conservan el número legado y los mayores se devuelven como cadenas exactas, incluidos los IDs dentro de consumos y arrays. No devuelve despachos: plantar no genera eventos M2."
+          },
+          "400": {
+            "description": "Validacion fallida: estado de subcampania incompatible, GPS no evaluable, responsable o coresponsable fuera del equipo, saldo asignado insuficiente, proposito incoherente, especie fuera del plan, reposicion mayor al pendiente del grupo origen, etc."
+          },
+          "401": {
+            "description": "Bearer JWT ausente/inválido o header discordante"
+          },
+          "403": {
+            "description": "Rol global insuficiente"
+          },
+          "404": {
+            "description": "Usuario o subcampania no encontrada"
+          },
+          "409": {
+            "description": "CLIENTE_INCOMPATIBLE: contrato inicial o upload sin ámbito/propósito"
+          },
+          "500": {
+            "description": "Error interno del servidor"
+          },
+          "503": {
+            "description": "Resultado inconcluso o respuesta con ID inexacto; no presume rechazo de negocio ni habilita repetir a ciegas."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar reposición interna consumiendo stock asignado (M3)",
+        "tags": [
+          "plantaciones"
+        ]
+      }
     }
   },
   "info": {
     "title": "R3Foresta · Acceso y material por vivero",
-    "description": "Contrato local de recepción única y material por vivero. M2 operativo independiente de M1 y de la autoridad para recibir. INICIO requiere recepción conforme, saldo decimal exacto y orden físico de fechas. Recuperación propia con la misma clave.",
-    "version": "2.0.0",
+    "description": "Contrato local de recepción única, material por vivero y continuidad de reposición interna con IDs exactos. T5 incorpora plantas vivas con procedencia y fotos privadas, éxito propio recuperable con la misma solicitud e intención; no persiste preparación ni rechazo durable. Las fotos vivero_incorporaciones se excluyen de las rutas genéricas y se leen por el timeline M2 o contexto pendiente propio autorizados.",
+    "version": "3.1.0",
     "contact": {}
   },
   "tags": [],
@@ -7831,6 +9495,87 @@
       }
     },
     "schemas": {
+      "IncorporarPlantasDto": {
+        "type": "object",
+        "properties": {
+          "solicitud_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Conservar esta clave y la intención ante timeout o ausencia de recibo."
+          },
+          "vivero_id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "ID BIGINT exacto del vivero físico."
+          },
+          "planta_id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$"
+          },
+          "modalidad": {
+            "type": "string",
+            "enum": [
+              "RECEPCION",
+              "SALDO_INICIAL"
+            ]
+          },
+          "procedencia": {
+            "type": "string",
+            "enum": [
+              "COMPRA",
+              "DONACION",
+              "PRODUCCION_PROPIA",
+              "DESCONOCIDA"
+            ],
+            "description": "RECEPCION: COMPRA/DONACION. SALDO_INICIAL: las cuatro procedencias."
+          },
+          "fecha_evento": {
+            "type": "string",
+            "format": "date",
+            "description": "Día físico de recepción o conteo, dentro de la ventana operativa de 10 días inclusivos en America/La_Paz."
+          },
+          "cantidad": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "tercero_origen": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Texto histórico opcional; no demuestra origen biológico."
+          },
+          "referencia_documental": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Referencia textual no única. No adjuntar facturas como fotos."
+          },
+          "observaciones": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Antecedentes y límites; obligatorio si DESCONOCIDA."
+          },
+          "evidencia_ids": {
+            "minItems": 1,
+            "maxItems": 5,
+            "uniqueItems": true,
+            "description": "Fotos pendientes propias del mismo vivero y solicitud.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "solicitud_id",
+          "vivero_id",
+          "planta_id",
+          "modalidad",
+          "procedencia",
+          "fecha_evento",
+          "cantidad",
+          "evidencia_ids"
+        ]
+      },
       "CreateUbicacionDto": {
         "type": "object",
         "properties": {

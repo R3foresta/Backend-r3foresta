@@ -147,7 +147,7 @@ describe('PlantacionEvidenciasService privado INT02-D', () => {
       'jwt',
     );
     expect(h.rpc).toHaveBeenCalledWith(
-      'pa_d_evidencias_reposicion',
+      'pa_d_evidencias_reposicion_exacto',
       expect.objectContaining({
         p_actor_id: 77,
         p_subcampania_id: 10,

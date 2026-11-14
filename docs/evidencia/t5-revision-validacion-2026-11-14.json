@@ -1,0 +1,94 @@
+{
+  "tarea": "T5_CORRECCIONES_REVISION_INDEPENDIENTE",
+  "estado": "VERIFICADO_LOCALMENTE",
+  "fecha_local": "2026-11-14",
+  "zona_horaria": "America/La_Paz",
+  "base": "0074200a77f5ce6780f64ce0f594d07ad18e6a82",
+  "version": "ARBOL_LOCAL_SIN_COMMIT",
+  "encargo_publicado_antes_de_editar": true,
+  "hallazgos": {
+    "bigint_reposicion": "IDs exactos conservados por DTO/policy/servicio y wrapper106 antes del transporte JSON; HTTP real consume DONACION vecina y lee103sin segundo débitoM1/M2.",
+    "fotos_privadas": "BucketT5 excluido de rutas genéricas (listado/entidad/ID); acceso por timelineM2/contextopendiente autorizados, signed_url300s, sin public_url falso.",
+    "check_embolsado": "107 alinea CHECK010 con RPC095;NULL/0histórico permitido con cantidad positivaUNIDAD=saldo posterior, MERMA/DESPACHOambosnonnull. DiagnósticoREADONLY destino preparado, no ejecutado en destino."
+  },
+  "entrada": {
+    "build": "APROBADO",
+    "unitarios": {
+      "suites": 95,
+      "pruebas": 1386,
+      "resultado": "APROBADO",
+      "cache": "/private/tmp/r3-jest"
+    },
+    "openapi_check": {
+      "recepcion_rutas": 6,
+      "m2_evidencias_reposicion_rutas": 43,
+      "participacion_rutas": 42,
+      "participacion_schemas": 90,
+      "resultado": "APROBADO"
+    },
+    "git_diff_check": "APROBADO",
+    "migraciones_001_100_modificadas": false
+  },
+  "entorno": {
+    "node": "24.19.0",
+    "postgres": "14.24 (Postgres.app)",
+    "postgis": "3.2.10",
+    "geos": "3.10.7",
+    "tcp_postgres": false,
+    "env_cargado": false,
+    "storage_y_http": "SINTETICOS"
+  },
+  "evidencias": [
+    "docs/evidencia/t5-revision-local-2026-11-14.json",
+    "docs/evidencia/t5-revision-compartida-2026-11-14.json",
+    "docs/evidencia/t5-revision-vivero-acceso-2026-11-14.json"
+  ],
+  "huellas_contrastadas": 328,
+  "huellas_coinciden_con_fuentes": true,
+  "migraciones_pendientes_en_orden": [
+    "101_vivero_incorporacion_evento.sql",
+    "102_vivero_incorporacion.sql",
+    "103_t5_procedencia_plantacion.sql",
+    "104_vivero_incorporacion_storage_privado.sql",
+    "105_vivero_operaciones_ids_exactos.sql",
+    "106_m3_reposicion_ids_exactos.sql",
+    "107_vivero_embolsado_saldo_naciente.sql"
+  ],
+  "diagnostico_destino": "PENDIENTE_DE_PABLO_SOLO_LECTURA",
+  "aplicacion_destino": "NO_REALIZADA_RESERVADA_A_PABLO_DESPUES_DE_REVISAR",
+  "limites": [
+    "Antecedente PostgreSQL representativo con CHECK010/056, no replay íntegro001–100.",
+    "107 se instala temprano sólo para preparar el ensayoM1; destino conserva orden101–107 y COMMIT101antes102.",
+    "Helper085 real y overlay082 mínimo; no085completo.",
+    "RegresiónD conserva077–080+106 yT2 conserva095+105; no confundir con pruebaT5integrada.",
+    "Storage104no cambió; evidencia SQL/RLS13nov conservada por separado, sinStorageHTTPreal.",
+    "Sin migraciones/Storage/resetremotos, cambiosPWA,commit,push ni despliegue."
+  ],
+  "sha256": {
+    "docs/vivero-acceso-openapi.json": "c19b7ed2ef1fc4e11ecf8037574d5be8fd03cc343b28fe12dfd2942bfccceabb",
+    "migrations/106_m3_reposicion_ids_exactos.sql": "6561ed6a34e295bf61f2437bebb284f27ed390ac433794fcbc0604ee0940cedd",
+    "migrations/107_vivero_embolsado_saldo_naciente.sql": "d88c6ff8a65f7a0e2d3ffcb6cf9123be9788dad8b774c281bf6b6a9b9a9c04f3",
+    "scripts/qa/vivero-acceso-openapi.cjs": "da8a7c6de8bbc587a43685b59be744f7c5f8bc1b64734d691f2a1e7324c3efc4",
+    "scripts/qa/vivero-incorporacion-107-diagnostico.sql": "75e8717e8e25e72d1298cb2f2743b6a9330c1e533045a2f89f960dd8c437a957",
+    "src/evidencias-trazabilidad/evidencias-t5-privadas.http.spec.ts": "497eeaed7d4795d7c59037a8c005f4d6f116c5e18ac57979d0bd9ecb6236a7ec",
+    "src/evidencias-trazabilidad/evidencias-trazabilidad.controller.ts": "84d82bbfa92477448d8b52a3bf38b7d7fb298c6e459d0c3c108da56cbc468f97",
+    "src/evidencias-trazabilidad/evidencias-trazabilidad.service.spec.ts": "692d718afc0bca323fba4f744567b22e6f8107460db4158d605fc7b3e0c4bc54",
+    "src/evidencias-trazabilidad/evidencias-trazabilidad.service.ts": "581d3b7bc1810baa60a8c513001dcf3d450d23dc248c4de5cad6f9a2480987f4",
+    "src/plantaciones/api/docs/plantaciones.swagger.ts": "61c8c41a5b62e7ae1d5550ba1030bc2853388e233895cfee9faccdc3a815365c",
+    "src/plantaciones/api/dto/crear-evidencia-pendiente-plantacion.dto.ts": "589cee093215c6742635c373b3ac94d55b9dc20db31f2a8063382a43e867ea4b",
+    "src/plantaciones/api/dto/descartar-evidencias-pendientes-plantacion.dto.ts": "3d303bdf9a7cb672d6e4f5cb5021bef00067cdad1db6bf0bf857471f8fe12a86",
+    "src/plantaciones/api/dto/detalle-plantacion.dto.ts": "f33274248f106ba29ac01c18a2fca157991bdb425c4f74ce6705894c611b6e48",
+    "src/plantaciones/api/dto/registrar-plantacion.dto.ts": "3c6ca98a228406d3acaf603699b888b4cbec8ae0f09fa637c68a13474f03b617",
+    "src/plantaciones/application/plantacion-auth.service.ts": "37d0bc70cb84654e2e1b574cb2fbdac2f0c7a8b37750ff6d5fec34ba15aabfac",
+    "src/plantaciones/application/plantacion-creation.service.ts": "366f57f8f3a495bb25f37760f4d1c05144688894f6d7b8699f43dcdb58f0fd4b",
+    "src/plantaciones/application/plantacion-evidencias.service.ts": "969e60267d552b99c223434f7d03e005fe0d060cc0c41d61c58d5ca91bb640fb",
+    "src/plantaciones/domain/policies/coresponsables.policy.ts": "fdfa125f3bb5144f86e847238f3a32255e0b9a6b75ede065803950d4625a3f0a",
+    "src/plantaciones/domain/policies/detalles.policy.ts": "3994f3bf7affee926c14f16b7fc19f3a17c02a8854aaa55e29dc703f88f1a752",
+    "src/plantaciones/domain/policies/identificador.policy.ts": "dcefbe698b3a0bb877ff5b46aa6259dc0852faea8fa6c236c501dbd24e3108e7",
+    "src/plantaciones/domain/policies/reposicion.policy.ts": "87cd87ffc4a7d6e9a3ff19ddfc24facd1af004aa8082bfb093ddcc5243da3e58",
+    "src/plantaciones/tests/plantacion-auth.service.spec.ts": "a59701aa189e2875cf263c3e7d03011ec9670abcfbb3050ba78373bf80c3702b",
+    "src/plantaciones/tests/plantacion-creation.service.spec.ts": "4c189a5070fd3c18685bdb283e9794cbc222893b7958243de3082d1ddfc55770",
+    "src/plantaciones/tests/plantacion-evidencias.service.spec.ts": "b54296e1e722aa6ceca794eac66747538619480820987216d87d45f611330a32",
+    "src/plantaciones/tests/reposicion-bigint.spec.ts": "a7a2ec8ff9a0b76ec8fb502372c2b8e970f695332ee49a63d343da3cfac06110"
+  }
+}

@@ -4,32 +4,27 @@ import {
   IsArray,
   IsBoolean,
   IsDateString,
-  IsInt,
   IsLatitude,
   IsLongitude,
   IsOptional,
   IsString,
   MaxLength,
-  Min,
   ValidateNested,
 } from 'class-validator';
+import { BigintId } from '../../../common/dto/bigint-id';
 import { DetallePlantacionDto } from './detalle-plantacion.dto';
 
 export class RegistrarPlantacionDto {
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  subcampania_id: number;
+  @BigintId()
+  subcampania_id: number | string;
 
   @IsOptional()
   @IsBoolean()
   es_reposicion?: boolean;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  registro_plantacion_origen_id?: number;
+  @BigintId()
+  registro_plantacion_origen_id?: number | string;
 
   @IsDateString()
   fecha_plantacion: string;
@@ -49,8 +44,8 @@ export class RegistrarPlantacionDto {
 
   @IsOptional()
   @IsArray()
-  @IsInt({ each: true })
-  coresponsable_ids?: number[];
+  @BigintId(true)
+  coresponsable_ids?: (number | string)[];
 
   @IsArray()
   @ArrayMinSize(1, {
@@ -64,6 +59,6 @@ export class RegistrarPlantacionDto {
   @ArrayMinSize(1, {
     message: 'Debe vincularse al menos una evidencia previamente subida.',
   })
-  @IsInt({ each: true })
-  evidencia_ids: number[];
+  @BigintId(true)
+  evidencia_ids: (number | string)[];
 }

@@ -97,7 +97,7 @@ describe('PlantacionCreationService', () => {
 
     expect(auth.getUserByAuthId).toHaveBeenCalledWith('auth-99');
     expect(auth.assertCanWrite).toHaveBeenCalledWith('GENERAL');
-    expect(rpc).toHaveBeenCalledWith('fn_m3_registrar_plantacion', {
+    expect(rpc).toHaveBeenCalledWith('fn_m3_registrar_plantacion_exacto', {
       p_subcampania_id: 10,
       p_es_reposicion: true,
       p_registro_plantacion_origen_id: 400,
@@ -263,7 +263,7 @@ describe('PlantacionCreationService', () => {
     expect(from).not.toHaveBeenCalled();
     expect(rpc).toHaveBeenCalledTimes(1);
     expect(rpc).toHaveBeenCalledWith(
-      'fn_m3_registrar_plantacion',
+      'fn_m3_registrar_plantacion_exacto',
       expect.objectContaining({ p_detalles: detalles, p_responsable_id: 99 }),
     );
     expect(result.data.cantidad_total_plantada).toBe(12);
@@ -378,7 +378,7 @@ describe('PlantacionCreationService', () => {
     ).rejects.toThrow(new BadRequestException(message));
 
     expect(rpc).toHaveBeenCalledWith(
-      'fn_m3_registrar_plantacion',
+      'fn_m3_registrar_plantacion_exacto',
       expect.objectContaining({
         p_es_reposicion: true,
         p_registro_plantacion_origen_id: 400,

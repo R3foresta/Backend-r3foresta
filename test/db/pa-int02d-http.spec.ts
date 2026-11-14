@@ -39,7 +39,7 @@ describe('INT02-D HTTP real → guard/service/RPC/PostGIS/Storage privado', () =
   afterEach(()=>{cases.push(expect.getState().currentTestName??'');controls.initialWrites=true;});
   afterAll(async()=>{
     await h?.app.close();
-    const p=resolve('docs/evidencia/pa-int02d-local.json');const e=JSON.parse(readFileSync(p,'utf8'));e.d_http_casos=cases;
+    const p=resolve(process.env.PA_A_QA_EVIDENCE || 'docs/evidencia/pa-int02d-local.json');const e=JSON.parse(readFileSync(p,'utf8'));e.d_http_casos=cases;
     writeFileSync(p,JSON.stringify(e,null,2)+'\n');
   });
   it('JWT/actividad y rol interno se comprueban antes de las rutas equivalentes',async()=>{
@@ -72,7 +72,8 @@ describe('INT02-D HTTP real → guard/service/RPC/PostGIS/Storage privado', () =
   });
   it('API general/aliases/foto pública no abren una pendiente privada porID',async()=>{
     expect((await get('/evidencias-trazabilidad/'+uploadedId,800)).status).toBe(404);
-    const listing=await get('/evidencias-trazabilidad?entidad_id=0',800);expect(listing.status).toBe(200);expect(listing.body.data).toHaveLength(0);
+    // El contrato actual exige BIGINT positivo; cero tampoco permite enumerar pendientes.
+    const listing=await get('/evidencias-trazabilidad?entidad_id=0',800);expect(listing.status).toBe(400);
     expect((await get('/v1/impact/imagenes/'+uploadedId)).status).toBe(404);
   });
   it('origen ajeno rechaza HTTP íntegro y origen propio conserva reposición interna',async()=>{

@@ -128,16 +128,19 @@ describe('ViveroAsignacionesService — asignacion fisica (RF-VIV-11)', () => {
 
     await service.crearAsignacion(55, baseDto, 'auth-1');
 
-    expect(rpc).toHaveBeenCalledWith('fn_vivero_asignar_stock_subcampania', {
-      p_lote_vivero_id: 55,
-      p_subcampania_id: 33,
-      p_cantidad_asignada: 100,
-      p_proposito: PropositoAsignacion.PLANTACION_INICIAL,
-      p_usuario_asignacion_id: 11,
-      p_fecha_asignacion: '2026-07-06',
-      p_evidencia_ids: [501],
-      p_observaciones: null,
-    });
+    expect(rpc).toHaveBeenCalledWith(
+      'fn_vivero_asignar_stock_subcampania_exacto',
+      {
+        p_lote_vivero_id: 55,
+        p_subcampania_id: 33,
+        p_cantidad_asignada: 100,
+        p_proposito: PropositoAsignacion.PLANTACION_INICIAL,
+        p_usuario_asignacion_id: 11,
+        p_fecha_asignacion: '2026-07-06',
+        p_evidencia_ids: [501],
+        p_observaciones: null,
+      },
+    );
     // Contrato fisico: la reserva logica quedo eliminada.
     expect(rpc).not.toHaveBeenCalledWith(
       'fn_vivero_reservar_stock_lote',
@@ -325,14 +328,17 @@ describe('ViveroAsignacionesService — devolucion fisica (RF-VIV-12)', () => {
       'auth-1',
     );
 
-    expect(rpc).toHaveBeenCalledWith('fn_m3_devolver_asignacion_vivero', {
-      p_asignacion_id: 10,
-      p_cantidad_devuelta: 40,
-      p_motivo_devolucion: MotivoDevolucionPlantacion.SOBRANTE_OPERATIVO,
-      p_usuario_devolucion_id: 11,
-      p_fecha_devolucion: '2026-07-07',
-      p_observaciones: null,
-    });
+    expect(rpc).toHaveBeenCalledWith(
+      'fn_m3_devolver_asignacion_vivero_exacto',
+      {
+        p_asignacion_id: 10,
+        p_cantidad_devuelta: 40,
+        p_motivo_devolucion: MotivoDevolucionPlantacion.SOBRANTE_OPERATIVO,
+        p_usuario_devolucion_id: 11,
+        p_fecha_devolucion: '2026-07-07',
+        p_observaciones: null,
+      },
+    );
     expect(result.data.saldo_vivo_antes).toBe(400);
     expect(result.data.saldo_vivo_despues).toBe(440);
     expect(result.data.evento_lote_vivero_id).toBe(460);

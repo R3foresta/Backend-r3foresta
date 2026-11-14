@@ -111,7 +111,7 @@ export class ViveroEmbolsadoService {
         'id, tipo_evento, fecha_evento, cantidad_afectada, saldo_vivo_antes, saldo_vivo_despues, created_at',
       )
       .eq('lote_id', loteId)
-      .in('tipo_evento', ['INICIO', 'EMBOLSADO'])
+      .in('tipo_evento', ['INICIO', 'EMBOLSADO', 'INCORPORACION'])
       .order('created_at', { ascending: true });
 
     if (eventosError) {
@@ -133,6 +133,9 @@ export class ViveroEmbolsadoService {
     if (lote.estado_lote !== 'ACTIVO') {
       puedeRegistrarEmbolsado = false;
       motivoBloqueo = `El lote esta en estado ${lote.estado_lote}. Solo lotes ACTIVOS permiten registrar EMBOLSADO.`;
+    } else if (eventosList.some((e) => e.tipo_evento === 'INCORPORACION')) {
+      puedeRegistrarEmbolsado = false;
+      motivoBloqueo = 'El lote ya nació con plantas vivas por INCORPORACION.';
     } else if (!tieneInicio) {
       puedeRegistrarEmbolsado = false;
       motivoBloqueo =
@@ -151,7 +154,7 @@ export class ViveroEmbolsadoService {
         nombre_cientifico_snapshot: lote.nombre_cientifico_snapshot,
         nombre_comercial_snapshot: lote.nombre_comercial_snapshot,
         tipo_material_snapshot: lote.tipo_material_snapshot,
-        cantidad_inicial_en_proceso: Number(lote.cantidad_inicial_en_proceso),
+        cantidad_inicial_en_proceso: lote.cantidad_inicial_en_proceso == null ? null : Number(lote.cantidad_inicial_en_proceso),
         unidad_medida_inicial: lote.unidad_medida_inicial,
         fecha_inicio: lote.fecha_inicio,
         estado_lote: lote.estado_lote,
@@ -219,7 +222,7 @@ export class ViveroEmbolsadoService {
       { eventoTipo: TipoEventoVivero.EMBOLSADO, loteId },
     );
 
-    const evidenciaIds: number[] = resultado.evidencia_ids;
+    const evidenciaIds = resultado.evidencia_ids;
 
     // Vincular visualmente el codigo_trazabilidad del lote a las evidencias pendientes.
     // La vinculacion definitiva (entidad_id, tipo_entidad_id) ocurre en la RPC de embolsado.

@@ -41,6 +41,8 @@
     "test:db:vivero:acceso": "python3 scripts/qa/vivero-acceso-test.py",
     "docs:vivero:acceso": "node scripts/qa/vivero-acceso-openapi.cjs",
     "test:db:recepcion": "python3 scripts/qa/recepcion-semillas-test.py",
+    "test:db:vivero:incorporacion": "python3 scripts/qa/vivero-incorporacion-test.py",
+    "test:db:vivero:incorporacion:storage": "python3 scripts/qa/vivero-incorporacion-storage-test.py",
     "docs:recepcion": "node scripts/qa/recepcion-semillas-openapi.cjs"
   },
   "dependencies": {

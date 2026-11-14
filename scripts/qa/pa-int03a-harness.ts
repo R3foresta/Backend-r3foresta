@@ -247,7 +247,15 @@ export async function startHarness(port = 0, sessionEndpoint = false) {
       { provide: ConfigService, useValue: { get: (key:string) => key === 'PARTICIPACION_INICIAL_ESCRITURA_HABILITADA' ? 'true' : 'pa-a-http-fixture' } },
       {
         provide: SupabaseService,
-        useValue: { getAdminClient: () => ({ rpc, storage: { from } }) },
+        useValue: { getAdminClient: () => ({ rpc, storage: { from }, from: (table: string) => {
+          if (table !== 'planta') throw new Error('Tabla fuera del harness A');
+          return { select: () => ({ in: async (column: string, ids: string[]) => {
+            if (column !== 'id' || ids.some((id) => !/^[1-9][0-9]*$/.test(id)))
+              throw new Error('Filtro fuera del harness A');
+            return JSON.parse(await sql('SET ROLE service_role; SELECT public.pa_a_http_transport(' + literal(
+              "SELECT coalesce(jsonb_agg(jsonb_build_object('id',id::text,'especie',especie,'nombre_comun_principal',nombre_comun_principal,'nombre_cientifico',nombre_cientifico,'imagen_url',imagen_url)),'[]'::jsonb) FROM public.planta WHERE id IN (" + ids.map(literal).join(',') + ')') + ')'));
+          } }) };
+        } }) },
       },
     ],
   }).compile();

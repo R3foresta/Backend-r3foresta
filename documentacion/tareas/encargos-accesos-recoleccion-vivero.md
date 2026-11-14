@@ -1,5 +1,11 @@
 # Encargos de implementación: accesos de Recolección y Vivero
 
+El13 de noviembre de2026 se implementa localmente el
+[núcleo simplificado T5](../../docs/t5-incorporacion-plantas.md).
+Su alcance y [evidencia](../../docs/t5-validacion-local.md) reemplazan el estado
+«T5 pendiente» del corte histórico siguiente; las ampliaciones propuestas,
+la aplicación remota y la PWA conservan su estado separado.
+
 El alcance de recepción T4 de este encargo es histórico. Su reemplazo es la
 [recepción única100](../../docs/t4-recepcion-semillas.md), con confirmación conforme
 o rechazo para corregir y autoridad ADMIN o VALIDADOR asignado. T1–T3 conservan
@@ -111,7 +117,11 @@ en recepción acreditada. Aviso recibido y [revisión coordinadora cerrada](../.
 tras corregir comparación decimal y descarte de datos al retirar un vivero. SQL096,
 conciliación y corte externos pendientes; T5 no iniciado.
 
-## T5. Plantas externas, pendiente
+## T5. Plantas externas · núcleo local simplificado
+
+El [contrato simplificado del13 de noviembre](../../docs/t5-incorporacion-plantas.md)
+identifica el núcleo implementado y sus ampliaciones pendientes. El encargo original
+que sigue conserva contexto histórico y no amplía por sí solo esta implementación.
 
 El mismo operario incorpora en su vivero compra, donación
 o saldo inicial sin exigir acceso M1 ni inventar Recolección/EMBOLSADO. Ejecutar el

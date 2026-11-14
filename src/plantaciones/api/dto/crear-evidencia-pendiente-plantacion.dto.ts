@@ -1,8 +1,7 @@
-import { Transform, Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
+import { BigintId } from '../../../common/dto/bigint-id';
 import {
   IsBoolean,
-  IsInt,
-  Min,
   IsDateString,
   IsOptional,
   IsString,
@@ -11,10 +10,8 @@ import {
 
 export class CrearEvidenciaPendientePlantacionDto {
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  subcampania_id?: number;
+  @BigintId()
+  subcampania_id?: number | string;
 
   @IsOptional()
   @Transform(({ value }) =>

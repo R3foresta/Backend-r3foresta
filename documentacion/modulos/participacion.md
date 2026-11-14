@@ -188,3 +188,10 @@ preserva las lecturas existentes de catálogos y campañas.
 `statement_timeout=30s` debe existir antes de la sentencia (067/hoisting PostgREST);
 `SET` interno por sí solo no demuestra cancelación. La evidencia D mide30s/5s en
 conexión limpia con configuración previa; versión/configuración REST remota se cotejan aparte.
+
+### Procedencia propia de consumos · T5
+
+`GET /api/v1/plantaciones/:id/procedencia-propia` añade la procedencia mínima de
+los detalles efectivamente consumidos para autor/participante efectivo activo,
+sin exigir M2 ni abrir su ficha/evidencias. Conserva LIFO, snapshots e historial;
+requiere103 y no modifica Impacto público. [Contrato y ajustes PWA pendientes](../../docs/t5-m3-procedencia.md).

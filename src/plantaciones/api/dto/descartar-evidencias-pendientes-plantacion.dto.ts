@@ -1,19 +1,11 @@
-import { Transform, Type } from 'class-transformer';
-import {
-  ArrayMinSize,
-  IsArray,
-  IsBoolean,
-  IsInt,
-  IsOptional,
-  Min,
-} from 'class-validator';
+import { Transform } from 'class-transformer';
+import { BigintId } from '../../../common/dto/bigint-id';
+import { ArrayMinSize, IsArray, IsBoolean, IsOptional } from 'class-validator';
 
 export class DescartarEvidenciasPendientesPlantacionDto {
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  subcampania_id?: number;
+  @BigintId()
+  subcampania_id?: number | string;
 
   @IsOptional()
   @Transform(({ value }) =>
@@ -26,8 +18,6 @@ export class DescartarEvidenciasPendientesPlantacionDto {
   @ArrayMinSize(1, {
     message: 'Debe enviarse al menos una evidencia pendiente para descartar.',
   })
-  @Type(() => Number)
-  @IsInt({ each: true, message: 'Cada evidencia_id debe ser entero' })
-  @Min(1, { each: true, message: 'Cada evidencia_id debe ser mayor a 0' })
-  evidencia_ids: number[];
+  @BigintId(true)
+  evidencia_ids: (number | string)[];
 }

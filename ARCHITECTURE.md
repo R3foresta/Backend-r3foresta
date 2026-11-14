@@ -1,5 +1,12 @@
 # Arquitectura del backend
 
+Actualización T5 local del13 de noviembre de2026:
+[contrato y transacción](docs/t5-incorporacion-plantas.md),
+[procedencia consumida por audiencia propia](docs/t5-m3-procedencia.md).
+La revisión del14 añade106 (IDs exactos en reposición interna) y107 (coherencia
+del CHECK010 de EMBOLSADO con la RPC095). [Correcciones y límites](docs/t5-revision-2026-11-14.md).
+101–107 son migraciones aditivas pendientes de aplicación/cotejo en destino.
+
 **Corte documental: 21 de octubre de 2026. INT05 verificada localmente; INT07 añade084 de motor y observaciones con verificación aislada.**
 [Entrega y consolidación INT05](docs/pa-int05-entrega-local.md), [versiones de entrega](../r3foresta-docs/ESTADO.md): lectura pública y propia verificadas localmente; push, SQL remoto y despliegue pendientes. Los cortes de pruebas INT05 y D conservan sus bases y entornos originales.
 Describe implementación; el contrato de producto y el estado de cada entorno
@@ -7,7 +14,7 @@ viven en [r3foresta-docs](https://github.com/R3foresta/r3foresta-docs).
 
 Actualización transversal del 5 de noviembre de 2026: [T1 M1 local](docs/t1-acceso-recoleccion.md)
 añade 092/093, acceso explícito independiente del rol y gestión ADMIN recuperable.
-T2 incorpora [asignaciones por vivero](docs/t2-acceso-viveros.md) con 094/095; revisión y aplicación/corte remoto conservan estado separado. T3 añade administración visual y proyecciones exactas, [revisadas localmente el 6 de noviembre](docs/evidencia/t3-revision-coordinadora-2026-11-06.json). La [recepción única](docs/t4-recepcion-semillas.md) con 100 reemplaza aprobación documental y conciliación de prueba. Pablo reportó reinicio y aplicación exitosa de 100 el 12 de noviembre. Cotejo remoto y corte coordinado pendientes. T5 separado.
+T2 incorpora [asignaciones por vivero](docs/t2-acceso-viveros.md) con 094/095; revisión y aplicación/corte remoto conservan estado separado. T3 añade administración visual y proyecciones exactas, [revisadas localmente el 6 de noviembre](docs/evidencia/t3-revision-coordinadora-2026-11-06.json). La [recepción única](docs/t4-recepcion-semillas.md) con 100 reemplaza aprobación documental y conciliación de prueba. Pablo reportó reinicio y aplicación exitosa de 100 el 12 de noviembre. Cotejo remoto y corte coordinado pendientes. T5 conserva su [contrato local propio](docs/t5-incorporacion-plantas.md).
 
 ## Fuentes y mapa de código
 
@@ -65,8 +72,11 @@ sin fallback, en los módulos de autenticación/usuario.
 
 ## Invariantes y transacciones
 
-- Un lote tiene una Recolección origen. `INICIO` aún no crea saldo vivo;
-  `EMBOLSADO` lo inaugura. Pérdida total anterior: descarte pre-embolsado.
+- Un lote nace desde Recolección (`INICIO` sin saldo vivo; `EMBOLSADO` lo inaugura)
+  o por `INCORPORACION` de plantas vivas en un vivero real, sin material M1 ficticio.
+  La base viva es única. Una extensión1:1 del evento conserva modalidad/procedencia,
+  solicitud e intención; lote, evento y vínculos se confirman en una sola RPC.
+  El descarte pre-embolsado sigue reservado al camino M1 sin base viva.
 - La asignación física descuenta Vivero y crea stock M3. Plantar aumenta consumo
   de esa asignación, sin un segundo descuento del lote.
 - `disponible = asignado - consumido - devuelto - mermado`; asignado es inmutable.
@@ -93,6 +103,19 @@ RLS no sustituye autorización. La continuidad probada entre RPC no cubre
 importaciones/SQL privilegiado que omitan la disciplina de cuentas → ámbitos.
 
 T2 mantiene cuenta SHARE en operación y destino UPDATE en retiro, compartido con rol/baja072; campañas → hijas → asignaciones → lote/origen → fotos conservan el orden de077. Vigencias/revisión/historial/terminal M2 se confirman juntos. Las evidencias pendientes guardan contexto inmutable y se revalidan al vincular; el bucket legado conserva URLs públicas.
+
+T5 reutiliza ese contexto y agrega la solicitud para fotos anteriores al lote.
+Cuenta → solicitud → lote nuevo → evidencias ordenadas serializa el alta.
+Sólo el éxito se persiste; no hay PREPARADO ni rechazo durable. Ausencia/timeout
+siguen inconclusos. Replay propio requiere cuenta activa y devuelve el hecho
+inicial, mientras escritura nueva exige M2 vigente. Las fotos nuevas usan bucket
+privado y URLs firmadas; no se modifica almacenamiento legado. Compra y saldo
+inicial no son producción ni validación de aptitud.103 conserva snapshots de lote
+en detalles nuevos M3;105 proyecta IDs exactos de las operaciones compartidas.
+106 extiende esa precisión a la entrada HTTP y la respuesta de reposición077,
+incluidos consumos.107 conserva saldo anteriorNULL de EMBOLSADO019/095 y cero
+histórico de010, con cantidad positiva en UNIDAD igual al saldo posterior;
+MERMA/DESPACHO siguen exigiendo ambos saldos. El destino requiere diagnóstico.
 
 100 conserva el cierre DML, el ledger protegido, las unidades y el saldo exacto
 de 097–099 y sustituye su recepción/conciliación por una decisión única. Cuenta →

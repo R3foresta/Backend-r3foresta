@@ -1,0 +1,53 @@
+{
+  "tarea": "T5_NUCLEO_BACKEND",
+  "estado": "VERIFICADO_LOCALMENTE",
+  "fecha_local": "2026-11-13",
+  "zona_horaria": "America/La_Paz",
+  "base": "0074200a77f5ce6780f64ce0f594d07ad18e6a82",
+  "cambios": "ARBOL_LOCAL_SIN_COMMIT",
+  "entorno": {
+    "os": "Darwin 25.5.0 arm64",
+    "node": "24.19.0",
+    "postgres": "14.24 (Postgres.app)",
+    "postgis": "3.2.10",
+    "geos": "3.10.7",
+    "env_cargado": false,
+    "servicios_reales": false
+  },
+  "entrada": {
+    "build": "APROBADO",
+    "unitarios": {
+      "suites": 93,
+      "pruebas": 1349,
+      "resultado": "APROBADO",
+      "watchman": false,
+      "cache": "/private/tmp/r3-jest"
+    },
+    "openapi": {
+      "recepcion_rutas": 6,
+      "m2_t5_rutas": 37,
+      "participacion_rutas": 42,
+      "participacion_schemas": 90,
+      "check": "APROBADO"
+    },
+    "git_diff_check": "APROBADO",
+    "migraciones_aplicadas_001_100_modificadas": false
+  },
+  "evidencias": [
+    "docs/evidencia/t5-incorporacion-local-2026-11-13-final.json",
+    "docs/evidencia/t5-incorporacion-storage-local-2026-11-13.json",
+    "docs/evidencia/t5-regresion-recepcion-2026-11-13-postgis.json",
+    "docs/evidencia/t5-regresion-vivero-acceso-2026-11-13-postgis-105-v2.json",
+    "docs/evidencia/t5-regresion-registro-2026-11-13-postgis-v3.json",
+    "docs/evidencia/t5-regresion-compartida-2026-11-13-postgis-v4.json"
+  ],
+  "huellas_t5_y_storage": "COINCIDEN_CON_FUENTES_ACTUALES",
+  "limites": [
+    "Antecedente PostgreSQL representativo, no replay productivo001–100.",
+    "Storage sintético, sin bucket ni SQL remotos.",
+    "Overlay082 mínimo y helper085 exacto; no085 completo.",
+    "Regresiones A/D históricas separadas de la prueba integrada100+T5.",
+    "Sin cambios PWA, commit, push ni despliegue.",
+    "Actualización canónica r3foresta-docs propuesta en backend por límite de escritura."
+  ]
+}

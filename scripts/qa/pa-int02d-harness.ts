@@ -12,7 +12,7 @@ import { SubcampaniasModule } from '../../src/subcampanias/subcampanias.module';
 import { PlantacionesModule } from '../../src/plantaciones/plantaciones.module';
 import { ImpactModule } from '../../src/impact/impact.module';
 import { EvidenciasTrazabilidadModule } from '../../src/evidencias-trazabilidad/evidencias-trazabilidad.module';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { SupabaseService } from '../../src/supabase/supabase.service';
 import { VerifiedActorGuard } from '../../src/auth/verified-actor.guard';
@@ -29,6 +29,8 @@ import {
 import { ParticipacionCargasService } from '../../src/participacion/cargas/participacion-cargas.service';
 import { ParticipacionImagenService } from '../../src/participacion/cargas/participacion-imagen.service';
 import { configureGlobalRoutes } from '../../src/app.routes';
+import { BlockchainService } from '../../src/blockchain/blockchain.service';
+import { PinataService } from '../../src/pinata/pinata.service';
 
 const run = promisify(execFile);
 const literal = (value: unknown): string =>
@@ -265,7 +267,7 @@ export async function startHarness(port = 0, sessionEndpoint = false) {
   const client={rpc:(name:string,args:Record<string,unknown>)=>{
     const pending:any=rpc(name,args);pending.single=()=>pending;return pending;},from:table,storage:{from}};
   const module = await Test.createTestingModule({
-    imports: [JwtModule.register({}),SubcampaniasModule,PlantacionesModule,ImpactModule,EvidenciasTrazabilidadModule],
+    imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }),JwtModule.register({}),SubcampaniasModule,PlantacionesModule,ImpactModule,EvidenciasTrazabilidadModule],
     controllers: [
       ParticipacionComandosController,
       ParticipacionLecturasController,
@@ -286,7 +288,10 @@ export async function startHarness(port = 0, sessionEndpoint = false) {
         useValue: { getAdminClient: () => client, getClient:()=>{throw new Error('Cliente público no permitido en harness D');} },
       },
     ],
-  }).overrideProvider(SupabaseService).useValue({getAdminClient:()=>client,getClient:()=>{throw new Error('Cliente público no permitido en harness D');}}).overrideProvider(ConfigService).useValue({get:(key:string)=>key==='PARTICIPACION_INICIAL_ESCRITURA_HABILITADA'?String(controls.initialWrites):'pa-a-http-fixture'}).compile();
+  }).overrideProvider(SupabaseService).useValue({getAdminClient:()=>client,getClient:()=>{throw new Error('Cliente público no permitido en harness D');}}).overrideProvider(ConfigService).useValue({get:(key:string)=>key==='PARTICIPACION_INICIAL_ESCRITURA_HABILITADA'?String(controls.initialWrites):'pa-a-http-fixture'})
+    .overrideProvider(BlockchainService).useValue({})
+    .overrideProvider(PinataService).useValue({})
+    .compile();
   const app = module.createNestApplication();
   configureGlobalRoutes(app);
   app.useGlobalPipes(new ValidationPipe({whitelist:true,transform:true}));

@@ -21,6 +21,8 @@ usan socket privado/DB sin TCP y destruyen exclusivamente su clúster al termina
 
 | Comando | Qué comprueba |
 |---|---|
+| `npm run test:db:vivero:incorporacion -- --postgis --pg-bin /ruta/postgis/bin --evidence /ruta/nueva/t5.json` | T5 sobre100: CHECKs/trigger/helpers010 reales y056; fallo EMBOLSADO095 antes107, corrección107 aditiva y preservación M1. Alta/procedencia/replay/rollback/ACL/carreras de101–103/105–106; `--postgis` exige extensión real e inicialLIFO074/075 íntegra. HTTP→DTO→SQL con IDs vecinos comprados/donados consume exactamente DONACION; descarte079/106 conserva la foto vecina. HTTP/JWT y Storage sintético, sin `.env`, TCP ni servicios reales; no replay productivo001–100.104/RLS tiene runner separado. [Alcance exacto](../docs/t5-validacion-local.md). |
+| `npm run test:db:vivero:incorporacion:storage -- --pg-bin /ruta/postgresql/bin --evidence /ruta/nueva/t5-storage.json` |104 en Storage/RLS sintético: instalación/repetición, denegaciones y drift, preservación de otros buckets/objetos. No crea el bucket ni prueba Supabase Storage remoto. |
 | `python3 scripts/qa/vivero-conciliacion-storage-test.py --pg-bin /ruta/postgresql/bin --evidence /ruta/nueva/storage-098.json` | 098 en PostgreSQL/RLS sintético: políticas permisivas globales, denegación a anon/auth del bucket dedicado, movimientos entre buckets, CRUD del servicio y otros buckets, instalación repetida, ausencia del bucket y abortos ante drift de catálogo, roles, políticas o metadatos. Comprueba el informe de estado antes/después. Sin HTTP Storage, TCP, `.env` ni servicios externos. |
 | `npm run test:db:recepcion -- --pg-bin /ruta/postgresql/bin --evidence /private/tmp/recepcion-unica.json` | Recepción única100 sobre antecedente092–099: instalación/repetición, retiro de dependencias antiguas, recepción/rechazo/corrección de la misma ficha, contexto de fotos por revisión, comandos/replay/recuperación, locks de retiro/rol/baja, fechas y ledger/INICIO sin doble débito. PostgreSQL privado desechable sin TCP/.env, HTTP/JWT local y Storage sintético. PostGIS exige runtime real al usar su opción. |
 | `npm run test:db:plan` | Revisión atómica del plan y concurrencia/ACL 062–063 |
@@ -50,8 +52,17 @@ Los runners T1/T2 conservan sus antecedentes SQL históricos de acceso y comprue
 que las rutas documentales retiradas respondan 404 en el backend actual. T2 añade,
 únicamente para HTTP, el lector `m2_acceso_leer` de 100 y la proyección de IDs
 `m2_inicio_lote_exacto` de 097 sobre la operación 095. Esto alinea el contrato de
-capacidades e IDs; no instala recepción/conciliación ni acredita 100 completa.
+capacidades e IDs. También instala/repite los wrappers105 sobre095 para el
+contrato actual de IDs exactos; no instala recepción/conciliación/incorporación
+ni acredita100 completa.
 La recepción única se verifica con su runner propio.
+
+Los runners de registro y compartida aceptan `--evidence /ruta/nueva.json` y
+guardan sus ejemplos HTTP junto al informe explícito, sin sobrescribir los
+cortes históricos. Su HTTP usa086 real con dos tablas vacías representativas
+del ledger082 y presentación de plantas del fixture; no acredita082 completo.
+La regresión compartida conserva su antecedente077–080: la integración100+T5
+se acredita con el runner de incorporación, no con ese antecedente histórico.
 
 B/C usan antecedentes mínimos post-067: no acreditan replay 001–067, PostGIS,
 Storage ni garantías del registro participante/INT02-D. Los runners pueden regenerar

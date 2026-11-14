@@ -1,3 +1,4 @@
+import { compatibleDatabaseId, exactId } from '../../common/dto/bigint-id';
 import { throwViveroMutationFailure } from './vivero-rpc-error';
 import {
   BadRequestException,
@@ -25,13 +26,13 @@ type SupabaseResult<T> = {
 };
 
 type LoteAsignacionRow = {
-  id: number;
+  id: number | string;
   estado_lote: string;
-  planta_id: number;
+  planta_id: number | string;
 };
 
 type SubcampaniaAsignacionRow = {
-  id: number;
+  id: number | string;
   nombre: string;
   estado: string;
 };
@@ -46,24 +47,24 @@ type CampaniaNombreRow = {
 };
 
 type SubcampaniaNombreRow = {
-  id: number;
+  id: number | string;
   nombre: string;
   campania: CampaniaNombreRow | CampaniaNombreRow[] | null;
 };
 
 type CoordinadorAsignacionRow = {
-  subcampania_id: number;
+  subcampania_id: number | string;
   usuario: UsuarioNombreRow | UsuarioNombreRow[] | null;
 };
 
 type AsignacionListaRow = Record<string, unknown> & {
-  subcampania_id: number;
+  subcampania_id: number | string;
   creator: UsuarioNombreRow | UsuarioNombreRow[] | null;
 };
 
 type AsignacionCancelacionRow = {
-  id: number;
-  lote_vivero_id: number;
+  id: number | string;
+  lote_vivero_id: number | string;
   estado: string;
   cantidad_asignada: number;
   cantidad_consumida: number;
@@ -96,7 +97,7 @@ export class ViveroAsignacionesService {
 
     const { data: loteData, error: loteError } = await supabase
       .from('lote_vivero')
-      .select('id, estado_lote, planta_id')
+      .select('id::text, estado_lote, planta_id::text')
       .eq('id', loteId)
       .maybeSingle();
 
@@ -117,7 +118,7 @@ export class ViveroAsignacionesService {
     // Verificar que la subcampaña existe y no está eliminada
     const { data: subcampaniaData, error: subError } = await supabase
       .from('subcampania')
-      .select('id, nombre, estado')
+      .select('id::text, nombre, estado')
       .eq('id', dto.subcampania_id)
       .is('deleted_at', null)
       .maybeSingle();
@@ -167,7 +168,7 @@ export class ViveroAsignacionesService {
     // La pertenencia de especies se valida en 060 bajo el mismo bloqueo
     // que la revisión del plan. Una prelectura aquí puede quedar obsoleta.
     const rpcResult = (await supabase.rpc(
-      'fn_vivero_asignar_stock_subcampania',
+      'fn_vivero_asignar_stock_subcampania_exacto',
       {
         p_lote_vivero_id: loteId,
         p_subcampania_id: dto.subcampania_id,
@@ -207,18 +208,18 @@ export class ViveroAsignacionesService {
     return {
       success: true,
       data: {
-        asignacion_id: Number(row.asignacion_id),
-        evento_lote_vivero_id: Number(row.evento_lote_vivero_id),
-        evento_plantacion_id: Number(row.evento_plantacion_id),
-        lote_vivero_id: Number(row.lote_vivero_id),
+        asignacion_id: compatibleDatabaseId(row.asignacion_id),
+        evento_lote_vivero_id: compatibleDatabaseId(row.evento_lote_vivero_id),
+        evento_plantacion_id: compatibleDatabaseId(row.evento_plantacion_id),
+        lote_vivero_id: compatibleDatabaseId(row.lote_vivero_id),
         codigo_trazabilidad_lote: (row.codigo_trazabilidad_lote ?? null) as
           | string
           | null,
-        subcampania_id: Number(row.subcampania_id),
+        subcampania_id: compatibleDatabaseId(row.subcampania_id),
         subcampania_nombre: subcampania.nombre,
         campania_id:
           row.campania_id !== null && row.campania_id !== undefined
-            ? Number(row.campania_id)
+            ? compatibleDatabaseId(row.campania_id)
             : null,
         proposito: row.proposito as string,
         estado: (row.estado_asignacion ?? 'ACTIVA') as string,
@@ -227,7 +228,7 @@ export class ViveroAsignacionesService {
         saldo_vivo_despues: Number(row.saldo_vivo_despues),
         evidencia_ids_vinculadas: (
           (row.evidencia_ids_vinculadas ?? []) as number[]
-        ).map(Number),
+        ).map(compatibleDatabaseId),
         lote_finalizado: Boolean(row.lote_finalizado),
         motivo_cierre: (row.motivo_cierre ?? null) as string | null,
       },
@@ -240,7 +241,7 @@ export class ViveroAsignacionesService {
     // Verificar que el lote existe
     const { data: lote, error: loteError } = await supabase
       .from('lote_vivero')
-      .select('id')
+      .select('id::text')
       .eq('id', loteId)
       .maybeSingle();
 
@@ -255,7 +256,7 @@ export class ViveroAsignacionesService {
     const { data, error } = await supabase
       .from('asignacion_vivero_subcampania')
       .select(
-        'id, subcampania_id, proposito, estado, cantidad_asignada, cantidad_consumida, cantidad_devuelta, cantidad_mermada, saldo_asignado_disponible, usuario_asignacion_id, fecha_asignacion, updated_at, creator:usuario_asignacion_id(nombre, apellido)',
+        'id::text, subcampania_id::text, proposito, estado, cantidad_asignada, cantidad_consumida, cantidad_devuelta, cantidad_mermada, saldo_asignado_disponible, usuario_asignacion_id::text, fecha_asignacion, updated_at, creator:usuario_asignacion_id(nombre, apellido)',
       )
       .eq('lote_vivero_id', loteId)
       .eq('estado', 'ACTIVA')
@@ -271,14 +272,14 @@ export class ViveroAsignacionesService {
       ...new Set(asignaciones.map((a) => a.subcampania_id)),
     ];
     const subcampaniaNombres: Record<
-      number,
+      string,
       { nombre: string; campania_nombre: string }
     > = {};
 
     if (subcampaniaIds.length > 0) {
       const { data: subData } = await supabase
         .from('subcampania')
-        .select('id, nombre, campania:campania_id(nombre)')
+        .select('id::text, nombre, campania:campania_id(nombre)')
         .in('id', subcampaniaIds);
 
       for (const sub of (subData ?? []) as SubcampaniaNombreRow[]) {
@@ -290,18 +291,18 @@ export class ViveroAsignacionesService {
       }
     }
 
-    const coordinatorNombres: Record<number, string> = {};
+    const coordinatorNombres: Record<string, string> = {};
     if (subcampaniaIds.length > 0) {
       const { data: coorData } = await supabase
         .from('subcampania_equipo')
-        .select('subcampania_id, usuario:usuario_id(nombre, apellido)')
+        .select('subcampania_id::text, usuario:usuario_id(nombre, apellido)')
         .in('subcampania_id', subcampaniaIds)
         .eq('rol', 'COORDINADOR');
 
       for (const c of (coorData ?? []) as CoordinadorAsignacionRow[]) {
         const u = this.unwrapRelation(c.usuario);
         if (u) {
-          coordinatorNombres[Number(c.subcampania_id)] =
+          coordinatorNombres[compatibleDatabaseId(c.subcampania_id)] =
             `${u.nombre ?? ''} ${u.apellido || ''}`.trim();
         }
       }
@@ -313,6 +314,9 @@ export class ViveroAsignacionesService {
         const c = this.unwrapRelation(a.creator);
         return {
           ...a,
+          id: compatibleDatabaseId(a.id),
+          subcampania_id: compatibleDatabaseId(a.subcampania_id),
+          usuario_asignacion_id: compatibleDatabaseId(a.usuario_asignacion_id),
           subcampania_nombre:
             subcampaniaNombres[a.subcampania_id]?.nombre ?? null,
           campania_nombre:
@@ -346,7 +350,7 @@ export class ViveroAsignacionesService {
     const { data: asignacionData, error: fetchError } = await supabase
       .from('asignacion_vivero_subcampania')
       .select(
-        'id, lote_vivero_id, estado, cantidad_asignada, cantidad_consumida',
+        'id::text, lote_vivero_id::text, estado, cantidad_asignada, cantidad_consumida',
       )
       .eq('id', asignacionId)
       .maybeSingle();
@@ -361,7 +365,7 @@ export class ViveroAsignacionesService {
     if (!asignacion) {
       throw new NotFoundException(`Asignación ${asignacionId} no encontrada`);
     }
-    if (String(asignacion.lote_vivero_id) !== String(loteId)) {
+    if (exactId(asignacion.lote_vivero_id) !== exactId(loteId)) {
       throw new NotFoundException(
         `Asignación ${asignacionId} no pertenece al lote ${loteId}`,
       );
@@ -372,14 +376,17 @@ export class ViveroAsignacionesService {
       );
     }
 
-    const rpcResult = (await supabase.rpc('fn_m3_devolver_asignacion_vivero', {
-      p_asignacion_id: asignacionId,
-      p_cantidad_devuelta: dto.cantidad_devuelta,
-      p_motivo_devolucion: dto.motivo_devolucion,
-      p_usuario_devolucion_id: usuario.id,
-      p_fecha_devolucion: dto.fecha_devolucion,
-      p_observaciones: dto.observaciones ?? null,
-    })) as unknown as SupabaseResult<
+    const rpcResult = (await supabase.rpc(
+      'fn_m3_devolver_asignacion_vivero_exacto',
+      {
+        p_asignacion_id: asignacionId,
+        p_cantidad_devuelta: dto.cantidad_devuelta,
+        p_motivo_devolucion: dto.motivo_devolucion,
+        p_usuario_devolucion_id: usuario.id,
+        p_fecha_devolucion: dto.fecha_devolucion,
+        p_observaciones: dto.observaciones ?? null,
+      },
+    )) as unknown as SupabaseResult<
       Record<string, unknown> | Record<string, unknown>[]
     >;
 
@@ -418,17 +425,17 @@ export class ViveroAsignacionesService {
     return {
       success: true,
       data: {
-        asignacion_id: Number(row.asignacion_id),
+        asignacion_id: compatibleDatabaseId(row.asignacion_id),
         estado: (row.estado_asignacion ?? null) as string | null,
         cantidad_devuelta: Number(row.cantidad_devuelta_delta),
         cantidad_devuelta_total: Number(row.cantidad_devuelta_total),
         saldo_asignado_disponible: Number(row.saldo_asignado_disponible),
-        lote_vivero_id: Number(row.lote_vivero_id),
+        lote_vivero_id: compatibleDatabaseId(row.lote_vivero_id),
         saldo_vivo_antes: Number(row.saldo_vivo_antes),
         saldo_vivo_despues: Number(row.saldo_vivo_despues),
         lote_reabierto: Boolean(row.lote_reabierto),
-        evento_lote_vivero_id: Number(row.evento_lote_vivero_id),
-        evento_plantacion_id: Number(row.evento_plantacion_id),
+        evento_lote_vivero_id: compatibleDatabaseId(row.evento_lote_vivero_id),
+        evento_plantacion_id: compatibleDatabaseId(row.evento_plantacion_id),
       },
     };
   }

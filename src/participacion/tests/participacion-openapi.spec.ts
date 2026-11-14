@@ -37,7 +37,7 @@ import { UsuariosAdministracionController } from '../../users/usuarios-administr
 import { UsuariosAdministracionService } from '../../users/application/usuarios-administracion.service';
 
 describe('Contrato OpenAPI de participación v1', () => {
-  it('documenta las 41 rutas registradas por Nest y resuelve todos sus schemas', async () => {
+  it('documenta las 42 rutas registradas por Nest y resuelve todos sus schemas', async () => {
     const module = await Test.createTestingModule({
       imports: [JwtModule.register({})],
       controllers: [
@@ -79,7 +79,7 @@ describe('Contrato OpenAPI de participación v1', () => {
       expect(Object.keys(actual.paths).sort()).toEqual(
         Object.keys(participacionOpenApi.paths).sort(),
       );
-      expect(Object.keys(actual.paths)).toHaveLength(41);
+      expect(Object.keys(actual.paths)).toHaveLength(42);
       for (const route of Object.keys(actual.paths))
         expect(Object.keys(actual.paths[route]).sort()).toEqual(
           Object.keys(participacionOpenApi.paths[route]).sort(),
@@ -101,6 +101,34 @@ describe('Contrato OpenAPI de participación v1', () => {
     } finally {
       await app.close();
     }
+  });
+
+  it('expone procedencia propia con fuentes persistidas sin abrir ficha M2 ni Impacto', () => {
+    const operation =
+      participacionOpenApi.paths['/api/v1/plantaciones/{id}/procedencia-propia']
+        .get!;
+    expect(operation.security).toEqual([{ bearerAuth: [] }]);
+    expect(operation.responses['200']).toHaveProperty(
+      'headers.Cache-Control.description',
+      'private, no-store',
+    );
+    expect(operation.parameters).toHaveLength(1);
+    const schemas = participacionOpenApi.components!.schemas!;
+    for (const field of [
+      'tercero_origen',
+      'referencia_documental',
+      'observaciones',
+      'evidencia_ids',
+    ]) {
+      expect(schemas.ConsumoProcedenciaPropia).not.toHaveProperty(
+        `properties.${field}`,
+      );
+    }
+    expect(schemas.ImpactoRegistro).not.toHaveProperty('properties.consumos');
+    expect(schemas.ProcedenciaPropia).toHaveProperty(
+      'properties.criterio_atribucion.enum',
+      ['CONSUMOS_PERSISTIDOS'],
+    );
   });
 
   it('publica observaciones, participantes y recuperación sin abrir cantidades ni reversiones', () => {

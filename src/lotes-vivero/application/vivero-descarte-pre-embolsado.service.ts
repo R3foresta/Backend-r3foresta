@@ -130,7 +130,7 @@ export class ViveroDescartePreEmbolsadoService {
       { eventoTipo: TipoEventoVivero.DESCARTE_PRE_EMBOLSADO, loteId },
     );
 
-    const evidenciaIds: number[] = resultado.evidencia_ids;
+    const evidenciaIds = resultado.evidencia_ids;
 
     if (evidenciaIds.length > 0) {
       const { error: updateError } = await supabase

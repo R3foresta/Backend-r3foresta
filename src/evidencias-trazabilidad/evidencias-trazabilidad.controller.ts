@@ -102,7 +102,7 @@ export class EvidenciasTrazabilidadController {
   @ApiOperation({
     summary: 'Listar evidencias de trazabilidad',
     description:
-      'Lista evidencias con filtros por entidad, tipo de entidad y código de trazabilidad.',
+      'Lista evidencias con filtros por entidad, tipo de entidad y código de trazabilidad. Excluye los buckets privados de participación, conciliación e incorporación de Vivero. Las fotos T5 se leen por el timeline M2 autorizado o su contexto pendiente propio, con URL firmada temporal.',
   })
   @ApiResponse({ status: 200, description: 'Lista de evidencias obtenida' })
   @ApiResponse({ status: 400, description: 'Parámetros inválidos' })
@@ -119,7 +119,7 @@ export class EvidenciasTrazabilidadController {
   @ApiOperation({
     summary: 'Listar evidencias por entidad',
     description:
-      'Obtiene evidencias por tipo de entidad (código) y entidad_id. Ejemplo: RECOLECCION/123.',
+      'Obtiene evidencias por tipo de entidad (código) y entidad_id. Ejemplo: RECOLECCION/123. Excluye vivero_incorporaciones aun con acceso M2: las fotos T5 usan el timeline M2 autorizado, con URL firmada temporal.',
   })
   @ApiParam({
     name: 'tipoEntidadCodigo',
@@ -198,7 +198,7 @@ export class EvidenciasTrazabilidadController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener evidencia por ID' })
+  @ApiOperation({ summary: 'Obtener evidencia por ID', description: 'Los buckets privados, incluido vivero_incorporaciones, no se sirven por esta ruta (404). Las fotos T5 se acceden por el timeline M2 autorizado o su contexto pendiente propio; no se genera public_url.' })
   @ApiParam({ name: 'id', type: Number, description: 'ID de evidencia' })
   @ApiResponse({ status: 200, description: 'Evidencia obtenida' })
   @ApiResponse({ status: 404, description: 'Evidencia no encontrada' })

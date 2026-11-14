@@ -1,7 +1,9 @@
+import { identificadorExacto } from './identificador.policy';
+
 export type DetallePlantacionInput = {
-  asignacion_id: number;
-  lote_vivero_id: number;
-  planta_id: number;
+  asignacion_id: number | string;
+  lote_vivero_id: number | string;
+  planta_id: number | string;
   cantidad: number;
 };
 
@@ -17,13 +19,15 @@ export class DetallesPlantacionPolicy {
 
     for (const [i, d] of detalles.entries()) {
       if (
-        !Number.isInteger(d.asignacion_id) ||
-        !Number.isInteger(d.lote_vivero_id) ||
-        !Number.isInteger(d.planta_id) ||
-        !Number.isInteger(d.cantidad)
+        !d ||
+        identificadorExacto(d.asignacion_id) === null ||
+        identificadorExacto(d.lote_vivero_id) === null ||
+        identificadorExacto(d.planta_id) === null ||
+        !Number.isSafeInteger(d.cantidad) ||
+        d.cantidad > 2147483647
       ) {
         throw new DetallesPlantacionPolicyError(
-          `Detalle ${i}: asignacion_id, lote_vivero_id, planta_id y cantidad deben ser enteros.`,
+          `Detalle ${i}: los IDs deben ser BIGINT exactos y cantidad un entero seguro hasta 2147483647.`,
         );
       }
 
@@ -32,6 +36,15 @@ export class DetallesPlantacionPolicy {
           `Detalle ${i}: cantidad debe ser mayor a cero.`,
         );
       }
+    }
+
+    if (
+      !Number.isSafeInteger(this.cantidadTotal(detalles)) ||
+      this.cantidadTotal(detalles) > 2147483647
+    ) {
+      throw new DetallesPlantacionPolicyError(
+        'La cantidad total excede 2147483647.',
+      );
     }
 
     const claves = new Set<string>();

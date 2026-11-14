@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """T2/094/095: clúster PostgreSQL privado, sin TCP, .env ni servicios reales."""
 import argparse
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import hashlib
 import json
 import os
@@ -289,8 +291,10 @@ def main():
             # ni acreditan la migración 100 completa sobre este fixture histórico.
             sql(extract('100_recoleccion_recepcion_unica.sql','m2_acceso_leer'))
             sql(extract('097_vivero_conciliacion_historica.sql','m2_inicio_lote_exacto'))
+            run(command()+['-f',str(ROOT/'migrations/105_vivero_operaciones_ids_exactos.sql')])
+            run(command()+['-f',str(ROOT/'migrations/105_vivero_operaciones_ids_exactos.sql')])
             sql('REVOKE ALL ON FUNCTION public.m2_inicio_lote_exacto(bigint,bigint,bigint,date,date,numeric,public.unidad_medida,text,bigint[],text) FROM PUBLIC,anon,authenticated; GRANT EXECUTE ON FUNCTION public.m2_inicio_lote_exacto(bigint,bigint,bigint,date,date,numeric,public.unidad_medida,text,bigint[],text) TO service_role;')
-            check(True,'HTTP usa lector de capacidades 100 y proyección de IDs 097 sobre antecedente T2, sin instalar recepción/conciliación')
+            check(True,'HTTP usa lector de capacidades100 y proyecciones de IDs097/105 sobre antecedenteT2, sin instalar recepción/conciliación ni incorporación')
             http_env=dict(env,T2_DB_SOCKET=str(socket),T2_DB_PORT='55444',T2_DB_PSQL=binaries['psql'],NODE_ENV='test')
             r=subprocess.run(['node',str(ROOT/'node_modules/jest/bin/jest.js'),'--config',str(ROOT/'test/jest-vivero-acceso-db.json'),'--runInBand','--cacheDirectory=/private/tmp/t2-jest'],cwd=ROOT,env=http_env,timeout=180)
             http={'exit_code':r.returncode,'suite':'test/db/vivero-acceso-http.spec.ts'}
@@ -303,8 +307,8 @@ def main():
         stopped=not (cluster/'postmaster.pid').exists()
         if stopped: shutil.rmtree(directory)
         if args.evidence:
-            files=list((ROOT/'src/lotes-vivero').rglob('*.ts'))+list((ROOT/'src/recolecciones').rglob('*.ts'))+list((ROOT/'src/evidencias-trazabilidad').rglob('*.ts'))+[ROOT/'migrations'/m for m in MIGRATIONS]+[Path(__file__).resolve(),ROOT/'test/db/vivero-acceso-fixture.sql',ROOT/'test/db/vivero-acceso-postgis-fixture.sql',ROOT/'test/db/vivero-acceso-http.spec.ts',ROOT/'test/jest-vivero-acceso-db.json',ROOT/'migrations/100_recoleccion_recepcion_unica.sql',ROOT/'migrations/097_vivero_conciliacion_historica.sql']
-            args.evidence.write_text(json.dumps({'tarea':'T2_ACCESO_VIVEROS','estado':'FALLIDO' if failed else 'CORRECTO','fecha':time.strftime('%Y-%m-%d'),'entorno':{'tipo':'SINTETICO_LOCAL','postgres':version,'tcp':False,'sin_env':True,'postgis':postgis_version or False,'cluster_detenido':stopped,'directorio_eliminado':not directory.exists()},'base':run(['git','-C',str(ROOT),'rev-parse','HEAD']),'base_arbol':'docs/evidencia/t2-acceso-viveros-base-2026-11-05.json','migraciones':MIGRATIONS,'proyecciones_actuales_http':[] if args.sql_only else ['100:m2_acceso_leer','097:m2_inicio_lote_exacto'],'comprobaciones':checks,'carreras':races,'http':http,'sha256':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(files))}},ensure_ascii=False,indent=2)+'\n')
+            files=list((ROOT/'src/lotes-vivero').rglob('*.ts'))+list((ROOT/'src/recolecciones').rglob('*.ts'))+list((ROOT/'src/evidencias-trazabilidad').rglob('*.ts'))+[ROOT/'migrations'/m for m in MIGRATIONS]+[Path(__file__).resolve(),ROOT/'test/db/vivero-acceso-fixture.sql',ROOT/'test/db/vivero-acceso-postgis-fixture.sql',ROOT/'test/db/vivero-acceso-http.spec.ts',ROOT/'test/jest-vivero-acceso-db.json',ROOT/'migrations/100_recoleccion_recepcion_unica.sql',ROOT/'migrations/097_vivero_conciliacion_historica.sql',ROOT/'migrations/105_vivero_operaciones_ids_exactos.sql']
+            args.evidence.write_text(json.dumps({'tarea':'T2_ACCESO_VIVEROS','estado':'FALLIDO' if failed else 'CORRECTO','fecha':datetime.now(ZoneInfo('America/La_Paz')).date().isoformat(),'zona_horaria':'America/La_Paz','entorno':{'tipo':'SINTETICO_LOCAL','postgres':version,'tcp':False,'sin_env':True,'postgis':postgis_version or False,'cluster_detenido':stopped,'directorio_eliminado':not directory.exists()},'base':run(['git','-C',str(ROOT),'rev-parse','HEAD']),'base_arbol':'docs/evidencia/t2-acceso-viveros-base-2026-11-05.json','migraciones':MIGRATIONS,'proyecciones_actuales_http':[] if args.sql_only else ['100:m2_acceso_leer','097:m2_inicio_lote_exacto','105:wrappersIDsTEXT'],'comprobaciones':checks,'carreras':races,'http':http,'sha256':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(files))}},ensure_ascii=False,indent=2)+'\n')
     print(f'T2: {len(checks)} grupos SQL y {len(races)} carreras aprobados.',flush=True)
 
 if __name__=='__main__': main()

@@ -20,6 +20,13 @@ const {
   LotesViveroService,
 } = require('../../src/lotes-vivero/application/lotes-vivero.service');
 const { configureGlobalRoutes } = require('../../src/app.routes');
+const { EvidenciasTrazabilidadController } = require('../../src/evidencias-trazabilidad/evidencias-trazabilidad.controller');
+const { EvidenciasTrazabilidadService } = require('../../src/evidencias-trazabilidad/evidencias-trazabilidad.service');
+const { PlantacionesController } = require('../../src/plantaciones/api/plantaciones.controller');
+const { PlantacionesService } = require('../../src/plantaciones/application/plantaciones.service');
+const { ViveroIncorporacionController } = require('../../src/lotes-vivero/api/vivero-incorporacion.controller');
+const { ViveroIncorporacionService } = require('../../src/lotes-vivero/application/vivero-incorporacion.service');
+const { ViveroEvidenciasService } = require('../../src/lotes-vivero/application/vivero-evidencias.service');
 const {
   RecoleccionesController,
 } = require('../../src/recolecciones/api/recolecciones.controller');
@@ -33,14 +40,21 @@ const {
   const module = await Test.createTestingModule({
     controllers: [
       ViveroAccesosController,
+      ViveroIncorporacionController,
       LotesViveroController,
       RecoleccionesController,
+      EvidenciasTrazabilidadController,
+      PlantacionesController,
     ],
     providers: [
       { provide: ViveroAccesosService, useValue: {} },
+      { provide: ViveroIncorporacionService, useValue: {} },
+      { provide: ViveroEvidenciasService, useValue: {} },
       { provide: LotesViveroService, useValue: {} },
       { provide: RecoleccionesService, useValue: {} },
       { provide: RecoleccionFormDataParser, useValue: {} },
+      { provide: EvidenciasTrazabilidadService, useValue: {} },
+      { provide: PlantacionesService, useValue: {} },
     ],
   })
     .overrideGuard(VerifiedActorGuard)
@@ -54,9 +68,9 @@ const {
     await app.init();
     const config = new DocumentBuilder()
       .setTitle('R3Foresta · Acceso y material por vivero')
-      .setVersion('2.0.0')
+      .setVersion('3.1.0')
       .setDescription(
-        'Contrato local de recepción única y material por vivero. M2 operativo independiente de M1 y de la autoridad para recibir. INICIO requiere recepción conforme, saldo decimal exacto y orden físico de fechas. Recuperación propia con la misma clave.',
+        'Contrato local de recepción única, material por vivero y continuidad de reposición interna con IDs exactos. T5 incorpora plantas vivas con procedencia y fotos privadas, éxito propio recuperable con la misma solicitud e intención; no persiste preparación ni rechazo durable. Las fotos vivero_incorporaciones se excluyen de las rutas genéricas y se leen por el timeline M2 o contexto pendiente propio autorizados.',
       )
       .addBearerAuth()
       .build();

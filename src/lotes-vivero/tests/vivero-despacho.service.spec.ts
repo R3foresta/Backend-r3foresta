@@ -110,17 +110,20 @@ describe('ViveroDespachoService', () => {
     expect(
       saldosService.assertCantidadNoExcedeSaldoFisico,
     ).toHaveBeenCalledWith(dto.cantidad_afectada, 50, LOTE_ID);
-    expect(rpcMock).toHaveBeenCalledWith('fn_vivero_registrar_despacho', {
-      p_lote_id: LOTE_ID,
-      p_fecha_evento: dto.fecha_evento,
-      p_responsable_id: USUARIO_ID,
-      p_cantidad_despachada: dto.cantidad_afectada,
-      p_destino_tipo: dto.destino_tipo,
-      p_destino_referencia: dto.destino_referencia,
-      p_comunidad_destino_id: dto.comunidad_destino_id,
-      p_observaciones: dto.observaciones,
-      p_evidencia_ids: dto.evidencia_ids,
-    });
+    expect(rpcMock).toHaveBeenCalledWith(
+      'fn_vivero_registrar_despacho_exacto',
+      {
+        p_lote_id: LOTE_ID,
+        p_fecha_evento: dto.fecha_evento,
+        p_responsable_id: USUARIO_ID,
+        p_cantidad_despachada: dto.cantidad_afectada,
+        p_destino_tipo: dto.destino_tipo,
+        p_destino_referencia: dto.destino_referencia,
+        p_comunidad_destino_id: dto.comunidad_destino_id,
+        p_observaciones: dto.observaciones,
+        p_evidencia_ids: dto.evidencia_ids,
+      },
+    );
     expect(response.success).toBe(true);
     expect(response.data.saldo_vivo_despues).toBe(80);
   });

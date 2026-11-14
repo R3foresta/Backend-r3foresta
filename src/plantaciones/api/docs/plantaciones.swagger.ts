@@ -1,4 +1,5 @@
 import { applyDecorators } from '@nestjs/common';
+import type { SchemaObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
 import {
   ApiBody,
   ApiConsumes,
@@ -6,6 +7,20 @@ import {
   ApiOperation,
   ApiResponse,
 } from '@nestjs/swagger';
+
+const EXACT_ID_SCHEMA: SchemaObject = {
+  oneOf: [
+    {
+      type: 'string',
+      pattern: '^[1-9][0-9]*$',
+      maxLength: 19,
+      example: '9007199255741001',
+    },
+    { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  ],
+  description:
+    'ID BIGINT decimal canónico hasta 9223372036854775807; JSON number sólo si es seguro. No convertir cadenas a Number.',
+};
 
 const AUTH_ID_HEADER = {
   name: 'x-auth-id',
@@ -29,7 +44,7 @@ export function ApiCrearEvidenciaPendientePlantacion() {
         type: 'object',
         required: ['subcampania_id', 'es_reposicion', 'fotos'],
         properties: {
-          subcampania_id: { type: 'integer', minimum: 1 },
+          subcampania_id: EXACT_ID_SCHEMA,
           es_reposicion: { type: 'boolean', enum: [true] },
           titulo: {
             type: 'string',
@@ -81,6 +96,11 @@ export function ApiCrearEvidenciaPendientePlantacion() {
       status: 404,
       description: 'Falta tipo_entidad_evidencia REGISTRO_PLANTACION',
     }),
+    ApiResponse({
+      status: 503,
+      description:
+        'Resultado inconcluso o respuesta con ID inexacto; no presume rechazo de negocio ni habilita repetir a ciegas.',
+    }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
 }
@@ -90,7 +110,7 @@ export function ApiRegistrarPlantacion() {
     ApiOperation({
       summary: 'Registrar reposición interna consumiendo stock asignado (M3)',
       description:
-        'Solo es_reposicion:true; inicial legada responde 409 CLIENTE_INCOMPATIBLE. Conserva rol ADMIN/GENERAL/VALIDADOR, equipo COORDINADOR/OPERARIO y estado ACTIVA/COMPLETADA/FINALIZADA_PARCIAL. La RPC comprueba origen inicial del mismo ámbito y evidencias propias privadas del mismo propósito antes de consumir stock M3. No vuelve a descontar Vivero.',
+        'Solo es_reposicion:true; inicial legada responde 409 CLIENTE_INCOMPATIBLE. Conserva rol ADMIN/GENERAL/VALIDADOR, equipo COORDINADOR/OPERARIO y estado ACTIVA/COMPLETADA/FINALIZADA_PARCIAL. La RPC comprueba origen inicial del mismo ámbito y evidencias propias privadas del mismo propósito antes de consumir stock M3. No vuelve a descontar Vivero. Los IDs aceptan cadenas BIGINT canónicas o números seguros; las cadenas no se redondean. Requiere106 para proyectar IDs y consumos exactos antes del transporte JSON.',
     }),
     ApiHeader(AUTH_ID_HEADER),
     ApiBody({
@@ -108,14 +128,12 @@ export function ApiRegistrarPlantacion() {
           'evidencia_ids',
         ],
         properties: {
-          subcampania_id: { type: 'integer', example: 1, minimum: 1 },
+          subcampania_id: EXACT_ID_SCHEMA,
           es_reposicion: { type: 'boolean', enum: [true], example: true },
           registro_plantacion_origen_id: {
-            type: 'integer',
-            nullable: true,
+            ...EXACT_ID_SCHEMA,
             description:
-              'Obligatorio si es_reposicion=true. Referencia el grupo origen al que se le repone material.',
-            example: null,
+              'ID exacto del grupo origen al que se repone material, obligatorio para reposición.',
           },
           fecha_plantacion: {
             type: 'string',
@@ -127,7 +145,7 @@ export function ApiRegistrarPlantacion() {
           observaciones: { type: 'string', maxLength: 2000, nullable: true },
           coresponsable_ids: {
             type: 'array',
-            items: { type: 'integer' },
+            items: EXACT_ID_SCHEMA,
             description:
               'Usuarios adicionales (subset del SUBCAMPANIA_EQUIPO).',
             example: [],
@@ -144,16 +162,21 @@ export function ApiRegistrarPlantacion() {
                 'cantidad',
               ],
               properties: {
-                asignacion_id: { type: 'integer', example: 12 },
-                lote_vivero_id: { type: 'integer', example: 7 },
-                planta_id: { type: 'integer', example: 3 },
-                cantidad: { type: 'integer', minimum: 1, example: 50 },
+                asignacion_id: EXACT_ID_SCHEMA,
+                lote_vivero_id: EXACT_ID_SCHEMA,
+                planta_id: EXACT_ID_SCHEMA,
+                cantidad: {
+                  type: 'integer',
+                  minimum: 1,
+                  maximum: 2147483647,
+                  example: 50,
+                },
               },
             },
           },
           evidencia_ids: {
             type: 'array',
-            items: { type: 'integer' },
+            items: EXACT_ID_SCHEMA,
             minItems: 1,
             description:
               'IDs de evidencias previamente subidas via POST /registros-plantacion/evidencias-pendientes.',
@@ -165,7 +188,7 @@ export function ApiRegistrarPlantacion() {
     ApiResponse({
       status: 201,
       description:
-        'Plantacion registrada. Devuelve registro_plantacion_id, codigo_trazabilidad, cantidad_total_plantada y `consumos` (por asignacion: cantidad_consumida, saldo_asignado_antes/despues y estado_final). No devuelve despachos: plantar no genera eventos M2.',
+        'Plantacion registrada. Devuelve registro_plantacion_id, codigo_trazabilidad, cantidad_total_plantada y `consumos` (por asignacion: cantidad_consumida, saldo_asignado_antes/despues y estado_final). IDs seguros conservan el número legado y los mayores se devuelven como cadenas exactas, incluidos los IDs dentro de consumos y arrays. No devuelve despachos: plantar no genera eventos M2.',
     }),
     ApiResponse({
       status: 400,
@@ -186,6 +209,11 @@ export function ApiRegistrarPlantacion() {
       status: 404,
       description: 'Usuario o subcampania no encontrada',
     }),
+    ApiResponse({
+      status: 503,
+      description:
+        'Resultado inconcluso o respuesta con ID inexacto; no presume rechazo de negocio ni habilita repetir a ciegas.',
+    }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );
 }
@@ -205,12 +233,12 @@ export function ApiDescartarEvidenciasPendientesPlantacion() {
         type: 'object',
         required: ['subcampania_id', 'es_reposicion', 'evidencia_ids'],
         properties: {
-          subcampania_id: { type: 'integer', minimum: 1 },
+          subcampania_id: EXACT_ID_SCHEMA,
           es_reposicion: { type: 'boolean', enum: [true] },
           evidencia_ids: {
             type: 'array',
             minItems: 1,
-            items: { type: 'integer', minimum: 1 },
+            items: EXACT_ID_SCHEMA,
             example: [101, 102],
           },
         },
@@ -236,6 +264,11 @@ export function ApiDescartarEvidenciasPendientesPlantacion() {
       status: 404,
       description:
         'Usuario no encontrado o falta tipo_entidad_evidencia REGISTRO_PLANTACION',
+    }),
+    ApiResponse({
+      status: 503,
+      description:
+        'Resultado inconcluso o respuesta con ID inexacto; no presume rechazo de negocio ni habilita repetir a ciegas.',
     }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );

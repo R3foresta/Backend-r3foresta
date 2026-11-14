@@ -1,5 +1,11 @@
 # Backend R3Foresta
 
+T5 implementa localmente la [incorporación de plantas vivas con procedencia](docs/t5-incorporacion-plantas.md):
+recepción o saldo inicial en un vivero real, alta atómica recuperable y continuidad
+M2/M3 sin doble descuento. Requiere101–107 y configuración del nuevo bucket privado;
+[revisión, pruebas y límites](docs/t5-revision-2026-11-14.md). SQL remoto, Storage, PWA
+y despliegue conservan verificación separada.
+
 API NestJS/Supabase para trazabilidad: **Recolección → Vivero → entrega física → Plantación**.
 Estado documental al **19 de octubre de 2026**: INT05 BE01–BE06 implementadas y verificadas localmente; el corte original de pruebas conserva la base `10e5dc5`.
 [Contrato, entorno y consolidación](docs/pa-int05-entrega-local.md), [versiones de entrega y pendientes](../r3foresta-docs/ESTADO.md). SQL remoto, push, despliegue y piloto pendientes.
@@ -59,7 +65,7 @@ previos de INICIO. Las evidencias 096–099 conservan su contexto histórico.
 
 T1 añade localmente [acceso explícito de Recolección](docs/t1-acceso-recoleccion.md)
 con API exclusiva ADMIN, vigencias, revisión M1 independiente, auditoría y recuperación.
-Requiere 092/093 y corte coordinado. T2 añade localmente [acceso operativo por vivero](docs/t2-acceso-viveros.md), API ADMIN, ámbitos M2 y DESECHO acotados con 094/095; [revisión coordinadora cerrada](docs/evidencia/t2-revision-coordinadora-2026-11-05.json). T3 incorpora Usuarios y permisos en la PWA y proyecciones exactas, [revisadas localmente](docs/evidencia/t3-revision-coordinadora-2026-11-06.json). Aplicación hasta095 [reportada por el usuario](docs/evidencia/t2-migraciones-095-aplicacion-reportada-2026-11-05.json); cotejo de catálogo, corte de T4 y despliegue pendientes; T5 separado.
+Requiere 092/093 y corte coordinado. T2 añade localmente [acceso operativo por vivero](docs/t2-acceso-viveros.md), API ADMIN, ámbitos M2 y DESECHO acotados con 094/095; [revisión coordinadora cerrada](docs/evidencia/t2-revision-coordinadora-2026-11-05.json). T3 incorpora Usuarios y permisos en la PWA y proyecciones exactas, [revisadas localmente](docs/evidencia/t3-revision-coordinadora-2026-11-06.json). Aplicación hasta095 [reportada por el usuario](docs/evidencia/t2-migraciones-095-aplicacion-reportada-2026-11-05.json); cotejo de catálogo, corte de T4 y despliegue pendientes; T5 conserva su [contrato local propio](docs/t5-incorporacion-plantas.md).
 
 ## Verificar un cambio
 

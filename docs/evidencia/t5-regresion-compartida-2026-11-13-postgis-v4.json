@@ -1,0 +1,2003 @@
+{
+  "tarea": "PA-T-INT02-D",
+  "estado": "CORRECTO",
+  "fecha_utc": "2026-11-13T20:32:08.745958+00:00",
+  "comando": "python3 scripts/qa/pa-int02d-db-test.py --pg-bin /private/tmp/pa-postgis-runtime.fG3bnl/14/bin",
+  "entorno": {
+    "aislado": true,
+    "tcp": false,
+    "env_cargado": false,
+    "naturaleza": "SINTETICO_AISLADO_POST_076",
+    "antecedentes": [
+      "test/db/pa-int02c-fixture.sql",
+      "test/db/pa-int03a-fixture.sql"
+    ],
+    "postgresql": "14.24 (Postgres.app)",
+    "postgis": "POSTGIS=\"3.2.10 7762352\" [EXTENSION] PGSQL=\"140\" GEOS=\"3.10.7-CAPI-1.16.7\" PROJ=\"8.1.1\" LIBXML=\"2.9.14\" LIBJSON=\"0.15\" LIBPROTOBUF=\"1.4.1\" WAGYU=\"0.5.0 (Internal)\"",
+    "node": "v24.19.0",
+    "runtime_reproducible": {
+      "preparador": "scripts/qa/pa-int03a-postgis-preparar.sh",
+      "fuente": "https://github.com/PostgresApp/PostgresApp/releases/download/v2.9.6/Postgres-2.9.6-14.dmg",
+      "sha256_artefacto_usado": "a73a5d7c78c1fdce15ff1cc31b55d670c0b68070e0c436add53d3b053ef6567a"
+    },
+    "cluster_detenido": true,
+    "directorio_eliminado": true
+  },
+  "casos": [
+    {
+      "caso": "contexto/selección por autoridad efectiva, ADMIN global, ACTIVA y SIN_STOCK válido",
+      "trazabilidad": [
+        "PA-ID04",
+        "PA-ID06",
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "LIFO timestamp+ID, entrega posterior excluida, meta superable y sin segundo débito M2",
+      "trazabilidad": [
+        "PA-ID21",
+        "PA-S01-CA05"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "snapshots congelados, retroactivo sin historia, cantidad grupal una vez y observación solo autor",
+      "trazabilidad": [
+        "PA-ID22"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "fechas extremas inclusivas y afiliaciones catálogo/Otra/ausencia, sin modificar perfil",
+      "trazabilidad": [
+        "PA-ID21",
+        "PA-ID22"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "revisión obsoleta, fecha fuera de ventana, especie fuera del plan y entrega no conciliada rechazan sin dominio",
+      "trazabilidad": [
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "recibo/replay idénticos después de retiro, contenido distinto 409 y ajeno invisible incluso ADMIN",
+      "trazabilidad": [
+        "PA-ID14",
+        "PA-ID15",
+        "PA-ID16",
+        "PA-ID23"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "rechazo terminal no cambia al reponer stock y preparación cancelada conserva huella NULL/409",
+      "trazabilidad": [
+        "PA-ID16",
+        "PA-ID17"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "doble POST un hecho/consumo/terminal y últimas unidades sin sobreconsumo",
+      "trazabilidad": [
+        "PA-ID14",
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "barreras DB para retiro/registro y seleccionado en ambos órdenes con permiso C real",
+      "trazabilidad": [
+        "PA-ID11",
+        "PA-ID13"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "perfil/snapshot en ambos órdenes y cambio rol serializado con cuenta/registro",
+      "trazabilidad": [
+        "PA-ID11",
+        "PA-ID13",
+        "PA-ID22"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "timeout de sentencia bajo lock real conserva resultado inconcluso y misma clave converge",
+      "trazabilidad": [
+        "PA-ID15",
+        "PA-ID17"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "rechazo tras efecto parcial revierte dominio y conserva terminal; desconocido deja preparación inconclusa y misma clave converge",
+      "trazabilidad": [
+        "PA-ID17"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "PostGIS real dentro/fuera; ausencia confirmada del evaluador inyectada produce rechazo durable 503 sin consumo",
+      "trazabilidad": [
+        "PA-ID20"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "evidencia ajena rechaza aun ADMIN; cargas omitidas/generaciones se clausuran sin borrar tombstones",
+      "trazabilidad": [
+        "PA-ID18",
+        "PA-ID19",
+        "PA-ID23"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "denegaciones SQL/RPC reales, todas sobrecargas privadas y FKs nuevas RESTRICT",
+      "trazabilidad": [
+        "PA-ID23"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "RPC física 076 real conserva DATE de entrada sin cast/backfill legado y descuenta M2 solo en entrega",
+      "trazabilidad": [
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "expiración inline al límite de 30 días: cancelación sin huella, replay distinto conserva 409 y GET terminal",
+      "trazabilidad": [
+        "PA-ID16",
+        "PA-ID17"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "foto vencida clausura inicial antes del barrido y conserva ledger de compensación sin consumo",
+      "trazabilidad": [
+        "PA-ID17",
+        "PA-ID19"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "regresión focalizada: rechazo tras consumo revierte hecho, detalles, contadores y conserva foto/terminal",
+      "trazabilidad": [
+        "PA-ID17",
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "fotos propias con tipo ajeno, vínculo previo o preparación/ámbito distinto rechazan íntegramente sin consumo",
+      "trazabilidad": [
+        "PA-ID18",
+        "PA-ID19"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "catálogo instalado 074: seis FKs RESTRICT validadas en carga y una en generaciones",
+      "trazabilidad": [
+        "PA-ID23"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "regresión C04–C09, continuidad, rol/baja e historial con helpers 075 instalados; once claves repiten recibo/GET sin efectos",
+      "trazabilidad": [
+        "PA-ID13",
+        "PA-ID16",
+        "PA-ID23"
+      ],
+      "resultado": "CORRECTO",
+      "operaciones": [
+        "CAMBIAR_ADMINISTRADOR_A_PLANTADOR",
+        "CAMBIAR_ROL_GLOBAL",
+        "DESIGNAR_ADMINISTRADOR",
+        "INACTIVAR_CUENTA",
+        "OTORGAR_PLANTADOR",
+        "REEMPLAZAR_ADMINISTRADOR",
+        "RETIRAR_ADMINISTRADOR",
+        "RETIRAR_PLANTADOR"
+      ],
+      "comandos": 11,
+      "ambitos": [
+        "850",
+        "851"
+      ],
+      "eventos_contextuales": 8,
+      "eventos_autoridad": 2
+    },
+    {
+      "caso": "080 cierra diez tablas/una vista/cuatro catálogos; extras/grants heredados abortan sin mutarlos",
+      "trazabilidad": [
+        "PA-ID23",
+        "PA-ID05"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "ACL reales de todas las firmas compartidas, nuevas y getter plan",
+      "trazabilidad": [
+        "PA-ID23"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "inicial legada clausurada y permiso contextual/rol inactivo no heredan logística",
+      "trazabilidad": [
+        "PA-ID05",
+        "PA-ID24"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "plan/cierre serializados en ambos órdenes, hechos/recibos/permisos conservados",
+      "trazabilidad": [
+        "PA-ID21",
+        "PA-ID15"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "entrega/devolución frente a inicial en ambos órdenes sin doble débito ni saldo negativo",
+      "trazabilidad": [
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "operaciones físicas entre ámbitos serializan lote sin inversión de locks",
+      "trazabilidad": [
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "entrega/devolución/cancelación y desactivación masiva en ambos órdenes con FK real, sin deadlock ni doble retorno",
+      "trazabilidad": [
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "reposición interna preservada, origen/tipo/ámbito/propietario estrictos sin segundo débito",
+      "trazabilidad": [
+        "PA-ID25",
+        "PA-ID18"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "activación/equipo/edición/borrado/polígono mantienen reglas y no crean permisos",
+      "trazabilidad": [
+        "PA-ID07",
+        "PA-ID05"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "cuenta activa revalidada tras espera y saldos físicos no negativos",
+      "trazabilidad": [
+        "PA-ID13",
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    },
+    {
+      "caso": "statement30s y lock5s medidos antes de077, sin efecto parcial ni rechazo fabricado",
+      "trazabilidad": [
+        "PA-ID17",
+        "PA-ID21"
+      ],
+      "resultado": "CORRECTO"
+    }
+  ],
+  "carreras": [
+    {
+      "caso": "doble POST simultáneo misma clave",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "805",
+            "fecha_plantacion": "2026-11-13",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-805",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "7",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "8067acb7-4765-42cf-bfb6-a9a144dbc246",
+          "finalizado_en": "2026-11-13T20:32:12.767137Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "805",
+            "fecha_plantacion": "2026-11-13",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-805",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "7",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "8067acb7-4765-42cf-bfb6-a9a144dbc246",
+          "finalizado_en": "2026-11-13T20:32:12.767137Z"
+        },
+        "http_status": 200
+      }
+    },
+    {
+      "caso": "dos comandos compiten por última unidad",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "806",
+            "fecha_plantacion": "2026-11-13",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-806",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "8",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "6f993d24-ee65-48e0-8a06-155e3bb9b4b4",
+          "finalizado_en": "2026-11-13T20:32:12.943661Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": {
+            "campos": [],
+            "codigo": "STOCK_INSUFICIENTE",
+            "ambitos": [],
+            "mensaje": "El stock elegible no cubre las cantidades confirmadas.",
+            "reintento": "NUEVA_CONFIRMACION"
+          },
+          "estado": "RECHAZADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": null,
+          "comando_id": "1e8456d7-b8db-4675-9148-45d73c44bd18",
+          "finalizado_en": "2026-11-13T20:32:13.009578Z"
+        },
+        "http_status": 409
+      }
+    },
+    {
+      "caso": "retiro actor antes de registro",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "RETIRAR_PLANTADOR",
+          "resultado": {
+            "tipo": "ACCESO",
+            "cambios": [
+              {
+                "usuarios": [
+                  {
+                    "cambio": "CAMBIO_APLICADO",
+                    "usuario_id": "801",
+                    "permiso_nuevo": null,
+                    "revision_nueva": "2",
+                    "permiso_anterior": "PLANTADOR",
+                    "revision_anterior": "1",
+                    "conserva_acceso_global": false
+                  }
+                ],
+                "subcampania_id": "807"
+              }
+            ]
+          },
+          "comando_id": "470a1d08-de92-425a-9b29-299a531353a7",
+          "finalizado_en": "2026-11-13T20:32:13.078016Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": {
+            "campos": [],
+            "codigo": "CAPACIDAD_INSUFICIENTE",
+            "ambitos": [],
+            "mensaje": "No dispone de esta capacidad.",
+            "reintento": "NUEVA_CONFIRMACION"
+          },
+          "estado": "RECHAZADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": null,
+          "comando_id": "abc6f8d2-f685-4d11-803e-c444bcd53854",
+          "finalizado_en": "2026-11-13T20:32:13.135553Z"
+        },
+        "http_status": 403
+      }
+    },
+    {
+      "caso": "registro antes de retiro actor",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "808",
+            "fecha_plantacion": "2026-11-13",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-808",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "9",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "cbd1176c-f286-445a-9a3b-93f2c07bc90d",
+          "finalizado_en": "2026-11-13T20:32:13.207013Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "RETIRAR_PLANTADOR",
+          "resultado": {
+            "tipo": "ACCESO",
+            "cambios": [
+              {
+                "usuarios": [
+                  {
+                    "cambio": "CAMBIO_APLICADO",
+                    "usuario_id": "801",
+                    "permiso_nuevo": null,
+                    "revision_nueva": "2",
+                    "permiso_anterior": "PLANTADOR",
+                    "revision_anterior": "1",
+                    "conserva_acceso_global": false
+                  }
+                ],
+                "subcampania_id": "808"
+              }
+            ]
+          },
+          "comando_id": "6f2b4e64-816f-485d-9b71-29cea0a91565",
+          "finalizado_en": "2026-11-13T20:32:13.260664Z"
+        },
+        "http_status": 200
+      }
+    },
+    {
+      "caso": "retiro participante antes de registro",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "RETIRAR_PLANTADOR",
+          "resultado": {
+            "tipo": "ACCESO",
+            "cambios": [
+              {
+                "usuarios": [
+                  {
+                    "cambio": "CAMBIO_APLICADO",
+                    "usuario_id": "802",
+                    "permiso_nuevo": null,
+                    "revision_nueva": "2",
+                    "permiso_anterior": "PLANTADOR",
+                    "revision_anterior": "1",
+                    "conserva_acceso_global": false
+                  }
+                ],
+                "subcampania_id": "809"
+              }
+            ]
+          },
+          "comando_id": "54f912ad-71f1-41c7-8299-50dfb5d15fc5",
+          "finalizado_en": "2026-11-13T20:32:13.321574Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": {
+            "campos": [],
+            "codigo": "PARTICIPANTE_NO_ELEGIBLE",
+            "ambitos": [],
+            "mensaje": "Una persona seleccionada ya no es elegible.",
+            "reintento": "NUEVA_CONFIRMACION"
+          },
+          "estado": "RECHAZADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": null,
+          "comando_id": "1c1d3124-c37b-4ecd-819c-d52c256d6daf",
+          "finalizado_en": "2026-11-13T20:32:13.384590Z"
+        },
+        "http_status": 409
+      }
+    },
+    {
+      "caso": "registro antes de retiro participante",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "810",
+            "fecha_plantacion": "2026-11-13",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-810",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "10",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "8869fd00-39fe-424c-86e2-7cba8d19e729",
+          "finalizado_en": "2026-11-13T20:32:13.457459Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "RETIRAR_PLANTADOR",
+          "resultado": {
+            "tipo": "ACCESO",
+            "cambios": [
+              {
+                "usuarios": [
+                  {
+                    "cambio": "CAMBIO_APLICADO",
+                    "usuario_id": "802",
+                    "permiso_nuevo": null,
+                    "revision_nueva": "2",
+                    "permiso_anterior": "PLANTADOR",
+                    "revision_anterior": "1",
+                    "conserva_acceso_global": false
+                  }
+                ],
+                "subcampania_id": "810"
+              }
+            ]
+          },
+          "comando_id": "7ddf3aca-60eb-4fa2-bc0a-f1f944790b62",
+          "finalizado_en": "2026-11-13T20:32:13.506748Z"
+        },
+        "http_status": 200
+      }
+    },
+    {
+      "caso": "perfil antes de captura snapshot",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "estado": "PERFIL_CAMBIADO"
+        }
+      },
+      "segundo": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "817",
+            "fecha_plantacion": "2026-11-13",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-817",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "11",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "2309a9fe-14f4-4cfa-ab8e-412c87e684f5",
+          "finalizado_en": "2026-11-13T20:32:13.631441Z"
+        },
+        "http_status": 200
+      }
+    },
+    {
+      "caso": "captura snapshot antes de cambio perfil",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "818",
+            "fecha_plantacion": "2026-11-13",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-818",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "12",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "057018a8-2240-479b-ad68-acea620277a3",
+          "finalizado_en": "2026-11-13T20:32:13.720887Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "estado": "PERFIL_CAMBIADO"
+        }
+      }
+    },
+    {
+      "caso": "cambio rol antes de registro global sin permiso",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "CAMBIAR_ROL_GLOBAL",
+          "resultado": {
+            "tipo": "ROL_GLOBAL",
+            "cambio": "CAMBIO_APLICADO",
+            "rol_nuevo": "VOLUNTARIO",
+            "usuario_id": "803",
+            "rol_anterior": "ADMIN",
+            "revision_nueva": "1",
+            "revision_anterior": "0"
+          },
+          "comando_id": "c56be73d-0afc-409b-9b2e-d3f2472dcafd",
+          "finalizado_en": "2026-11-13T20:32:13.797393Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": {
+            "campos": [],
+            "codigo": "CAPACIDAD_INSUFICIENTE",
+            "ambitos": [],
+            "mensaje": "No dispone de esta capacidad.",
+            "reintento": "NUEVA_CONFIRMACION"
+          },
+          "estado": "RECHAZADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": null,
+          "comando_id": "95a959ed-d66f-45fe-8134-ce59b9568fca",
+          "finalizado_en": "2026-11-13T20:32:13.853984Z"
+        },
+        "http_status": 403
+      }
+    },
+    {
+      "caso": "registro global antes de cambio rol sin permiso",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "803",
+            "subcampania_id": "819",
+            "fecha_plantacion": "2026-11-13",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT03A-819",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "13",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0
+          },
+          "comando_id": "69bf0e5a-9d1b-4f5a-aca0-fd132c8e6b43",
+          "finalizado_en": "2026-11-13T20:32:13.954557Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "CAMBIAR_ROL_GLOBAL",
+          "resultado": {
+            "tipo": "ROL_GLOBAL",
+            "cambio": "CAMBIO_APLICADO",
+            "rol_nuevo": "VOLUNTARIO",
+            "usuario_id": "803",
+            "rol_anterior": "ADMIN",
+            "revision_nueva": "3",
+            "revision_anterior": "2"
+          },
+          "comando_id": "203da7d1-077d-4cc7-a40b-9bfe97e2c649",
+          "finalizado_en": "2026-11-13T20:32:14.008162Z"
+        },
+        "http_status": 200
+      }
+    },
+    {
+      "caso": "plan primero → inicial revisión obsoleta",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "data": {
+          "metas": [
+            {
+              "planta": {
+                "id": 8,
+                "especie": "Tara sintética",
+                "nombre_cientifico": "Caesalpinia spinosa"
+              },
+              "planta_id": 8,
+              "cantidad_objetivo": 3,
+              "porcentaje_objetivo": 100
+            }
+          ],
+          "estado": "ACTIVA",
+          "plan_revision": 1,
+          "subcampania_id": 900,
+          "meta_total_arboles": 3
+        },
+        "error": null
+      },
+      "segundo": {
+        "body": {
+          "error": {
+            "campos": [],
+            "codigo": "PLAN_MODIFICADO",
+            "ambitos": [],
+            "mensaje": "El plan cambió; revise las cantidades antes de confirmar.",
+            "reintento": "NUEVA_CONFIRMACION"
+          },
+          "estado": "RECHAZADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": null,
+          "comando_id": "1af0c420-9b17-4d67-b11e-e1c3ae446539",
+          "finalizado_en": "2026-11-13T20:32:26.421053Z"
+        },
+        "http_status": 409
+      }
+    },
+    {
+      "caso": "inicial primero → plan revalida",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "901",
+            "fecha_plantacion": "2026-11-13",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT02D-901",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "28",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0.0
+          },
+          "comando_id": "4603fb27-77ef-42c5-9e56-6f9a9d58cf43",
+          "finalizado_en": "2026-11-13T20:32:26.502186Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "data": {
+          "metas": [
+            {
+              "planta": {
+                "id": 8,
+                "especie": "Tara sintética",
+                "nombre_cientifico": "Caesalpinia spinosa"
+              },
+              "planta_id": 8,
+              "cantidad_objetivo": 3,
+              "porcentaje_objetivo": 100
+            }
+          ],
+          "estado": "ACTIVA",
+          "plan_revision": 1,
+          "subcampania_id": 901,
+          "meta_total_arboles": 3
+        },
+        "error": null
+      }
+    },
+    {
+      "caso": "cierre primero → inicial rechazada",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "data": {
+          "id": 902,
+          "estado": "COMPLETADA",
+          "updated_at": "2026-11-13T16:32:26.61517-04:00",
+          "fase_mantenimiento": "MANTENIMIENTO_ACTIVO",
+          "observaciones_cierre": null,
+          "motivo_cierre_parcial": null,
+          "fecha_cierre_operativo": "2026-11-12T20:00:00-04:00",
+          "fecha_fin_mantenimiento": "2026-11-13"
+        },
+        "error": null
+      },
+      "segundo": {
+        "body": {
+          "error": {
+            "campos": [],
+            "codigo": "SUBCAMPANIA_NO_OPERATIVA",
+            "ambitos": [],
+            "mensaje": "La subcampaña no está operativa.",
+            "reintento": "NUEVA_CONFIRMACION"
+          },
+          "estado": "RECHAZADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": null,
+          "comando_id": "e7e232ef-75ff-48db-b39a-62b445c0f6e8",
+          "finalizado_en": "2026-11-13T20:32:26.672789Z"
+        },
+        "http_status": 409
+      }
+    },
+    {
+      "caso": "inicial primero → cierre conserva hecho/permisos",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "903",
+            "fecha_plantacion": "2026-11-13",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT02D-903",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "29",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0.0
+          },
+          "comando_id": "d46dfcf7-2d8c-4698-bc5d-058bd06b05e0",
+          "finalizado_en": "2026-11-13T20:32:26.746698Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "data": {
+          "id": 903,
+          "estado": "COMPLETADA",
+          "updated_at": "2026-11-13T16:32:26.754338-04:00",
+          "fase_mantenimiento": "MANTENIMIENTO_ACTIVO",
+          "observaciones_cierre": null,
+          "motivo_cierre_parcial": null,
+          "fecha_cierre_operativo": "2026-11-12T20:00:00-04:00",
+          "fecha_fin_mantenimiento": "2026-11-13"
+        },
+        "error": null
+      }
+    },
+    {
+      "caso": "devolución primero → inicial sin stock",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "data": {
+          "asignacion_id": 90400,
+          "lote_reabierto": false,
+          "lote_vivero_id": 81,
+          "saldo_vivo_antes": 1000,
+          "estado_asignacion": "DEVUELTA",
+          "saldo_vivo_despues": 1020,
+          "evento_plantacion_id": 2,
+          "evento_lote_vivero_id": 4,
+          "cantidad_devuelta_delta": 20,
+          "cantidad_devuelta_total": 20,
+          "saldo_asignado_disponible": 0
+        },
+        "error": null
+      },
+      "segundo": {
+        "body": {
+          "error": {
+            "campos": [],
+            "codigo": "STOCK_INSUFICIENTE",
+            "ambitos": [],
+            "mensaje": "El stock elegible no cubre las cantidades confirmadas.",
+            "reintento": "NUEVA_CONFIRMACION"
+          },
+          "estado": "RECHAZADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": null,
+          "comando_id": "f7fc2008-c20f-4869-b0e6-a25874e7ab92",
+          "finalizado_en": "2026-11-13T20:32:26.933550Z"
+        },
+        "http_status": 409
+      }
+    },
+    {
+      "caso": "inicial primero → devolución revalida saldo",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "905",
+            "fecha_plantacion": "2026-11-13",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT02D-905",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "30",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0.0
+          },
+          "comando_id": "0c018496-d62c-4047-a3d8-cb8799ae8ea6",
+          "finalizado_en": "2026-11-13T20:32:27.007877Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "data": null,
+        "error": {
+          "code": "P0001",
+          "message": "La devolucion (20) excede el saldo asignado disponible (19) de la asignacion 90500."
+        }
+      }
+    },
+    {
+      "caso": "entrega primero → inicial consume stock nuevo sin segundo débito",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "data": {
+          "proposito": "PLANTACION_INICIAL",
+          "campania_id": 900,
+          "asignacion_id": 1000001,
+          "motivo_cierre": null,
+          "lote_vivero_id": 81,
+          "subcampania_id": 906,
+          "lote_finalizado": false,
+          "saldo_vivo_antes": 1020,
+          "cantidad_asignada": 5,
+          "estado_asignacion": "ACTIVA",
+          "saldo_vivo_despues": 1015,
+          "evento_plantacion_id": 3,
+          "evento_lote_vivero_id": 5,
+          "codigo_trazabilidad_lote": "LOTE-INT03A-81",
+          "evidencia_ids_vinculadas": [
+            80
+          ]
+        },
+        "error": null
+      },
+      "segundo": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 22,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "906",
+            "fecha_plantacion": "2026-11-13",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT02D-906",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "31",
+            "cantidad_total_plantada": 22,
+            "gps_distancia_a_poligono_m": 0.0
+          },
+          "comando_id": "ff86f5cb-1787-471c-bd8c-945c875c21fa",
+          "finalizado_en": "2026-11-13T20:32:27.201472Z"
+        },
+        "http_status": 200
+      }
+    },
+    {
+      "caso": "inicial primero → entrega preserva saldos",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "REGISTRAR_PLANTACION_INICIAL",
+          "resultado": {
+            "tipo": "PLANTACION_INICIAL",
+            "especies": [
+              {
+                "cantidad": 1,
+                "planta_id": "8"
+              }
+            ],
+            "responsable_id": "801",
+            "subcampania_id": "907",
+            "fecha_plantacion": "2026-11-13",
+            "revision_inicial": "0",
+            "codigo_trazabilidad": "PLT-001-INT02D-907",
+            "gps_dentro_poligono": true,
+            "registro_plantacion_id": "32",
+            "cantidad_total_plantada": 1,
+            "gps_distancia_a_poligono_m": 0.0
+          },
+          "comando_id": "47d38020-1403-466a-8f95-2ecc983337e7",
+          "finalizado_en": "2026-11-13T20:32:27.279868Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "data": {
+          "proposito": "PLANTACION_INICIAL",
+          "campania_id": 900,
+          "asignacion_id": 1000002,
+          "motivo_cierre": null,
+          "lote_vivero_id": 81,
+          "subcampania_id": 907,
+          "lote_finalizado": false,
+          "saldo_vivo_antes": 1015,
+          "cantidad_asignada": 5,
+          "estado_asignacion": "ACTIVA",
+          "saldo_vivo_despues": 1010,
+          "evento_plantacion_id": 4,
+          "evento_lote_vivero_id": 6,
+          "codigo_trazabilidad_lote": "LOTE-INT03A-81",
+          "evidencia_ids_vinculadas": [
+            82
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "caso": "entrega y devolución de otro ámbito comparten lote",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "data": {
+          "proposito": "PLANTACION_INICIAL",
+          "campania_id": 900,
+          "asignacion_id": 1000003,
+          "motivo_cierre": null,
+          "lote_vivero_id": 81,
+          "subcampania_id": 908,
+          "lote_finalizado": false,
+          "saldo_vivo_antes": 1010,
+          "cantidad_asignada": 5,
+          "estado_asignacion": "ACTIVA",
+          "saldo_vivo_despues": 1005,
+          "evento_plantacion_id": 5,
+          "evento_lote_vivero_id": 7,
+          "codigo_trazabilidad_lote": "LOTE-INT03A-81",
+          "evidencia_ids_vinculadas": [
+            83
+          ]
+        },
+        "error": null
+      },
+      "segundo": {
+        "data": {
+          "asignacion_id": 90900,
+          "lote_reabierto": false,
+          "lote_vivero_id": 81,
+          "saldo_vivo_antes": 1005,
+          "estado_asignacion": "ACTIVA",
+          "saldo_vivo_despues": 1008,
+          "evento_plantacion_id": 6,
+          "evento_lote_vivero_id": 8,
+          "cantidad_devuelta_delta": 3,
+          "cantidad_devuelta_total": 3,
+          "saldo_asignado_disponible": 17
+        },
+        "error": null
+      }
+    },
+    {
+      "caso": "devolución y entrega de otro ámbito comparten lote",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "data": {
+          "asignacion_id": 91000,
+          "lote_reabierto": false,
+          "lote_vivero_id": 81,
+          "saldo_vivo_antes": 1008,
+          "estado_asignacion": "ACTIVA",
+          "saldo_vivo_despues": 1011,
+          "evento_plantacion_id": 7,
+          "evento_lote_vivero_id": 9,
+          "cantidad_devuelta_delta": 3,
+          "cantidad_devuelta_total": 3,
+          "saldo_asignado_disponible": 17
+        },
+        "error": null
+      },
+      "segundo": {
+        "data": {
+          "proposito": "PLANTACION_INICIAL",
+          "campania_id": 900,
+          "asignacion_id": 1000004,
+          "motivo_cierre": null,
+          "lote_vivero_id": 81,
+          "subcampania_id": 911,
+          "lote_finalizado": false,
+          "saldo_vivo_antes": 1011,
+          "cantidad_asignada": 5,
+          "estado_asignacion": "ACTIVA",
+          "saldo_vivo_despues": 1006,
+          "evento_plantacion_id": 8,
+          "evento_lote_vivero_id": 10,
+          "codigo_trazabilidad_lote": "LOTE-INT03A-81",
+          "evidencia_ids_vinculadas": [
+            84
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "caso": "physical antes de FK → desactivación espera campaña",
+      "espera_observada": "Lock",
+      "barrera": "BEFORE INSERT evento_lote_vivero, anterior a FK real de campaña",
+      "orden": "física adquiere locks → desactivación espera → física confirma → desactivación",
+      "primero": {
+        "data": {
+          "proposito": "PLANTACION_INICIAL",
+          "campania_id": 960,
+          "asignacion_id": 1000005,
+          "motivo_cierre": null,
+          "lote_vivero_id": 81,
+          "subcampania_id": 960,
+          "lote_finalizado": false,
+          "saldo_vivo_antes": 1006,
+          "cantidad_asignada": 5,
+          "estado_asignacion": "ACTIVA",
+          "saldo_vivo_despues": 1001,
+          "evento_plantacion_id": 9,
+          "evento_lote_vivero_id": 11,
+          "codigo_trazabilidad_lote": "LOTE-INT03A-81",
+          "evidencia_ids_vinculadas": [
+            85
+          ]
+        },
+        "error": null
+      },
+      "segundo": {
+        "data": {
+          "deleted_at": "2026-11-13T16:32:27.597453-04:00",
+          "campania_id": 960,
+          "unidades_devueltas": 25,
+          "asignaciones_devueltas": 2,
+          "subcampanias_canceladas": 1
+        },
+        "error": null
+      }
+    },
+    {
+      "caso": "desactivación primero → physical revalida con FK real",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "data": {
+          "deleted_at": "2026-11-13T16:32:27.725423-04:00",
+          "campania_id": 961,
+          "unidades_devueltas": 20,
+          "asignaciones_devueltas": 1,
+          "subcampanias_canceladas": 1
+        },
+        "error": null
+      },
+      "segundo": {
+        "data": null,
+        "error": {
+          "code": "P0001",
+          "message": "Subcampania 961 no encontrada o eliminada."
+        }
+      }
+    },
+    {
+      "caso": "giveback antes de FK → desactivación espera campaña",
+      "espera_observada": "Lock",
+      "barrera": "BEFORE INSERT evento_lote_vivero, anterior a FK real de campaña",
+      "orden": "física adquiere locks → desactivación espera → física confirma → desactivación",
+      "primero": {
+        "data": {
+          "asignacion_id": 96200,
+          "lote_reabierto": false,
+          "lote_vivero_id": 81,
+          "saldo_vivo_antes": 1046,
+          "estado_asignacion": "ACTIVA",
+          "saldo_vivo_despues": 1049,
+          "evento_plantacion_id": 13,
+          "evento_lote_vivero_id": 15,
+          "cantidad_devuelta_delta": 3,
+          "cantidad_devuelta_total": 3,
+          "saldo_asignado_disponible": 17
+        },
+        "error": null
+      },
+      "segundo": {
+        "data": {
+          "deleted_at": "2026-11-13T16:32:27.914451-04:00",
+          "campania_id": 962,
+          "unidades_devueltas": 17,
+          "asignaciones_devueltas": 1,
+          "subcampanias_canceladas": 1
+        },
+        "error": null
+      }
+    },
+    {
+      "caso": "desactivación primero → giveback revalida con FK real",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "data": {
+          "deleted_at": "2026-11-13T16:32:28.038589-04:00",
+          "campania_id": 963,
+          "unidades_devueltas": 20,
+          "asignaciones_devueltas": 1,
+          "subcampanias_canceladas": 1
+        },
+        "error": null
+      },
+      "segundo": {
+        "data": null,
+        "error": {
+          "code": "P0001",
+          "message": "La asignacion 96300 ya esta DEVUELTA."
+        }
+      }
+    },
+    {
+      "caso": "cancel antes de FK → desactivación espera campaña",
+      "espera_observada": "Lock",
+      "barrera": "BEFORE INSERT evento_lote_vivero, anterior a FK real de campaña",
+      "orden": "física adquiere locks → desactivación espera → física confirma → desactivación",
+      "primero": {
+        "data": {
+          "id": 964,
+          "tipo": "REFORESTACION",
+          "estado": "CANCELADA",
+          "nombre": "Ámbito FK D",
+          "zona_id": 1,
+          "created_at": "2026-10-01T08:00:00-04:00",
+          "created_by": 800,
+          "deleted_at": "2026-11-13T16:32:28.176478-04:00",
+          "deleted_by": 800,
+          "updated_at": "2026-11-13T16:32:28.176478-04:00",
+          "updated_by": 800,
+          "campania_id": 964,
+          "descripcion": null,
+          "plan_revision": 0,
+          "poligono_geom": {
+            "crs": {
+              "type": "name",
+              "properties": {
+                "name": "EPSG:4326"
+              }
+            },
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -68.2,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.6
+                ],
+                [
+                  -68,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.4
+                ],
+                [
+                  -68.2,
+                  -16.6
+                ]
+              ]
+            ]
+          },
+          "area_hectareas": null,
+          "total_repuesto": 0,
+          "saldo_vivo_actual": 0,
+          "fase_mantenimiento": "NO_APLICA",
+          "fecha_estimada_fin": null,
+          "meta_total_arboles": 2,
+          "codigo_trazabilidad": "INT02D-FK-964",
+          "nombre_zona_snapshot": null,
+          "observaciones_cierre": null,
+          "fecha_estimada_inicio": null,
+          "motivo_cierre_parcial": null,
+          "tolerancia_gps_metros": 50,
+          "fecha_cierre_operativo": null,
+          "total_muerto_acumulado": 0,
+          "total_plantado_inicial": 0,
+          "fecha_fin_mantenimiento": null,
+          "nombre_coordinador_snapshot": null,
+          "participacion_inicializada_en": null,
+          "participacion_inicializada_por": null,
+          "nombres_organizaciones_snapshot": null
+        },
+        "error": null
+      },
+      "segundo": {
+        "data": {
+          "deleted_at": "2026-11-13T16:32:28.230216-04:00",
+          "campania_id": 964,
+          "unidades_devueltas": 0,
+          "asignaciones_devueltas": 0,
+          "subcampanias_canceladas": 0
+        },
+        "error": null
+      }
+    },
+    {
+      "caso": "desactivación primero → cancel revalida con FK real",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "data": {
+          "deleted_at": "2026-11-13T16:32:28.357459-04:00",
+          "campania_id": 965,
+          "unidades_devueltas": 20,
+          "asignaciones_devueltas": 1,
+          "subcampanias_canceladas": 1
+        },
+        "error": null
+      },
+      "segundo": {
+        "data": null,
+        "error": {
+          "code": "P0002",
+          "message": "Subcampania 965 no encontrada."
+        }
+      }
+    },
+    {
+      "caso": "baja C primero → operación interna denegada",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "INACTIVAR_CUENTA",
+          "resultado": {
+            "tipo": "CUENTA_INACTIVADA",
+            "activo": false,
+            "cambio": "CAMBIO_APLICADO",
+            "usuario_id": "902",
+            "revision_nueva": "1",
+            "revision_anterior": "0"
+          },
+          "comando_id": "343a4d03-77d6-4da7-88d0-59d2d857be7a",
+          "finalizado_en": "2026-11-13T20:32:28.828199Z"
+        },
+        "http_status": 200
+      },
+      "segundo": {
+        "data": null,
+        "error": {
+          "code": "PT403",
+          "message": "CUENTA_NO_DISPONIBLE"
+        }
+      }
+    },
+    {
+      "caso": "reposición primero → baja C espera cuenta y preserva hecho",
+      "espera_observada": "Lock",
+      "orden": "primera RPC → commit → segunda RPC",
+      "primero": {
+        "data": {
+          "consumos": [
+            {
+              "estado_final": "ACTIVA",
+              "asignacion_id": 91201,
+              "lote_vivero_id": 81,
+              "cantidad_consumida": 1,
+              "saldo_asignado_antes": 4,
+              "saldo_asignado_despues": 3
+            }
+          ],
+          "codigo_trazabilidad": "PLT-003-INT02D-912",
+          "gps_dentro_poligono": true,
+          "registro_plantacion_id": 36,
+          "cantidad_total_plantada": 1,
+          "evidencia_ids_vinculadas": [
+            91
+          ],
+          "gps_distancia_a_poligono_m": 0,
+          "coresponsable_ids_vinculados": []
+        },
+        "error": null
+      },
+      "segundo": {
+        "body": {
+          "error": null,
+          "estado": "CONFIRMADO",
+          "operacion": "INACTIVAR_CUENTA",
+          "resultado": {
+            "tipo": "CUENTA_INACTIVADA",
+            "activo": false,
+            "cambio": "CAMBIO_APLICADO",
+            "usuario_id": "901",
+            "revision_nueva": "1",
+            "revision_anterior": "0"
+          },
+          "comando_id": "88bbc45d-8f02-44a6-99a3-07073f684966",
+          "finalizado_en": "2026-11-13T20:32:28.975155Z"
+        },
+        "http_status": 200
+      }
+    }
+  ],
+  "limites": [
+    "Sin aplicación remota, transición de personas reales, push ni despliegue",
+    "Fixture parcial; no acredita replay 001–073",
+    "Storage de prueba privado de archivos; no acredita políticas del bucket Supabase real",
+    "URLs/CDN legadas y Storage remotos requieren cotejo/corte del entorno destino",
+    "HTTP instala086 real sobre dos tablas vacías representativas del ledger082; no acredita082 completo."
+  ],
+  "migraciones": [
+    "migrations/068_pa_participacion_comando.sql",
+    "migrations/069_pa_int02b_eventos_acceso.sql",
+    "migrations/070_pa_int02b_permisos_contextuales.sql",
+    "migrations/071_pa_int02b_bootstrap_controlado.sql",
+    "migrations/072_pa_int02c_comandos_acceso.sql",
+    "migrations/073_pa_int02c_lecturas.sql",
+    "migrations/074_pa_int03a_cargas.sql",
+    "migrations/075_pa_int03a_registro.sql",
+    "migrations/076_pa_int03a_fecha_entrega.sql",
+    "migrations/077_pa_int02d_operaciones_compartidas.sql",
+    "migrations/078_pa_int02d_lifecycle.sql",
+    "migrations/079_pa_int02d_evidencias.sql",
+    "migrations/080_pa_int02d_superficie_privada.sql"
+  ],
+  "revision_git": "0074200a77f5ce6780f64ce0f594d07ad18e6a82",
+  "sha256": {
+    "scripts/sql/pa-int02d-superficie-preflight.sql": "1854fa14593b8d0cb033c038da0f4db06bd65ce809ea391a2b450f18c67bef84",
+    "test/db/pa-int02d-fixture.sql": "e3353ef2e09adca91cd4f2827f70d97379a62de25abc3c4afabddb455a1b96a8",
+    "scripts/qa/pa-int02d-db-test.py": "6f327303243fc6258ca98aed00b3c130dc0ff9f0029d05b80cc14776705aadca",
+    "test/db/pa-int02d-assertions.py": "8c93b50993907d794a86e4e2e0ebee460f99bddacd7631b86422144e85d1f818",
+    "test/db/pa-int02d-http.spec.ts": "f8a4a15c349dbc35ba8aac07695d206f1ebb9daf5065048db60eb75ebca55138",
+    "scripts/qa/pa-int02d-harness.ts": "8b316283b6b419c5b261817b9cb19833d61ceab8b7110280feb24154be6ef3d2",
+    "migrations/068_pa_participacion_comando.sql": "838e1e658d178e59af5318e5b64514aef6b02317c1d4b19a3bd71af77e353a45",
+    "migrations/069_pa_int02b_eventos_acceso.sql": "cc360b8799d6a681d3ac98fe0114feae38223dfea7bea9dda0a4b739d0afca39",
+    "migrations/070_pa_int02b_permisos_contextuales.sql": "fe577206af76c8aa5f61ad453d0916b0e025b13b1660ba996fc8bbbd81dddd39",
+    "migrations/071_pa_int02b_bootstrap_controlado.sql": "ef8a2e3ff9a4e370c8ff176e0f85b46447f135dd3e5bd34ce21f74f909dbb560",
+    "migrations/072_pa_int02c_comandos_acceso.sql": "747b74f9a1d4c0eab006544119c4a5d505c757939a4eeedaec77e95f25233ee7",
+    "migrations/073_pa_int02c_lecturas.sql": "7bfcc6d60e5baaf603a514475e5403137d28a478dba715eed22a63797c34b157",
+    "migrations/074_pa_int03a_cargas.sql": "fa72c23c500cb743fa1afa0452ea088bcf0cff8d15b3e3956b763e7adb2cf045",
+    "migrations/075_pa_int03a_registro.sql": "be438c7b27f25f2e14f607bcfd307678cd401ac5f2d6746e29a37058ade24169",
+    "migrations/076_pa_int03a_fecha_entrega.sql": "c12ae6f68ad43799946a5a335d5eff64bd9b17446ad31dd0670447f6f32cf2ae",
+    "migrations/077_pa_int02d_operaciones_compartidas.sql": "c11660a287349ccadc45ff0026008f193834e55cf28f2ce89b99ba46a799088b",
+    "migrations/078_pa_int02d_lifecycle.sql": "bfe78a412ef71d795eff20167e1f73f02a7b6091779f2808e0f6e10ccde6aa0f",
+    "migrations/079_pa_int02d_evidencias.sql": "509b6b2a4a50de012d060f469d85a781b5b6947a03d47669f934e8f99d8f5f3d",
+    "migrations/080_pa_int02d_superficie_privada.sql": "d52b8e518c42d3e3e43b8c3262eab4165e28f2b7a23b32339637069336e323ea",
+    "src/participacion/application/participacion-correcciones.service.ts": "57f518a2b721f0856d163b34bbf62fd8de61700a8d0ea46587b2670fc91052df",
+    "src/participacion/application/participacion-registro.service.ts": "a6366f7ed16333346c9032595c27a61a9bd71bb71d289f1bdd8c7cf17fa3f63b",
+    "src/participacion/cargas/participacion-cargas-cleanup-reinicio.spec.ts": "4d5a81d49e541c03c63643d47ef8c9b51d74ccc692ea337732b592e96eb0b9e3",
+    "src/participacion/cargas/participacion-cargas.controller.ts": "fad5a2b7b4ec9d09ca31f24d94fd2ca097ef3a8e59d73e4c8a8e6d572a9a1657",
+    "src/participacion/cargas/participacion-cargas.service.spec.ts": "e68723b1d5629ed45e7bdb57c976a8531ed79071668cd60b4a9b9fc93a1838b3",
+    "src/participacion/cargas/participacion-cargas.service.ts": "cc321f3bd2dad508b928d2e1c56d0b28cef474f2adaceb0d59381ab20eee579a",
+    "src/participacion/cargas/participacion-imagen-publica.service.spec.ts": "aa0eb9b51834883a1347ec1068aba09159aa2a6371dae43dcaf9b47626d3b12b",
+    "src/participacion/cargas/participacion-imagen.service.spec.ts": "97a90c4480619e289ed53f6cb402ac85337db00120c8895cb8936757e291f1e1",
+    "src/participacion/cargas/participacion-imagen.service.ts": "e2f0510c44c3468e1b94e1006267005d43ab28d25a1d273c7f7ae9fb225ac963",
+    "src/participacion/comando-canonical.ts": "e2539ce1d5108df8a34d5db36c87fe77b098918cf2fc73adddf97d6d16a8c4f0",
+    "src/participacion/comando-recibo.ts": "cb28b01e5d7d1cec3068034b2dc1e11212afe428186d0282a84eb377c0c022e8",
+    "src/participacion/domain/policies/correcciones-proyeccion.policy.ts": "0092f34d701b86c675b95fad0c9d0ac0242e9459abe6944f1bae97a980e4f3ad",
+    "src/participacion/domain/policies/registro-proyeccion.policy.ts": "fa88e05fc65ea35057cd08b7b1b03f39f2b5fe155f85a281b63ac44c1a2f5624",
+    "src/participacion/dto/comandos.dto.ts": "8a9135a48810f29d91be48b261280b4e75db4824c86b42b115f0c56a4579c39c",
+    "src/participacion/dto/correcciones.dto.ts": "240a48d775d5babe263eb41ed6777f2851957c822a32950bae09cba99abcb4c1",
+    "src/participacion/dto/lecturas.dto.ts": "bdd51a81f9190df06bf3338d664a73cc887be1e2810f58bdc3f66e0c2c297432",
+    "src/participacion/dto/registro.dto.ts": "b1260b3fb27569cc5f9fac4f304db229a22685c75ad69371a9ff76b73494ffe4",
+    "src/participacion/participacion-comandos.controller.ts": "773d56931ee103544395f8fda8fed438eb12c24ae6ec1816dc8ce7dde69b5f69",
+    "src/participacion/participacion-comandos.service.ts": "d3189f4fc2943fa53a9183f163d80b809eea3c6b3a38167751c3a3801f9b2574",
+    "src/participacion/participacion-correcciones.controller.ts": "f074716ab976e701801308f0e1292a685f092325b5c662888fd17053d5182ccf",
+    "src/participacion/participacion-exception.filter.ts": "7504691a4d5154b943fc0fb89c2e3d03f6155e173c6ceff39735d9a38ef4a04a",
+    "src/participacion/participacion-lecturas.controller.ts": "e76be61252872891e20eb8dfc2a679432d78e2b0b8c642b2421df1f106baeb39",
+    "src/participacion/participacion-lecturas.service.ts": "b8d2768490889eb48eff95d794df22c1a15e7271144126cd34cf1724d7021456",
+    "src/participacion/participacion-openapi.generated.ts": "2cc4345aabde931822f17821a845771bfe89cd4ecea594afe52391964bcaed42",
+    "src/participacion/participacion-registro.controller.ts": "3d0a7979b5ecac59bb3e69a4f080823819a97d97d998983893da704c0db4e6ca",
+    "src/participacion/participacion.module.ts": "c00a2a2ae57ae310ce8ab762b2487ccd9fc8fc0408f0db99e3794df2e0c4c7fb",
+    "src/participacion/tests/comando-canonical.spec.ts": "342c998b05c9c12dd0a5ef29dccf63d9e225b7bf53e12a663376bd359121a6e5",
+    "src/participacion/tests/correcciones-participantes.spec.ts": "10109016c7b1c12e6e774e072b24eebbcefbbf74b3918e9d111443d9c0e485f2",
+    "src/participacion/tests/correcciones.spec.ts": "0344461e5aae58393b453b00007cc6d2fa3a8e4c8e8ccbb8d0f370e84582cdfe",
+    "src/participacion/tests/participacion-comandos.service.spec.ts": "3f9ee0ba59d5021005560f4f4c5ec1eff49ca86ee29cb30b7bc993df863aa503",
+    "src/participacion/tests/participacion-lecturas.spec.ts": "8bdf6b2539200fbeac369c9082dedf999b2887f744a48d44a19dcbfea0def62c",
+    "src/participacion/tests/participacion-openapi.spec.ts": "8c4f222ba53010659dbb7bafe6908460e741b8468674f786b71261e53e8d08b3",
+    "src/participacion/tests/procedencia-propia.spec.ts": "27e4791418e1c4a5a359f0e6a958857e0f99d75def002f15b84c03b227b8565a",
+    "src/participacion/tests/registro-dto.spec.ts": "0089c02d9c3f77534a9da0478759ac998473e41ba11425742fc35b2629304b1a",
+    "src/participacion/tests/registro-service.spec.ts": "f66a41c57c7abe02b5dc7e4c9ed3914a62f8e31f2b28294b10d4b9599d1a72ba",
+    "migrations/010_vivero_operational_rules.sql": "9e19e7f83c7b36f516fff9857f97efba312e6ace8aaafc5c0774d8a9e6d083e3",
+    "test/db/pa-int03a-fixture.sql": "1e18eda74ca9ce8ac8234d40c31d6de20d0c990a2c0b4c7d22d692a37bf4117f",
+    "test/db/pa-int03a-assertions.py": "9db6f5237e832b52307ae29b8b8815b34ce4d661b69782c505322069ad1b7541",
+    "test/db/pa-int03a-expiracion.py": "7aa505aad4c5cdac74aae4072c1f336d70ec9742ebe2b41555c11fcdc6610daa",
+    "test/db/pa-int03a-acceso-regresion.py": "8c24afcf612af043ddf19fdad19a376c732cac9bf800f5868cb701fb88ed35fb",
+    "test/db/pa-int03a-http.spec.ts": "3dd652c77a111597c58ac08390c073e3515859f08cf3e108c3c27c46a9df2716",
+    "test/jest-participacion-registro-db.json": "fe0a046ded5c6127f96c1e98526a32ce2060ae9076876918c1b7981794ec4442",
+    "scripts/qa/pa-int03a-db-test.py": "2d013eb58e0c1a7f086bcc8760c2c7838d921766028aebbb2ed0531b86e16895",
+    "scripts/qa/pa-int03a-harness.ts": "2e29b7e85c7027f0ed4c5ce3fae01667a83d72548934947bbaeb5679a0b7c645",
+    "scripts/qa/pa-int03a-preview-server.ts": "5c30879d9d85bd477af9dc4df6e1f3d0efe07267c5718ecef3f49ffe7d769ca4",
+    "scripts/qa/pa-int03a-postgis-preparar.sh": "09cc8611b12431bb8690e9ca2ceed05ccb54442b116d0a2f65ac27caf56dba59",
+    "test/db/pa-int03a-preview-fixture.sql": "746aafc7eac07b8dc771f16ab27bc48c30ede672fc6d937d6d971b24755467a5",
+    "test/db/fixtures/pa-int03a/sintetica.heic": "ebeb0363f833465546726dd5e3856bb30036af146ab05bd661751452da24eda3"
+  },
+  "saldos_lifo": {
+    "registro_id": "2",
+    "detalles": [
+      [
+        80002,
+        2
+      ],
+      [
+        80003,
+        5
+      ]
+    ],
+    "vivero_intacto": true,
+    "meta": 2,
+    "plantado": 7,
+    "estado": "ACTIVA"
+  },
+  "catalogo_cargas": {
+    "FK_RESTRICT_carga": 6,
+    "FK_RESTRICT_generacion": 1,
+    "instalacion_y_repeticion": "074–076",
+    "Storage_RLS_adversario": "Política permisiva legada + restrictiva074 probadas SQL reales; bucket privado; otro bucket preservado"
+  },
+  "sql_estado": "CORRECTO",
+  "d_http_casos": [
+    "INT02-D HTTP real → guard/service/RPC/PostGIS/Storage privado JWT/actividad y rol interno se comprueban antes de las rutas equivalentes",
+    "INT02-D HTTP real → guard/service/RPC/PostGIS/Storage privado inicial/contexto/upload antiguos dan409 sin crear evidencias o consumir stock",
+    "INT02-D HTTP real → guard/service/RPC/PostGIS/Storage privado GET plan permanece disponible para toda cuenta activa y escritura exigeADMIN",
+    "INT02-D HTTP real → guard/service/RPC/PostGIS/Storage privado upload interno exige ámbito/equipo y usa original privado+derivado sanitizado",
+    "INT02-D HTTP real → guard/service/RPC/PostGIS/Storage privado API general/aliases/foto pública no abren una pendiente privada porID",
+    "INT02-D HTTP real → guard/service/RPC/PostGIS/Storage privado origen ajeno rechaza HTTP íntegro y origen propio conserva reposición interna",
+    "INT02-D HTTP real → guard/service/RPC/PostGIS/Storage privado ADMIN no descarta ajenas/vinculadas y descarta solo pendientes propias",
+    "INT02-D HTTP real → guard/service/RPC/PostGIS/Storage privado pausa de servidor conserva preparación/GET y replay terminal sin nueva escritura",
+    "INT02-D HTTP real → guard/service/RPC/PostGIS/Storage privado foto histórica elegible se sanitiza sinJWT; pendiente/ajena no accede aStorage"
+  ],
+  "http_casos": [
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales rechaza visitante, cuenta inactiva y x-auth-id discordante; cache privada",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales contexto real y paginación de candidatos no exponen stock interno ni perfiles",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales PREPARADO recupera 202 y exige DTO estricto, multipart y bytes realmente decodificables",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales decodifica jpeg real y elimina metadata del derivado JPEG",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales decodifica png real y elimina metadata del derivado JPEG",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales decodifica webp real y elimina metadata del derivado JPEG",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales decodifica heic real y elimina metadata del derivado JPEG",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales decodifica heif real y elimina metadata del derivado JPEG",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales preview propio firmado 5 minutos; ADMIN ajeno y objeto directo permanecen privados",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales mismos bytes recuperan misma evidencia; otros bytes 409 y máximo diez cargas",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales reconcilia respuesta perdida Storage y finalización DB sin duplicar evidencia ni objetos",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales Storage antes de escritura deja 202 recuperable y nueva generación invalida lease anterior",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales upload atrasado tras cancelar/limpiar reaparece y el ledger durable lo vuelve a borrar",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales confirma hecho/fotos/recibo; público ve solo derivado, cleanup protege VINCULADA y falta temporal no revierte stock",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales confirmar omitiendo upload en tránsito clausura su generación y cleanup conserva la foto vinculada",
+    "PA INT03-A HTTP → guard/service/RPC/PostGIS y objetos privados reales pérdida de respuesta después de commit permite recuperar recibo tras retiro sin nuevo consumo"
+  ],
+  "storage": {
+    "tipo": "Archivos privados reales en directorio efímero 0700, objetos 0600; URLs HMAC verificadas por HTTP",
+    "original_sha256": "89973ffa58b683b6e888e2b6b0bb993052f4d6e357a9cafde51a371ec6f8bab1",
+    "formatos": [
+      "JPEG",
+      "PNG",
+      "WEBP",
+      "HEIC",
+      "HEIF"
+    ],
+    "fallos_inyectados": [
+      "upload confirma objeto y pierde respuesta",
+      "upload falla antes de escribir",
+      "finalización DB confirma y pierde respuesta",
+      "registro DB confirma y pierde respuesta",
+      "upload bloqueado antes de escribir, cancelación/cleanup y aparición atrasada",
+      "registro confirma una foto y omite otra reservada en tránsito, invalida lease y barre aparición atrasada",
+      "remove falla una vez"
+    ],
+    "limite": "No acredita políticas remotas del bucket Supabase ni red de producción"
+  },
+  "http_storage": {
+    "suite": "test/jest-participacion-compartida-db.json",
+    "exit_code": 0
+  },
+  "preflight_adversarios": [
+    {
+      "caso": "PA_D_FUERA_ALCANCE_SELECT_PUBLICO",
+      "fallo_sin_mutacion": true
+    },
+    {
+      "caso": "PA_D_FUERA_ALCANCE_DML_PUBLICO",
+      "fallo_sin_mutacion": true
+    },
+    {
+      "caso": "PA_D_FUERA_ALCANCE_DML_PUBLICO",
+      "fallo_sin_mutacion": true
+    },
+    {
+      "caso": "PA_D_FUERA_ALCANCE_DML_PUBLICO",
+      "fallo_sin_mutacion": true
+    },
+    {
+      "caso": "PA_D_VISTA_PUBLICA_NO_AUTORIZADA",
+      "fallo_sin_mutacion": true
+    },
+    {
+      "caso": "PA_D_DEFINER_PUBLICO_NO_AUTORIZADO",
+      "fallo_sin_mutacion": true
+    },
+    {
+      "caso": "servicio dependía solo dePUBLIC",
+      "rollback_integral_sin_grants_nuevos": true
+    }
+  ],
+  "preflight_local": {
+    "rol": "postgres",
+    "fuente": "CATALOGO_DEL_DESTINO_NO_INFERIDO",
+    "membresias": [
+      {
+        "rol": "pg_read_all_settings",
+        "miembro": "pg_monitor"
+      },
+      {
+        "rol": "pg_read_all_stats",
+        "miembro": "pg_monitor"
+      },
+      {
+        "rol": "pg_stat_scan_tables",
+        "miembro": "pg_monitor"
+      }
+    ],
+    "relaciones": [
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}",
+        "rls": false,
+        "relacion": "evento_plantacion"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}",
+        "rls": false,
+        "relacion": "subcampania_equipo"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}",
+        "rls": false,
+        "relacion": "subcampania_meta_especie"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}",
+        "rls": false,
+        "relacion": "lote_vivero"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}",
+        "rls": false,
+        "relacion": "registro_plantacion"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}",
+        "rls": false,
+        "relacion": "registro_plantacion_detalle"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}",
+        "rls": false,
+        "relacion": "evidencias_trazabilidad"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}",
+        "rls": false,
+        "relacion": "asignacion_vivero_subcampania"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}",
+        "rls": false,
+        "relacion": "evento_lote_vivero"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}",
+        "rls": false,
+        "relacion": "registro_plantacion_coresponsable"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}",
+        "rls": false,
+        "relacion": "subcampania"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}",
+        "rls": false,
+        "relacion": "campania_organizacion"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}",
+        "rls": false,
+        "relacion": "campania"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=r/postgres}",
+        "rls": false,
+        "relacion": "v_lote_vivero_saldos"
+      },
+      {
+        "acl": "{postgres=arwdDxt/postgres,service_role=r/postgres,=r/postgres,anon=r/postgres,authenticated=r/postgres}",
+        "rls": false,
+        "relacion": "campania_estado"
+      }
+    ],
+    "columnas_acl": [],
+    "helpers_codigos": []
+  },
+  "acl_compartidas": [
+    {
+      "anon": false,
+      "firma": "pa_d_subcampania_activar(bigint,bigint)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_d_foto_legada_publica(bigint)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_d_evidencias_reposicion(bigint,bigint,text,jsonb)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_d_cuenta(bigint)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "fn_m3_registrar_plantacion(bigint,boolean,bigint,date,bigint,numeric,numeric,text,bigint[],jsonb,bigint[])",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "fn_vivero_asignar_stock_subcampania(bigint,bigint,integer,proposito_asignacion,bigint,date,bigint[],text)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "fn_m3_devolver_asignacion_vivero(bigint,integer,motivo_devolucion_plantacion,bigint,date,text)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "fn_m2_m3_aplicar_devolucion_fisica(bigint,integer,motivo_devolucion_plantacion,bigint,date,text)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "fn_subcampania_cancelar_interna(bigint,bigint,text,jsonb)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "fn_subcampania_cancelar(bigint,bigint,text)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "fn_campania_desactivar_sin_plantaciones(bigint,bigint,text)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "fn_subcampania_revisar_plan(bigint,integer,jsonb,bigint,bigint)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "fn_subcampania_obtener_plan(bigint)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_d_subcampania_cerrar(bigint,bigint,jsonb)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_d_equipo_agregar(bigint,bigint,jsonb)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_d_equipo_quitar(bigint,bigint,bigint)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_d_subcampania_editar(bigint,bigint,jsonb)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_d_subcampania_borrar(bigint,bigint)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "fn_subcampania_setear_poligono(integer,jsonb,bigint)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_foto_publica(bigint)",
+      "public": false,
+      "authenticated": false
+    },
+    {
+      "anon": false,
+      "firma": "pa_d_test_ejecutar(text)",
+      "public": false,
+      "authenticated": false
+    }
+  ],
+  "timeouts_compartidos": {
+    "statement_segundos": 30.009,
+    "lock_segundos": 5.013,
+    "entrada": "conexión limpia con SET previo según rol/proconfig,077 real con trigger lento sintético",
+    "rollback_verificado": true,
+    "limite": "PostgREST remoto/configuración hoisted/catálogo pendientes de cotejo"
+  },
+  "d_resultados": {
+    "grupos_sql": 11,
+    "carreras_reales": 18,
+    "espera": "Lock observada",
+    "superficie_080": "VERIFICADA_LOCAL_ALCANCE_FIJO_EXTRAS_CONDICIONADOS_AL_PREFLIGHT"
+  }
+}
