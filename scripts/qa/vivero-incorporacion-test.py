@@ -489,6 +489,15 @@ def main():
         migration107=next((ROOT/'migrations').glob('107_*'));drift107=migration107.read_text().replace('BEGIN;','',1).rsplit('COMMIT;',1)[0]
         sql('BEGIN; ALTER TABLE public.evento_lote_vivero DROP CONSTRAINT chk_evento_lote_vivero_saldos_eventos_vivos_requeridos; '+drift107,error='T5_EMBOLSADO_107_CHECK_INCOMPATIBLE')
         check(True,'107 detecta CHECK ausente y revierte deriva delensayo sin repararcatalogo silenciosamente')
+        # Cierre108 posterior a107: conservar todos los hechos del ensayo y
+        # ejecutar también HTTP sobre los CHECKs definitivos no negativos.
+        antes108=sql("SELECT jsonb_build_object('lotes',(SELECT jsonb_agg(to_jsonb(l) ORDER BY id) FROM public.lote_vivero l),'eventos',(SELECT jsonb_agg(to_jsonb(e) ORDER BY id) FROM public.evento_lote_vivero e),'fotos',(SELECT jsonb_agg(to_jsonb(f) ORDER BY id) FROM public.evidencias_trazabilidad f))")
+        migration108=next((ROOT/'migrations').glob('108_*'));migrations.append(migration108.name)
+        run(command()+['-f',str(migration108)]);run(command()+['-f',str(migration108)])
+        check(antes108==sql("SELECT jsonb_build_object('lotes',(SELECT jsonb_agg(to_jsonb(l) ORDER BY id) FROM public.lote_vivero l),'eventos',(SELECT jsonb_agg(to_jsonb(e) ORDER BY id) FROM public.evento_lote_vivero e),'fotos',(SELECT jsonb_agg(to_jsonb(f) ORDER BY id) FROM public.evidencias_trazabilidad f))"),'108 instalación/repetición conserva todos los lotes/eventos/fotos T5 poblados')
+        lote108=call(inicio(24,100))['lote_vivero_id']
+        call(evento(24,lote108,'EMBOLSADO',qty=7))
+        check(sql(f"SELECT saldo_vivo_antes IS NULL AND saldo_vivo_despues=7 AND cantidad_afectada=7 AND unidad_medida_evento='UNIDAD' FROM public.evento_lote_vivero WHERE lote_id={lote108} AND tipo_evento='EMBOLSADO'")=='t','108 conserva INICIO/EMBOLSADO095 real con evidencia y nacimientoNULL a7')
         if not args.sql_only:
             sql("CREATE FUNCTION public.t5_http_transport(p_sql text) RETURNS jsonb LANGUAGE plpgsql AS $$ DECLARE r jsonb; BEGIN EXECUTE p_sql INTO r; RETURN jsonb_build_object('data',r,'error',NULL); EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('data',NULL,'error',jsonb_build_object('code',SQLSTATE,'message',SQLERRM)); END $$")
             http_env=dict(env,T5_DB_SOCKET=str(socket),T5_DB_PORT='55444',T5_DB_PSQL=binaries['psql'],NODE_ENV='test',T5_HTTP_POSTGIS=str(args.postgis).lower())
