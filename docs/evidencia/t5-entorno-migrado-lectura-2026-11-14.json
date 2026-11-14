@@ -1,0 +1,675 @@
+{
+  "fecha_utc": "2026-11-14T15:37:49.006Z",
+  "revision": "7984368",
+  "destino": "vyrjlehkhabydkhjxagx.supabase.co",
+  "metodo": "SOLO_GET_SIN_FILAS_DE_NEGOCIO",
+  "openapi_status": 200,
+  "rpc": {
+    "m2_incorporacion_crear": {
+      "presente": true,
+      "parametros": [
+        {
+          "in": "body",
+          "name": "args",
+          "required": true,
+          "schema": {
+            "properties": {
+              "p_actor_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_payload": {
+                "format": "jsonb"
+              },
+              "p_solicitud_id": {
+                "format": "uuid",
+                "type": "string"
+              }
+            },
+            "required": [
+              "p_actor_id",
+              "p_solicitud_id",
+              "p_payload"
+            ],
+            "type": "object"
+          }
+        },
+        {
+          "$ref": "#/parameters/preferParams"
+        }
+      ]
+    },
+    "m2_incorporacion_recuperar": {
+      "presente": true,
+      "parametros": [
+        {
+          "in": "body",
+          "name": "args",
+          "required": true,
+          "schema": {
+            "properties": {
+              "p_actor_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_solicitud_id": {
+                "format": "uuid",
+                "type": "string"
+              }
+            },
+            "required": [
+              "p_actor_id",
+              "p_solicitud_id"
+            ],
+            "type": "object"
+          }
+        },
+        {
+          "$ref": "#/parameters/preferParams"
+        }
+      ]
+    },
+    "m2_incorporacion_evidencias_preparar": {
+      "presente": true,
+      "parametros": [
+        {
+          "in": "body",
+          "name": "args",
+          "required": true,
+          "schema": {
+            "properties": {
+              "p_actor_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_fotos": {
+                "format": "jsonb"
+              },
+              "p_solicitud_id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "p_vivero_id": {
+                "format": "bigint",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "p_actor_id",
+              "p_vivero_id",
+              "p_solicitud_id",
+              "p_fotos"
+            ],
+            "type": "object"
+          }
+        },
+        {
+          "$ref": "#/parameters/preferParams"
+        }
+      ]
+    },
+    "m2_incorporacion_evidencias_leer": {
+      "presente": true,
+      "parametros": [
+        {
+          "in": "body",
+          "name": "args",
+          "required": true,
+          "schema": {
+            "properties": {
+              "p_actor_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_solicitud_id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "p_vivero_id": {
+                "format": "bigint",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "p_actor_id",
+              "p_vivero_id",
+              "p_solicitud_id"
+            ],
+            "type": "object"
+          }
+        },
+        {
+          "$ref": "#/parameters/preferParams"
+        }
+      ]
+    },
+    "pa_registro_procedencia_propia_leer": {
+      "presente": true,
+      "parametros": [
+        {
+          "in": "body",
+          "name": "args",
+          "required": true,
+          "schema": {
+            "description": "T5: procedencia mínima del consumo persistido para autor/participante efectivo activo; sin ficha/fotos M2. Atribución registrada, no prueba de selección física de lote.",
+            "properties": {
+              "p_actor_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_auth_id": {
+                "format": "text",
+                "type": "string"
+              },
+              "p_registro_id": {
+                "format": "bigint",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "p_actor_id",
+              "p_auth_id",
+              "p_registro_id"
+            ],
+            "type": "object"
+          }
+        },
+        {
+          "$ref": "#/parameters/preferParams"
+        }
+      ]
+    },
+    "fn_vivero_registrar_adaptabilidad_exacto": {
+      "presente": true,
+      "parametros": [
+        {
+          "in": "body",
+          "name": "args",
+          "required": true,
+          "schema": {
+            "description": "T5: mismos efectos y autoridad de la RPC vigente; IDs TEXT y arrays TEXT[] antes del transporte JSON. No crea motor ni ejecuta dos veces.",
+            "properties": {
+              "p_evidencia_ids": {
+                "format": "bigint[]",
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "p_fecha_evento": {
+                "format": "date",
+                "type": "string"
+              },
+              "p_lote_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_observaciones": {
+                "format": "text",
+                "type": "string"
+              },
+              "p_responsable_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_subetapa_destino": {
+                "format": "public.subetapa_adaptabilidad",
+                "type": "string"
+              }
+            },
+            "required": [
+              "p_lote_id",
+              "p_fecha_evento",
+              "p_responsable_id",
+              "p_subetapa_destino"
+            ],
+            "type": "object"
+          }
+        },
+        {
+          "$ref": "#/parameters/preferParams"
+        }
+      ]
+    },
+    "fn_vivero_registrar_merma_exacto": {
+      "presente": true,
+      "parametros": [
+        {
+          "in": "body",
+          "name": "args",
+          "required": true,
+          "schema": {
+            "description": "T5: mismos efectos y autoridad de la RPC vigente; IDs TEXT y arrays TEXT[] antes del transporte JSON. No crea motor ni ejecuta dos veces.",
+            "properties": {
+              "p_cantidad_perdida": {
+                "format": "integer",
+                "type": "integer"
+              },
+              "p_causa_merma": {
+                "format": "public.causa_merma_vivero",
+                "type": "string"
+              },
+              "p_evidencia_ids": {
+                "format": "bigint[]",
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "p_fecha_evento": {
+                "format": "date",
+                "type": "string"
+              },
+              "p_lote_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_observaciones": {
+                "format": "text",
+                "type": "string"
+              },
+              "p_responsable_id": {
+                "format": "bigint",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "p_lote_id",
+              "p_fecha_evento",
+              "p_responsable_id",
+              "p_cantidad_perdida",
+              "p_causa_merma"
+            ],
+            "type": "object"
+          }
+        },
+        {
+          "$ref": "#/parameters/preferParams"
+        }
+      ]
+    },
+    "fn_vivero_registrar_despacho_exacto": {
+      "presente": true,
+      "parametros": [
+        {
+          "in": "body",
+          "name": "args",
+          "required": true,
+          "schema": {
+            "description": "T5: mismos efectos y autoridad de la RPC vigente; IDs TEXT y arrays TEXT[] antes del transporte JSON. No crea motor ni ejecuta dos veces.",
+            "properties": {
+              "p_cantidad_despachada": {
+                "format": "integer",
+                "type": "integer"
+              },
+              "p_comunidad_destino_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_destino_referencia": {
+                "format": "text",
+                "type": "string"
+              },
+              "p_destino_tipo": {
+                "format": "public.destino_tipo_vivero",
+                "type": "string"
+              },
+              "p_evidencia_ids": {
+                "format": "bigint[]",
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "p_fecha_evento": {
+                "format": "date",
+                "type": "string"
+              },
+              "p_lote_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_observaciones": {
+                "format": "text",
+                "type": "string"
+              },
+              "p_responsable_id": {
+                "format": "bigint",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "p_lote_id",
+              "p_fecha_evento",
+              "p_responsable_id",
+              "p_cantidad_despachada",
+              "p_destino_tipo",
+              "p_destino_referencia"
+            ],
+            "type": "object"
+          }
+        },
+        {
+          "$ref": "#/parameters/preferParams"
+        }
+      ]
+    },
+    "fn_vivero_asignar_stock_subcampania_exacto": {
+      "presente": true,
+      "parametros": [
+        {
+          "in": "body",
+          "name": "args",
+          "required": true,
+          "schema": {
+            "description": "T5: mismos efectos y autoridad de la RPC vigente; IDs TEXT y arrays TEXT[] antes del transporte JSON. No crea motor ni ejecuta dos veces.",
+            "properties": {
+              "p_cantidad_asignada": {
+                "format": "integer",
+                "type": "integer"
+              },
+              "p_evidencia_ids": {
+                "format": "bigint[]",
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "p_fecha_asignacion": {
+                "format": "date",
+                "type": "string"
+              },
+              "p_lote_vivero_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_observaciones": {
+                "format": "text",
+                "type": "string"
+              },
+              "p_proposito": {
+                "format": "public.proposito_asignacion",
+                "type": "string"
+              },
+              "p_subcampania_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_usuario_asignacion_id": {
+                "format": "bigint",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "p_lote_vivero_id",
+              "p_subcampania_id",
+              "p_cantidad_asignada",
+              "p_proposito",
+              "p_usuario_asignacion_id",
+              "p_fecha_asignacion",
+              "p_evidencia_ids"
+            ],
+            "type": "object"
+          }
+        },
+        {
+          "$ref": "#/parameters/preferParams"
+        }
+      ]
+    },
+    "fn_m3_devolver_asignacion_vivero_exacto": {
+      "presente": true,
+      "parametros": [
+        {
+          "in": "body",
+          "name": "args",
+          "required": true,
+          "schema": {
+            "description": "T5: mismos efectos y autoridad de la RPC vigente; IDs TEXT y arrays TEXT[] antes del transporte JSON. No crea motor ni ejecuta dos veces.",
+            "properties": {
+              "p_asignacion_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_cantidad_devuelta": {
+                "format": "integer",
+                "type": "integer"
+              },
+              "p_fecha_devolucion": {
+                "format": "date",
+                "type": "string"
+              },
+              "p_motivo_devolucion": {
+                "format": "public.motivo_devolucion_plantacion",
+                "type": "string"
+              },
+              "p_observaciones": {
+                "format": "text",
+                "type": "string"
+              },
+              "p_usuario_devolucion_id": {
+                "format": "bigint",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "p_asignacion_id",
+              "p_cantidad_devuelta",
+              "p_motivo_devolucion",
+              "p_usuario_devolucion_id",
+              "p_fecha_devolucion"
+            ],
+            "type": "object"
+          }
+        },
+        {
+          "$ref": "#/parameters/preferParams"
+        }
+      ]
+    },
+    "fn_m3_registrar_plantacion_exacto": {
+      "presente": true,
+      "parametros": [
+        {
+          "in": "body",
+          "name": "args",
+          "required": true,
+          "schema": {
+            "description": "T5 revisión: una ejecución de reposición interna077 con IDs/arrays TEXT y consumos JSONB con IDs en cadenas antes de serializar. Misma autoridad y transacción; no crea idempotencia ni modifica inicial075.",
+            "properties": {
+              "p_coresponsable_ids": {
+                "format": "bigint[]",
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "p_detalles": {
+                "format": "jsonb"
+              },
+              "p_es_reposicion": {
+                "format": "boolean",
+                "type": "boolean"
+              },
+              "p_evidencia_ids": {
+                "format": "bigint[]",
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "p_fecha_plantacion": {
+                "format": "date",
+                "type": "string"
+              },
+              "p_latitud": {
+                "format": "numeric",
+                "type": "number"
+              },
+              "p_longitud": {
+                "format": "numeric",
+                "type": "number"
+              },
+              "p_observaciones": {
+                "format": "text",
+                "type": "string"
+              },
+              "p_registro_plantacion_origen_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_responsable_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_subcampania_id": {
+                "format": "bigint",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "p_subcampania_id",
+              "p_es_reposicion",
+              "p_registro_plantacion_origen_id",
+              "p_fecha_plantacion",
+              "p_responsable_id",
+              "p_latitud",
+              "p_longitud",
+              "p_observaciones",
+              "p_coresponsable_ids",
+              "p_detalles",
+              "p_evidencia_ids"
+            ],
+            "type": "object"
+          }
+        },
+        {
+          "$ref": "#/parameters/preferParams"
+        }
+      ]
+    },
+    "pa_d_evidencias_reposicion_exacto": {
+      "presente": true,
+      "parametros": [
+        {
+          "in": "body",
+          "name": "args",
+          "required": true,
+          "schema": {
+            "properties": {
+              "p_accion": {
+                "format": "text",
+                "type": "string"
+              },
+              "p_actor_id": {
+                "format": "bigint",
+                "type": "integer"
+              },
+              "p_payload": {
+                "format": "jsonb"
+              },
+              "p_subcampania_id": {
+                "format": "bigint",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "p_actor_id",
+              "p_subcampania_id",
+              "p_accion"
+            ],
+            "type": "object"
+          }
+        },
+        {
+          "$ref": "#/parameters/preferParams"
+        }
+      ]
+    }
+  },
+  "tabla_incorporacion": {
+    "description": "T5: extensión inmutable 1:1 del evento INCORPORACION. Solo altas confirmadas, sin PREPARADO/rechazo durable.",
+    "required": [
+      "evento_id",
+      "modalidad",
+      "procedencia",
+      "solicitud_id",
+      "huella_solicitud",
+      "registrado_en"
+    ],
+    "properties": {
+      "evento_id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `evento_lote_vivero.id`.<fk table='evento_lote_vivero' column='id'/>",
+        "format": "bigint",
+        "type": "integer"
+      },
+      "modalidad": {
+        "format": "text",
+        "type": "string"
+      },
+      "procedencia": {
+        "format": "text",
+        "type": "string"
+      },
+      "tercero_origen": {
+        "format": "text",
+        "type": "string"
+      },
+      "referencia_documental": {
+        "format": "text",
+        "type": "string"
+      },
+      "solicitud_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "huella_solicitud": {
+        "description": "Intención JSONB v1: IDs decimales exactos, fecha ISO, cantidad entera, textos btrim/NFC o null, IDs fotos únicos ordenados. No contiene datos duplicados fuera de la comparación de reintentos.",
+        "format": "jsonb"
+      },
+      "registrado_en": {
+        "default": "clock_timestamp()",
+        "description": "Sello real de confirmación nueva; no atribuye hora a created_at DATE legado ni a fecha_evento física.",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "bucket_status": 400,
+  "bucket": null,
+  "limites": [
+    "Catálogo REST no prueba cuerposSQL, constraints, triggers ni grants efectivos.",
+    "Sin escrituras, consultas de cuentas/filas de negocio, cambiosStorage ni despliegue."
+  ],
+  "bucket_error": {
+    "statusCode": "404",
+    "error": "Bucket not found",
+    "message": "Bucket not found"
+  },
+  "anon": {
+    "vivero_incorporacion": {
+      "status": 401,
+      "codigo": "42501",
+      "filas_solicitadas": 0
+    },
+    "m2_evidencia_contexto": {
+      "status": 401,
+      "codigo": "42501",
+      "filas_solicitadas": 0
+    },
+    "lote_vivero": {
+      "status": 401,
+      "codigo": "42501",
+      "filas_solicitadas": 0
+    },
+    "evento_lote_vivero": {
+      "status": 401,
+      "codigo": "42501",
+      "filas_solicitadas": 0
+    }
+  },
+  "api_local": {
+    "resultado": "NO_DISPONIBLE_O_NO_VERIFICADA_EN_127.0.0.1:3000"
+  }
+}

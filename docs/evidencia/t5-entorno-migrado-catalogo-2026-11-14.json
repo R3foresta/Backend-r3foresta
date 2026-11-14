@@ -1,0 +1,548 @@
+{
+  "destino": "vyrjlehkhabydkhjxagx",
+  "revision_fuente": "7984368",
+  "procedencia": "SQL Editor Supabase Studio, export CSV de consulta BEGIN READ ONLY",
+  "catalogo": {
+    "informe": "T5_CATALOGO_POSTERIOR_101_107",
+    "triggers": [
+      {
+        "nombre": "evento_incorporacion_integridad_t5",
+        "funcion": "m2_incorporacion_integridad()",
+        "habilitado": "O"
+      },
+      {
+        "nombre": "incorporacion_evento_conservar_t5",
+        "funcion": "m2_incorporacion_conservar_evento()",
+        "habilitado": "O"
+      },
+      {
+        "nombre": "incorporacion_inmutable_t5",
+        "funcion": "fn_subcampania_historial_prevent_mutation()",
+        "habilitado": "O"
+      },
+      {
+        "nombre": "incorporacion_integridad_t5",
+        "funcion": "m2_incorporacion_integridad()",
+        "habilitado": "O"
+      },
+      {
+        "nombre": "incorporacion_lote_conservar_t5",
+        "funcion": "m2_incorporacion_conservar_lote()",
+        "habilitado": "O"
+      },
+      {
+        "nombre": "lote_incorporacion_integridad_t5",
+        "funcion": "m2_incorporacion_integridad()",
+        "habilitado": "O"
+      },
+      {
+        "nombre": "t5_detalle_snapshot_lote_trg",
+        "funcion": "t5_detalle_snapshot_lote()",
+        "habilitado": "O"
+      }
+    ],
+    "funciones": [
+      {
+        "firma": "fn_m3_devolver_asignacion_vivero_exacto(bigint,integer,motivo_devolucion_plantacion,bigint,date,text)",
+        "nombre": "fn_m3_devolver_asignacion_vivero_exacto",
+        "sha256": "6dcf5d38be183b55034377c5aa6e6857a85ad751f47ccf4502a8021608288ed6",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s",
+          "TimeZone=America/La_Paz"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "fn_m3_registrar_plantacion_exacto(bigint,boolean,bigint,date,bigint,numeric,numeric,text,bigint[],jsonb,bigint[])",
+        "nombre": "fn_m3_registrar_plantacion_exacto",
+        "sha256": "abdf5e3246fc318c764a68ae3d8682dac1f4b059c40619d409a6cd5cc13cab5e",
+        "definer": false,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s",
+          "TimeZone=America/La_Paz"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "fn_vivero_asignar_stock_subcampania(bigint,bigint,integer,proposito_asignacion,bigint,date,bigint[],text)",
+        "nombre": "fn_vivero_asignar_stock_subcampania",
+        "sha256": "46ccc3bec635058a51fac028e2e9db18aa3240b62f15a596b53fe97805dcbff1",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s",
+          "TimeZone=America/La_Paz"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "fn_vivero_asignar_stock_subcampania_exacto(bigint,bigint,integer,proposito_asignacion,bigint,date,bigint[],text)",
+        "nombre": "fn_vivero_asignar_stock_subcampania_exacto",
+        "sha256": "5b0c084508fc83acc351396ed6e1d00a90bbec82c9ccc76fd781122ea6b1cdcb",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s",
+          "TimeZone=America/La_Paz"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "fn_vivero_registrar_adaptabilidad(bigint,date,bigint,subetapa_adaptabilidad,text,bigint[])",
+        "nombre": "fn_vivero_registrar_adaptabilidad",
+        "sha256": "efb117beabdf0d6f829c1b975679569b307146fd2a6bd6b2fdd79e8698d601e0",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s",
+          "TimeZone=America/La_Paz"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "fn_vivero_registrar_adaptabilidad_exacto(bigint,date,bigint,subetapa_adaptabilidad,text,bigint[])",
+        "nombre": "fn_vivero_registrar_adaptabilidad_exacto",
+        "sha256": "7b5fcc734dc44f9ae6be4a8b7abb9ab6aa22343530b47c168da574f23530dfb5",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s",
+          "TimeZone=America/La_Paz"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "fn_vivero_registrar_despacho(bigint,date,bigint,integer,destino_tipo_vivero,text,bigint,text,bigint[])",
+        "nombre": "fn_vivero_registrar_despacho",
+        "sha256": "2a8f950a2af740c06c889ac361de341db4b444f20c9ab2c9eb252941f71d91b8",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s",
+          "TimeZone=America/La_Paz"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "fn_vivero_registrar_despacho(bigint,date,bigint,integer,destino_tipo_vivero,text,bigint,jsonb,text)",
+        "nombre": "fn_vivero_registrar_despacho",
+        "sha256": "1988f8a01eb0b7fff601127c7e1bbe79a7add836ccaceca70ab54552bc225db1",
+        "definer": false,
+        "anon_execute": false,
+        "configuracion": [
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "fn_vivero_registrar_despacho_exacto(bigint,date,bigint,integer,destino_tipo_vivero,text,bigint,text,bigint[])",
+        "nombre": "fn_vivero_registrar_despacho_exacto",
+        "sha256": "b7662e2afff63ac2c32042747d13cb39198a59a3b09d5102a508284646ed951a",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s",
+          "TimeZone=America/La_Paz"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "fn_vivero_registrar_merma(bigint,date,bigint,integer,causa_merma_vivero,text,bigint[])",
+        "nombre": "fn_vivero_registrar_merma",
+        "sha256": "4f0d97ae7dcef9f35ecd8d79733c8478376f1326258b95aa4ed0a3a5d9d4e325",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s",
+          "TimeZone=America/La_Paz"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "fn_vivero_registrar_merma_exacto(bigint,date,bigint,integer,causa_merma_vivero,text,bigint[])",
+        "nombre": "fn_vivero_registrar_merma_exacto",
+        "sha256": "9f4328be938648999cea583afb101ac892b9d0dd3c3ce2c944e5b53a48c14689",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s",
+          "TimeZone=America/La_Paz"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "m2_incorporacion_conservar_evento()",
+        "nombre": "m2_incorporacion_conservar_evento",
+        "sha256": "7962ab7afab5e4ff495f6a456012a9be8d1be8175d01695f891b65445740aefc",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "m2_incorporacion_conservar_lote()",
+        "nombre": "m2_incorporacion_conservar_lote",
+        "sha256": "4289a168f48509c1e45f36a895c67d71579a3b6e6883e09d4a2498b6116cb9a7",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "m2_incorporacion_crear(bigint,uuid,jsonb)",
+        "nombre": "m2_incorporacion_crear",
+        "sha256": "a8c18b371af2ba8631f8e3f0dc36be63ca637a16828d9e83fc38ddeb4827025f",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s",
+          "TimeZone=America/La_Paz"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "m2_incorporacion_evidencias_leer(bigint,bigint,uuid)",
+        "nombre": "m2_incorporacion_evidencias_leer",
+        "sha256": "2f2c67f6605b0c3f484362bfcead4c2235c0d47b8a8b0e62e6f691dec21ecac6",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "m2_incorporacion_evidencias_preparar(bigint,bigint,uuid,jsonb)",
+        "nombre": "m2_incorporacion_evidencias_preparar",
+        "sha256": "f7aaa4b7e0c90599ec750291ec9b5d0232aa65e881f6cfc2e3fe5c56b5192936",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "m2_incorporacion_integridad()",
+        "nombre": "m2_incorporacion_integridad",
+        "sha256": "7b8273286e33fb0ad0f8f4b4b9a502964a4a88808a038c4602e9572ab1175423",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "m2_incorporacion_recibo(bigint)",
+        "nombre": "m2_incorporacion_recibo",
+        "sha256": "aaeaa7a724d1475a71213040fceceaf8cb707592dbf288c6e1603eb477831a74",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "m2_incorporacion_recuperar(bigint,uuid)",
+        "nombre": "m2_incorporacion_recuperar",
+        "sha256": "5671b16415d797010d24e7e595ae44eb561f9ffe88aad5d3b1681d82abe30121",
+        "definer": true,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "pa_d_evidencias_reposicion_exacto(bigint,bigint,text,jsonb)",
+        "nombre": "pa_d_evidencias_reposicion_exacto",
+        "sha256": "91a78bff831846f87834480f24acb8a84e9d76cb4d29889a176c3628be4fbded",
+        "definer": false,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "pa_registro_procedencia_propia_leer(bigint,text,bigint)",
+        "nombre": "pa_registro_procedencia_propia_leer",
+        "sha256": "d6a5f36d7acd127e3e05bc464b2b6d422838d4dbe06584d33a9f847ffc8bc400",
+        "definer": false,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "authenticated_execute": false
+      },
+      {
+        "firma": "t5_detalle_snapshot_lote()",
+        "nombre": "t5_detalle_snapshot_lote",
+        "sha256": "a06508652d0f22632a863fef9ada2d016e020c0950787a007724cfb66687c894",
+        "definer": false,
+        "anon_execute": false,
+        "configuracion": [
+          "search_path=pg_catalog, public",
+          "lock_timeout=5s",
+          "statement_timeout=30s"
+        ],
+        "authenticated_execute": false
+      }
+    ],
+    "base_unica": {
+      "unico": true,
+      "valido": true,
+      "definicion": "CREATE UNIQUE INDEX evento_lote_base_viva_unica_t5 ON public.evento_lote_vivero USING btree (lote_id) WHERE (tipo_evento = ANY (ARRAY['EMBOLSADO'::tipo_evento_vivero, 'INCORPORACION'::tipo_evento_vivero]))"
+    },
+    "postgresql": "17.6",
+    "solo_lectura": "on",
+    "checks_embolsado": [
+      {
+        "nombre": "chk_evento_lote_vivero_embolsado_consistente",
+        "validada": true,
+        "definicion": "CHECK (((tipo_evento <> 'EMBOLSADO'::tipo_evento_vivero) OR ((saldo_vivo_antes = 0) AND (cantidad_afectada IS NOT NULL) AND (cantidad_afectada = (saldo_vivo_despues)::numeric))))"
+      },
+      {
+        "nombre": "chk_evento_lote_vivero_saldos_eventos_vivos_requeridos",
+        "validada": true,
+        "definicion": "CHECK ((((tipo_evento = 'EMBOLSADO'::tipo_evento_vivero) AND (saldo_vivo_antes IS NULL) AND (saldo_vivo_despues IS NOT NULL) AND (saldo_vivo_despues >= 0)) OR ((tipo_evento = ANY (ARRAY['MERMA'::tipo_evento_vivero, 'DESPACHO'::tipo_evento_vivero])) AND (saldo_vivo_antes IS NOT NULL) AND (saldo_vivo_despues IS NOT NULL) AND (saldo_vivo_antes >= 0) AND (saldo_vivo_despues >= 0)) OR (tipo_evento <> ALL (ARRAY['EMBOLSADO'::tipo_evento_vivero, 'MERMA'::tipo_evento_vivero, 'DESPACHO'::tipo_evento_vivero]))))"
+      }
+    ]
+  },
+  "cotejo_funciones": [
+    {
+      "firma": "public.m2_incorporacion_integridad()",
+      "fuente": "102",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.m2_incorporacion_conservar_lote()",
+      "fuente": "102",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.m2_incorporacion_conservar_evento()",
+      "fuente": "102",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.m2_incorporacion_recibo(bigint)",
+      "fuente": "102",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.m2_incorporacion_recuperar(bigint,uuid)",
+      "fuente": "102",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.m2_incorporacion_evidencias_preparar(bigint,bigint,uuid,jsonb)",
+      "fuente": "102",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.m2_incorporacion_evidencias_leer(bigint,bigint,uuid)",
+      "fuente": "102",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.m2_incorporacion_crear(bigint,uuid,jsonb)",
+      "fuente": "102",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.fn_vivero_registrar_adaptabilidad(bigint,date,bigint,public.subetapa_adaptabilidad,text,bigint[])",
+      "fuente": "102",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.fn_vivero_registrar_despacho(bigint,date,bigint,integer,public.destino_tipo_vivero,text,bigint,text,bigint[])",
+      "fuente": "102",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.fn_vivero_registrar_merma(bigint,date,bigint,integer,public.causa_merma_vivero,text,bigint[])",
+      "fuente": "102",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.fn_vivero_asignar_stock_subcampania(bigint,bigint,int,public.proposito_asignacion,bigint,date,bigint[],text)",
+      "fuente": "102",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.t5_detalle_snapshot_lote()",
+      "fuente": "103",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.pa_registro_procedencia_propia_leer(bigint,text,bigint)",
+      "fuente": "103",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.fn_vivero_registrar_adaptabilidad_exacto(bigint,date,bigint,public.subetapa_adaptabilidad,text,bigint[])",
+      "fuente": "105",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.fn_vivero_registrar_merma_exacto(bigint,date,bigint,integer,public.causa_merma_vivero,text,bigint[])",
+      "fuente": "105",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.fn_vivero_registrar_despacho_exacto(bigint,date,bigint,integer,public.destino_tipo_vivero,text,bigint,text,bigint[])",
+      "fuente": "105",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.fn_vivero_asignar_stock_subcampania_exacto(bigint,bigint,int,public.proposito_asignacion,bigint,date,bigint[],text)",
+      "fuente": "105",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.fn_m3_devolver_asignacion_vivero_exacto(bigint,int,public.motivo_devolucion_plantacion,bigint,date,text)",
+      "fuente": "105",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.fn_m3_registrar_plantacion_exacto(bigint,boolean,bigint,date,bigint,numeric,numeric,text,bigint[],jsonb,bigint[])",
+      "fuente": "106",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "firma": "public.pa_d_evidencias_reposicion_exacto(bigint,bigint,text,jsonb)",
+      "fuente": "106",
+      "presente": true,
+      "sha256_coincide": true,
+      "seguridad_coincide": true,
+      "anon_execute": false,
+      "authenticated_execute": false
+    }
+  ],
+  "funciones_faltantes": [],
+  "limitacion": "Comparación de cuerpos y seguridad. Restricciones y triggers requieren evaluación de definiciones; sin prueba funcional de escritura.",
+  "nota_cotejo": "Por firma completa: se conserva la sobrecarga histórica de despacho, pero no se confunde con la firma redefinida por102."
+}

@@ -1,0 +1,64 @@
+{
+  "fecha": "2026-11-14",
+  "revision_fuente": "7984368",
+  "destino": "vyrjlehkhabydkhjxagx.supabase.co",
+  "confirmacion_usuario": "Todo el proyecto es de pruebas; todavía no está en producción oficial.",
+  "cuenta": {
+    "alias": "user-admi-local",
+    "origen": "Indicada por Pablo; perfil autenticado observado en Chrome",
+    "rol_visible": "Administrador",
+    "jwt_exportado": false
+  },
+  "api_local": {
+    "origen": "GET fuera del sandbox tras EPERM local dentro del sandbox",
+    "base": "http://127.0.0.1:3000",
+    "health": {
+      "status": 200,
+      "service": "r3foresta-backend",
+      "timestamp": "2026-11-14T15:56:09.559Z"
+    },
+    "openapi_status": 200,
+    "rutas_incorporacion": [
+      "/api/lotes-vivero/incorporaciones/{solicitud_id}/evidencias-pendientes",
+      "/api/lotes-vivero/incorporaciones",
+      "/api/lotes-vivero/incorporaciones/{solicitud_id}"
+    ]
+  },
+  "studio": {
+    "origen": "Campos observados mediante interfaz nativa de Supabase Studio; no exportación JSON completa",
+    "diagnostico_readonly": "e22344c6-8627-4b16-8e2b-35dee52fdc0d",
+    "rls_buckets": true,
+    "rls_objects": true,
+    "bucket": null,
+    "politicas_dedicadas_presentes": true,
+    "rpc_embolsado": {
+      "sha256": "fd072db314cef4d158e3e19eac9844bb055f47ceafc3ca9eb1963a4ca0c7acb9",
+      "definer": true,
+      "configuracion": [
+        "search_path=pg_catalog, public",
+        "lock_timeout=5s",
+        "statement_timeout=30s"
+      ]
+    },
+    "exportacion_csv_completada": false
+  },
+  "snippet_107": {
+    "id": "8d4daa5c-1dd6-4368-bb3a-5dc6f5f8a991",
+    "nombre": "107_vivero_embolsado_saldo_naciente.sql",
+    "encabezado_observado": "Revisión T5: reposición interna con IDs exactos antes del transporte JSON.",
+    "cierre_observado": "ACL de pa_d_evidencias_reposicion_exacto; NOTIFY pgrst; COMMIT",
+    "resultado_visible": "Success. No rows returned",
+    "inferencia": "El contenido observado corresponde al alcance106, no acredita aplicación del archivo107 local.",
+    "editado_o_reejecutado": false
+  },
+  "pwa": {
+    "url": "http://localhost:5173/app/vivero",
+    "resultado": "Pantalla Preparando tu espacio; tras recargar, página en blanco.",
+    "alta_funcional_completada": false
+  },
+  "limites": [
+    "Sin migraciones, cambiosStorage ni altas operativas remotas.",
+    "No se capturó ni fabricó JWT.",
+    "No acredita frontendT5 ni despliegue externo."
+  ]
+}

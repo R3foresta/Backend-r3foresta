@@ -6,6 +6,7 @@ Esta carpeta conserva resultados fechados; no es otro backlog ni una receta de d
 
 | Entrega | Informe | Alcance |
 |---|---|---|
+| T5 · cotejo remoto14/11/2026 | [Entorno migrado y evidencia](t5-entorno-migrado-2026-11-14.md) |21 funciones coinciden; CHECKs distintos de107 y bucket ausente. Pablo confirma destino de pruebas; ensayo funcional pendiente de resolver configuración y seleccionar cuenta. |
 | T5 · revisión14/11/2026 | [Correcciones, evidencia y orden SQL](t5-revision-2026-11-14.md) | BIGINT HTTP→SQL, exclusión de fotos privadas de rutas genéricas y coherencia CHECK010/EMBOLSADO. Diagnóstico destino pendiente; aplicación reservada a Pablo. |
 | T5 · compatibilidad102 | [Helper de fechas aportado y reintento](t5-102-fecha-compatibilidad.md) | Segunda huella exacta del mismo helper sin comentarios; no cambia reglas ni redefine la función. Aplicación en destino pendiente de Pablo. |
 | T5 plantas vivas · local13/11/2026 | [Contrato](t5-incorporacion-plantas.md), [verificación](t5-validacion-local.md), [procedencia M3](t5-m3-procedencia.md) | Alta simplificada, fotos privadas, recuperación y continuidad M2/M3. Aplicación SQL/Storage, PWA y despliegue separados. |
