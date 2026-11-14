@@ -6,6 +6,7 @@ Esta carpeta conserva resultados fechados; no es otro backlog ni una receta de d
 
 | Entrega | Informe | Alcance |
 |---|---|---|
+| T5 · revisión de historial14/11/2026 | [Origen, fases y reconstrucción](t5-historial-revision-2026-11-14.md) | Revisión de datos y Chrome: origen/eventos conservados, ficha INCORPORACION en blanco y fases inferidas en UI. Propuesta de adaptación pendiente; sin cambios de producto. |
 | T5 · corrección y ensayo real14/11/2026 | [Resultado y puntos de retorno](t5-correcciones-pruebas-2026-11-14.md) |108 aplicada/cotejada, bucket privado configurado y17 comprobaciones HTTP/Storage aprobadas con sesión ADMIN real. Carga/recarga PWA recuperada; interfaz T5 de producto pendiente. |
 | T5 · cotejo remoto14/11/2026 | [Entorno migrado y evidencia](t5-entorno-migrado-2026-11-14.md) |21 funciones coinciden; CHECKs distintos de107 y bucket ausente. Pablo confirma destino de pruebas; ensayo funcional pendiente de resolver configuración y seleccionar cuenta. |
 | T5 · revisión14/11/2026 | [Correcciones, evidencia y orden SQL](t5-revision-2026-11-14.md) | BIGINT HTTP→SQL, exclusión de fotos privadas de rutas genéricas y coherencia CHECK010/EMBOLSADO. Diagnóstico destino pendiente; aplicación reservada a Pablo. |

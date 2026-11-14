@@ -1,0 +1,102 @@
+{
+  "fecha_utc": "2026-11-14T16:21:36.688Z",
+  "destino": "vyrjlehkhabydkhjxagx.supabase.co",
+  "revision": "cc38aed",
+  "metodo": "REST GET privilegiado, columnas operativas acotadas a lotes122/124; no endpoint HTTP autenticado de usuario",
+  "lotes": [
+    {
+      "id": "122",
+      "recoleccion_id": "300",
+      "planta_id": "46",
+      "vivero_id": "1",
+      "fecha_inicio": "2026-11-12",
+      "cantidad_inicial_en_proceso": 5,
+      "unidad_medida_inicial": "UNIDAD",
+      "plantas_vivas_iniciales": null,
+      "saldo_vivo_actual": null,
+      "subetapa_actual": null,
+      "estado_lote": "ACTIVO"
+    },
+    {
+      "id": "124",
+      "recoleccion_id": null,
+      "planta_id": "46",
+      "vivero_id": "1",
+      "fecha_inicio": "2026-11-14",
+      "cantidad_inicial_en_proceso": null,
+      "unidad_medida_inicial": null,
+      "plantas_vivas_iniciales": 3,
+      "saldo_vivo_actual": 3,
+      "subetapa_actual": null,
+      "estado_lote": "ACTIVO"
+    }
+  ],
+  "eventos": [
+    {
+      "id": "336",
+      "lote_id": "122",
+      "tipo_evento": "INICIO",
+      "fecha_evento": "2026-11-12",
+      "created_at": "2026-11-12",
+      "cantidad_afectada": 5,
+      "unidad_medida_evento": "UNIDAD",
+      "saldo_vivo_antes": null,
+      "saldo_vivo_despues": null,
+      "subetapa_destino": null,
+      "origen_despacho": null,
+      "asignacion_id": null
+    },
+    {
+      "id": "338",
+      "lote_id": "124",
+      "tipo_evento": "INCORPORACION",
+      "fecha_evento": "2026-11-14",
+      "created_at": "2026-11-14",
+      "cantidad_afectada": 3,
+      "unidad_medida_evento": "UNIDAD",
+      "saldo_vivo_antes": 0,
+      "saldo_vivo_despues": 3,
+      "subetapa_destino": null,
+      "origen_despacho": null,
+      "asignacion_id": null
+    }
+  ],
+  "incorporacion": [
+    {
+      "evento_id": "338",
+      "modalidad": "SALDO_INICIAL",
+      "procedencia": "DONACION",
+      "solicitud_id": "41e54f26-f8a2-422b-8ef8-b029aedf1edc",
+      "registrado_en": "2026-11-14T16:10:20.685689+00:00"
+    }
+  ],
+  "limites": [
+    "Sólo dos fixtures existentes; no acredita fases que no ocurrieron ni M3 remoto.",
+    "No se consultaron nombres, correos, tokens, fotos ni URLs.",
+    "No se ejecutaron mutaciones."
+  ],
+  "recoleccion_fecha": {
+    "id": "300",
+    "fecha": "2026-11-12"
+  },
+  "pwa": {
+    "revision": "0007ee0",
+    "metodo": "Observación CUA Chrome sesión ADMIN legítima, sin exportarJWT ni fotos",
+    "lote_124": {
+      "resultado": "FICHA_EN_BLANCO",
+      "error": "Cannot read properties of null (reading toLocaleString)",
+      "componente": "IndicadoresRapidos.tsx:47",
+      "dato_null": "cantidadInicialEnProceso"
+    },
+    "lote_122": {
+      "resultado": "HISTORIAL_VISIBLE",
+      "origen": "REC-2026-001",
+      "evento": "INICIO",
+      "fecha_evento_visible": "12 NOV 2026",
+      "fecha_origen_visible": "11 nov 2026",
+      "cantidad": "5 unidad",
+      "evidencia_fotos": 1,
+      "sustrato_visible": "Sustrato A · estándar (respaldo estático del componente, no dato acreditado por esta observación)"
+    }
+  }
+}
