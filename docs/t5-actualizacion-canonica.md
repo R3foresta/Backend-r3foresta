@@ -5,6 +5,13 @@ en Backend-r3foresta, no en r3foresta-docs. Los siguientes cambios son revisable
 no afirman actualización canónica ni aplicación remota. La revisión del14
 agrega106/107 y [su informe](t5-revision-2026-11-14.md).
 
+La propuesta vigente del15 para la dependencia de frontend es la
+[entrada breve de integración backend](t5-integracion-backend-2026-11-15.md):
+109 reserva nuevas incorporaciones/fotos a ADMIN global, preserva recibo/replay
+propio activo;110 agrega procedencia administrativa separada y el timeline
+expone paginación/estados de fotos. El bloque siguiente conserva el corte
+histórico inicial; no usar su autoridad M2 como contrato vigente de T5 con109.
+
 ## Entrada breve para ESTADO.md y tablero de implementación
 
 Bloque para copiar en `r3foresta-docs/ESTADO.md`; sus enlaces son relativos a
@@ -34,7 +41,9 @@ En `02-vivero-module` y contrato90-02, distinguir los dos nacimientos vivos:
 EMBOLSADO desde M1 e INCORPORACION sin Recolección. Sólo el primero es producción;
 compra/saldo inicial no lo son. `INICIO` continúa sin saldo vivo. Modalidad y
 procedencia son dimensiones diferentes. La recepción T4 no concede por sí sola
-autoridad T5; rige ADMIN o GENERAL/VALIDADOR con vigencia operativa M2.
+autoridad T5; con109 rige ADMIN global actual para alta/fotos y cuenta activa
+para resultado/replay propio CONFIRMADO. T4 y las demás operaciones M2 conservan
+su autoridad vigente.
 
 Añadir a los flujos la recepción física en vivero y conteo de remanentes actuales.
 El ejemplo300antiguas/210contadas registra210, sin compra nueva300 ni merma90.

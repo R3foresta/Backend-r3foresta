@@ -10,6 +10,12 @@ Su aplicación, el bucket privado y el alta ADMIN con foto están
 [verificados en ese entorno](docs/t5-correcciones-pruebas-2026-11-14.md);
 frontend T5 y despliegue externo siguen separados.
 
+La [integración backend del15 de noviembre](docs/t5-integracion-backend-2026-11-15.md)
+añade109/110 locales: nueva incorporación/fotos pendientes sólo ADMIN global,
+replay/resultado propios con cuenta activa, procedencia administrativa por ID
+separada de propia/Impacto y timeline M2 paginado. No altera autoridad T4/M2
+general ni crea movimientos de inventario por lectura.
+
 **Corte documental: 21 de octubre de 2026. INT05 verificada localmente; INT07 añade084 de motor y observaciones con verificación aislada.**
 [Entrega y consolidación INT05](docs/pa-int05-entrega-local.md), [versiones de entrega](../r3foresta-docs/ESTADO.md): lectura pública y propia verificadas localmente; push, SQL remoto y despliegue pendientes. Los cortes de pruebas INT05 y D conservan sus bases y entornos originales.
 Describe implementación; el contrato de producto y el estado de cada entorno
@@ -111,7 +117,7 @@ T5 reutiliza ese contexto y agrega la solicitud para fotos anteriores al lote.
 Cuenta → solicitud → lote nuevo → evidencias ordenadas serializa el alta.
 Sólo el éxito se persiste; no hay PREPARADO ni rechazo durable. Ausencia/timeout
 siguen inconclusos. Replay propio requiere cuenta activa y devuelve el hecho
-inicial, mientras escritura nueva exige M2 vigente. Las fotos nuevas usan bucket
+inicial, mientras escritura nueva exige ADMIN global con109. Las fotos nuevas usan bucket
 privado y URLs firmadas; no se modifica almacenamiento legado. Compra y saldo
 inicial no son producción ni validación de aptitud.103 conserva snapshots de lote
 en detalles nuevos M3;105 proyecta IDs exactos de las operaciones compartidas.

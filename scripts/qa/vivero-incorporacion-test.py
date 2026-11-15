@@ -191,9 +191,9 @@ def main():
         return key,p,r['data']
     def counts():
         return sql("SELECT jsonb_build_array((SELECT count(*) FROM public.lote_vivero),(SELECT count(*) FROM public.evento_lote_vivero),(SELECT count(*) FROM public.vivero_incorporacion),(SELECT count(*) FROM public.evidencias_trazabilidad WHERE entidad_id<>0))")
-    def lifecycle(op,user=20):
+    def lifecycle(op,user=20,role='VOLUNTARIO'):
         data={'usuario_destino_id':str(user),'revision_esperada':sql(f'SELECT revision_autoridad FROM public.usuario WHERE id={user}'),'motivo':'Cambio sintético T5'}
-        if op=='CAMBIAR_ROL_GLOBAL':data['rol_global']='VOLUNTARIO'
+        if op=='CAMBIAR_ROL_GLOBAL':data['rol_global']=role
         canon=json.dumps(data,ensure_ascii=False,separators=(',',':'),sort_keys=True)
         return f"SELECT public.pa_autoridad_ejecutar(1,'fixture-admin','{op}','{uuid.uuid4()}',{lit(data)},'{canon}')"
     failed=True
@@ -498,8 +498,76 @@ def main():
         lote108=call(inicio(24,100))['lote_vivero_id']
         call(evento(24,lote108,'EMBOLSADO',qty=7))
         check(sql(f"SELECT saldo_vivo_antes IS NULL AND saldo_vivo_despues=7 AND cantidad_afectada=7 AND unidad_medida_evento='UNIDAD' FROM public.evento_lote_vivero WHERE lote_id={lote108} AND tipo_evento='EMBOLSADO'")=='t','108 conserva INICIO/EMBOLSADO095 real con evidencia y nacimientoNULL a7')
+        # Integración frontend: nuevo cierre de autoridad después de probar los
+        # antecedentes históricos. Desde aquí no se reaplica102 ni107.
+        domain_snapshot="SELECT md5(jsonb_build_array((SELECT jsonb_agg(to_jsonb(l) ORDER BY id) FROM public.lote_vivero l),(SELECT jsonb_agg(to_jsonb(e) ORDER BY id) FROM public.evento_lote_vivero e),(SELECT jsonb_agg(to_jsonb(i) ORDER BY evento_id) FROM public.vivero_incorporacion i),(SELECT jsonb_agg(to_jsonb(f) ORDER BY id) FROM public.evidencias_trazabilidad f))::text)"
+        def definitions():
+            return sql("SELECT md5(jsonb_agg(jsonb_build_array(oid::text,prosrc,proconfig,proacl) ORDER BY oid)::text) FROM pg_proc WHERE pronamespace='public'::regnamespace")
+        for num in (('109','110') if args.postgis else ('109',)):
+            migration=next((ROOT/'migrations').glob(num+'_*'));body_migration=migration.read_text().replace('BEGIN;','',1).rsplit('COMMIT;',1)[0]
+            before_domain=sql(domain_snapshot);before_defs=definitions()
+            sql('BEGIN; '+body_migration+' ROLLBACK;')
+            check(before_domain==sql(domain_snapshot) and before_defs==definitions(),num+' ensayo ROLLBACK conserva catálogo, ACL y todos los hechos')
+            migrations.append(migration.name);run(command()+['-f',str(migration)]);installed=definitions();run(command()+['-f',str(migration)])
+            check(before_domain==sql(domain_snapshot) and installed==definitions(),num+' instalación/repetición conserva hechos e IDs y no agrega inventario ni backfill')
+            if num=='109':
+                attacks=[("CREATE OR REPLACE FUNCTION public.m2_incorporacion_crear(p_actor_id bigint,p_solicitud_id uuid,p_payload jsonb) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public SET lock_timeout='5s' SET statement_timeout='30s' SET TimeZone='America/La_Paz' AS $$ BEGIN RETURN '{}'::jsonb; END $$;",'T5_ADMIN_109_ANTECEDENTE_INCOMPATIBLE'),
+                         ("CREATE OR REPLACE FUNCTION public.pa_d_cuenta(p_id bigint) RETURNS text LANGUAGE plpgsql SET search_path=pg_catalog,public AS $$ BEGIN RETURN 'ADMIN'; END $$;",'T5_ADMIN_109_ANTECEDENTE_INCOMPATIBLE'),
+                         ("GRANT EXECUTE ON FUNCTION public.m2_incorporacion_crear(bigint,uuid,jsonb) TO PUBLIC;",'T5_ADMIN_109_ACL_INCOMPATIBLE')]
+            else:
+                attacks=[("CREATE OR REPLACE FUNCTION public.pa_registro_procedencia_administrativa_leer(p_actor_id bigint,p_auth_id text,p_registro_id bigint) RETURNS jsonb LANGUAGE plpgsql AS $$ BEGIN RETURN '{}'::jsonb; END $$;",'T5_ADMIN_PROCEDENCIA_FUNCION_INCOMPATIBLE'),
+                         ("GRANT EXECUTE ON FUNCTION public.pa_registro_procedencia_administrativa_leer(bigint,text,bigint) TO PUBLIC;",'T5_ADMIN_PROCEDENCIA_FUNCION_EXPUESTA')]
+            for attack,expected in attacks:
+                sql('BEGIN; '+attack+' '+body_migration,error=expected)
+                check(installed==definitions() and before_domain==sql(domain_snapshot),num+' preflight rechaza deriva/ACL y rollback conserva funciones/hechos: '+expected)
+        focal=ROOT/'test/db/t5-integracion-admin.sql'
+        if focal.exists():
+            run(command()+['-f',str(focal)]);check(True,'109 matriz focal de ADMIN/GENERAL/VALIDADOR/VOLUNTARIO/inactivo, recuperación y contexto de fotos')
+        if args.postgis:
+            focal=ROOT/'test/db/t5-integracion-procedencia.sql'
+            if focal.exists():
+                run(command()+['-f',str(focal)]);check(True,'110 lectura SQL ADMIN, privacidad, snapshots, orígenes e IDs exactos frente a lectura propia')
+        # Rol/baja072 y operación109 comparten la fila de cuenta, observando
+        # bloqueos reales. Son cuentas sintéticas de este clúster desechable.
+        sql("INSERT INTO public.usuario(id,auth_id,nombre,rol,activo) VALUES(930,'fixture-t5-race-admin','ADMIN carrera sintética','ADMIN',true)")
+        for op in ('CAMBIAR_ROL_GLOBAL','INACTIVAR_CUENTA'):
+            k,q=payload(actor=930);before=counts()
+            race(lifecycle(op,user=930,role='GENERAL'),create(930,k,q),'109_'+op.lower()+'_antes_alta','CUENTA' if op=='INACTIVAR_CUENTA' else 'CAPACIDAD')
+            check(before==counts() and recover(1,k)['estado']=='SIN_RESULTADO','109 retiro de autoridad previo impide alta y no persiste rechazo durable '+op)
+            if op=='INACTIVAR_CUENTA':
+                # Preparación de fixture para el próximo ensayo;072 no publica reactivación.
+                sql('UPDATE public.usuario SET activo=true WHERE id=930')
+            else:call(lifecycle('CAMBIAR_ROL_GLOBAL',user=930,role='ADMIN'))
+        k,q=payload(actor=930)
+        race(create(930,k,q),lifecycle('CAMBIAR_ROL_GLOBAL',user=930,role='GENERAL'),'109_alta_antes_retiro_admin')
+        confirmed=recover(930,k)
+        check(confirmed['estado']=='CONFIRMADO' and call(create(930,k,q))==confirmed,'109 alta ganadora conserva replay y GET propio tras perder ADMIN sin exigir M2')
+        sql(create(930,str(uuid.uuid4()),q),error='CAPACIDAD',service=True)
+        call(lifecycle('CAMBIAR_ROL_GLOBAL',user=930,role='ADMIN'))
+        def prepare_inc_statement(actor,key):
+            files=[{'ruta_archivo':f'vivero/incorporaciones/{actor}/{key}/{uuid.uuid4()}.jpg','mime_type':'image/jpeg','tamano_bytes':20}]
+            return f"SELECT public.m2_incorporacion_evidencias_preparar({actor},1,'{key}',{lit(files)})"
+        k=str(uuid.uuid4());before=sql('SELECT count(*) FROM public.evidencias_trazabilidad')
+        race(lifecycle('CAMBIAR_ROL_GLOBAL',user=930,role='VALIDADOR'),prepare_inc_statement(930,k),'109_retiro_admin_antes_fotos','CAPACIDAD')
+        check(before==sql('SELECT count(*) FROM public.evidencias_trazabilidad'),'109 rol retirado antes de preparar fotos no inserta evidencia ni contexto')
+        call(lifecycle('CAMBIAR_ROL_GLOBAL',user=930,role='ADMIN'))
+        k=str(uuid.uuid4())
+        race(prepare_inc_statement(930,k),lifecycle('CAMBIAR_ROL_GLOBAL',user=930,role='GENERAL'),'109_fotos_antes_retiro_admin')
+        sql(f"SELECT public.m2_incorporacion_evidencias_leer(930,1,'{k}')",error='CAPACIDAD',service=True)
+        check(sql(f"SELECT count(*) FROM public.m2_evidencia_contexto WHERE actor_id=930 AND solicitud_id='{k}'")=='1','109 preparación ganadora conserva contexto inmutable; lectura pendiente se cierra al perder ADMIN')
+        if args.postgis:
+            rid=sql('SELECT min(registro_plantacion_id) FROM public.registro_plantacion_detalle')
+            admin_read=f"SELECT public.pa_registro_procedencia_administrativa_leer(930,'fixture-t5-race-admin',{rid})"
+            call(lifecycle('CAMBIAR_ROL_GLOBAL',user=930,role='ADMIN'))
+            race(lifecycle('CAMBIAR_ROL_GLOBAL',user=930,role='GENERAL'),admin_read,'110_retiro_admin_antes_lectura','CAPACIDAD')
+            call(lifecycle('CAMBIAR_ROL_GLOBAL',user=930,role='ADMIN'))
+            race(admin_read,lifecycle('CAMBIAR_ROL_GLOBAL',user=930,role='GENERAL'),'110_lectura_antes_retiro_admin')
+            check(True,'110 lectura comparte lock de cuenta con autoridad072 en ambos órdenes sin requerir relación propia ni M2')
+        # M2 explícito no cambia por cerrar únicamente las operacionesT5.
+        call(evento(20,lote108,'ADAPTABILIDAD'))
+        check(True,'109 conserva operación M2 GENERAL con vigencia fuera de incorporación')
         if not args.sql_only:
-            sql("CREATE FUNCTION public.t5_http_transport(p_sql text) RETURNS jsonb LANGUAGE plpgsql AS $$ DECLARE r jsonb; BEGIN EXECUTE p_sql INTO r; RETURN jsonb_build_object('data',r,'error',NULL); EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('data',NULL,'error',jsonb_build_object('code',SQLSTATE,'message',SQLERRM)); END $$")
+            sql("CREATE FUNCTION public.t5_http_transport(p_sql text) RETURNS jsonb LANGUAGE plpgsql AS $$ DECLARE r jsonb; detalle text; BEGIN EXECUTE p_sql INTO r; RETURN jsonb_build_object('data',r,'error',NULL); EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS detalle=PG_EXCEPTION_DETAIL; RETURN jsonb_build_object('data',NULL,'error',jsonb_build_object('code',SQLSTATE,'message',SQLERRM,'details',detalle)); END $$")
             http_env=dict(env,T5_DB_SOCKET=str(socket),T5_DB_PORT='55444',T5_DB_PSQL=binaries['psql'],NODE_ENV='test',T5_HTTP_POSTGIS=str(args.postgis).lower())
             if http_bigint_fixture:http_env['T5_HTTP_BIGINT_FIXTURE']=json.dumps(http_bigint_fixture)
             suite='test/db/vivero-incorporacion-http.spec.ts'
@@ -515,7 +583,7 @@ def main():
         stopped=not (cluster/'postmaster.pid').exists()
         if stopped:shutil.rmtree(directory)
         if args.evidence:
-            files=list((ROOT/'src/lotes-vivero').rglob('*.ts'))+list((ROOT/'src/plantaciones').rglob('*.ts'))+[ROOT/'migrations'/m for m in migrations]+[Path(__file__).resolve(),ROOT/'migrations/010_vivero_operational_rules.sql',ROOT/'migrations/056_fix_devolucion_saldo_constraint.sql',ROOT/'scripts/qa/vivero-incorporacion-102-antecedentes.sql',ROOT/'scripts/qa/vivero-incorporacion-107-diagnostico.sql',ROOT/'scripts/qa/vivero-incorporacion-inicial-helper.py',ROOT/'test/db/vivero-incorporacion-inicial-fixture.sql',ROOT/'test/db/vivero-incorporacion-http.spec.ts',ROOT/'test/jest-vivero-incorporacion-db.json']
+            files=list((ROOT/'src/lotes-vivero').rglob('*.ts'))+list((ROOT/'src/plantaciones').rglob('*.ts'))+list((ROOT/'src/participacion').rglob('*.ts'))+[ROOT/'migrations'/m for m in migrations]+list((ROOT/'test/db').glob('t5-integracion-*.sql'))+[Path(__file__).resolve(),ROOT/'migrations/010_vivero_operational_rules.sql',ROOT/'migrations/056_fix_devolucion_saldo_constraint.sql',ROOT/'scripts/qa/vivero-incorporacion-102-antecedentes.sql',ROOT/'scripts/qa/vivero-incorporacion-107-diagnostico.sql',ROOT/'scripts/qa/vivero-incorporacion-inicial-helper.py',ROOT/'test/db/vivero-incorporacion-inicial-fixture.sql',ROOT/'test/db/vivero-incorporacion-http.spec.ts',ROOT/'test/jest-vivero-incorporacion-db.json']
             evidence={'tarea':'T5_INCORPORACION_PLANTAS_VIVAS','estado':'FALLIDO' if failed else 'CORRECTO','fecha':datetime.now(ZoneInfo('America/La_Paz')).date().isoformat(),'zona_horaria':'America/La_Paz',
                 'entorno':{'tipo':'SINTETICO_LOCAL','node':run(['node','--version']),'postgres':version,'tcp':False,'sin_env':True,'postgis':postgis_version or False,'cluster_detenido':stopped,'directorio_eliminado':not directory.exists()},
                 'base':run(['git','-C',str(ROOT),'rev-parse','HEAD']),'migraciones':migrations,'comprobaciones':checks,'carreras':races,'http':http,'diagnostico107':diagnostico107,

@@ -37,7 +37,7 @@ import { UsuariosAdministracionController } from '../../users/usuarios-administr
 import { UsuariosAdministracionService } from '../../users/application/usuarios-administracion.service';
 
 describe('Contrato OpenAPI de participación v1', () => {
-  it('documenta las 42 rutas registradas por Nest y resuelve todos sus schemas', async () => {
+  it('documenta las 43 rutas registradas por Nest y resuelve todos sus schemas', async () => {
     const module = await Test.createTestingModule({
       imports: [JwtModule.register({})],
       controllers: [
@@ -79,7 +79,7 @@ describe('Contrato OpenAPI de participación v1', () => {
       expect(Object.keys(actual.paths).sort()).toEqual(
         Object.keys(participacionOpenApi.paths).sort(),
       );
-      expect(Object.keys(actual.paths)).toHaveLength(42);
+      expect(Object.keys(actual.paths)).toHaveLength(43);
       for (const route of Object.keys(actual.paths))
         expect(Object.keys(actual.paths[route]).sort()).toEqual(
           Object.keys(participacionOpenApi.paths[route]).sort(),

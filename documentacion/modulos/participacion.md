@@ -195,3 +195,9 @@ conexión limpia con configuración previa; versión/configuración REST remota 
 los detalles efectivamente consumidos para autor/participante efectivo activo,
 sin exigir M2 ni abrir su ficha/evidencias. Conserva LIFO, snapshots e historial;
 requiere103 y no modifica Impacto público. [Contrato y ajustes PWA pendientes](../../docs/t5-m3-procedencia.md).
+
+`GET /api/v1/plantaciones/:id/procedencia-administrativa` añade con110 una
+audiencia separada exclusiva ADMIN global activo, revalidada en SQL bajo lock
+de cuenta. No exige relación propia ni M2 y comparte la proyección mínima
+anterior. No amplía procedencia-propia, Impacto ni el listado público actual;
+no ADMIN recibe403 y ADMIN recibe404 si no existe. [Integración backend local](../../docs/t5-integracion-backend-2026-11-15.md).

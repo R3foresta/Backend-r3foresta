@@ -1,409 +1,164 @@
-# Pruebas Postman — Timeline / Historial del Lote de Vivero
+# Timeline privado del lote de Vivero
 
-> Endpoint único: `GET /api/lotes-vivero/:id/timeline`  
-> Base URL local: `http://localhost:3000/api`  
-> **No requiere autenticación** — no enviar `x-auth-id`
+Contrato local T5 del15 de noviembre de2026. `GET /api/lotes-vivero/:id/timeline`
+requiere Bearer JWT verificado, cuenta activa y autorización M2 por lote en
+**cada página**. `x-auth-id` sin JWT no autentica. Responde `private, no-store`
+y `Vary: Authorization`. Los lotes agotados conservan su historial autorizado.
 
----
+## Consulta y paginación
 
-## ¿Qué devuelve este endpoint?
-
-Devuelve el historial cronológico completo de eventos de un lote de vivero, ordenados por `fecha_evento` ascendente (del más antiguo al más reciente). Cada evento incluye:
-
-- Tipo de evento (`INICIO`, `EMBOLSADO`, `ADAPTABILIDAD`, `MERMA`, `DESPACHO`, `CIERRE_AUTOMATICO`)
-- Fecha del evento y fecha de creación del registro
-- Nombre completo del responsable
-- Un **payload específico** según el tipo de evento (saldos, causas, subetapas, etc.)
-- Las **evidencias** (fotos) vinculadas al evento con su URL pública
-
----
-
-## Configuración base en Postman
-
-| Campo | Valor |
-|---|---|
-| Método | `GET` |
-| URL | `http://localhost:3000/api/lotes-vivero/{{lote_id}}/timeline` |
-| Headers | _(ninguno requerido)_ |
-| Body | _(ninguno)_ |
-| Auth | _(ninguna)_ |
-
-**Variables de entorno sugeridas:**
-
-| Variable | Valor de ejemplo |
-|---|---|
-| `base_url` | `http://localhost:3000/api` |
-| `lote_id` | `1` |
-
----
-
-## Caso 1 — Historial completo sin filtros
-
-Devuelve todos los eventos del lote en orden cronológico.
-
-**URL:**
-```
-GET http://localhost:3000/api/lotes-vivero/1/timeline
+```http
+GET /api/lotes-vivero/123/timeline?limite=100
+Authorization: Bearer <JWT>
 ```
 
-**Tab Params:** _(vacío)_
+| Query | Contrato |
+|---|---|
+| `tipo_evento` | Tipo de evento real, opcional. |
+| `responsable_id` | BIGINT exacto; cadena decimal o número legado seguro. |
+| `fecha_inicio`, `fecha_fin` | Filtros inclusivos sobre fecha física. |
+| `limite` | Entero1–200; omisión100. |
+| `cursor` | Token opaco devuelto por backend; conservar lote/filtros. |
 
-**Respuesta exitosa `200`:**
+Orden fijo: `fecha_evento ASC`, `created_at ASC`, `id ASC`. No representa
+una secuencia para reconstruir stock: la fecha física puede ser retroactiva.
+La incorporación guarda `registrado_en` real; el resto conserva null cuando
+sólo existe DATE. No convertir `2026-11-15` en una hora ni restarle un día
+al presentarla en America/La_Paz.
+
 ```json
 {
   "success": true,
   "data": {
-    "lote_id": 1,
-    "codigo_trazabilidad": "LV-2026-0001",
+    "lote_id": 123,
+    "codigo_trazabilidad": "VIV-EJEMPLO-SINTETICO",
     "estado_lote": "ACTIVO",
-    "total_eventos": 5,
-    "eventos": [
-      {
-        "id": 10,
-        "lote_vivero_id": 1,
-        "tipo_evento": "INICIO",
-        "fecha_evento": "2026-04-20",
-        "created_at": "2026-04-20T09:00:00Z",
-        "responsable_id": 5,
-        "responsable_nombre": "Juan Banana",
-        "observaciones": null,
-        "payload": {
-          "tipo": "INICIO",
-          "cantidad_inicial": 100,
-          "unidad_medida": "G"
-        },
-        "evidencias": []
-      },
-      {
-        "id": 11,
-        "lote_vivero_id": 1,
-        "tipo_evento": "EMBOLSADO",
-        "fecha_evento": "2026-04-25",
-        "created_at": "2026-04-25T11:00:00Z",
-        "responsable_id": 5,
-        "responsable_nombre": "Juan Banana",
-        "observaciones": null,
-        "payload": {
-          "tipo": "EMBOLSADO",
-          "plantas_vivas_iniciales": 35
-        },
-        "evidencias": []
-      },
-      {
-        "id": 12,
-        "lote_vivero_id": 1,
-        "tipo_evento": "MERMA",
-        "fecha_evento": "2026-05-02",
-        "created_at": "2026-05-02T14:00:00Z",
-        "responsable_id": 5,
-        "responsable_nombre": "Juan Banana",
-        "observaciones": "Ataque de hongos en bandeja 3",
-        "payload": {
-          "tipo": "MERMA",
-          "cantidad_afectada": 5,
-          "causa_merma": "ENFERMEDAD",
-          "saldo_vivo_antes": 35,
-          "saldo_vivo_despues": 30
-        },
-        "evidencias": [
-          {
-            "id": 200,
-            "ruta_archivo": "vivero/merma/foto1.jpg",
-            "mime_type": "image/jpeg",
-            "tipo_archivo": "imagen",
-            "es_principal": true,
-            "orden": 0,
-            "public_url": "https://xyz.supabase.co/storage/v1/object/public/recoleccion_fotos/vivero/merma/foto1.jpg"
-          }
-        ]
-      },
-      {
-        "id": 13,
-        "tipo_evento": "ADAPTABILIDAD",
-        "fecha_evento": "2026-05-05",
-        "payload": {
-          "tipo": "ADAPTABILIDAD",
-          "subetapa_destino": "SOMBRA",
-          "saldo_vivo_antes": 30,
-          "saldo_vivo_despues": 30
-        },
-        "evidencias": []
-      },
-      {
-        "id": 14,
-        "tipo_evento": "DESPACHO",
-        "fecha_evento": "2026-05-06",
-        "payload": {
-          "tipo": "DESPACHO",
-          "cantidad_afectada": 18,
-          "destino_tipo": "DONACION",
-          "destino_referencia": "Comunidad Llachon",
-          "saldo_vivo_antes": 30,
-          "saldo_vivo_despues": 12
-        },
-        "evidencias": []
-      }
-    ]
-  }
-}
-```
-
----
-
-## Caso 2 — Filtrar por tipo de evento
-
-Solo devuelve los eventos del tipo indicado.
-
-**Valores válidos para `tipo_evento`:**
-
-| Valor | Descripción |
-|---|---|
-| `INICIO` | Creación del lote desde una recolección |
-| `EMBOLSADO` | Conversión a plantas vivas en maceta |
-| `ADAPTABILIDAD` | Cambio de subetapa (SOMBRA → MEDIA_SOMBRA → SOL_DIRECTO) |
-| `MERMA` | Pérdida de plantas (plaga, enfermedad, etc.) |
-| `DESPACHO` | Salida de plantas hacia una comunidad u otro destino |
-| `CIERRE_AUTOMATICO` | Cierre automático por pérdida total o despacho total |
-
-**Ejemplo — solo mermas:**
-```
-GET http://localhost:3000/api/lotes-vivero/1/timeline?tipo_evento=MERMA
-```
-
-**Tab Params:**
-
-| Key | Value |
-|---|---|
-| `tipo_evento` | `MERMA` |
-
-**Ejemplo — solo adaptabilidades:**
-```
-GET http://localhost:3000/api/lotes-vivero/1/timeline?tipo_evento=ADAPTABILIDAD
-```
-
-**Ejemplo — solo despachos:**
-```
-GET http://localhost:3000/api/lotes-vivero/1/timeline?tipo_evento=DESPACHO
-```
-
----
-
-## Caso 3 — Filtrar por responsable
-
-Solo devuelve los eventos registrados por un usuario específico.
-
-```
-GET http://localhost:3000/api/lotes-vivero/1/timeline?responsable_id=5
-```
-
-**Tab Params:**
-
-| Key | Value |
-|---|---|
-| `responsable_id` | `5` _(ID del usuario en la tabla `usuario`)_ |
-
----
-
-## Caso 4 — Filtrar por rango de fechas
-
-Devuelve eventos cuya `fecha_evento` esté dentro del rango indicado (ambos extremos inclusivos).
-
-```
-GET http://localhost:3000/api/lotes-vivero/1/timeline?fecha_inicio=2026-04-01&fecha_fin=2026-06-30
-```
-
-**Tab Params:**
-
-| Key | Value |
-|---|---|
-| `fecha_inicio` | `2026-04-01` |
-| `fecha_fin` | `2026-06-30` |
-
-> Las fechas deben estar en formato `YYYY-MM-DD`.  
-> Puedes usar solo `fecha_inicio`, solo `fecha_fin`, o ambos.
-
----
-
-## Caso 5 — Todos los filtros combinados
-
-```
-GET http://localhost:3000/api/lotes-vivero/1/timeline?tipo_evento=MERMA&responsable_id=5&fecha_inicio=2026-04-01&fecha_fin=2026-06-30
-```
-
-**Tab Params:**
-
-| Key | Value |
-|---|---|
-| `tipo_evento` | `MERMA` |
-| `responsable_id` | `5` |
-| `fecha_inicio` | `2026-04-01` |
-| `fecha_fin` | `2026-06-30` |
-
----
-
-## Caso 6 — Lote sin eventos
-
-Cuando el lote existe pero no tiene ningún evento registrado (o ninguno coincide con los filtros).
-
-**Respuesta `200`:**
-```json
-{
-  "success": true,
-  "data": {
-    "lote_id": 1,
-    "codigo_trazabilidad": "LV-2026-0001",
-    "estado_lote": "ACTIVO",
-    "total_eventos": 0,
-    "eventos": []
-  }
-}
-```
-
----
-
-## Payloads por tipo de evento
-
-Cada evento incluye un campo `payload` con información específica según su tipo:
-
-### `INICIO`
-```json
-{
-  "tipo": "INICIO",
-  "cantidad_inicial": 100,
-  "unidad_medida": "G"
-}
-```
-| Campo | Descripción |
-|---|---|
-| `cantidad_inicial` | Cantidad de semillas/esquejes al iniciar el lote |
-| `unidad_medida` | `"G"` (gramos) o `"UNIDAD"` |
-
----
-
-### `EMBOLSADO`
-```json
-{
-  "tipo": "EMBOLSADO",
-  "plantas_vivas_iniciales": 35
-}
-```
-| Campo | Descripción |
-|---|---|
-| `plantas_vivas_iniciales` | Saldo vivo después del embolsado |
-
----
-
-### `ADAPTABILIDAD`
-```json
-{
-  "tipo": "ADAPTABILIDAD",
-  "subetapa_destino": "MEDIA_SOMBRA",
-  "saldo_vivo_antes": 30,
-  "saldo_vivo_despues": 30
-}
-```
-| Campo | Valores posibles |
-|---|---|
-| `subetapa_destino` | `SOMBRA`, `MEDIA_SOMBRA`, `SOL_DIRECTO` |
-| `saldo_vivo_antes` | Plantas vivas antes del evento |
-| `saldo_vivo_despues` | Plantas vivas después (igual al anterior en adaptabilidad) |
-
----
-
-### `MERMA`
-```json
-{
-  "tipo": "MERMA",
-  "cantidad_afectada": 5,
-  "causa_merma": "PLAGA",
-  "saldo_vivo_antes": 35,
-  "saldo_vivo_despues": 30
-}
-```
-| Campo | Valores posibles para `causa_merma` |
-|---|---|
-| `causa_merma` | `PLAGA`, `ENFERMEDAD`, `SEQUIA`, `DANO_FISICO`, `MUERTE_NATURAL`, `OTRO` |
-
----
-
-### `DESPACHO`
-```json
-{
-  "tipo": "DESPACHO",
-  "cantidad_afectada": 18,
-  "destino_tipo": "DONACION",
-  "destino_referencia": "Comunidad Llachon",
-  "saldo_vivo_antes": 30,
-  "saldo_vivo_despues": 12
-}
-```
-| Campo | Valores posibles para `destino_tipo` |
-|---|---|
-| `destino_tipo` | `PLANTACION_PROPIA`, `PLANTACION_COMUNIDAD`, `DONACION`, `VENTA`, `OTRO`, `PLANTACION_CAMPANIA` |
-
----
-
-### `CIERRE_AUTOMATICO`
-```json
-{
-  "tipo": "CIERRE_AUTOMATICO",
-  "motivo_cierre": "PERDIDA_TOTAL"
-}
-```
-| Campo | Valores posibles para `motivo_cierre` |
-|---|---|
-| `motivo_cierre` | `DESPACHO_TOTAL`, `PERDIDA_TOTAL`, `MIXTO` |
-
----
-
-## Errores posibles
-
-| Status | Causa |
-|---|---|
-| `400` | `tipo_evento` con valor que no existe en el enum |
-| `400` | `fecha_inicio` o `fecha_fin` con formato distinto a `YYYY-MM-DD` |
-| `400` | `responsable_id` no es un número entero positivo |
-| `404` | El lote con ese ID no existe |
-| `500` | Error interno del servidor (ver logs) |
-
----
-
-## Estructura completa de un evento en la respuesta
-
-```json
-{
-  "id": 12,
-  "lote_vivero_id": 1,
-  "tipo_evento": "MERMA",
-  "fecha_evento": "2026-05-02",
-  "created_at": "2026-05-02T14:00:00Z",
-  "responsable_id": 5,
-  "responsable_nombre": "Juan Banana",
-  "observaciones": "Texto libre opcional",
-  "payload": { ... },
-  "evidencias": [
-    {
-      "id": 200,
-      "ruta_archivo": "vivero/merma/foto1.jpg",
-      "mime_type": "image/jpeg",
-      "tipo_archivo": "imagen",
-      "es_principal": true,
-      "orden": 0,
-      "public_url": "https://..."
+    "total_eventos": 100,
+    "eventos": [],
+    "paginacion": {
+      "limite": 100,
+      "devueltos": 100,
+      "total_en_lectura": 231,
+      "hay_mas": true,
+      "cursor_siguiente": "<token-devuelto-por-backend>",
+      "lectura_completa": false,
+      "corte_evento_id": "9007199254741500",
+      "orden": ["fecha_evento", "created_at", "id"]
     }
-  ]
+  }
 }
 ```
 
----
+El ejemplo abrevia `eventos`; `total_eventos` y `devueltos` son el tamaño de
+esa página, no el total histórico. `total_en_lectura` cuenta el conjunto con
+filtros y corte. Reunir todas las páginas hasta `hay_mas:false` y
+`cursor_siguiente:null`. **`lectura_completa:true` indica sólo la última página
+del corte**, no que una página aislada contenga todo el historial. La completitud
+de fotos se informa por separado. Se detectan límites PostgREST menores a la
+página solicitada mediante conteo exacto; se continúa con el último evento
+realmente recibido, sin saltar por un offset supuesto.
 
-## Resumen del endpoint
+El cursor es base64url de JSON versión1 con
+`{version,contexto,orden,corte,total,fecha,creado,id}`. `contexto` liga lote y
+los cuatro filtros; `orden` es `ASC`, IDs son cadenas y `total` es el conteo
+inicial. El consumidor **no debe construir ni editar el cursor**. No concede
+permisos y se vuelve a autorizar el lote en cada petición.
 
-| Campo | Valor |
+El corte es el máximo ID visible al iniciar; las inserciones posteriores por
+encima del corte esperan a una nueva lectura sin cursor. No es un snapshot
+transaccional mantenido entre peticiones. Una transacción pendiente podría
+confirmar un ID inferior al corte: se compara el conteo inicial antes y después
+de cada página, incluidas primera/última y firma de fotos. Si cambia, responde409
+`HISTORIAL_CAMBIO_DURANTE_LECTURA`; descartar las páginas de ese intento y
+reiniciar sin cursor para evitar omisiones silenciosas. La garantía es el
+conjunto observado bajo ese corte, no una instantánea permanente del futuro.
+
+## Eventos, vínculos y responsables
+
+Tipos conservados: `INICIO`, `INCORPORACION`, `EMBOLSADO`,
+`DESCARTE_PRE_EMBOLSADO`, `ADAPTABILIDAD`, `MERMA`, `DESPACHO`,
+`DEVOLUCION_PLANTACION`, `CIERRE_AUTOMATICO`. No inferir fases faltantes ni
+eliminar tipos desconocidos silenciosamente en la UI.
+
+Ejemplo de devolución sintética abreviado:
+
+```json
+{
+  "id": "9007199254741000",
+  "lote_vivero_id": 123,
+  "tipo_evento": "DEVOLUCION_PLANTACION",
+  "fecha_evento": "2026-11-15",
+  "created_at": "2026-11-15",
+  "registrado_en": null,
+  "responsable_id": 20,
+  "responsable_nombre": "Nombre actual de cuenta sintética",
+  "responsable_nombre_fuente": "CUENTA_ACTUAL",
+  "observaciones": null,
+  "payload": {
+    "tipo": "DEVOLUCION_PLANTACION",
+    "cantidad_afectada": 2,
+    "saldo_vivo_antes": 0,
+    "saldo_vivo_despues": 2,
+    "origen_despacho": null,
+    "asignacion_id": "9007199254741001",
+    "subcampania_id": "11",
+    "campania_id": "1",
+    "registro_plantacion_id": null,
+    "naturaleza_devolucion": "NO_REGISTRADA"
+  },
+  "estado_evidencias": "CONSULTADAS",
+  "evidencias": []
+}
+```
+
+DESPACHO y DEVOLUCION_PLANTACION exponen los vínculos **persistidos en el evento**:
+`origen_despacho`, `asignacion_id`, `subcampania_id`, `campania_id`,
+`registro_plantacion_id`, como strings exactos/null. No se enlazan por especie
+ni se inventa una Plantación. M2 no conserva un discriminador fiable entre
+retorno automático de cancelación y devolución física explícita; por eso
+`naturaleza_devolucion=NO_REGISTRADA`. No cambia la cancelación vigente.
+
+Los IDs legados del sobre/evento conservan compatibilidad number seguro|string;
+los nuevos vínculos son string|null. No convertir BIGINT a Number en frontend.
+INCORPORACION añade `registrado_en` y mantiene modalidad/procedencia/cantidad.
+Su responsable usa el snapshot del lote (`SNAPSHOT_INCORPORACION`); otros
+nombres son `CUENTA_ACTUAL` o null/`NO_REGISTRADO`. No acreditan nombre histórico
+si falta snapshot y no se rellenan retrospectivamente.
+
+## Fotos y errores parciales
+
+Cada evento tiene `estado_evidencias=CONSULTADAS|ERROR_CONSULTA`. Sólo
+`CONSULTADAS` con `evidencias:[]` acredita que no hay fotos vinculadas visibles.
+Un fallo de catálogo/consulta/paginación conserva eventos, marca ERROR_CONSULTA
+y puede conservar las fotos parciales ya obtenidas. La consulta de evidencias
+legadas también pagina para evitar truncamiento por límites PostgREST.
+
+Cada foto conserva `id`, ruta, MIME, tipo, principalidad, orden y metadata real
+`titulo`, `tamano_bytes`, `tomado_en` (null si falta; tamaño number seguro|string).
+`estado_url` es `DISPONIBLE`, `ERROR_FIRMA` o `ERROR_URL`.
+
+- Bucket privado `vivero_incorporaciones`: `signed_url` y
+  `url_expira_en_segundos:300`; nunca `public_url`. Ante fallo mantiene metadata,
+  `estado_url:ERROR_FIRMA`, `signed_url:null` y TTL null.
+- Bucket legado: `public_url`; si falla se marca ERROR_URL y URL null.
+- Una foto no firmable no elimina otras fotos ni eventos. Renovar firma mediante
+  otra lectura backend autorizada. No exportar las URLs temporales como prueba
+  durable ni construir una URL pública para el bucket privado.
+
+## Errores y compatibilidad de despliegue
+
+| HTTP | Significado |
 |---|---|
-| Método | `GET` |
-| Ruta | `/api/lotes-vivero/:id/timeline` |
-| Autenticación | No requerida |
-| Filtros disponibles | `tipo_evento`, `responsable_id`, `fecha_inicio`, `fecha_fin` |
-| Ordenamiento | `fecha_evento ASC` → `created_at ASC` → `id ASC` |
-| Evidencias | Cargadas en batch (una sola consulta, no N+1) |
+|401 | Bearer ausente/inválido o identidad discordante. |
+|403 | Cuenta inactiva, rol/permiso M2 insuficiente. |
+|404 | Lote inexistente. |
+|400 | Query, límite o cursor inválido/de otro contexto. |
+|409 | `error.codigo=HISTORIAL_CAMBIO_DURANTE_LECTURA`; reiniciar sin cursor. |
+|500 | No se pudo leer/comprobar eventos; no representar como historial vacío. |
+
+El backend101–108 previo no entrega `paginacion`, estos estados ni todos los
+vínculos. Su ausencia **no acredita historial completo ni fotos consultadas**.
+El frontend debe admitir esa compatibilidad como resultado legado/incompleto y
+no invocar procedencia-administrativa hasta disponibilidad del backend110.
+La UI oculta no sustituye la autorización SQL109 de nuevas incorporaciones.
+[Entrega backend y comprobaciones](../../docs/t5-integracion-backend-2026-11-15.md).

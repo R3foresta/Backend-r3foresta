@@ -26,7 +26,7 @@ export class IncorporarPlantasDto {
   @ApiProperty({
     format: 'uuid',
     description:
-      'Conservar esta clave y la intención ante timeout o ausencia de recibo.',
+      'Nueva clave sólo ADMIN global activo; conservar clave e intención ante incertidumbre. Replay propio CONFIRMADO y GET resultado sólo exigen cuenta activa aunque pierda ADMIN/M2.',
   })
   @IsUUID()
   solicitud_id: string;

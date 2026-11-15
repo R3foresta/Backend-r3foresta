@@ -1,8 +1,10 @@
 # T5 · incorporación de plantas vivas con procedencia
 
 Implementación backend local del 13 de noviembre, corregida tras revisión el
-14 de noviembre de 2026, sobre `0074200` más árbol de trabajo. Requiere 100 y
-las migraciones aditivas 101–107. [Correcciones y verificación](t5-revision-2026-11-14.md). No acredita
+14 de noviembre de 2026. La integración del15 añade el cierre ADMIN109 después
+de108; [contratos y verificación local](t5-integracion-backend-2026-11-15.md).
+Requiere100 y las migraciones aditivas101–109, en orden.
+[Correcciones anteriores](t5-revision-2026-11-14.md). No acredita
 SQL aplicado, bucket creado, commit, push, despliegue ni integración PWA.
 
 El núcleo registra una recepción de compra/donación o un conteo inicial de
@@ -50,15 +52,26 @@ es operativa; el alta no incorpora un motor adicional de deduplicación física.
 
 Todas las rutas usan Bearer JWT verificado, cuenta activa y respuestas
 `private, no-store`. La autoridad se revalida en la RPC bajo lock de cuenta.
-Alta y fotos requieren ADMIN o GENERAL/VALIDADOR con vigencia M2 al vivero;
-no requieren M1 ni una segunda aprobación. No se aceptan actor ni rol del body.
+Las nuevas incorporaciones y fotos pendientes requieren ADMIN global actual.
+GENERAL/VALIDADOR con M2 no pueden crearlas; sus demás operaciones M2/T4
+conservan la autorización vigente. No requieren M1 ni una segunda aprobación.
+No se aceptan actor ni rol del body.
 
 | Método y ruta bajo `/api/lotes-vivero/incorporaciones` | Contrato |
 |---|---|
 | `POST /:solicitud_id/evidencias-pendientes` | Multipart `vivero_id`, `fotos` (1–5), opcionales `titulo`, `descripcion`, `metadata`, `tomado_en`, `es_principal` |
-| `GET /:solicitud_id/evidencias-pendientes?vivero_id=...` | Recupera fotos aún pendientes propias del mismo contexto; exige M2 actual |
+| `GET /:solicitud_id/evidencias-pendientes?vivero_id=...` | Recupera fotos aún pendientes propias del mismo contexto; exige ADMIN global actual |
 | `POST /` | Confirma el alta atómica con el JSON siguiente |
 | `GET /:solicitud_id` | Recupera éxito propio con cuenta activa, incluso sin rol interno o vigencia actuales |
+
+El `POST /` también conserva el replay propio de una solicitud ya CONFIRMADA
+con UUID e intención idénticos después de perder ADMIN. Una nueva clave exige
+ADMIN; otra intención produce409 y una solicitud ajena403. El guard conserva
+cuentas activas de cualquier rol para permitir esa recuperación; no autoriza
+por ello nuevas escrituras.109 verifica el rol bajo SHARE de la cuenta, antes
+de confirmar o preparar fotos, coordinado con los cambios de autoridad072.
+El servicio rechaza fotos no autorizadas antes de preparar/subir archivos.
+Los rechazos no crean un resultado durable.
 
 Crear un UUID por intención y conservarlo **antes** de subir fotos. El UUID
 es insensible a mayúsculas; los paths se normalizan a minúsculas. No enviar

@@ -3530,6 +3530,162 @@
         "description": "T5/103. JWT y cuenta activa; autor o participante efectivo revalidado según085, incluso para ADMIN. Sin permiso M2. Una fila por detalle persistido, con su asignación/lote y cantidad original: no recalcula LIFO ni usa saldo actual. Snapshots del detalle, null históricos conservados. Origen mínimo de Recolección o incorporación, sin tercero, referencia documental, observaciones ni evidencias M2. Atribución registrada: no acredita selección física del lote ni edad biológica. Sin query. Impacto público conserva su contrato."
       }
     },
+    "/api/v1/plantaciones/{id}/procedencia-administrativa": {
+      "get": {
+        "summary": "Procedencia mínima del consumo para ADMIN global",
+        "operationId": "ProcedenciamnimadelconsumoparaADMINglobal",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lectura privada.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authorization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcedenciaPropiaLectura"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error fuera de recibo; resultado inconcluso.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorFueraDeRecibo"
+                }
+              }
+            }
+          }
+        },
+        "description": "T5/110. JWT, cuenta activa y ADMIN global revalidados en RPC bajo lock de cuenta. No exige autoría, participación ni acceso M2; administración contextual no habilita esta ruta. Misma proyección mínima de consumos persistidos y snapshots que procedencia-propia, sin tercero, referencia, observaciones ni fotos M2. No recalcula LIFO ni inventario. 403 uniforme para no ADMIN antes de consultar el registro; ADMIN recibe 404 si no existe. Lectura histórica por ID sin filtros de elegibilidad pública. Sin query. Respuesta private, no-store y Vary Authorization. No amplía procedencia-propia ni Impacto público y no añade listado global de registros."
+      }
+    },
     "/api/v1/participacion/comandos/preparaciones": {
       "post": {
         "summary": "Preparar cargas propias",

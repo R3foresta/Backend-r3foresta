@@ -263,7 +263,7 @@ export function detallePropio(
   return row;
 }
 
-/** Procedencia del consumo registrado: no concede lectura de la ficha M2. */
+/** Proyección mínima común tras autorizar cada audiencia en su RPC privada. */
 export function procedenciaPropia(value: unknown, registroId: string) {
   const row = exact(value, [
     'registro_plantacion_id',

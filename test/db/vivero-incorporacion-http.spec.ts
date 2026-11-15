@@ -42,11 +42,12 @@ async function transport(statement: string) {
 let lostRpc: string | null = null;
 let throwAfterRpc: string | null = null;
 let publicBucket = false;
+let retirarRolDuranteUpload: string | null = null;
 const uploads: Array<{ bucket: string; path: string }> = [];
 const removed: string[] = [];
 const client = {
   rpc: (name: string, args: Record<string, unknown>) => {
-    if (!/^(m2_incorporacion_(crear|recuperar|evidencias_preparar)|m2_incorporacion_evidencias_leer|m2_ambitos|pa_actor_verificar|fn_m3_registrar_plantacion_exacto|pa_d_evidencias_reposicion_exacto|pa_registro_procedencia_propia_leer)$/.test(name))
+    if (!/^(m2_incorporacion_(crear|recuperar|evidencias_preparar)|m2_incorporacion_evidencias_leer|m2_ambitos|pa_actor_verificar|fn_m3_registrar_plantacion_exacto|pa_d_evidencias_reposicion_exacto|pa_registro_procedencia_(propia|administrativa)_leer)$/.test(name))
       throw new Error('RPC fuera de fixture: ' + name);
     const pending = (async () => {
       const setof = name === 'fn_m3_registrar_plantacion_exacto';
@@ -83,7 +84,17 @@ const client = {
   storage: {
     getBucket: async (bucket: string) => ({ data: { id: bucket, public: publicBucket }, error: null }),
     from: (bucket: string) => ({
-      upload: async (path: string) => { uploads.push({ bucket, path }); return { data: { id: randomUUID() }, error: null }; },
+      upload: async (path: string) => {
+        uploads.push({ bucket, path });
+        if (retirarRolDuranteUpload) {
+          const user = retirarRolDuranteUpload;
+          retirarRolDuranteUpload = null;
+          const payload = { usuario_destino_id: user, revision_esperada: await sql(`SELECT revision_autoridad FROM public.usuario WHERE id=${user}`), rol_global: 'GENERAL', motivo: 'Retiro sintético durante carga T5' };
+          const changed = JSON.parse(await sql(`SET ROLE service_role; SELECT public.pa_autoridad_ejecutar(1,'fixture-admin','CAMBIAR_ROL_GLOBAL',${literal(randomUUID())},${literal(payload)}::jsonb,${literal(JSON.stringify(payload))})`));
+          if (changed.body?.estado !== 'CONFIRMADO') throw new Error('No se confirmó retiro de fixture');
+        }
+        return { data: { id: randomUUID() }, error: null };
+      },
       remove: async (paths: string[]) => { removed.push(...paths); return { error: null }; },
       createSignedUrl: async (path: string, seconds: number) => ({ data: { signedUrl: `https://private.invalid/${path}?expires=${seconds}` }, error: null }),
       getPublicUrl: () => { throw new Error('No URL pública en incorporación'); },
@@ -91,15 +102,15 @@ const client = {
   },
 };
 const jwt = new JwtService({ secret: 'solo-fixture-t5-no-productivo' });
-const auth = (user = 'fixture-t2-operario') => ({ Authorization: 'Bearer ' + jwt.sign({ sub: user }, { expiresIn: '1h' }) });
+const auth = (user = 'fixture-admin') => ({ Authorization: 'Bearer ' + jwt.sign({ sub: user }, { expiresIn: '1h' }) });
 let app: INestApplication;
 let day: string;
 const base = '/api/lotes-vivero/incorporaciones';
-async function photos(key: string, actor = 'fixture-t2-operario') {
+async function photos(key: string, actor = 'fixture-admin') {
   return request(app.getHttpServer()).post(`${base}/${key}/evidencias-pendientes`).set(auth(actor)).field('vivero_id', '1')
     .attach('fotos', Buffer.from('fixture-imagen-sintetica'), { filename: 'foto.jpg', contentType: 'image/jpeg' });
 }
-async function body(actor = 'fixture-t2-operario') {
+async function body(actor = 'fixture-admin') {
   const key = randomUUID(); const foto = await photos(key, actor); expect(foto.status).toBe(201);
   expect(foto.body.data[0].signed_url).toContain('private.invalid');
   expect(foto.body.data[0].public_url).toBeUndefined();
@@ -121,18 +132,22 @@ beforeAll(async () => {
 });
 afterAll(async () => { await app?.close(); });
 
-test('JWT verificado, cuenta activa, M2 por vivero y actor de sesión', async () => {
+test('JWT verificado, cuenta activa, ADMIN global y actor de sesión', async () => {
   await request(app.getHttpServer()).get(`${base}/${randomUUID()}`).set('x-auth-id', 'fixture-admin').set('x-user-role', 'ADMIN').expect(401);
-  await request(app.getHttpServer()).get(`${base}/${randomUUID()}`).set(auth()).set('x-auth-id', 'fixture-admin').expect(401);
+  await request(app.getHttpServer()).get(`${base}/${randomUUID()}`).set(auth()).set('x-auth-id', 'fixture-t2-operario').expect(401);
   await request(app.getHttpServer()).get(`${base}/${randomUUID()}`).set(auth('fixture-inactivo')).expect(403);
-  for (const actor of ['fixture-t2-m1', 'fixture-t2-sin-vivero', 'fixture-voluntario']) {
+  const beforeUploads = uploads.length;
+  for (const actor of ['fixture-t2-operario', 'fixture-t2-ambos', 'fixture-t2-m1', 'fixture-t2-sin-vivero', 'fixture-voluntario']) {
     expect((await photos(randomUUID(), actor)).status).toBe(403);
+    await request(app.getHttpServer()).get(`${base}/${randomUUID()}/evidencias-pendientes?vivero_id=1`).set(auth(actor)).expect(403);
+    await request(app.getHttpServer()).post(base).set(auth(actor)).send({ solicitud_id: randomUUID(), vivero_id: '1', planta_id: '1', modalidad: 'RECEPCION', procedencia: 'COMPRA', cantidad: 1, fecha_evento: day, evidencia_ids: ['1'] }).expect(403);
   }
+  expect(uploads).toHaveLength(beforeUploads);
   const b = await body();
   await request(app.getHttpServer()).post(base).set(auth()).send({ ...b, responsable_id: '1' }).expect(400);
   const r = await request(app.getHttpServer()).post(base).set(auth()).send(b).expect(201);
   expect(r.headers['cache-control']).toContain('no-store');
-  expect(await sql(`SELECT responsable_id FROM public.evento_lote_vivero WHERE id=${r.body.data.evento_incorporacion_id}`)).toBe('20');
+  expect(await sql(`SELECT responsable_id FROM public.evento_lote_vivero WHERE id=${r.body.data.evento_incorporacion_id}`)).toBe('1');
 });
 test('alta, replay, recuperación exacta, conflicto e aislamiento entre actores', async () => {
   const b = await body(); const n = uploads.length;
@@ -165,16 +180,35 @@ test('Storage privado falla cerrado; carga incierta no borra objeto ni acredita 
   const pending = await request(app.getHttpServer()).get(`${base}/${key}/evidencias-pendientes?vivero_id=1`).set(auth()).expect(200);
   expect(pending.body.evidencia_ids).toHaveLength(1);
   expect(pending.body.data[0].signed_url).toContain('private.invalid');
-  const other = await request(app.getHttpServer()).get(`${base}/${key}/evidencias-pendientes?vivero_id=1`).set(auth('fixture-t2-ambos')).expect(200);
-  expect(other.body.evidencia_ids).toEqual([]);
+  await request(app.getHttpServer()).get(`${base}/${key}/evidencias-pendientes?vivero_id=1`).set(auth('fixture-t2-ambos')).expect(403);
 });
-test('GENERALM2 sinM1 incorpora; combina modalidad/procedencia y protege cantidades/fechas', async () => {
-  expect(await sql('SELECT public.m1_acceso_efectivo(20)')).toBe('f');
+test('ADMIN incorpora; combina modalidad/procedencia y protege cantidades/fechas', async () => {
   const b = await body();
   for (const extra of [{ procedencia: 'PRODUCCION_PROPIA' }, { cantidad: 1.5 }, { cantidad: 0 }, { fecha_evento: '2099-01-01' }, { evidencia_ids: [] }])
     await request(app.getHttpServer()).post(base).set(auth()).send({ ...b, ...extra }).expect(400);
   const saldo = await request(app.getHttpServer()).post(base).set(auth()).send({ ...b, modalidad: 'SALDO_INICIAL', procedencia: 'DESCONOCIDA', observaciones: 'Historia previa no registrada.', cantidad: 210 }).expect(201);
   expect(saldo.body.data.cantidad).toBe(210);
+});
+test('pérdida de rol preserva GET/replay propio confirmado y cierra nueva intención/fotos', async () => {
+  const actor = 'fixture-t5-http-admin';
+  await sql("INSERT INTO public.usuario(id,auth_id,nombre,rol,activo) VALUES(940,'fixture-t5-http-admin','ADMIN HTTP sintético','ADMIN',true)");
+  const b = await body(actor);
+  const confirmed = await request(app.getHttpServer()).post(base).set(auth(actor)).send(b).expect(201);
+  // Cambio de fixture aislado; la carrera con autoridad072 se ejercita en SQL.
+  await sql("UPDATE public.usuario SET rol='VOLUNTARIO' WHERE id=940");
+  const recovered = await request(app.getHttpServer()).get(`${base}/${b.solicitud_id}`).set(auth(actor)).expect(200);
+  expect(recovered.body).toEqual(confirmed.body);
+  const replay = await request(app.getHttpServer()).post(base).set(auth(actor)).send(b).expect(201);
+  expect(replay.body).toEqual(confirmed.body);
+  await request(app.getHttpServer()).post(base).set(auth(actor)).send({ ...b, cantidad: 99 }).expect(409);
+  await request(app.getHttpServer()).post(base).set(auth(actor)).send({ ...b, solicitud_id: randomUUID() }).expect(403);
+  const before = uploads.length;
+  expect((await photos(randomUUID(), actor)).status).toBe(403);
+  expect(uploads).toHaveLength(before);
+  await request(app.getHttpServer()).get(`${base}/${b.solicitud_id}/evidencias-pendientes?vivero_id=1`).set(auth(actor)).expect(403);
+  await request(app.getHttpServer()).post(base).set(auth()).send(b).expect(403);
+  await sql('UPDATE public.usuario SET activo=false WHERE id=940');
+  await request(app.getHttpServer()).get(`${base}/${b.solicitud_id}`).set(auth(actor)).expect(403);
 });
 test('excepción de transporte después de confirmar foto conservaobjeto y devuelve503 recuperable', async () => {
   const key = randomUUID(); const cleanups = removed.length;
@@ -184,6 +218,19 @@ test('excepción de transporte después de confirmar foto conservaobjeto y devue
   const pending = await request(app.getHttpServer()).get(`${base}/${key}/evidencias-pendientes?vivero_id=1`).set(auth()).expect(200);
   expect(pending.body.evidencia_ids).toHaveLength(1);
   expect(await sql(`SELECT count(*) FROM public.vivero_incorporacion WHERE solicitud_id=${literal(key)}`)).toBe('0');
+});
+
+test('retiro ADMIN durante Storage se revalida en SQL, revierte metadatos y compensa sólo la carga', async () => {
+  await sql("INSERT INTO public.usuario(id,auth_id,nombre,rol,activo) VALUES(941,'fixture-t5-http-race','ADMIN Storage sintético','ADMIN',true)");
+  const key = randomUUID(); const before = uploads.length; const cleanups = removed.length;
+  retirarRolDuranteUpload = '941';
+  expect((await photos(key, 'fixture-t5-http-race')).status).toBe(403);
+  expect(uploads).toHaveLength(before + 1);
+  expect(removed.slice(cleanups)).toEqual([uploads[before].path]);
+  expect(await sql(`SELECT count(*) FROM public.m2_evidencia_contexto WHERE solicitud_id=${literal(key)}`)).toBe('0');
+  expect(await sql(`SELECT count(*) FROM public.evidencias_trazabilidad WHERE ruta_archivo=${literal(uploads[before].path)}`)).toBe('0');
+  const result = await request(app.getHttpServer()).get(`${base}/${key}`).set(auth('fixture-t5-http-race')).expect(200);
+  expect(result.body.estado).toBe('SIN_RESULTADO');
 });
 
 test('HTTP reposición conserva BIGINT vecinos y consume DONACION exacta con procedencia propia103', async () => {
@@ -216,6 +263,20 @@ test('HTTP reposición conserva BIGINT vecinos y consume DONACION exacta con pro
   expect(own.body.data.consumos[0].lote_vivero_id).toBe(f.donacion_lote);
   expect(own.body.data.consumos[0].asignacion_id).toBe(f.donacion_asignacion);
   expect(own.body.data.consumos[0].cantidad).toBe(1);
+  const route = `/api/v1/plantaciones/${rid}/procedencia-administrativa`;
+  await request(app.getHttpServer()).get(route).expect(401);
+  const administrative = await request(app.getHttpServer()).get(route).set(auth()).expect(200);
+  expect(administrative.body.data).toEqual(own.body.data);
+  expect(administrative.headers['cache-control']).toContain('no-store');
+  expect(administrative.headers.vary).toContain('Authorization');
+  expect(JSON.stringify(administrative.body)).not.toMatch(/tercero_origen|referencia_documental|observaciones|evidencia_ids|signed_url|ruta_archivo/);
+  await request(app.getHttpServer()).get(route).set(auth('fixture-t2-m1')).expect(403);
+  await request(app.getHttpServer()).get(route).set(auth('fixture-t2-coordinador')).expect(403);
+  await request(app.getHttpServer()).get(route).set(auth('fixture-inactivo')).expect(403);
+  await request(app.getHttpServer()).get(`/api/v1/plantaciones/${rid}/procedencia-propia`).set(auth()).expect(404);
+  await request(app.getHttpServer()).get('/api/v1/plantaciones/9223372036854775807/procedencia-administrativa').set(auth()).expect(404);
+  await request(app.getHttpServer()).get('/api/v1/plantaciones/9223372036854775807/procedencia-administrativa').set(auth('fixture-t2-m1')).expect(403);
+  await request(app.getHttpServer()).get(route + '?fotos=true').set(auth()).expect(422);
   const after = JSON.parse(await sql(`SELECT jsonb_build_object('m1',(SELECT saldo_actual FROM public.recoleccion WHERE id=100),
     'm2',(SELECT jsonb_agg(jsonb_build_array(id::text,saldo_vivo_actual) ORDER BY id) FROM public.lote_vivero WHERE id IN (${f.compra_lote},${f.donacion_lote})),
     'consumida_compra',(SELECT cantidad_consumida FROM public.asignacion_vivero_subcampania WHERE id=${f.compra_asignacion}),

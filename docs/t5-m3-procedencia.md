@@ -6,6 +6,9 @@ efectiva propia de 085 como antecedente. La entrega backend completa utiliza
 101–107 tras la revisión del14; véase el [contrato de incorporación](t5-incorporacion-plantas.md).
 Código local y pruebas aisladas no acreditan SQL aplicado, publicación ni despliegue.
 
+La integración local del15 de noviembre añade110 después de109 para la
+audiencia administrativa descrita abajo. [Entrega, contrato y evidencia](t5-integracion-backend-2026-11-15.md).
+
 ## Lectura mínima propia
 
 ```http
@@ -21,6 +24,27 @@ lectura y restaurarlo la recupera. La autoría conserva su propia legitimación.
 No acepta parámetros de consulta. Responde `private, no-store` y
 `Vary: Authorization`; la ficha ajena o inexistente produce el mismo 404.
 Impacto público conserva su contrato y no incluye esta información.
+
+## Lectura administrativa por registro
+
+`GET /api/v1/plantaciones/:id/procedencia-administrativa` exige Bearer verificado,
+cuenta activa y ADMIN **global** actual, revalidado en
+`pa_registro_procedencia_administrativa_leer` bajo SHARE de cuenta. No exige
+autoría, participación ni acceso M2. Administrar una subcampaña no concede
+esta ruta. Comparte exactamente el payload mínimo del ejemplo siguiente y
+su validador de IDs/cantidades/snapshots con la lectura propia.
+
+No acepta query; responde `private, no-store` y `Vary: Authorization`.
+Sin JWT responde401, cuenta inactiva o rol insuficiente403. El no ADMIN recibe
+403 antes de consultar el registro, también para IDs inexistentes; ADMIN
+recibe404 si el registro no existe. La lectura histórica por ID no adopta los
+filtros de elegibilidad pública de campaña/subcampaña. No añade un listado
+global ni amplía el listado público usado actualmente por la PWA; sólo permite
+enriquecer registros que ADMIN ya puede seleccionar.
+
+La ruta propia anterior sigue requiriendo autoría/participación efectiva incluso
+para ADMIN. No se exponen tercero, referencia, observaciones ni fotos M2 en
+ninguna de las dos rutas. Ninguna lectura escribe stock o recalcula LIFO.
 
 ```json
 {

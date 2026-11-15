@@ -13,10 +13,23 @@ function query(data: unknown) {
     in: jest.fn().mockReturnThis(),
     ilike: jest.fn().mockReturnThis(),
     is: jest.fn().mockReturnThis(),
+    gte: jest.fn().mockReturnThis(),
+    lte: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    range: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
-    maybeSingle: jest.fn().mockResolvedValue({ data, error: null }),
+    maybeSingle: jest
+      .fn()
+      .mockResolvedValue({
+        data: Array.isArray(data) ? (data[0] ?? null) : data,
+        error: null,
+      }),
     then: (resolve: any, reject: any) =>
-      Promise.resolve({ data, error: null }).then(resolve, reject),
+      Promise.resolve({
+        data,
+        error: null,
+        count: Array.isArray(data) ? data.length : data ? 1 : 0,
+      }).then(resolve, reject),
   };
 }
 const foto = {
@@ -39,28 +52,24 @@ describe('Fotos T5 privadas y conservación ante incertidumbre', () => {
   let getBucket: jest.Mock;
   let getPublicUrl: jest.Mock;
   let createSignedUrl: jest.Mock;
+  let getUserByAuthId: jest.Mock;
+  let assertVivero: jest.Mock;
   beforeEach(() => {
     rpc = jest.fn().mockResolvedValue({ data: [ev.id], error: null });
-    upload = jest
-      .fn()
-      .mockResolvedValue({
-        data: { id: '9e98ae22-ed37-4d47-a355-9157a73dcf87' },
-        error: null,
-      });
+    upload = jest.fn().mockResolvedValue({
+      data: { id: '9e98ae22-ed37-4d47-a355-9157a73dcf87' },
+      error: null,
+    });
     remove = jest.fn().mockResolvedValue({ error: null });
     getPublicUrl = jest.fn();
-    createSignedUrl = jest
-      .fn()
-      .mockResolvedValue({
-        data: { signedUrl: 'https://storage.invalid/signed' },
-        error: null,
-      });
-    getBucket = jest
-      .fn()
-      .mockResolvedValue({
-        data: { id: 'vivero_incorporaciones', public: false },
-        error: null,
-      });
+    createSignedUrl = jest.fn().mockResolvedValue({
+      data: { signedUrl: 'https://storage.invalid/signed' },
+      error: null,
+    });
+    getBucket = jest.fn().mockResolvedValue({
+      data: { id: 'vivero_incorporaciones', public: false },
+      error: null,
+    });
     const supabase = {
       getAdminClient: () => ({
         rpc,
@@ -76,11 +85,11 @@ describe('Fotos T5 privadas y conservación ante incertidumbre', () => {
         },
       }),
     } as unknown as SupabaseService;
+    getUserByAuthId = jest.fn().mockResolvedValue({ id: '77', rol: 'ADMIN' });
+    assertVivero = jest.fn();
     const auth = {
-      getUserByAuthId: jest
-        .fn()
-        .mockResolvedValue({ id: '77', rol: 'GENERAL' }),
-      assertVivero: jest.fn(),
+      getUserByAuthId,
+      assertVivero,
     } as unknown as ViveroAuthService;
     service = new ViveroEvidenciasService(
       supabase,
@@ -113,6 +122,26 @@ describe('Fotos T5 privadas y conservación ante incertidumbre', () => {
     });
     expect(result.data[0]).not.toHaveProperty('public_url');
     expect(getPublicUrl).not.toHaveBeenCalled();
+  });
+  it.each(['GENERAL', 'VALIDADOR', 'VOLUNTARIO'])(
+    'rechaza %s antes de Storage aun con acceso M2',
+    async (rol) => {
+      getUserByAuthId.mockResolvedValue({ id: '77', rol });
+      await expect(cargar(service)).rejects.toThrow(ForbiddenException);
+      expect(assertVivero).not.toHaveBeenCalled();
+      expect(getBucket).not.toHaveBeenCalled();
+      expect(upload).not.toHaveBeenCalled();
+      expect(rpc).not.toHaveBeenCalled();
+      expect(remove).not.toHaveBeenCalled();
+    },
+  );
+  it('rechaza cuenta inactiva antes de Storage', async () => {
+    getUserByAuthId.mockRejectedValue(
+      new ForbiddenException('CUENTA_INACTIVA'),
+    );
+    await expect(cargar(service)).rejects.toThrow(ForbiddenException);
+    expect(upload).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
   });
   it('falla antes de subir si el bucket se volvió público', async () => {
     getBucket.mockResolvedValue({
@@ -148,12 +177,10 @@ describe('Fotos T5 privadas y conservación ante incertidumbre', () => {
 });
 
 it('historial T5 conserva nombre del responsable inicial, procedencia y URL privada', async () => {
-  const sign = jest
-    .fn()
-    .mockResolvedValue({
-      data: { signedUrl: 'https://storage.invalid/private' },
-      error: null,
-    });
+  const sign = jest.fn().mockResolvedValue({
+    data: { signedUrl: 'https://storage.invalid/private' },
+    error: null,
+  });
   const pub = jest.fn();
   const supabase = {
     getAdminClient: () => ({

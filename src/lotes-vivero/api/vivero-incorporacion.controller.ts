@@ -46,7 +46,7 @@ import {
 @ApiResponse({ status: 401, description: 'Bearer ausente o inválido.' })
 @ApiResponse({
   status: 403,
-  description: 'Cuenta inactiva, autoridad M2 insuficiente o solicitud ajena.',
+  description: 'Cuenta inactiva, ADMIN global requerido para nuevas altas/fotos o solicitud ajena.',
 })
 @ApiResponse({
   status: 503,
@@ -63,7 +63,7 @@ export class ViveroIncorporacionController {
   @ApiOperation({
     summary: 'Recuperar las fotos pendientes propias de una carga inconclusa.',
     description:
-      'Exige autoridad M2 actual sobre vivero_id; devuelve solamente el contexto propio de la misma solicitud. No confirma ingreso ni demuestra rollback.',
+      'Exige ADMIN global actual y cuenta activa; devuelve solamente el contexto propio de la misma solicitud y vivero_id. No confirma ingreso ni demuestra rollback.',
   })
   @ApiResponse({
     status: 200,
@@ -88,7 +88,7 @@ export class ViveroIncorporacionController {
     summary:
       'Cargar fotos privadas de recepción/conteo para una solicitud y vivero.',
     description:
-      'ADMIN o GENERAL/VALIDADOR con vigencia M2. No constituye ingreso. No adjuntar documentos sensibles.',
+      'Exclusivo de ADMIN global activo. La autoridad se comprueba antes de subir Storage y otra vez bajo lock de cuenta en la RPC. No constituye ingreso. No adjuntar documentos sensibles.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -143,7 +143,7 @@ export class ViveroIncorporacionController {
   @ApiOperation({
     summary: 'Incorporar plantas vivas en un lote nuevo con procedencia.',
     description:
-      'ADMIN o GENERAL/VALIDADOR con vigencia M2, sin permiso M1 ni doble aprobación. Lote, evento, extensión y fotos se confirman juntos. Misma clave e intención recupera el hecho inicial; no recalcula el saldo actual. No valida aptitud para entrega.',
+      'Nueva clave exclusiva de ADMIN global activo, sin permiso M1/M2 ni doble aprobación. Lote, evento, extensión y fotos se confirman juntos. Misma clave e intención de un hecho ya CONFIRMADO recupera el recibo propio incluso tras perder ADMIN o M2; sólo exige cuenta activa y no recalcula el saldo actual. La RPC serializa la autorización con cambios de rol/baja. No valida aptitud para entrega.',
   })
   @ApiBody({ type: IncorporarPlantasDto })
   @ApiResponse({ status: 201, schema: INCORPORACION_RESULTADO_SCHEMA })
@@ -165,7 +165,7 @@ export class ViveroIncorporacionController {
   @ApiOperation({
     summary: 'Recuperar el éxito propio de una incorporación.',
     description:
-      'Cuenta activa y misma autoría, incluso sin vigencia M2 o rol interno actuales. SIN_RESULTADO no acredita rollback ni habilita una nueva clave. No persiste PREPARADO ni rechazos de negocio.',
+      'Cuenta activa y misma autoría, incluso tras perder ADMIN o vigencia M2. SIN_RESULTADO no acredita rollback ni habilita una nueva clave. No persiste PREPARADO ni rechazos de negocio.',
   })
   @ApiResponse({ status: 200, schema: INCORPORACION_RESULTADO_SCHEMA })
   recuperar(

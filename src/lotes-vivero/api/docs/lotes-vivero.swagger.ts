@@ -17,6 +17,7 @@ import { TipoEventoVivero } from '../../domain/enums/tipo-evento-vivero.enum';
 import { UnidadMedidaVivero } from '../../domain/enums/unidad-medida-vivero.enum';
 import { CANTIDAD_INICIO_DECIMAL } from '../dto/crear-lote-vivero.dto';
 import { ORIGEN_LOTE_SCHEMA } from './incorporacion.swagger';
+import type { SchemaObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
 
 // Entradas operativas: cadenas exactas y compatibilidad con números legados seguros.
 const OPERATION_ID_SCHEMA = {
@@ -24,6 +25,300 @@ const OPERATION_ID_SCHEMA = {
     { type: 'string', pattern: '^[1-9][0-9]*$', maxLength: 19 },
     { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
   ],
+};
+
+const TIMELINE_ID: SchemaObject = {
+  type: 'string',
+  pattern: '^[1-9][0-9]*$',
+  maxLength: 19,
+};
+const TIMELINE_NULL_ID: SchemaObject = { ...TIMELINE_ID, nullable: true };
+const TIMELINE_NULL_TEXT: SchemaObject = { type: 'string', nullable: true };
+const TIMELINE_NULL_NUMBER: SchemaObject = { type: 'number', nullable: true };
+const TIMELINE_SALDOS: Record<string, SchemaObject> = {
+  saldo_vivo_antes: TIMELINE_NULL_NUMBER,
+  saldo_vivo_despues: TIMELINE_NULL_NUMBER,
+};
+const TIMELINE_VINCULOS: Record<string, SchemaObject> = {
+  origen_despacho: {
+    ...TIMELINE_NULL_TEXT,
+    enum: ['MANUAL', 'ASIGNACION_SUBCAMPANIA', 'AUTOMATICO_PLANTACION', null],
+  },
+  asignacion_id: TIMELINE_NULL_ID,
+  subcampania_id: TIMELINE_NULL_ID,
+  campania_id: TIMELINE_NULL_ID,
+  registro_plantacion_id: TIMELINE_NULL_ID,
+};
+const TIMELINE_PAYLOAD: Record<
+  TipoEventoVivero,
+  Record<string, SchemaObject>
+> = {
+  [TipoEventoVivero.INICIO]: {
+    cantidad_inicial: TIMELINE_NULL_NUMBER,
+    unidad_medida: TIMELINE_NULL_TEXT,
+  },
+  [TipoEventoVivero.EMBOLSADO]: {
+    plantas_vivas_iniciales: TIMELINE_NULL_NUMBER,
+  },
+  [TipoEventoVivero.INCORPORACION]: {
+    cantidad: TIMELINE_NULL_NUMBER,
+    procedencia: {
+      type: 'object',
+      nullable: true,
+      required: [
+        'modalidad',
+        'procedencia',
+        'tercero_origen',
+        'referencia_documental',
+        'registrado_en',
+      ],
+      properties: {
+        modalidad: { type: 'string', enum: ['RECEPCION', 'SALDO_INICIAL'] },
+        procedencia: {
+          type: 'string',
+          enum: ['COMPRA', 'DONACION', 'PRODUCCION_PROPIA', 'DESCONOCIDA'],
+        },
+        tercero_origen: TIMELINE_NULL_TEXT,
+        referencia_documental: TIMELINE_NULL_TEXT,
+        registrado_en: { type: 'string', format: 'date-time' },
+      },
+    },
+  },
+  [TipoEventoVivero.ADAPTABILIDAD]: {
+    subetapa_destino: TIMELINE_NULL_TEXT,
+    ...TIMELINE_SALDOS,
+  },
+  [TipoEventoVivero.MERMA]: {
+    cantidad_afectada: TIMELINE_NULL_NUMBER,
+    causa_merma: TIMELINE_NULL_TEXT,
+    ...TIMELINE_SALDOS,
+  },
+  [TipoEventoVivero.DESCARTE_PRE_EMBOLSADO]: {
+    cantidad_material_afectado: TIMELINE_NULL_NUMBER,
+    unidad_medida_evento: TIMELINE_NULL_TEXT,
+    causa_descarte_pre_embolsado: TIMELINE_NULL_TEXT,
+  },
+  [TipoEventoVivero.DESPACHO]: {
+    cantidad_afectada: TIMELINE_NULL_NUMBER,
+    destino_tipo: TIMELINE_NULL_TEXT,
+    destino_referencia: TIMELINE_NULL_TEXT,
+    ...TIMELINE_SALDOS,
+    ...TIMELINE_VINCULOS,
+  },
+  [TipoEventoVivero.DEVOLUCION_PLANTACION]: {
+    cantidad_afectada: TIMELINE_NULL_NUMBER,
+    ...TIMELINE_SALDOS,
+    ...TIMELINE_VINCULOS,
+    naturaleza_devolucion: {
+      type: 'string',
+      enum: ['NO_REGISTRADA'],
+      description:
+        'El evento M2 no conserva discriminador ni vínculo unívoco al evento M3 para distinguir devolución explícita de retorno por cancelación. No se infiere por texto, especie o estado actual.',
+    },
+  },
+  [TipoEventoVivero.CIERRE_AUTOMATICO]: { motivo_cierre: TIMELINE_NULL_TEXT },
+};
+const TIMELINE_EVIDENCIA: SchemaObject = {
+  type: 'object',
+  required: [
+    'id',
+    'ruta_archivo',
+    'mime_type',
+    'tipo_archivo',
+    'es_principal',
+    'orden',
+    'titulo',
+    'tamano_bytes',
+    'tomado_en',
+    'estado_url',
+  ],
+  properties: {
+    id: OPERATION_ID_SCHEMA,
+    ruta_archivo: { type: 'string' },
+    mime_type: { type: 'string' },
+    tipo_archivo: { type: 'string' },
+    es_principal: { type: 'boolean' },
+    orden: { type: 'integer' },
+    titulo: TIMELINE_NULL_TEXT,
+    tamano_bytes: {
+      nullable: true,
+      oneOf: [
+        { type: 'integer', minimum: 0, maximum: Number.MAX_SAFE_INTEGER },
+        { type: 'string', pattern: '^[0-9]+$' },
+      ],
+    },
+    tomado_en: { type: 'string', format: 'date-time', nullable: true },
+    estado_url: {
+      type: 'string',
+      enum: ['DISPONIBLE', 'ERROR_FIRMA', 'ERROR_URL'],
+    },
+    signed_url: {
+      type: 'string',
+      format: 'uri',
+      nullable: true,
+      description:
+        'Sólo bucket privado vivero_incorporaciones; null ante ERROR_FIRMA. No construir URL pública.',
+    },
+    url_expira_en_segundos: {
+      type: 'integer',
+      nullable: true,
+      enum: [300, null],
+    },
+    public_url: {
+      type: 'string',
+      format: 'uri',
+      nullable: true,
+      description: 'Sólo almacenamiento legado público; null ante ERROR_URL.',
+    },
+  },
+};
+export const TIMELINE_LOTE_SCHEMA: SchemaObject = {
+  type: 'object',
+  required: ['success', 'data'],
+  properties: {
+    success: { type: 'boolean', enum: [true] },
+    data: {
+      type: 'object',
+      required: [
+        'lote_id',
+        'codigo_trazabilidad',
+        'estado_lote',
+        'total_eventos',
+        'eventos',
+        'paginacion',
+      ],
+      properties: {
+        lote_id: OPERATION_ID_SCHEMA,
+        codigo_trazabilidad: { type: 'string' },
+        estado_lote: { type: 'string', enum: Object.values(EstadoLoteVivero) },
+        total_eventos: {
+          type: 'integer',
+          minimum: 0,
+          description:
+            'Número de eventos de esta página, conserva el campo legado; no es el total del historial.',
+        },
+        eventos: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: [
+              'id',
+              'lote_vivero_id',
+              'tipo_evento',
+              'fecha_evento',
+              'created_at',
+              'registrado_en',
+              'responsable_id',
+              'responsable_nombre',
+              'responsable_nombre_fuente',
+              'observaciones',
+              'payload',
+              'estado_evidencias',
+              'evidencias',
+            ],
+            properties: {
+              id: OPERATION_ID_SCHEMA,
+              lote_vivero_id: OPERATION_ID_SCHEMA,
+              tipo_evento: {
+                type: 'string',
+                enum: Object.values(TipoEventoVivero),
+              },
+              fecha_evento: {
+                type: 'string',
+                format: 'date',
+                description:
+                  'Día físico. Puede ser retroactivo; no usar el orden del timeline para recalcular saldo.',
+              },
+              created_at: {
+                type: 'string',
+                format: 'date',
+                description: 'DATE histórico; no atribuirle hora.',
+              },
+              registrado_en: {
+                type: 'string',
+                format: 'date-time',
+                nullable: true,
+                description:
+                  'Hora real disponible sólo para INCORPORACION; null para los otros eventos.',
+              },
+              responsable_id: OPERATION_ID_SCHEMA,
+              responsable_nombre: TIMELINE_NULL_TEXT,
+              responsable_nombre_fuente: {
+                type: 'string',
+                enum: [
+                  'SNAPSHOT_INCORPORACION',
+                  'CUENTA_ACTUAL',
+                  'NO_REGISTRADO',
+                ],
+              },
+              observaciones: TIMELINE_NULL_TEXT,
+              payload: {
+                oneOf: Object.entries(TIMELINE_PAYLOAD).map(
+                  ([tipo, properties]) => ({
+                    type: 'object',
+                    required: ['tipo', ...Object.keys(properties)],
+                    properties: {
+                      tipo: { type: 'string', enum: [tipo] },
+                      ...properties,
+                    },
+                  }),
+                ),
+              },
+              estado_evidencias: {
+                type: 'string',
+                enum: ['CONSULTADAS', 'ERROR_CONSULTA'],
+                description:
+                  'ERROR_CONSULTA conserva eventos y fotos parciales; una lista vacía con error no acredita ausencia de fotos.',
+              },
+              evidencias: { type: 'array', items: TIMELINE_EVIDENCIA },
+            },
+          },
+        },
+        paginacion: {
+          type: 'object',
+          required: [
+            'limite',
+            'devueltos',
+            'total_en_lectura',
+            'hay_mas',
+            'cursor_siguiente',
+            'lectura_completa',
+            'corte_evento_id',
+            'orden',
+          ],
+          properties: {
+            limite: { type: 'integer', minimum: 1, maximum: 200, default: 100 },
+            devueltos: { type: 'integer', minimum: 0 },
+            total_en_lectura: { type: 'integer', minimum: 0 },
+            hay_mas: { type: 'boolean' },
+            cursor_siguiente: {
+              type: 'string',
+              nullable: true,
+              maxLength: 2048,
+            },
+            lectura_completa: {
+              type: 'boolean',
+              description:
+                'Fin del recorrido hasta el corte, equivale a !hay_mas; sólo después de reunir todas las páginas puede presentarse el historial completo de esa lectura.',
+            },
+            corte_evento_id: {
+              ...TIMELINE_NULL_ID,
+              description:
+                'Mayor ID observado al comenzar; continuar excluye IDs posteriores, aunque su fecha física sea retroactiva. Si confirma una inserción bajo el corte, el cambio de conteo exige409 y reinicio sin cursor. No es un snapshot MVCC entre peticiones.',
+            },
+            orden: {
+              type: 'array',
+              items: {
+                type: 'string',
+                enum: ['fecha_evento', 'created_at', 'id'],
+              },
+              example: ['fecha_evento', 'created_at', 'id'],
+            },
+          },
+        },
+      },
+    },
+  },
 };
 
 export function ApiCrearEvidenciaPendiente() {
@@ -694,12 +989,32 @@ export function ApiObtenerDetalleLote() {
       status: 200,
       description:
         'Devuelve { success: true, data } con el lote, sus relaciones y ultimo_evento_por_tipo (null por tipo si todavia no ocurrio).',
-      schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object', properties: {
-        origen: ORIGEN_LOTE_SCHEMA, recoleccion_id: { nullable: true, oneOf: [{ type: 'string' }, { type: 'integer' }] },
-        cantidad_inicial_en_proceso: { type: 'number', nullable: true }, tipo_material_snapshot: { type: 'string', nullable: true },
-        unidad_medida_inicial: { type: 'string', nullable: true }, plantas_vivas_iniciales: { type: 'integer', nullable: true }, saldo_vivo_actual: { type: 'integer', nullable: true },
-        ultimo_evento_por_tipo: { type: 'object', description: 'Incluye INCORPORACION y DEVOLUCION_PLANTACION; null por tipo aún ausente.' },
-      } } } },
+      schema: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean' },
+          data: {
+            type: 'object',
+            properties: {
+              origen: ORIGEN_LOTE_SCHEMA,
+              recoleccion_id: {
+                nullable: true,
+                oneOf: [{ type: 'string' }, { type: 'integer' }],
+              },
+              cantidad_inicial_en_proceso: { type: 'number', nullable: true },
+              tipo_material_snapshot: { type: 'string', nullable: true },
+              unidad_medida_inicial: { type: 'string', nullable: true },
+              plantas_vivas_iniciales: { type: 'integer', nullable: true },
+              saldo_vivo_actual: { type: 'integer', nullable: true },
+              ultimo_evento_por_tipo: {
+                type: 'object',
+                description:
+                  'Incluye INCORPORACION y DEVOLUCION_PLANTACION; null por tipo aún ausente.',
+              },
+            },
+          },
+        },
+      },
     }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
@@ -777,7 +1092,7 @@ export function ApiObtenerTimeline() {
     ApiOperation({
       summary: 'Obtener timeline de eventos del lote',
       description:
-        'Devuelve el historial cronologico de eventos del lote (inicio, embolsado, adaptabilidad, mermas, despachos). Permite filtrar por tipo de evento, responsable y rango de fechas.',
+        'Historial privado autorizado por lote en cada página, incluido lote agotado. Conserva todos los tipos de evento y vínculos persistidos, sin inferir fases ni recalcular stock. Orden ASC por fecha_evento, created_at e ID exacto. Devuelve hasta100 eventos por omisión (máximo200), conteo exacto y cursor ligado al lote/filtros/corte/total inicial. Continuar con los mismos filtros mientras hay_mas; reunir todas las páginas antes de presentar historia completa. lectura_completa marca sólo el fin del recorrido. El corte por mayor ID excluye nuevas inserciones posteriores; un cambio dentro del corte produce409 HISTORIAL_CAMBIO_DURANTE_LECTURA y exige reiniciar sin cursor. No es snapshot MVCC entre peticiones. Fotos privadas firmadas TTL300; fallo de consulta y fallo de firma explícitos sin perder los eventos. T4/M2 conserva su autorización por vivero.',
     }),
     ApiParam({
       name: 'id',
@@ -808,11 +1123,39 @@ export function ApiObtenerTimeline() {
       type: String,
       description: 'Fecha fin del rango (ISO 8601)',
     }),
+    ApiQuery({
+      name: 'limite',
+      required: false,
+      schema: { type: 'integer', minimum: 1, maximum: 200, default: 100 },
+      description:
+        'Máximo de eventos por página. Un límite inferior del servidor no significa fin: usar hay_mas/cursor_siguiente.',
+    }),
+    ApiQuery({
+      name: 'cursor',
+      required: false,
+      type: String,
+      description:
+        'Continuación opaca devuelta por la página anterior, máximo2048 caracteres. Ligada al lote, filtros y corte, sin conceder autorización. No construir ni modificar.',
+    }),
     ApiResponse({
       status: 200,
       description: 'Timeline del lote obtenido exitosamente',
+      schema: TIMELINE_LOTE_SCHEMA,
     }),
     ApiResponse({ status: 400, description: 'Parametros de filtro invalidos' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT verificado requerido',
+    }),
+    ApiResponse({
+      status: 403,
+      description: 'Cuenta inactiva o sin autorización al vivero del lote',
+    }),
+    ApiResponse({
+      status: 409,
+      description:
+        'HISTORIAL_CAMBIO_DURANTE_LECTURA: cambió el conjunto append-only dentro del corte. Descartar recorrido parcial y reiniciar sin cursor.',
+    }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
   );

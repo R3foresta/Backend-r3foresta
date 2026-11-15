@@ -5,6 +5,10 @@ recepción o saldo inicial en un vivero real, alta atómica recuperable y contin
 M2/M3 sin doble descuento. El entorno de pruebas recibió el cierre aditivo108
 y el bucket privado; [alta con foto, recuperación y replay verificados](docs/t5-correcciones-pruebas-2026-11-14.md).
 La interfaz T5 de producto y el despliegue externo siguen pendientes.
+La [dependencia backend de integración T5](docs/t5-integracion-backend-2026-11-15.md)
+añade localmente109/110: nuevas incorporaciones ADMIN global, procedencia
+administrativa separada e historial paginado con fallos de fotos explícitos.
+Su aplicación remota y despliegue requieren su propio cotejo.
 
 API NestJS/Supabase para trazabilidad: **Recolección → Vivero → entrega física → Plantación**.
 Estado documental al **19 de octubre de 2026**: INT05 BE01–BE06 implementadas y verificadas localmente; el corte original de pruebas conserva la base `10e5dc5`.

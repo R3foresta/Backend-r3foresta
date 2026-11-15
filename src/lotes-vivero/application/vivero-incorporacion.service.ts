@@ -18,6 +18,8 @@ export class ViveroIncorporacionService {
     const motivo = validarProcedenciaIncorporacion(dto);
     if (motivo) throw new BadRequestException(motivo);
     const { solicitud_id, ...payload } = dto;
+    // No aplicar un guard ADMIN a todo POST: la RPC distingue replay propio
+    // CONFIRMADO de una clave nueva, cuya autoridad valida bajo lock de cuenta.
     return this.ejecutar('m2_incorporacion_crear', {
       p_actor_id: actorId,
       p_solicitud_id: solicitud_id,

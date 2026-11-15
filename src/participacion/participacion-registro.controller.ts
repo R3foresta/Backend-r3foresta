@@ -104,4 +104,18 @@ export class ParticipacionRegistroController {
     strictObject(query, [], 'query');
     return this.service.procedencia(req.actor, id(registro));
   }
+  @Get('plantaciones/:id/procedencia-administrativa')
+  @ApiOperation({
+    summary: 'Procedencia mínima de un registro para ADMIN global activo',
+    description:
+      'Revalida ADMIN global en la lectura privada; no requiere autoría ni acceso M2. No amplía procedencia-propia ni Impacto público.',
+  })
+  procedenciaAdministrativa(
+    @Req() req: ActorRequest,
+    @Param('id') registro: string,
+    @Query() query: unknown,
+  ) {
+    strictObject(query, [], 'query');
+    return this.service.procedenciaAdministrativa(req.actor, id(registro));
+  }
 }

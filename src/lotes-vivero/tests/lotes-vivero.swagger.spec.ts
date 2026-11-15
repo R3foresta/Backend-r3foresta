@@ -468,19 +468,62 @@ describe('ApiObtenerTimeline', () => {
     );
   });
 
-  it('declara los query params de filtro: responsable_id, fecha_inicio, fecha_fin', () => {
+  it('declara filtros y continuación explícita del historial', () => {
     const params = getParameters(fn);
     const queryNames = params
       .filter((p) => p.in === 'query')
       .map((p) => p.name);
     expect(queryNames).toEqual(
-      expect.arrayContaining(['responsable_id', 'fecha_inicio', 'fecha_fin']),
+      expect.arrayContaining([
+        'responsable_id',
+        'fecha_inicio',
+        'fecha_fin',
+        'limite',
+        'cursor',
+      ]),
     );
   });
 
-  it('expone los codigos de respuesta 200, 400, 404 y 500', () => {
+  it('expone lectura privada, cambio de lectura y errores de consulta', () => {
     expect(getStatusCodes(fn)).toEqual(
-      expect.arrayContaining([200, 400, 404, 500]),
+      expect.arrayContaining([200, 400, 401, 403, 404, 409, 500]),
     );
+  });
+
+  it('documenta completitud, vínculos reales y estados de fotos sin URL pública privada', () => {
+    const data = getResponsesObj(fn)['200'].schema.properties.data;
+    expect(data.required).toContain('paginacion');
+    expect(data.properties.paginacion.required).toEqual(
+      expect.arrayContaining([
+        'cursor_siguiente',
+        'hay_mas',
+        'lectura_completa',
+        'total_en_lectura',
+        'corte_evento_id',
+      ]),
+    );
+    const event = data.properties.eventos.items;
+    expect(event.properties.estado_evidencias.enum).toEqual([
+      'CONSULTADAS',
+      'ERROR_CONSULTA',
+    ]);
+    expect(
+      event.properties.evidencias.items.properties.estado_url.enum,
+    ).toEqual(['DISPONIBLE', 'ERROR_FIRMA', 'ERROR_URL']);
+    const despacho = event.properties.payload.oneOf.find(
+      (s: any) => s.properties.tipo.enum[0] === 'DESPACHO',
+    );
+    expect(despacho.required).toEqual(
+      expect.arrayContaining([
+        'asignacion_id',
+        'subcampania_id',
+        'campania_id',
+        'origen_despacho',
+      ]),
+    );
+    expect(despacho.properties.asignacion_id).toMatchObject({
+      type: 'string',
+      nullable: true,
+    });
   });
 });

@@ -68,9 +68,9 @@ const {
     await app.init();
     const config = new DocumentBuilder()
       .setTitle('R3Foresta · Acceso y material por vivero')
-      .setVersion('3.1.0')
+      .setVersion('3.2.0')
       .setDescription(
-        'Contrato local de recepción única, material por vivero y continuidad de reposición interna con IDs exactos. T5 incorpora plantas vivas con procedencia y fotos privadas, éxito propio recuperable con la misma solicitud e intención; no persiste preparación ni rechazo durable. Las fotos vivero_incorporaciones se excluyen de las rutas genéricas y se leen por el timeline M2 o contexto pendiente propio autorizados.',
+        'Contrato local de recepción única, material por vivero y continuidad de reposición interna con IDs exactos. Nuevas incorporaciones T5 y fotos pendientes requieren ADMIN global actual; resultado y replay propios confirmados siguen disponibles para la cuenta activa tras perder el rol. No persiste preparación ni rechazo durable. Timeline por lote paginado con vínculos reales, fuentes de responsable y estado explícito de fotos; las privadas vivero_incorporaciones usan firma TTL300, sin URL pública. T4 y operación M2 conservan su autorización.',
       )
       .addBearerAuth()
       .build();

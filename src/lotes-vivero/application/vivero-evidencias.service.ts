@@ -68,6 +68,11 @@ export class ViveroEvidenciasService {
     const usuario = await this.authService.getUserByAuthId(authId);
     const evento =
       options.eventoTipo ?? dto.evento_tipo ?? TipoEventoVivero.INICIO;
+    const incorporacion = evento === TipoEventoVivero.INCORPORACION;
+    // Autoridad actual de DB antes de preparar archivos o consultar/subir Storage.
+    // La RPC vuelve a verificarla bajo el lock de cuenta frente a rol/baja.
+    if (incorporacion && usuario.rol !== 'ADMIN')
+      throw new ForbiddenException('CAPACIDAD_INSUFICIENTE: incorporación exclusiva ADMIN global');
     const viveroId = options.loteId
       ? await this.authService.assertLote(usuario, options.loteId)
       : dto.vivero_id;
@@ -76,7 +81,6 @@ export class ViveroEvidenciasService {
         'vivero_id es obligatorio para la carga previa a INICIO.',
       );
     await this.authService.assertVivero(usuario, viveroId);
-    const incorporacion = evento === TipoEventoVivero.INCORPORACION;
     const solicitudId = options.solicitudId?.toLowerCase();
     if (incorporacion && (!options.solicitudId || options.loteId))
       throw new BadRequestException('INCORPORACION requiere solicitud previa sin lote.');

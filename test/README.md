@@ -58,6 +58,16 @@ contrato actual de IDs exactos; no instala recepción/conciliación/incorporaci�
 ni acredita100 completa.
 La recepción única se verifica con su runner propio.
 
+El runner T5 instala109 después del antecedente poblado108 y110 con `--postgis`.
+Comprueba instalación/repetición/rollback, deriva y ACL; ejecuta las RPC con
+`service_role`, ADMIN global frente a roles M2 y administrador contextual, replay
+propio tras pérdida de ADMIN, carreras072/109/110 y HTTP real Nest→SQL privado.
+Incluye retiro de ADMIN durante la carga Storage sintética, compensación por
+rechazo concluyente y503 ante resultado incierto. Las cuentas/cambios de rol
+pertenecen exclusivamente al clúster desechable; no modifica personas reales.
+El timeline se prueba en unitarios con cap PostgREST simulado, IDs grandes,
+historial/fotos extensos y fallos parciales. No acredita PostgREST/Storage remoto.
+
 Los runners de registro y compartida aceptan `--evidence /ruta/nueva.json` y
 guardan sus ejemplos HTTP junto al informe explícito, sin sobrescribir los
 cortes históricos. Su HTTP usa086 real con dos tablas vacías representativas

@@ -157,11 +157,27 @@ export class ParticipacionRegistroService {
     }
   }
   async procedencia(actor: VerifiedActor, registro: string) {
-    const envelope = await this.lectura(
+    return this.leerProcedencia(
       actor,
+      registro,
       'pa_registro_procedencia_propia_leer',
-      { p_registro_id: registro },
     );
+  }
+  async procedenciaAdministrativa(actor: VerifiedActor, registro: string) {
+    return this.leerProcedencia(
+      actor,
+      registro,
+      'pa_registro_procedencia_administrativa_leer',
+    );
+  }
+  private async leerProcedencia(
+    actor: VerifiedActor,
+    registro: string,
+    rpc: string,
+  ) {
+    const envelope = await this.lectura(actor, rpc, {
+      p_registro_id: registro,
+    });
     try {
       return {
         ...envelope,
