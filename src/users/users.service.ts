@@ -22,7 +22,7 @@ export class UsersService {
   ) {}
 
   /**
-   * Crea un nuevo usuario en Supabase
+   * Persiste la cuenta y la passkey ya verificada en una sola transacción.
    */
   async createUser(userData: {
     username: string;
@@ -31,80 +31,47 @@ export class UsersService {
   }): Promise<User> {
     const supabase = this.supabaseService.getAdminClient();
 
-    // Verificar si el usuario ya existe
-    const { data: existingUser } = await supabase
-      .from('usuario')
-      .select('id')
-      .eq('username', userData.username)
-      .single();
-
-    if (existingUser) {
-      throw new ConflictException('El usuario ya existe');
-    }
-
-    // Generar auth_id único
-    const authId = this.generateId();
-
-    // Insertar usuario en la tabla usuario
-
-    const { data: newUser, error: userError } = await supabase
-      .from('usuario')
-      .insert({
-        username: userData.username,
-        correo: userData.email,
-        auth_id: authId,
-        nombre: userData.username, // Por defecto usa el username como nombre
-        rol: 'VOLUNTARIO',
-      })
-      .select('auth_id, username, correo, created_at')
-      .single();
-
-    if (userError) {
-      throw new Error(`Error al crear usuario: ${userError.message}`);
-    }
-
-    // Resolver el PK como texto: PostgREST entrega BIGINT numérico de select()
-    // con posible pérdida de precisión antes de que JavaScript pueda adaptarlo.
-    const actorResult = (await supabase.rpc('pa_actor_verificar', {
-      p_auth_id: authId,
-    })) as {
-      data: { usuario_id: string } | null;
-      error: { message: string } | null;
+    // El vínculo BIGINT usuario/credencial se resuelve íntegramente en SQL.
+    const { data: newUser, error } = (await supabase.rpc(
+      'pa_usuario_registrar',
+      {
+        p_auth_id: this.generateId(),
+        p_username: userData.username,
+        p_correo: userData.email ?? null,
+        p_credential_id: userData.credential.credentialId,
+        p_public_key: userData.credential.publicKey,
+        p_algorithm: userData.credential.algorithm,
+        p_counter: userData.credential.counter,
+        p_transports: userData.credential.transports || [],
+      },
+    )) as {
+      data: {
+        auth_id: string;
+        username: string;
+        correo: string | null;
+        created_at: string;
+      } | null;
+      error: { code?: string; message: string } | null;
     };
-    if (actorResult.error || !actorResult.data) {
-      await supabase.from('usuario').delete().eq('auth_id', authId);
-      throw new InternalServerErrorException(
-        'No se pudo resolver la cuenta creada.',
+
+    if (error?.code === '23505') {
+      throw new ConflictException(
+        error.message === 'USUARIO_YA_EXISTE'
+          ? 'El usuario ya existe'
+          : 'Los datos de registro ya están en uso.',
       );
     }
-    // Insertar credencial en la tabla usuario_credencial
-    const { error: credError } = await supabase
-      .from('usuario_credencial')
-      .insert({
-        usuario_id: actorResult.data.usuario_id,
-        credential_id: userData.credential.credentialId,
-        public_key: userData.credential.publicKey,
-        algorithm: userData.credential.algorithm,
-        counter: userData.credential.counter,
-        transports: userData.credential.transports || [],
-      });
-
-    if (credError) {
-      // Eliminar usuario si falla la credencial
-      await supabase.from('usuario').delete().eq('auth_id', authId);
-      throw new Error(`Error al crear credencial: ${credError.message}`);
+    if (error || !newUser) {
+      throw new InternalServerErrorException(
+        'No se pudo completar el registro.',
+      );
     }
 
-    // Retornar el usuario en el formato esperado
     return {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       id: newUser.auth_id, // Usamos auth_id como id para el JWT
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       username: newUser.username,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       email: newUser.correo,
       credentials: [userData.credential],
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       createdAt: new Date(newUser.created_at),
     };
   }
