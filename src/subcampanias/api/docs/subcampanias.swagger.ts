@@ -21,10 +21,14 @@ export function ApiCrearSubcampania() {
     ApiOperation({
       summary: 'Crear subcampaña',
       description:
-        'Crea una subcampaña en estado BORRADOR. El tipo se hereda automáticamente desde la campaña padre. Genera un código de trazabilidad SUB-NNN-CMP-YYYY-NNN. Solo el rol ADMIN.',
+        'Crea el BORRADOR, su código y el historial BORRADOR_CREADO en una sola transacción. Hereda el tipo de una campaña no eliminada. El correlativo SUB-NNN-CMP-YYYY-NNN tiene un mínimo de tres dígitos y no reutiliza códigos de subcampañas eliminadas. Solo ADMIN global con Bearer JWT verificado.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
+    ApiBearerAuth(),
+    ApiHeader({
+      name: 'x-auth-id',
+      description: 'Opcional; si se envía debe coincidir con sub del JWT.',
+      required: false,
+    }),
     ApiBody({
       schema: {
         type: 'object',
@@ -70,7 +74,10 @@ export function ApiCrearSubcampania() {
       description: 'Subcampaña creada correctamente.',
     }),
     ApiResponse({ status: 400, description: 'Datos inválidos.' }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer ausente, inválido o incompatible con x-auth-id.',
+    }),
     ApiResponse({
       status: 403,
       description: 'Solo el rol ADMIN puede crear subcampañas.',
@@ -79,6 +86,11 @@ export function ApiCrearSubcampania() {
     ApiResponse({
       status: 422,
       description: 'Conflicto de unicidad al crear.',
+    }),
+    ApiResponse({
+      status: 503,
+      description:
+        'Resultado no determinado por un aborto técnico; consultar antes de repetir.',
     }),
   );
 }

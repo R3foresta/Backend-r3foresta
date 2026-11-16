@@ -32,10 +32,12 @@ export class SubcampaniasHistorialService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   async registrar(params: RegistrarEventoParams): Promise<void> {
-    // Este evento es obligatorio y solo puede insertarse dentro de la RPC que
-    // persiste la revisión. Nunca debe pasar por el historial best-effort.
+    // Estos eventos son obligatorios dentro de sus RPC transaccionales.
     if (params.tipo === TipoHistorialSubcampania.PLAN_REVISADO) {
       throw new Error('PLAN_REVISADO requiere fn_subcampania_revisar_plan.');
+    }
+    if (params.tipo === TipoHistorialSubcampania.BORRADOR_CREADO) {
+      throw new Error('BORRADOR_CREADO requiere pa_d_subcampania_crear.');
     }
     const supabase = this.supabaseService.getAdminClient();
 
@@ -50,7 +52,7 @@ export class SubcampaniasHistorialService {
     });
 
     if (error) {
-      // El historial es best-effort para las transiciones iniciales:
+      // El historial restante conserva su comportamiento best-effort:
       // si la tabla aun no fue migrada en el entorno, no rompemos el flujo.
       // Logueamos para que el operador la revise.
       this.logger.warn(

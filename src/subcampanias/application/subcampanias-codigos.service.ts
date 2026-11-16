@@ -7,7 +7,7 @@ export class SubcampaniasCodigosService {
 
   async generarCodigo(campaniaId: number): Promise<string> {
     const { data, error } = await this.supabaseService
-      .getClient()
+      .getAdminClient()
       .rpc('fn_generar_codigo_subcampania', { p_campania_id: campaniaId });
 
     if (error || !data) {

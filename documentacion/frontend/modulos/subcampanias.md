@@ -78,13 +78,16 @@ Para cambiar coordinador:
 
 ## POST /subcampanias
 
-**Rol mínimo**: ADMIN
-**Descripción**: Crea una subcampaña en estado BORRADOR dentro de una campaña.
+Una cuenta `ADMIN` activa puede crear un `BORRADOR` dentro de una campaña vigente.
+El `201` confirma la subcampaña y su evento `BORRADOR_CREADO` juntos. El servidor
+asigna el siguiente correlativo histórico de esa campaña, incluidos los códigos de
+borradores retirados. Después de `SUB-999-…` sigue `SUB-1000-…`.
 
 **Headers**
 | Header | Requerido | Descripción |
 |--------|-----------|-------------|
-| x-auth-id | ✓ | Supabase auth_id del usuario |
+| Authorization | ✓ | `Bearer <token>` de la sesión WebAuthn |
+| x-auth-id | — | Si se envía, debe coincidir con la identidad del token |
 | Content-Type | ✓ | `application/json` |
 
 **Body** (`application/json`)
@@ -134,16 +137,18 @@ Para cambiar coordinador:
 | Status | Cuándo |
 |--------|--------|
 | 400 | Validación fallida |
-| 401 | Header x-auth-id ausente |
-| 403 | El usuario autenticado no tiene rol ADMIN |
-| 404 | Campaña o zona no encontrada |
+| 401 | Falta el Bearer, la sesión es inválida o `x-auth-id` difiere de la sesión |
+| 403 | Cuenta inactiva o sin rol ADMIN |
+| 404 | Campaña inexistente o retirada |
+| 422 | Conflicto de unicidad al crear el borrador |
+| 503 | Aborto técnico o timeout sin confirmación; consultar las subcampañas antes de repetir |
 
 **Ejemplo cURL**
 
 ```bash
 curl -X POST http://localhost:3000/api/subcampanias \
   -H "Content-Type: application/json" \
-  -H "x-auth-id: <tu-auth-id>" \
+  -H "Authorization: Bearer <token>" \
   -d '{
     "campania_id": 1,
     "nombre": "Subcampaña Zona A",

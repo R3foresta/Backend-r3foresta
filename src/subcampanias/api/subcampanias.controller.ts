@@ -1,5 +1,6 @@
 import { ActiveAccountAudience } from '../../auth/internal-actor.guard';
 import { InternalActorGuard } from '../../auth/internal-actor.guard';
+import type { ActorRequest } from '../../auth/verified-actor.guard';
 import {
   BadRequestException,
   Body,
@@ -56,11 +57,8 @@ export class SubcampaniasController {
 
   @Post()
   @ApiCrearSubcampania()
-  crear(
-    @Body() dto: CrearSubcampaniaDto,
-    @Headers('x-auth-id') authId?: string,
-  ) {
-    return this.subcampaniasService.crear(dto, this.requireAuthId(authId));
+  crear(@Body() dto: CrearSubcampaniaDto, @Req() request: ActorRequest) {
+    return this.subcampaniasService.crear(dto, request.actor.auth_id);
   }
 
   @Get()

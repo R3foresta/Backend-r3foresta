@@ -1,119 +1,62 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
-  Logger,
+  InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { throwSharedMutationFailure } from '../../common/db/pa-shared-rpc-error';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CrearSubcampaniaDto } from '../api/dto/crear-subcampania.dto';
-import { EstadoSubcampania } from '../domain/enums/estado-subcampania.enum';
-import { SubcampaniasAuthService } from './subcampanias-auth.service';
-import { SubcampaniasCodigosService } from './subcampanias-codigos.service';
-import {
-  SubcampaniasHistorialService,
-  TipoHistorialSubcampania,
-} from './subcampanias-historial.service';
+import { lifecycleObject } from './subcampanias-rpc-error';
 
 @Injectable()
 export class SubcampaniasCreationService {
-  private readonly logger = new Logger(SubcampaniasCreationService.name);
-
-  constructor(
-    private readonly supabaseService: SupabaseService,
-    private readonly authService: SubcampaniasAuthService,
-    private readonly codigosService: SubcampaniasCodigosService,
-    private readonly historialService: SubcampaniasHistorialService,
-  ) {}
+  constructor(private readonly supabaseService: SupabaseService) {}
 
   async crear(dto: CrearSubcampaniaDto, authId: string) {
-    const usuario = await this.authService.getUserByAuthId(authId);
-    this.authService.assertAdmin(usuario.rol);
-
-    if (
-      dto.fecha_estimada_inicio &&
-      dto.fecha_estimada_fin &&
-      new Date(dto.fecha_estimada_fin) < new Date(dto.fecha_estimada_inicio)
-    ) {
-      throw new BadRequestException(
-        'fecha_estimada_fin no puede ser anterior a fecha_estimada_inicio.',
-      );
-    }
-
-    const supabase = this.supabaseService.getAdminClient();
-
-    const { data: campania, error: campError } = await supabase
-      .from('campania')
-      .select('id, tipo')
-      .eq('id', dto.campania_id)
-      .is('deleted_at', null)
-      .single();
-
-    if (campError || !campania) {
-      throw new NotFoundException(
-        `Campaña con id ${dto.campania_id} no encontrada`,
-      );
-    }
-
-    const tipoHeredado = (campania as any).tipo as string;
-
-    const codigo = await this.codigosService.generarCodigo(dto.campania_id);
-
-    const { data: subcampania, error } = await supabase
-      .from('subcampania')
-      .insert({
-        campania_id: dto.campania_id,
-        nombre: dto.nombre,
-        descripcion: dto.descripcion ?? null,
-        tipo: tipoHeredado,
-        zona_id: dto.zona_id,
-        meta_total_arboles: dto.meta_total_arboles,
-        fecha_estimada_inicio: dto.fecha_estimada_inicio ?? null,
-        fecha_estimada_fin: dto.fecha_estimada_fin ?? null,
-        tolerancia_gps_metros: dto.tolerancia_gps_metros ?? 50,
-        codigo_trazabilidad: codigo,
-        created_by: usuario.id,
-        updated_by: usuario.id,
-      })
-      .select(
-        'id, campania_id, nombre, tipo, estado, zona_id, meta_total_arboles, codigo_trazabilidad, descripcion, fecha_estimada_inicio, fecha_estimada_fin, tolerancia_gps_metros, created_at',
-      )
-      .single();
-
-    if (error) {
-      this.logger.error('Error al crear subcampania:', error);
-      if (error.code === '23505') {
-        throw new UnprocessableEntityException(
-          'Ya existe una subcampaña con ese código de trazabilidad.',
-        );
-      }
-      throw new BadRequestException(
-        error.message || 'No se pudo crear la subcampaña.',
-      );
-    }
-
-    const subcampaniaCreada = subcampania as Record<string, unknown>;
-    const subcampaniaId = Number(subcampaniaCreada.id);
-
-    await this.historialService.registrar({
-      subcampaniaId,
-      tipo: TipoHistorialSubcampania.BORRADOR_CREADO,
-      actorUserId: usuario.id,
-      estadoDestino: EstadoSubcampania.BORRADOR,
-      metadata: {
-        codigo_trazabilidad: codigo,
-        campania_id: dto.campania_id,
-        zona_id: dto.zona_id,
-        meta_total_arboles: dto.meta_total_arboles,
-      },
-    });
+    // authId procede del actor verificado por el guard. SQL resuelve el BIGINT
+    // exacto y revalida cuenta/ADMIN bajo lock antes de las reglas del alta.
+    const { data, error } = (await this.supabaseService
+      .getAdminClient()
+      .rpc('pa_d_subcampania_crear', {
+        p_auth_id: authId,
+        p_payload: Object.fromEntries(
+          Object.entries(dto).filter(([, value]) => value !== undefined),
+        ),
+      })) as {
+      data: unknown;
+      error: { code?: string; message?: string } | null;
+    };
+    if (error) this.throwRpcError(error);
 
     return {
       success: true,
       data: {
         message: 'Subcampaña creada correctamente.',
-        ...subcampaniaCreada,
+        ...lifecycleObject(data),
       },
     };
+  }
+
+  private throwRpcError(error: { code?: string; message?: string }): never {
+    throwSharedMutationFailure(error);
+    const message = error.message || 'No se pudo crear la subcampaña.';
+    if (error.code === 'PT401') throw new UnauthorizedException(message);
+    if (error.code === '42501') throw new ForbiddenException(message);
+    if (error.code === 'P0002') throw new NotFoundException(message);
+    if (error.code === '23505') {
+      throw new UnprocessableEntityException(
+        'Ya existe una subcampaña con ese código de trazabilidad.',
+      );
+    }
+    if (error.code === 'PGRST202' || error.code === '42883') {
+      throw new InternalServerErrorException(
+        'La migración 112 de creación atómica no está disponible.',
+      );
+    }
+    throw new BadRequestException(message);
   }
 }

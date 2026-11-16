@@ -1,0 +1,48 @@
+{
+  "fecha": "2026-11-16",
+  "entorno": "PostgreSQL/PostGIS privado desechable sin TCP/.env",
+  "postgresql": "14.24 (Postgres.app)",
+  "postgis": "3.2.10",
+  "sha256": {
+    "migrations/027_m3_postgis_y_enums.sql": "e5b3ae74c44c88e59a1f99510a582cfd2f0ff193bdb6f03b3c09da2f94217027",
+    "migrations/028_m3_campania.sql": "58b1ce3b3c366bcb270772726e6bef32b6f9faafcb360d7ea4b078073ca811ba",
+    "migrations/029_m3_subcampania.sql": "b41f38e34185027687970f2fad9c4be9fdc0926bc56e9d9b6cd07702f7468569",
+    "migrations/037_m3_campania_tipo.sql": "72aa6b6296f0feb9acaed235ebfadde2f1f8c1f745cdf2b776e39dfe73ba92c0",
+    "migrations/047_m3_cancelacion_subcampania_y_plan.sql": "006ccc1d5823964db4b836112ef575743b2fcbdd9f49770889ff8495ffddc86b",
+    "migrations/048_fix_generar_codigo_subcampania_soft_delete.sql": "d9cc790e7d27015b16826468cb8dd79cd4360c0ee884ef11169d590e7f98f664",
+    "migrations/050_m3_campania_edicion_eliminacion_estricta_mvp.sql": "8bdb0987514ccfcf6329a035c5e4f9bab1b1e34f7aeec30be568257d827df441",
+    "migrations/057_m3_campania_desactivacion_masiva.sql": "6b5d11da067ab990fdb5775de6975c9583aa15470c7ac2ac467f009cea057856",
+    "migrations/077_pa_int02d_operaciones_compartidas.sql": "c11660a287349ccadc45ff0026008f193834e55cf28f2ce89b99ba46a799088b",
+    "migrations/112_subcampania_creacion_atomica.sql": "989f66ce2092b29a5afd7ecd5aee822c1f16ba63ae09174f72e9e51033595764",
+    "scripts/qa/subcampania-creacion-test.py": "26cd95c5cbb69865943afbd18a0fcbbd55b5c032dd09e6228b1553fd515fd69c"
+  },
+  "limites": [
+    "Antecedente focal usuario/zona/stock vacío; DDL027/028/029/037/048/050 reales, historial047, CHECK057 y RPC077 extraídos sin modificar.",
+    "Sin reconstrucción001–110, HTTP/PostgREST/Storage/Supabase remoto ni devolución física; identidad HTTP/JWT cubierta en unitarios.",
+    "Actor BIGINT exacto en SQL; mantiene IDs numéricos y campania_id INTEGER del contrato HTTP legado."
+  ],
+  "comprobaciones": [
+    "Preflight sin privilegio de lock aborta sin RPC ni redefinición parcial",
+    "Sobrecarga desconocida aborta el preflight y conserva funciones, ACL y filas",
+    "Instalación/repetición conserva campañas, subcampañas e historial previos",
+    "Instalación/repetición conserva ACL de todas las tablas/secuencias existentes",
+    "ACL heredada pública aborta la instalación completa y conserva funciones, ACL y filas",
+    "ACL privada de pa_d_subcampania_crear(text,jsonb)",
+    "ACL privada de fn_generar_codigo_subcampania(integer)",
+    "Denegación SQL real para anon/authenticated",
+    "MAX histórico incluye soft-delete999; alta1000 sin truncar, tipo heredado y admisión temporal vigente",
+    "Actor BIGINT exacto en alta/historial; no copia snapshots congelados al activar",
+    "El siguiente correlativo continúa1001, sin reusar el código histórico",
+    "Precedencia cuenta/ADMIN -> fechas -> campaña; campaña ausente/eliminada rechazada",
+    "Fallo obligatorio de historial revierte el borrador y todo el dominio",
+    "Rollback no reserva ni consume el código de trazabilidad",
+    "Primera alta permanece sin commit mientras la segunda espera el lock real",
+    "Dos altas solapadas: ambas confirman, dos códigos distintos y un historial por alta",
+    "Revalidación después de esperar cuenta: rol='GENERAL' impide el alta",
+    "Revalidación después de esperar cuenta: activo=false impide el alta",
+    "Si el alta gana, conserva SHARE de cuenta hasta commit y el retiro espera",
+    "Tras esperar la campaña hereda el tipo confirmado, con triggers037/050 reales",
+    "Desactivación077 gana: alta espera campaña y rechaza sin crear hija",
+    "Alta gana: desactivación077 espera, descubre/cancela la nueva hija y conserva ambos historiales"
+  ]
+}
