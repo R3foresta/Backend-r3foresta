@@ -1,0 +1,190 @@
+{
+  "fecha_utc": "2026-11-16T19:02:42.623Z",
+  "proyecto": "vyrjlehkhabydkhjxagx",
+  "metodo": "GET /rest/v1/ OpenAPI por cliente; sin ejecutar RPC ni escribir datos",
+  "resultados": [
+    {
+      "rol": "servicio",
+      "status": 200,
+      "funciones": [
+        {
+          "nombre": "fn_crear_campania",
+          "visible": true,
+          "resumen": "RF-PLA-01: cuenta ADMIN activa bajo SHARE; código039, campaña/auditoría y organizaciones en una sola transacción. Invocación exclusiva service_role tras JWT verificado; sin recibo ni reintento idempotente.",
+          "parametros": [
+            {
+              "description": "RF-PLA-01: cuenta ADMIN activa bajo SHARE; código039, campaña/auditoría y organizaciones en una sola transacción. Invocación exclusiva service_role tras JWT verificado; sin recibo ni reintento idempotente.",
+              "properties": {
+                "p_auth_id": {
+                  "format": "text",
+                  "type": "string"
+                },
+                "p_descripcion": {
+                  "format": "text",
+                  "type": "string"
+                },
+                "p_fecha_estimada_fin": {
+                  "format": "date",
+                  "type": "string"
+                },
+                "p_fecha_estimada_inicio": {
+                  "format": "date",
+                  "type": "string"
+                },
+                "p_nombre": {
+                  "format": "text",
+                  "type": "string"
+                },
+                "p_organizacion_ids": {
+                  "format": "bigint[]",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "type": "array"
+                },
+                "p_tipo": {
+                  "format": "public.tipo_subcampania",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "p_auth_id",
+                "p_nombre",
+                "p_tipo"
+              ],
+              "type": "object"
+            }
+          ]
+        },
+        {
+          "nombre": "pa_d_subcampania_crear",
+          "visible": true,
+          "resumen": null,
+          "parametros": [
+            {
+              "properties": {
+                "p_auth_id": {
+                  "format": "text",
+                  "type": "string"
+                },
+                "p_payload": {
+                  "format": "jsonb"
+                }
+              },
+              "required": [
+                "p_auth_id",
+                "p_payload"
+              ],
+              "type": "object"
+            }
+          ]
+        },
+        {
+          "nombre": "pa_usuario_registrar",
+          "visible": true,
+          "resumen": null,
+          "parametros": [
+            {
+              "properties": {
+                "p_algorithm": {
+                  "format": "text",
+                  "type": "string"
+                },
+                "p_auth_id": {
+                  "format": "text",
+                  "type": "string"
+                },
+                "p_correo": {
+                  "format": "text",
+                  "type": "string"
+                },
+                "p_counter": {
+                  "format": "integer",
+                  "type": "integer"
+                },
+                "p_credential_id": {
+                  "format": "text",
+                  "type": "string"
+                },
+                "p_public_key": {
+                  "format": "text",
+                  "type": "string"
+                },
+                "p_transports": {
+                  "format": "text[]",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "p_username": {
+                  "format": "text",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "p_auth_id",
+                "p_username",
+                "p_correo",
+                "p_credential_id",
+                "p_public_key",
+                "p_algorithm",
+                "p_counter",
+                "p_transports"
+              ],
+              "type": "object"
+            }
+          ]
+        },
+        {
+          "nombre": "fn_generar_codigo_campania",
+          "visible": true,
+          "resumen": "Contador global039, privado y sin reinicio anual. CMP-YYYY-NNN con mínimo3 dígitos y sin truncamiento. nextval no revierte: un aborto puede dejar saltos, sin reutilizar el correlativo consumido.",
+          "parametros": [
+            {
+              "description": "Contador global039, privado y sin reinicio anual. CMP-YYYY-NNN con mínimo3 dígitos y sin truncamiento. nextval no revierte: un aborto puede dejar saltos, sin reutilizar el correlativo consumido.",
+              "properties": {
+                "p_anio": {
+                  "format": "integer",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "p_anio"
+              ],
+              "type": "object"
+            }
+          ]
+        },
+        {
+          "nombre": "fn_generar_codigo_subcampania",
+          "visible": true,
+          "resumen": "MAX histórico048 por campaña, incluidos soft-deleted; mínimo3 dígitos sin truncar1000. Invocar dentro de la transacción de alta (campaña FOR UPDATE). No reserva código por sí sola.",
+          "parametros": [
+            {
+              "description": "MAX histórico048 por campaña, incluidos soft-deleted; mínimo3 dígitos sin truncar1000. Invocar dentro de la transacción de alta (campaña FOR UPDATE). No reserva código por sí sola.",
+              "properties": {
+                "p_campania_id": {
+                  "format": "integer",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "p_campania_id"
+              ],
+              "type": "object"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "rol": "publico",
+      "status": 401
+    }
+  ],
+  "limites": [
+    "Visibilidad y firmas REST; no coteja cuerpos SQL completos, triggers ni catálogo de índices/secuencias.",
+    "No prueba altas remotas ni login real, y no acredita publicación o despliegue."
+  ]
+}

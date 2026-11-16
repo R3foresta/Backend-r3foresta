@@ -1,0 +1,19 @@
+{
+  "fecha": "2026-11-16",
+  "migraciones": [
+    "111_campania_creacion_atomica.sql",
+    "112_subcampania_creacion_atomica.sql",
+    "113_usuario_alta_atomica.sql"
+  ],
+  "estado": "APLICACION_REPORTADA_POR_USUARIO",
+  "fuente": "Mensaje de Pablo en el chat de revisión del backend",
+  "texto": "por si acaso ya estan las migraciones con successe",
+  "entorno_en_el_mensaje": "No identificado explícitamente; se contrastó por lectura REST el proyecto de pruebas configurado.",
+  "cotejo_rest": "mvp-altas-111-113-rest-2026-11-16.json",
+  "limites": [
+    "Success reportado no acredita igualdad de cuerpos SQL con los archivos locales.",
+    "REST acredita firmas/disponibilidad privada de las tres RPC y los dos generadores.",
+    "El GET de metadatos del cliente público respondió401; no se ejecutaron RPC públicas ni altas de prueba remotas.",
+    "No acredita commit, push, despliegue ni ceremonia WebAuthn real."
+  ]
+}

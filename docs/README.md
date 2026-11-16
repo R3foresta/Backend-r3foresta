@@ -6,6 +6,8 @@ Esta carpeta conserva resultados fechados; no es otro backlog ni una receta de d
 
 | Entrega | Informe | Alcance |
 |---|---|---|
+| Revisión MVP ·16/11/2026 | [Altas atómicas y WebAuthn](revision-altas-mvp-2026-11-16.md) |111–113, orígenes explícitos y revisión coordinadora; build/1.487 unitarios, concurrencia SQL y OpenAPI aprobados. `Success` reportado y firmas privadas visibles en REST de pruebas; cuerpos SQL, despliegue y recorrido real separados. |
+| Creación de subcampañas · diagnóstico16/11/2026 | [Causa y corrección local del 500](subcampanias-creacion-diagnostico-2026-11-16.md) | Generador legado con cliente público:42501 reproducido por REST, cliente privado200. Corrección y regresión local aprobadas; recorrido PWA y despliegue separados. |
 | T5 · revisión de historial14/11/2026 | [Origen, fases y reconstrucción](t5-historial-revision-2026-11-14.md) | Revisión de datos y Chrome: origen/eventos conservados, ficha INCORPORACION en blanco y fases inferidas en UI. Propuesta de adaptación pendiente; sin cambios de producto. |
 | T5 · corrección y ensayo real14/11/2026 | [Resultado y puntos de retorno](t5-correcciones-pruebas-2026-11-14.md) |108 aplicada/cotejada, bucket privado configurado y17 comprobaciones HTTP/Storage aprobadas con sesión ADMIN real. Carga/recarga PWA recuperada; interfaz T5 de producto pendiente. |
 | T5 · cotejo remoto14/11/2026 | [Entorno migrado y evidencia](t5-entorno-migrado-2026-11-14.md) |21 funciones coinciden; CHECKs distintos de107 y bucket ausente. Pablo confirma destino de pruebas; ensayo funcional pendiente de resolver configuración y seleccionar cuenta. |

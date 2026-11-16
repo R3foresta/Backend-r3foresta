@@ -1,5 +1,11 @@
 # Backend R3Foresta
 
+La [revisión local del MVP del16 de noviembre](docs/revision-altas-mvp-2026-11-16.md)
+añade altas atómicas de campañas, subcampañas y usuario/passkey (111–113),
+y orígenes explícitos para WebAuthn/CORS. Pablo confirmó `Success` de111–113 y
+sus firmas privadas quedaron visibles en REST de pruebas. Despliegue y recorrido
+real siguen separados; revisar `CORS_ORIGINS` en cada entorno.
+
 T5 implementa localmente la [incorporación de plantas vivas con procedencia](docs/t5-incorporacion-plantas.md):
 recepción o saldo inicial en un vivero real, alta atómica recuperable y continuidad
 M2/M3 sin doble descuento. El entorno de pruebas recibió el cierre aditivo108
@@ -28,8 +34,9 @@ Node/npm compatibles con el lockfile; la última verificación usó Node 24.19.0
 Supabase, JWT, Pinata y blockchain: estos módulos se inicializan al arrancar.
 `JWT_SECRET` es obligatorio, sin fallback. `SUPABASE_SERVICE_ROLE_KEY` es
 necesaria para identidad, operaciones privadas y RPC; nunca va a la PWA.
-Las variables y opcionales `HOST`, `PORT`, `CORS_ORIGINS` y `UBICACION_VIEW_NAME`
-están en [.env.example](.env.example).
+`CORS_ORIGINS` es obligatorio con `NODE_ENV=production`; contiene la lista completa
+de orígenes HTTPS permitidos para CORS y WebAuthn. Las variables y opcionales
+`HOST`, `PORT` y `UBICACION_VIEW_NAME` están en [.env.example](.env.example).
 
 | Servicio local | URL |
 |---|---|

@@ -21,6 +21,9 @@ usan socket privado/DB sin TCP y destruyen exclusivamente su clúster al termina
 
 | Comando | Qué comprueba |
 |---|---|
+| `python3 scripts/qa/campania-creacion-111-test.py --pg-bin /ruta/postgresql/bin --evidence /ruta/nueva/111.json` | Alta ADMIN111: campaña y organizaciones atómicas, rollback tras un vínculo, secuencia global999→1000, ACL, instalación repetida y concurrencia con retiro/baja. PostgreSQL privado sin TCP ni `.env`; DDL028/037/039/050 real sobre fixture focal. |
+| `python3 scripts/qa/subcampania-creacion-test.py --pg-bin /ruta/postgis/bin --evidence /ruta/nueva/112.json` | Alta112: código histórico, BORRADOR e historial juntos; rollback, IDs de actor exactos, ACL y carreras alta/alta, rol/baja, tipo y desactivación077. PostgreSQL/PostGIS privado; stock vacío y antecedente focal, sin devolución física ni Supabase. |
+| `python3 scripts/qa/usuario-alta-test.py --pg-bin /ruta/postgresql/bin --evidence /ruta/nueva/113.json` | Alta113: usuario VOLUNTARIO/credencial atómicos, fallo y reintento, unicidad concurrente, correo opcional, BIGINT, cuentas legadas y ACL. PostgreSQL privado con antecedentes064–067, sin TCP, `.env` ni Supabase. |
 | `python3 scripts/qa/vivero-embolsado-108-test.py --pg-bin /ruta/postgresql/bin --evidence /ruta/nueva/108.json` | Cierre108 desde010/107/variante exacta observada en destino: instalación/repetición, conservación de hechos/RPC095, CHECKs de cantidad/unidad/saldos, abortos y rollback por deriva/datos incompatibles. PostgreSQL privado sin TCP/.env; fixture focal de catálogo, sin invocar RPC operativa ni Supabase. La regresiónT5 instala108 sobre hechos poblados y ejecuta INICIO/EMBOLSADO095 y HTTP con el cierre resultante. |
 | `npm run test:db:vivero:incorporacion -- --postgis --pg-bin /ruta/postgis/bin --evidence /ruta/nueva/t5.json` | T5 sobre100: CHECKs/trigger/helpers010 reales y056; fallo EMBOLSADO095 antes107, corrección107 aditiva y preservación M1. Alta/procedencia/replay/rollback/ACL/carreras de101–103/105–106; `--postgis` exige extensión real e inicialLIFO074/075 íntegra. HTTP→DTO→SQL con IDs vecinos comprados/donados consume exactamente DONACION; descarte079/106 conserva la foto vecina. HTTP/JWT y Storage sintético, sin `.env`, TCP ni servicios reales; no replay productivo001–100.104/RLS tiene runner separado. [Alcance exacto](../docs/t5-validacion-local.md). |
 | `npm run test:db:vivero:incorporacion:storage -- --pg-bin /ruta/postgresql/bin --evidence /ruta/nueva/t5-storage.json` |104 en Storage/RLS sintético: instalación/repetición, denegaciones y drift, preservación de otros buckets/objetos. No crea el bucket ni prueba Supabase Storage remoto. |
@@ -57,6 +60,12 @@ capacidades e IDs. También instala/repite los wrappers105 sobre095 para el
 contrato actual de IDs exactos; no instala recepción/conciliación/incorporación
 ni acredita100 completa.
 La recepción única se verifica con su runner propio.
+
+Las altas111–113 tienen además pruebas HTTP dentro de `test:unit`: guards/JWT,
+DTO, respuestas y llamada RPC privada con transporte Supabase sintético. WebAuthn
+usa la biblioteca instalada y firmas generadas localmente para comprobar orígenes
+permitidos, rechazo de sitios ajenos y discrepancia header/ceremonia. No acredita
+biometría, navegador, PostgREST remoto ni despliegue. [Resultados y límites](../docs/revision-altas-mvp-2026-11-16.md).
 
 El runner T5 instala109 después del antecedente poblado108 y110 con `--postgis`.
 Comprueba instalación/repetición/rollback, deriva y ACL; ejecuta las RPC con

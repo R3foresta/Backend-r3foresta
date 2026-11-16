@@ -79,6 +79,13 @@ para identidad/datos/RPC restringidos y falla si no está configurada. El client
 público permanece para proyecciones legitimadas. `JWT_SECRET` es obligatorio,
 sin fallback, en los módulos de autenticación/usuario.
 
+El cierre local del16 de noviembre usa `CORS_ORIGINS` como lista exacta compartida
+por CORS y WebAuthn. Registro/login exigen `Origin` permitido y coincidencia con
+la ceremonia; producción requiere configuración explícita HTTPS. El RP ID
+conserva el hostname del frontend. Tras verificar WebAuthn, `pa_usuario_registrar`
+(113) confirma usuario VOLUNTARIO y primera credencial juntos; no hay borrado
+compensatorio desde Node. [Configuración y consumo](documentacion/frontend/webauthn.md).
+
 ## Invariantes y transacciones
 
 - Un lote nace desde Recolección (`INICIO` sin saldo vivo; `EMBOLSADO` lo inaugura)
@@ -94,6 +101,15 @@ sin fallback, en los módulos de autenticación/usuario.
   separado de rol global y permiso contextual. Afiliación no concede autoridad.
 - Historiales/eventos son append-only; snapshots conservan el pasado.
   Polígono/GPS autoritativos se validan con PostGIS.
+
+Las altas de campaña (111) y subcampaña (112) usan una RPC privada por operación.
+La primera confirma campaña y todas sus organizaciones; la segunda confirma
+código, BORRADOR e historial BORRADOR_CREADO. Ambas revalidan ADMIN activo bajo
+lock SHARE de cuenta; subcampaña toma después UPDATE de campaña para serializar
+el correlativo histórico. Los códigos admiten más de tres dígitos. La secuencia
+global de campañas puede dejar saltos tras un aborto. Estas altas no incorporan
+recibo ni replay idempotente: ante respuesta perdida se consulta el resultado
+antes de repetir. [Revisión y evidencia local](docs/revision-altas-mvp-2026-11-16.md).
 
 Saldo y escrituras relacionadas usan RPC: asignación, plantación, devolución,
 cancelación y revisión de plan, entre otras. T1 confirma captura, edición/fotos y transiciones M1 en RPC privadas, coordinadas

@@ -1,0 +1,137 @@
+{
+  "fecha_utc": "2026-11-16T19:06:27.460Z",
+  "estado": "APROBADO_LOCAL",
+  "base_git": "3cb82e418031dbfe468cd1064c36a984cf03e0cc",
+  "alcance": "Puntos2–5 autorizados; árbol local sin commit nuevo. Migraciones111–113 reportadas aplicadas y metadatos REST cotejados por separado.",
+  "entorno": {
+    "node": "v24.19.0",
+    "npm": "12.0.2",
+    "postgrest": "Sustituido en tests HTTP; cotejo remoto de metadatos separado"
+  },
+  "build": {
+    "comando": "npm run build",
+    "exit_code": 0
+  },
+  "unitarios": {
+    "comando": "npm run test:unit -- --runInBand --ci --silent --cacheDirectory=/private/tmp/r3foresta-mvp-revision-nov16",
+    "suites": 101,
+    "pruebas": 1487,
+    "fallidas": 0,
+    "pendientes": 0
+  },
+  "eslint": {
+    "alcance": [
+      "src/auth/auth-origins.http.spec.ts",
+      "src/auth/trusted-origins.spec.ts",
+      "src/auth/trusted-origins.ts",
+      "src/campanias/application/campanias-creation.service.ts",
+      "src/campanias/tests/campanias-creation.http.spec.ts",
+      "src/campanias/tests/campanias-creation.service.spec.ts",
+      "src/subcampanias/application/subcampanias-creation.service.ts",
+      "src/subcampanias/tests/subcampanias-creation.http.spec.ts",
+      "src/subcampanias/tests/subcampanias-creation.service.spec.ts",
+      "src/users/users-alta.spec.ts"
+    ],
+    "errores": 0,
+    "avisos": 0,
+    "global_ejecutado": false
+  },
+  "openapi": [
+    {
+      "script": "pa-int02c-openapi.cjs",
+      "rutas": 43,
+      "schemas": 90,
+      "opcion": "--check",
+      "exit_code": 0
+    },
+    {
+      "script": "vivero-acceso-openapi.cjs",
+      "rutas": 43,
+      "opcion": "--check",
+      "exit_code": 0
+    },
+    {
+      "script": "recepcion-semillas-openapi.cjs",
+      "rutas": 6,
+      "opcion": "--check",
+      "exit_code": 0
+    },
+    {
+      "script": "recoleccion-acceso-openapi.cjs",
+      "rutas": 5,
+      "opcion": "--check",
+      "exit_code": 0
+    }
+  ],
+  "sql_aislado": [
+    {
+      "migracion": 111,
+      "comprobaciones": 34,
+      "carreras": 4,
+      "evidencia": "mvp-campania-111-local-2026-11-16.json"
+    },
+    {
+      "migracion": 112,
+      "comprobaciones": 22,
+      "evidencia": "mvp-subcampania-112-local-2026-11-16.json"
+    },
+    {
+      "migracion": 113,
+      "comprobaciones": 35,
+      "carreras": 4,
+      "evidencia": "mvp-usuario-113-local-2026-11-16.json"
+    }
+  ],
+  "observaciones": [
+    "Un intento final dentro del sandbox bloqueó sockets127.0.0.1 (EPERM); la repetición con permiso para HTTP local aprobó101/1487.",
+    "Los primeros initdb necesitaron memoria compartida local fuera del sandbox; los runners conservaron socket privado y TCP deshabilitado."
+  ],
+  "revision": [
+    "Cuenta/ADMIN revalidada bajo SHARE en111/112; subcampaña retiene campaña UPDATE hasta historial y commit.",
+    "111 clasifica fallo de asociaciones como rechazo íntegro; abortos técnicos compartidos devuelven503.",
+    "112 limita cambios ACL a firmas cotejadas; sobrecargas/permisos públicos heredados abortan instalación.",
+    "113 revierte usuario y credencial juntos y preserva unicidad de username/correo/auth_id/credential_id.",
+    "WebAuthn usa origen esperado desde configuración exacta y biblioteca real para clientDataJSON."
+  ],
+  "sha256": {
+    ".env.example": "3b5ce12d1ba3d09f521f352e232dbd5be9fc0c80d5f8755ae480302074f1ddc0",
+    "src/auth/auth.controller.ts": "c9b0068f530cae5660a2f5b0e6c35b8bb896f1c2d1a1142d123a2dab43b8e2b0",
+    "src/auth/auth.service.ts": "35d4baced225560450bf7c79b99dbfee3e6bbb2cd6e4446a56e5a1798125acc3",
+    "src/campanias/api/campanias.controller.ts": "e481ee724c094c8ba38f8aa6bda79614e7de02bc54277bc160507d72e326a35c",
+    "src/campanias/api/docs/campanias.swagger.ts": "3e9cefd0ee81f48afc8ccf708f3e898e3654be4110810134106e2ed6e79edfb2",
+    "src/campanias/application/campanias-codigos.service.ts": "b9d6aedcea459e7743d22ad1269a4c02282bb0a07478fbaded11992ef614a78e",
+    "src/campanias/application/campanias-creation.service.ts": "36552b3e4f751fdf2f4508242ddb5a6d00cc105ca2102734817d2fac92c47eb2",
+    "src/campanias/tests/campanias-creation.service.spec.ts": "cd92cd742a02e4358596911856a3057545577a851e4abfa4b2b2b7194a22f61b",
+    "src/main.ts": "c1cbfca1fc4545a268c835be45d453e2686de8accd5ee98a898269ad54171dd8",
+    "src/subcampanias/api/docs/subcampanias.swagger.ts": "31aab0994ff274c219ae07b7b11dbc9674f36f919d66a6bd48be837d8675477a",
+    "src/subcampanias/api/subcampanias.controller.ts": "953ab3ba59361cd79bd19a8d5e446a193119846f709d631071d2a700acc6cfe8",
+    "src/subcampanias/application/subcampanias-codigos.service.ts": "c62caed80b6f4a7085cdc03e6546f072232519467e10b039e7e4e9b21787b8db",
+    "src/subcampanias/application/subcampanias-creation.service.ts": "0cdc4244e7963ef3a6a0708cea159183f8f2a64c647b63186897ac5d4b9b19bb",
+    "src/subcampanias/application/subcampanias-historial.service.ts": "045b126e557db4e9a4048f2c6e5500d6a77bc20620de5f2365247b770ffb258d",
+    "src/subcampanias/tests/subcampanias-creation.service.spec.ts": "ba86320aad3acec81e032218c076201c0b4fed16e63110840da6666a421211b8",
+    "src/users/entities/user.entity.ts": "403fa5429c5c0bc016afabbfe39d08e108025f17de168a5981db4abe04fe1a14",
+    "src/users/perfil-v1.http.spec.ts": "9d7bb9919db5071000dc7ea2e12b45c3541b0513aa8e1416be59e1cf52b60d88",
+    "src/users/users-alta.spec.ts": "79b03cec410ef79bd6aa10ca5dd0c106d694ba4a140f1b4c4b753250e54c7bc5",
+    "src/users/users.service.ts": "5d1091c2f38502c2d6d569776dcb33ed8fd41d121c6c89f1f2ead7cd0bb5652c",
+    "migrations/111_campania_creacion_atomica.sql": "3eda3c91e6c844099cba9c85e4955b4421cfa3ef0c20e71b3bd0d0498efa76d4",
+    "migrations/112_subcampania_creacion_atomica.sql": "989f66ce2092b29a5afd7ecd5aee822c1f16ba63ae09174f72e9e51033595764",
+    "migrations/113_usuario_alta_atomica.sql": "e5c94bea31e5bd0f0054f06a281fde76b7737be61c53df10d4933e13e74626da",
+    "scripts/qa/campania-creacion-111-test.py": "627df201314216e6b1e31d750537df6a9b16a093fc52ac2d84ded05c56ef0e17",
+    "scripts/qa/subcampania-creacion-test.py": "26cd95c5cbb69865943afbd18a0fcbbd55b5c032dd09e6228b1553fd515fd69c",
+    "scripts/qa/usuario-alta-test.py": "c1aff394dd5d87ffe70326d5c4f2f4735b6073f6966dbf1a4a27af7e753f787f",
+    "src/auth/auth-origins.http.spec.ts": "99c8b46f2f5d6826dcf2b195d00cf6529980625834aef99432fced8510ea1d10",
+    "src/auth/trusted-origins.spec.ts": "3115b40711bee879c78d43e13584b4c9bdf0219f7fc2578fc3316adea5c6b3a7",
+    "src/auth/trusted-origins.ts": "583f6de264b12ed3ad137b1a1610c18f0650fa256184d01d3229db5f9651108d",
+    "src/campanias/tests/campanias-creation.http.spec.ts": "db03df4d15e1be5629bf8a6741b3b9215ebe6f15b6ed7fe2ff4e7bc32b6d74d6",
+    "src/subcampanias/tests/subcampanias-creation.http.spec.ts": "2a77e6eba67cc7b5fa2a36b369dcf067ef926e7973d429874809101a38268c12",
+    "test/db/campania-creacion-111.schema.sql": "fafdd3ba6c1cb47b553fd7feb32b47d804fc674d2d716cf1d4e1b1e459f68d56",
+    "test/db/usuario-alta-fixture.sql": "72a93a171438bf26d7d50af5f338c984af89b005579f450fda6c0f1ee389c56e"
+  },
+  "limites": [
+    "No hay navegador/autenticador WebAuthn real en estas pruebas.",
+    "Fixtures focales; no reconstrucción completa001–110 ni garantía de scripts SQL privilegiados que omitan los locks.",
+    "Campaña/subcampaña conservan IDs HTTP numéricos; exactitud nueva del actor y vínculo usuario/credencial.",
+    "Sin recibos ni replay idempotente en las tres altas; pérdida de respuesta requiere consulta o login.",
+    "Publicación/despliegue, configuración desplegada y recorrido real siguen pendientes."
+  ]
+}
