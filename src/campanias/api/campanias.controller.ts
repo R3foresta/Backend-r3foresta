@@ -1,4 +1,5 @@
 import { InternalActorGuard } from '../../auth/internal-actor.guard';
+import type { ActorRequest } from '../../auth/verified-actor.guard';
 import {
   BadRequestException,
   Body,
@@ -14,6 +15,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UnauthorizedException,
 } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common';
@@ -47,8 +49,8 @@ export class CampaniasController {
 
   @Post()
   @ApiCrearCampania()
-  crear(@Body() dto: CrearCampaniaDto, @Headers('x-auth-id') authId?: string) {
-    return this.campaniasService.crear(dto, this.requireAuthId(authId));
+  crear(@Body() dto: CrearCampaniaDto, @Req() request: ActorRequest) {
+    return this.campaniasService.crear(dto, request.actor.auth_id);
   }
 
   @Get()

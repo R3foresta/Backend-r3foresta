@@ -20,10 +20,13 @@ export function ApiCrearCampania() {
     ApiOperation({
       summary: 'Crear campaña',
       description:
-        'Crea una campaña con un código de trazabilidad generado automáticamente (CMP-YYYY-NNN). Solo el rol ADMIN puede crear campañas.',
+        'Requiere Bearer JWT verificado y cuenta activa con rol ADMIN global. Crea la campaña, su auditoría y las organizaciones solicitadas en una sola transacción: cualquier fallo revierte el alta completa. Las organizaciones son opcionales y deben existir en el catálogo. El código CMP-YYYY-NNN usa un correlativo global que no reinicia por año, conserva el histórico y crece a cuatro o más dígitos sin truncamiento; los abortos pueden dejar saltos.',
     }),
-    ApiSecurity('x-auth-id'),
-    ApiHeader(AUTH_ID_HEADER),
+    ApiHeader({
+      name: 'x-auth-id',
+      required: false,
+      description: 'Opcional; si se envía, debe coincidir con el sub del JWT.',
+    }),
     ApiBody({
       schema: {
         type: 'object',
@@ -60,6 +63,8 @@ export function ApiCrearCampania() {
           },
           organizacion_ids: {
             type: 'array',
+            minItems: 1,
+            nullable: true,
             items: { type: 'integer', minimum: 1 },
             example: [1, 2],
           },
@@ -69,16 +74,33 @@ export function ApiCrearCampania() {
     ApiResponse({ status: 201, description: 'Campaña creada correctamente.' }),
     ApiResponse({
       status: 400,
-      description: 'Datos inválidos o fechas incoherentes.',
+      description:
+        'Datos inválidos, fechas incoherentes o fallo en las organizaciones solicitadas; no se confirma una campaña parcial.',
     }),
-    ApiResponse({ status: 401, description: 'Header x-auth-id requerido.' }),
+    ApiResponse({
+      status: 401,
+      description: 'Bearer JWT ausente, inválido o expirado.',
+    }),
     ApiResponse({
       status: 403,
-      description: 'Solo el rol ADMIN puede crear campañas.',
+      description: 'Cuenta inactiva o sin rol ADMIN global.',
+    }),
+    ApiResponse({
+      status: 404,
+      description: 'La cuenta de la sesión ya no existe al confirmar el alta.',
     }),
     ApiResponse({
       status: 422,
       description: 'Ya existe una campaña con ese nombre.',
+    }),
+    ApiResponse({
+      status: 503,
+      description:
+        'Resultado no determinado por un aborto técnico; consultar el estado antes de repetir el alta. No hay reintento idempotente.',
+    }),
+    ApiResponse({
+      status: 500,
+      description: 'Cliente privado o migración de creación no disponibles.',
     }),
   );
 }

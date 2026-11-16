@@ -6,13 +6,16 @@ Base URL: `/api/campanias`
 
 ## POST /campanias
 
-**Rol mínimo**: ADMIN
-**Descripción**: Crea una campaña. El código de trazabilidad (`CMP-YYYY-NNN`) se genera automáticamente.
+Una cuenta `ADMIN` activa puede crear una campaña con o sin organizaciones.
+El `201` confirma tanto la campaña como todos los vínculos solicitados en
+`organizacion_ids`. Si PostgreSQL rechaza un vínculo, revierte el alta completa.
+El código `CMP-YYYY-NNN` usa un correlativo global de al menos tres dígitos.
 
 **Headers**
 | Header | Requerido | Descripción |
 |--------|-----------|-------------|
-| x-auth-id | ✓ | Supabase auth_id del usuario |
+| Authorization | ✓ | `Bearer <token>` de la sesión WebAuthn |
+| x-auth-id | — | Si se envía, debe coincidir con la identidad del token |
 | Content-Type | ✓ | `application/json` |
 
 **Body** (`application/json`)
@@ -23,13 +26,14 @@ Base URL: `/api/campanias`
 | descripcion | string | — | max 1000 caracteres |
 | fecha_estimada_inicio | string (ISO date) | — | formato YYYY-MM-DD |
 | fecha_estimada_fin | string (ISO date) | — | formato YYYY-MM-DD, >= fecha_estimada_inicio |
-| organizacion_ids | number[] | — | Array de IDs de organizaciones existentes |
+| organizacion_ids | number[] | — | IDs de organizaciones existentes. Omitir el campo para crear la campaña sin asociaciones |
 
 **Respuesta exitosa** `201`
 ```json
 {
   "success": true,
   "data": {
+    "message": "Campaña creada correctamente.",
     "id": 1,
     "nombre": "Campaña Norte 2026",
     "tipo": "REFORESTACION",
@@ -37,8 +41,7 @@ Base URL: `/api/campanias`
     "descripcion": "Reforestación de la zona norte del país",
     "fecha_estimada_inicio": "2026-06-01",
     "fecha_estimada_fin": "2026-12-31",
-    "created_at": "2026-05-28T10:00:00Z",
-    "updated_at": "2026-05-28T10:00:00Z"
+    "created_at": "2026-05-28T10:00:00Z"
   }
 }
 ```
@@ -46,16 +49,17 @@ Base URL: `/api/campanias`
 **Errores**
 | Status | Cuándo |
 |--------|--------|
-| 400 | Validación fallida: fechas incoherentes, tipo inválido |
-| 401 | Header x-auth-id ausente |
-| 403 | Rol distinto de ADMIN |
-| 409 | Ya existe una campaña con ese nombre |
+| 400 | Validación fallida: fechas incoherentes, tipo inválido u organizaciones inexistentes/repetidas; no confirma un alta parcial |
+| 401 | Falta el Bearer, la sesión es inválida o `x-auth-id` difiere de la sesión |
+| 403 | Cuenta inactiva o sin rol ADMIN |
+| 422 | Ya existe una campaña con ese nombre |
+| 503 | Aborto técnico o timeout sin confirmación; consultar las campañas antes de repetir |
 
 **Ejemplo cURL**
 ```bash
 curl -X POST http://localhost:3000/api/campanias \
   -H "Content-Type: application/json" \
-  -H "x-auth-id: <tu-auth-id>" \
+  -H "Authorization: Bearer <token>" \
   -d '{
     "nombre": "Campaña Norte 2026",
     "tipo": "REFORESTACION",

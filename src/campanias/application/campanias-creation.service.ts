@@ -1,9 +1,11 @@
 import {
   BadRequestException,
   Injectable,
-  Logger,
+  InternalServerErrorException,
+  NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { throwSharedMutationFailure } from '../../common/db/pa-shared-rpc-error';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CrearCampaniaDto } from '../api/dto/crear-campania.dto';
 import {
@@ -14,23 +16,25 @@ import {
   TipoCampaniaPolicy,
   TipoCampaniaPolicyError,
 } from '../domain/policies/tipo-campania.policy';
-import { CampaniasAuthService } from './campanias-auth.service';
-import { CampaniasCodigosService } from './campanias-codigos.service';
+
+type CampaniaCreada = {
+  id: number;
+  nombre: string;
+  tipo: string;
+  codigo_trazabilidad: string;
+  descripcion: string | null;
+  fecha_estimada_inicio: string | null;
+  fecha_estimada_fin: string | null;
+  created_at: string;
+};
 
 @Injectable()
 export class CampaniasCreationService {
-  private readonly logger = new Logger(CampaniasCreationService.name);
+  constructor(private readonly supabaseService: SupabaseService) {}
 
-  constructor(
-    private readonly supabaseService: SupabaseService,
-    private readonly authService: CampaniasAuthService,
-    private readonly codigosService: CampaniasCodigosService,
-  ) {}
-
+  // authId procede de InternalActorGuard. La RPC revalida actividad y ADMIN
+  // bajo lock de cuenta antes de crear campaña, auditoría y organizaciones.
   async crear(dto: CrearCampaniaDto, authId: string) {
-    const usuario = await this.authService.getUserByAuthId(authId);
-    this.authService.assertAdmin(usuario.rol);
-
     try {
       TipoCampaniaPolicy.assertValido(dto.tipo);
       FechasCampaniaPolicy.assertCoherentes(
@@ -47,66 +51,54 @@ export class CampaniasCreationService {
       throw err;
     }
 
-    const anio = new Date().getFullYear();
-    const codigo = await this.codigosService.generarCodigo(anio);
-
-    const supabase = this.supabaseService.getAdminClient();
-
-    const { data: campania, error } = await supabase
-      .from('campania')
-      .insert({
-        nombre: dto.nombre,
-        descripcion: dto.descripcion ?? null,
-        tipo: dto.tipo,
-        codigo_trazabilidad: codigo,
-        fecha_estimada_inicio: dto.fecha_estimada_inicio ?? null,
-        fecha_estimada_fin: dto.fecha_estimada_fin ?? null,
-        created_by: usuario.id,
-        updated_by: usuario.id,
-      })
-      .select(
-        'id, nombre, tipo, codigo_trazabilidad, descripcion, fecha_estimada_inicio, fecha_estimada_fin, created_at',
-      )
-      .single();
+    const { data, error } = (await this.supabaseService
+      .getAdminClient()
+      .rpc('fn_crear_campania', {
+        p_auth_id: authId,
+        p_nombre: dto.nombre,
+        p_tipo: dto.tipo,
+        p_descripcion: dto.descripcion ?? null,
+        p_fecha_estimada_inicio: dto.fecha_estimada_inicio ?? null,
+        p_fecha_estimada_fin: dto.fecha_estimada_fin ?? null,
+        p_organizacion_ids: dto.organizacion_ids ?? null,
+      })) as { data: unknown; error: { code: string; message: string } | null };
 
     if (error) {
-      this.logger.error('Error al crear campania:', error);
-      if (error.code === '23505') {
-        throw new UnprocessableEntityException(
-          'Ya existe una campaña con ese nombre.',
+      throwSharedMutationFailure(error);
+      if (error.code === 'PT404') throw new NotFoundException(error.message);
+      if (error.code === 'PT422') {
+        throw new UnprocessableEntityException(error.message);
+      }
+      if (error.code === 'PT400') throw new BadRequestException(error.message);
+      if (error.code === 'PGRST202' || error.code === '42883') {
+        throw new InternalServerErrorException(
+          'La migración de creación atómica de campañas no está disponible.',
         );
       }
-      throw new BadRequestException(
-        error.message || 'No se pudo crear la campaña.',
-      );
+      // Los detalles SQL pueden contener datos de la solicitud; no se exponen
+      // ni registran como parte de la respuesta de negocio.
+      throw new BadRequestException('No se pudo crear la campaña.');
     }
 
-    const campId = (campania as any).id as number;
-
-    if (dto.organizacion_ids && dto.organizacion_ids.length > 0) {
-      const { error: orgError } = await supabase
-        .from('campania_organizacion')
-        .insert(
-          dto.organizacion_ids.map((orgId) => ({
-            campania_id: campId,
-            organizacion_id: orgId,
-            created_by: usuario.id,
-          })),
-        );
-
-      if (orgError) {
-        this.logger.error(
-          'Error al asociar organizaciones al crear:',
-          orgError,
-        );
-      }
+    if (
+      !data ||
+      typeof data !== 'object' ||
+      Array.isArray(data) ||
+      !('id' in data) ||
+      typeof data.id !== 'number' ||
+      !('codigo_trazabilidad' in data) ||
+      typeof data.codigo_trazabilidad !== 'string'
+    ) {
+      throw new InternalServerErrorException(
+        'La creación no devolvió una campaña válida.',
+      );
     }
 
     return {
       success: true,
       data: {
         message: 'Campaña creada correctamente.',
-        ...(campania as any),
+        ...(data as CampaniaCreada),
       },
     };
   }

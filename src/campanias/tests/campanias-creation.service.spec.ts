@@ -2,11 +2,12 @@ import {
   BadRequestException,
   ForbiddenException,
   InternalServerErrorException,
+  NotFoundException,
+  ServiceUnavailableException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { TipoCampania } from '../domain/enums/tipo-campania.enum';
-import { CampaniasAuthService } from '../application/campanias-auth.service';
 import { CampaniasCodigosService } from '../application/campanias-codigos.service';
 import { CampaniasCreationService } from '../application/campanias-creation.service';
 import { CrearCampaniaDto } from '../api/dto/crear-campania.dto';
@@ -16,186 +17,243 @@ function buildDto(overrides: Partial<CrearCampaniaDto> = {}): CrearCampaniaDto {
     nombre: 'Campaña Test',
     tipo: TipoCampania.REFORESTACION,
     ...overrides,
-  } as CrearCampaniaDto;
+  };
 }
 
-function buildSupabase(insertResult: { data: any; error: any }) {
-  const single = jest.fn().mockResolvedValue(insertResult);
-  const select = jest.fn().mockReturnValue({ single });
-  const insert = jest.fn().mockReturnValue({ select });
-  const insertOrganizaciones = jest.fn().mockResolvedValue({ error: null });
-  const from = jest.fn((table: string) => {
-    if (table === 'campania') return { insert };
-    if (table === 'campania_organizacion')
-      return { insert: insertOrganizaciones };
-    throw new Error(`Tabla no mockeada: ${table}`);
+const campania = {
+  id: 1,
+  nombre: 'Campaña Test',
+  tipo: 'REFORESTACION',
+  codigo_trazabilidad: 'CMP-2026-1000',
+  descripcion: null,
+  fecha_estimada_inicio: null,
+  fecha_estimada_fin: null,
+  created_at: '2026-01-01T00:00:00Z',
+};
+
+function buildSupabase(result: {
+  data: unknown;
+  error: { code: string; message: string } | null;
+}) {
+  const rpc = jest.fn().mockResolvedValue(result);
+  const from = jest.fn(() => {
+    throw new Error('El alta completa corresponde a la RPC.');
   });
-  const supabase = {
-    getAdminClient: jest.fn().mockReturnValue({ from }),
-    getClient: jest.fn(() => {
-      throw new Error('El cliente público no tiene permisos de escritura.');
-    }),
-  } as unknown as SupabaseService;
-  return { supabase, from, insert, insertOrganizaciones };
-}
-
-function buildAuthService(rol: string) {
-  return {
-    getUserByAuthId: jest
-      .fn()
-      .mockResolvedValue({ id: 1, nombre: 'Admin', rol }),
-    assertAdmin: jest.fn().mockImplementation((r: string) => {
-      if (r.toUpperCase() !== 'ADMIN') throw new ForbiddenException();
-    }),
-  } as unknown as CampaniasAuthService;
-}
-
-function buildCodigosService(codigo = 'CMP-2026-001') {
-  return {
-    generarCodigo: jest.fn().mockResolvedValue(codigo),
-  } as unknown as CampaniasCodigosService;
+  const getAdminClient = jest.fn().mockReturnValue({ rpc, from });
+  const getClient = jest.fn(() => {
+    throw new Error('El cliente público no participa en el alta.');
+  });
+  const supabase = { getAdminClient, getClient } as unknown as SupabaseService;
+  return { supabase, rpc, from, getAdminClient, getClient };
 }
 
 describe('CampaniasCreationService', () => {
-  it('crea campaña y asociaciones autorizadas aunque el cliente público no pueda escribir', async () => {
-    const campania = {
-      id: 1,
-      nombre: 'Campaña Test',
-      tipo: 'REFORESTACION',
-      codigo_trazabilidad: 'CMP-2026-001',
-      descripcion: null,
-      fecha_estimada_inicio: null,
-      fecha_estimada_fin: null,
-      created_at: '2026-01-01T00:00:00Z',
-    };
-    const { supabase, insert, insertOrganizaciones } = buildSupabase({
+  it('crea campaña y organizaciones con una sola RPC privada y conserva el contrato', async () => {
+    const { supabase, rpc, from, getClient } = buildSupabase({
       data: campania,
       error: null,
     });
-    const authService = buildAuthService('ADMIN');
-    const codigosService = buildCodigosService('CMP-2026-001');
+    const service = new CampaniasCreationService(supabase);
 
-    const service = new CampaniasCreationService(
-      supabase,
-      authService,
-      codigosService,
-    );
     const result = await service.crear(
       buildDto({ organizacion_ids: [20, 21] }),
-      'auth-1',
+      'auth-verificado',
     );
 
-    expect(result.success).toBe(true);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    expect(result.data.codigo_trazabilidad).toBe('CMP-2026-001');
-    expect(insert).toHaveBeenCalledWith(
+    expect(result).toEqual({
+      success: true,
+      data: { message: 'Campaña creada correctamente.', ...campania },
+    });
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith('fn_crear_campania', {
+      p_auth_id: 'auth-verificado',
+      p_nombre: 'Campaña Test',
+      p_tipo: 'REFORESTACION',
+      p_descripcion: null,
+      p_fecha_estimada_inicio: null,
+      p_fecha_estimada_fin: null,
+      p_organizacion_ids: [20, 21],
+    });
+    expect(from).not.toHaveBeenCalled();
+    expect(getClient).not.toHaveBeenCalled();
+  });
+
+  it('conserva las organizaciones opcionales y envía los campos vigentes', async () => {
+    const { supabase, rpc } = buildSupabase({ data: campania, error: null });
+    const service = new CampaniasCreationService(supabase);
+    await service.crear(
+      buildDto({
+        descripcion: 'Descripción',
+        fecha_estimada_inicio: '2026-11-20',
+        fecha_estimada_fin: '2026-11-21',
+      }),
+      'auth-verificado',
+    );
+    expect(rpc).toHaveBeenCalledWith(
+      'fn_crear_campania',
       expect.objectContaining({
-        nombre: 'Campaña Test',
-        created_by: 1,
-        updated_by: 1,
+        p_descripcion: 'Descripción',
+        p_fecha_estimada_inicio: '2026-11-20',
+        p_fecha_estimada_fin: '2026-11-21',
+        p_organizacion_ids: null,
       }),
     );
-    expect(insertOrganizaciones).toHaveBeenCalledWith([
-      { campania_id: 1, organizacion_id: 20, created_by: 1 },
-      { campania_id: 1, organizacion_id: 21, created_by: 1 },
-    ]);
-    expect(supabase.getClient).not.toHaveBeenCalled();
   });
 
-  it('lanza 403 si el rol no es ADMIN', async () => {
-    const { supabase, from } = buildSupabase({ data: null, error: null });
-    const authService = buildAuthService('GENERAL');
-    const codigosService = buildCodigosService();
-
-    const service = new CampaniasCreationService(
-      supabase,
-      authService,
-      codigosService,
-    );
-
-    await expect(service.crear(buildDto(), 'auth-1')).rejects.toThrow(
+  it.each([
+    [
+      'PT403',
       ForbiddenException,
-    );
+      'Solo el rol ADMIN puede realizar esta operación.',
+    ],
+    ['PT403', ForbiddenException, 'CUENTA_INACTIVA'],
+    ['PT404', NotFoundException, 'La cuenta de la sesión no existe.'],
+    [
+      'PT422',
+      UnprocessableEntityException,
+      'Ya existe una campaña con ese nombre.',
+    ],
+    [
+      'PT400',
+      BadRequestException,
+      'Las organizaciones asociadas deben existir en el catálogo.',
+    ],
+    [
+      'PT400',
+      BadRequestException,
+      'No se pudo crear la campaña: código u organizaciones duplicadas.',
+    ],
+  ])(
+    'propaga %s de la revalidación transaccional, sin devolver éxito',
+    async (code, exception, message) => {
+      const { supabase, rpc, from, getClient } = buildSupabase({
+        data: null,
+        error: { code, message },
+      });
+      const service = new CampaniasCreationService(supabase);
+      await expect(
+        service.crear(buildDto(), 'auth-verificado'),
+      ).rejects.toMatchObject({ constructor: exception, message });
+      expect(rpc).toHaveBeenCalledTimes(1);
+      expect(from).not.toHaveBeenCalled();
+      expect(getClient).not.toHaveBeenCalled();
+    },
+  );
+
+  it('un fallo SQL de asociaciones impide success y no expone detalles de la solicitud', async () => {
+    const { supabase, rpc, from } = buildSupabase({
+      data: null,
+      error: { code: 'P0001', message: 'Detalle interno de una asociación' },
+    });
+    const service = new CampaniasCreationService(supabase);
+    await expect(
+      service.crear(buildDto({ organizacion_ids: [20] }), 'auth-verificado'),
+    ).rejects.toThrow(new BadRequestException('No se pudo crear la campaña.'));
+    expect(rpc).toHaveBeenCalledTimes(1);
     expect(from).not.toHaveBeenCalled();
-    expect(supabase.getAdminClient).not.toHaveBeenCalled();
   });
 
-  it('falla antes de escribir si no existe cliente privado, sin fallback público', async () => {
-    const { supabase, from } = buildSupabase({ data: null, error: null });
+  it.each(['PGRST202', '42883'])(
+    'informa la migración111 ausente (%s)',
+    async (code) => {
+      const { supabase } = buildSupabase({
+        data: null,
+        error: { code, message: 'RPC no disponible' },
+      });
+      await expect(
+        new CampaniasCreationService(supabase).crear(
+          buildDto(),
+          'auth-verificado',
+        ),
+      ).rejects.toThrow(InternalServerErrorException);
+    },
+  );
+
+  it.each(['55P03', '57014', '40P01', '40001'])(
+    'clasifica el aborto técnico %s como 503 inconcluso',
+    async (code) => {
+      const { supabase } = buildSupabase({
+        data: null,
+        error: { code, message: 'Aborto técnico' },
+      });
+      await expect(
+        new CampaniasCreationService(supabase).crear(
+          buildDto(),
+          'auth-verificado',
+        ),
+      ).rejects.toMatchObject({
+        constructor: ServiceUnavailableException,
+        response: {
+          error: {
+            codigo: 'RESULTADO_NO_DETERMINADO',
+            resultado_concluyente: false,
+          },
+        },
+      });
+    },
+  );
+
+  it('falla antes de escribir si falta el cliente privado, sin fallback público', async () => {
+    const { supabase, rpc, getAdminClient, getClient } = buildSupabase({
+      data: null,
+      error: null,
+    });
     const failure = new InternalServerErrorException(
       'Cliente privado no disponible.',
     );
-    jest.mocked(supabase.getAdminClient).mockImplementation(() => {
+    getAdminClient.mockImplementation(() => {
       throw failure;
     });
-    const service = new CampaniasCreationService(
-      supabase,
-      buildAuthService('ADMIN'),
-      buildCodigosService(),
-    );
-
-    await expect(service.crear(buildDto(), 'auth-1')).rejects.toBe(failure);
-    expect(from).not.toHaveBeenCalled();
-    expect(supabase.getClient).not.toHaveBeenCalled();
-  });
-
-  it('lanza 422 si Supabase devuelve error 23505 (nombre duplicado)', async () => {
-    const { supabase } = buildSupabase({
-      data: null,
-      error: { code: '23505', message: 'duplicate key' },
-    });
-    const authService = buildAuthService('ADMIN');
-    const codigosService = buildCodigosService();
-
-    const service = new CampaniasCreationService(
-      supabase,
-      authService,
-      codigosService,
-    );
-
-    await expect(service.crear(buildDto(), 'auth-1')).rejects.toThrow(
-      UnprocessableEntityException,
-    );
-  });
-
-  it('lanza 400 si Supabase devuelve error generico', async () => {
-    const { supabase } = buildSupabase({
-      data: null,
-      error: { code: '42000', message: 'generic error' },
-    });
-    const authService = buildAuthService('ADMIN');
-    const codigosService = buildCodigosService();
-
-    const service = new CampaniasCreationService(
-      supabase,
-      authService,
-      codigosService,
-    );
-
-    await expect(service.crear(buildDto(), 'auth-1')).rejects.toThrow(
-      BadRequestException,
-    );
-  });
-
-  it('lanza 400 si fecha_fin es anterior a fecha_inicio', async () => {
-    const { supabase } = buildSupabase({ data: null, error: null });
-    const authService = buildAuthService('ADMIN');
-    const codigosService = buildCodigosService();
-
-    const service = new CampaniasCreationService(
-      supabase,
-      authService,
-      codigosService,
-    );
-
     await expect(
-      service.crear(
-        buildDto({
-          fecha_estimada_inicio: '2026-12-01',
-          fecha_estimada_fin: '2026-06-01',
-        }),
-        'auth-1',
+      new CampaniasCreationService(supabase).crear(
+        buildDto(),
+        'auth-verificado',
+      ),
+    ).rejects.toBe(failure);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(getClient).not.toHaveBeenCalled();
+  });
+
+  it.each([null, [], {}, { id: 1 }])(
+    'rechaza un resultado de RPC inválido (%j)',
+    async (data) => {
+      const { supabase } = buildSupabase({ data, error: null });
+      await expect(
+        new CampaniasCreationService(supabase).crear(
+          buildDto(),
+          'auth-verificado',
+        ),
+      ).rejects.toThrow(InternalServerErrorException);
+    },
+  );
+
+  it.each([
+    { fecha_estimada_inicio: '2026-12-01', fecha_estimada_fin: '2026-06-01' },
+    { tipo: 'OTRO' as TipoCampania },
+  ])('valida las políticas antes de invocar SQL (%j)', async (overrides) => {
+    const { supabase, rpc } = buildSupabase({ data: null, error: null });
+    await expect(
+      new CampaniasCreationService(supabase).crear(
+        buildDto(overrides),
+        'auth-verificado',
       ),
     ).rejects.toThrow(BadRequestException);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe('CampaniasCodigosService', () => {
+  it('usa exclusivamente el generador privado y conserva el sufijo1000 completo', async () => {
+    const { supabase, rpc, getClient } = buildSupabase({
+      data: 'CMP-2026-1000',
+      error: null,
+    });
+    await expect(
+      new CampaniasCodigosService(supabase).generarCodigo(2026),
+    ).resolves.toBe('CMP-2026-1000');
+    expect(rpc).toHaveBeenCalledWith('fn_generar_codigo_campania', {
+      p_anio: 2026,
+    });
+    expect(getClient).not.toHaveBeenCalled();
   });
 });
