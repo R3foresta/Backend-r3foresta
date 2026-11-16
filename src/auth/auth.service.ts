@@ -10,10 +10,12 @@ import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Credential } from '../users/entities/credential.entity';
+import { expectedWebAuthnOrigin, loadTrustedOrigins } from './trusted-origins';
 
 @Injectable()
 export class AuthService implements OnModuleDestroy {
-  // Almacenamiento temporal de challenges (usar Redis en producción)
+  private readonly trustedOrigins = loadTrustedOrigins();
+  // Desafíos en memoria para una instancia; reiniciar invalida la ceremonia.
   private challenges: Map<string, { challenge: string; expiresAt: number }> =
     new Map();
   private readonly challengeCleanupTimer: ReturnType<typeof setInterval>;
@@ -70,7 +72,7 @@ export class AuthService implements OnModuleDestroy {
   /**
    * Registra un nuevo usuario con passkey
    */
-  async register(registerDto: RegisterDto, origin: string) {
+  async register(registerDto: RegisterDto, origin: string | undefined) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { username, email, registration, challenge } = registerDto;
 
@@ -80,11 +82,15 @@ export class AuthService implements OnModuleDestroy {
     }
 
     try {
+      const expectedOrigin = expectedWebAuthnOrigin(
+        this.trustedOrigins,
+        origin,
+      );
       // Verificar el registro con WebAuthn
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const verified = await server.verifyRegistration(registration, {
         challenge,
-        origin,
+        origin: expectedOrigin,
       });
 
       // Crear credencial
@@ -129,7 +135,7 @@ export class AuthService implements OnModuleDestroy {
   /**
    * Autentica al usuario con passkey
    */
-  async login(loginDto: LoginDto, origin: string) {
+  async login(loginDto: LoginDto, origin: string | undefined) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { authentication, challenge } = loginDto;
 
@@ -139,6 +145,10 @@ export class AuthService implements OnModuleDestroy {
     }
 
     try {
+      const expectedOrigin = expectedWebAuthnOrigin(
+        this.trustedOrigins,
+        origin,
+      );
       // Extraer credentialId - puede venir como 'credentialId' o 'id'
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       const credentialId = (authentication.credentialId ||
@@ -172,7 +182,7 @@ export class AuthService implements OnModuleDestroy {
         },
         {
           challenge,
-          origin,
+          origin: expectedOrigin,
           userVerified: true,
           counter: credential.counter,
         },

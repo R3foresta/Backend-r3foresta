@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
 import { configureGlobalRoutes } from './app.routes';
 import { participacionOpenApi } from './participacion/participacion-openapi.generated';
+import { isCorsOriginAllowed, loadTrustedOrigins } from './auth/trusted-origins';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -38,31 +39,14 @@ async function bootstrap() {
     skipMultipart(bodyParser.urlencoded({ limit: '5mb', extended: true })),
   );
 
-  // Configurar orígenes CORS
-  const allowedOrigins = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://localhost:3000',
-    'https://pwa-r3foresta.vercel.app',
-  ];
-
-  // Agregar orígenes desde variable de entorno si existe
-  if (process.env.CORS_ORIGINS) {
-    const envOrigins = process.env.CORS_ORIGINS.split(',');
-    allowedOrigins.push(...envOrigins);
-  }
+  const allowedOrigins = loadTrustedOrigins();
 
   // Habilitar CORS
   app.enableCors({
     origin: (origin, callback) => {
-      // Permitir requests sin origin (como Postman)
-      if (!origin) return callback(null, true);
-
-      // Verificar si el origin está en la lista o es un subdominio de Vercel
-      if (allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
+      if (isCorsOriginAllowed(allowedOrigins, origin)) {
         callback(null, true);
       } else {
-        console.warn(`⚠️  CORS bloqueado para origen: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     },

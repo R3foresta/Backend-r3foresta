@@ -23,7 +23,7 @@ export class AuthController {
    */
   @Post('register')
   async register(@Body() body: unknown, @Req() req: Request) {
-    const origin = req.headers.origin || 'http://localhost:5173';
+    const origin = req.headers.origin;
     return this.authService.register(await parseRegisterDto(body), origin);
   }
 
@@ -33,7 +33,7 @@ export class AuthController {
    */
   @Post('login')
   async login(@Body() loginDto: LoginDto, @Req() req: Request) {
-    const origin = req.headers.origin || 'http://localhost:5173';
+    const origin = req.headers.origin;
     return this.authService.login(loginDto, origin);
   }
 }

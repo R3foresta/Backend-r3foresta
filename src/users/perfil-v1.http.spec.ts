@@ -352,6 +352,7 @@ describe('PA-T-INT02-A contrato HTTP', () => {
     }
     await request(app.getHttpServer())
       .post('/api/auth/register')
+      .set('Origin', 'http://localhost:5173')
       .send(payload)
       .expect(201);
     expect(register).toHaveBeenCalledWith(
