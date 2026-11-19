@@ -57,6 +57,56 @@ export class ReportesController {
     return this.reportes.plantaciones(req.actor, query);
   }
 
+  @Get('plantaciones/registros')
+  @ApiOperation({
+    summary: 'Registros que aportan a una fila de especie del reporte ADMIN',
+  })
+  @ApiQuery({
+    name: 'desde',
+    required: true,
+    schema: { type: 'string', format: 'date' },
+  })
+  @ApiQuery({
+    name: 'hasta',
+    required: true,
+    schema: { type: 'string', format: 'date' },
+  })
+  @ApiQuery({ name: 'organizacion_id', required: false, type: String })
+  @ApiQuery({ name: 'campania_id', required: false, type: String })
+  @ApiQuery({ name: 'planta_id', required: false, type: String })
+  @ApiQuery({
+    name: 'especie',
+    required: true,
+    type: String,
+    description: 'ID de la fila elegida o sin_desglose.',
+  })
+  @ApiQuery({
+    name: 'version_detalle',
+    required: true,
+    schema: { type: 'string', pattern: '^[0-9a-f]{64}$' },
+  })
+  @ApiQuery({
+    name: 'pagina',
+    required: false,
+    schema: { type: 'integer', minimum: 1, maximum: 1_000_000, default: 1 },
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Totales de la especie, página de aportes y ficha de cada registro.',
+  })
+  @ApiResponse({ status: 401, description: 'Sesión inválida.' })
+  @ApiResponse({ status: 403, description: 'Se requiere ADMIN activo.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Cambió el detalle de la especie desde la lectura original.',
+  })
+  @ApiResponse({ status: 422, description: 'Filtros inválidos.' })
+  @ApiResponse({ status: 503, description: 'Lectura no disponible.' })
+  registrosPlantaciones(@Req() req: ActorRequest, @Query() query: unknown) {
+    return this.reportes.registrosPlantaciones(req.actor, query);
+  }
+
   @Get('vivero')
   @ApiOperation({ summary: 'Saldo físico actual de plantas vivas para ADMIN' })
   @ApiQuery({ name: 'planta_id', required: false, type: String })

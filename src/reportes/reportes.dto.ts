@@ -43,13 +43,43 @@ function pagina(value: unknown) {
   return Number(value);
 }
 
-export function parseFiltrosPlantaciones(value: unknown) {
-  const query = strictObject(value, camposPlantaciones, 'query');
+function filtrosPlantaciones(query: Record<string, unknown>) {
   return {
     ...periodo(query),
     organizacion_id: idOpcional(query, 'organizacion_id'),
     campania_id: idOpcional(query, 'campania_id'),
     planta_id: idOpcional(query, 'planta_id'),
+  };
+}
+
+export function parseFiltrosPlantaciones(value: unknown) {
+  return filtrosPlantaciones(strictObject(value, camposPlantaciones, 'query'));
+}
+
+export function parseRegistrosPlantaciones(value: unknown) {
+  const query = strictObject(
+    value,
+    [...camposPlantaciones, 'especie', 'version_detalle', 'pagina'],
+    'query',
+  );
+  const filtros = filtrosPlantaciones(query);
+  const especie =
+    query.especie === 'sin_desglose'
+      ? query.especie
+      : id(query.especie, 'especie');
+  if (filtros.planta_id !== null && filtros.planta_id !== especie)
+    invalidInput('especie');
+  if (
+    typeof query.version_detalle !== 'string' ||
+    !/^[0-9a-f]{64}$/.test(query.version_detalle)
+  ) {
+    invalidInput('version_detalle');
+  }
+  return {
+    ...filtros,
+    especie,
+    version_detalle: query.version_detalle,
+    pagina: pagina(query.pagina),
   };
 }
 

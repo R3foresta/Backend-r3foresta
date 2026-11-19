@@ -17,6 +17,9 @@ describe('Reportes administrativos HTTP', () => {
   const jwt = new JwtService({ secret });
   const base = '/api/v1/reportes/plantaciones';
   const consulta = base + '?desde=2026-01-01&hasta=2026-11-18';
+  const version = 'a'.repeat(64);
+  const registros = base + '/registros?desde=2026-01-01&hasta=2026-11-18';
+  const detalle = registros + '&especie=3&version_detalle=' + version;
   const vivero = '/api/v1/reportes/vivero';
   const mermas = '/api/v1/reportes/mermas';
   const semillas = '/api/v1/reportes/semillas';
@@ -51,6 +54,7 @@ describe('Reportes administrativos HTTP', () => {
     if (
       [
         'reportes_plantaciones_leer',
+        'reportes_plantaciones_leer_corte',
         'reportes_vivero_leer',
         'reportes_mermas_leer',
         'reportes_mermas_leer_corte',
@@ -170,6 +174,80 @@ describe('Reportes administrativos HTTP', () => {
       .set('Authorization', bearer('inactive'))
       .expect(403);
     expect(lectura).not.toHaveBeenCalled();
+  });
+
+  it('propaga los filtros y la versión de la fila al pedir una página', async () => {
+    const res = await request(app.getHttpServer())
+      .get(
+        detalle +
+          '&campania_id=42&organizacion_id=9007199254740995&planta_id=3&pagina=2',
+      )
+      .set('Authorization', bearer('admin'))
+      .expect(200);
+    expect(res.body).toEqual({ success: true, data: resultado });
+    expect(res.headers['cache-control']).toBe('private, no-store');
+    expect(rpc).toHaveBeenLastCalledWith('reportes_plantaciones_leer_corte', {
+      p_actor_id: '9007199254740993',
+      p_auth_id: 'admin',
+      p_desde: '2026-01-01',
+      p_hasta: '2026-11-18',
+      p_organizacion_id: '9007199254740995',
+      p_campania_id: '42',
+      p_planta_id: '3',
+      p_especie: '3',
+      p_pagina: 2,
+      p_version_detalle: version,
+    });
+  });
+
+  it('admite Sin desglose y conserva el estado de corte obsoleto', async () => {
+    lectura.mockResolvedValueOnce({ data: null, error: { code: 'PT409' } });
+    await request(app.getHttpServer())
+      .get(registros + '&especie=sin_desglose&version_detalle=' + version)
+      .set('Authorization', bearer('admin'))
+      .expect(409);
+    expect(lectura).toHaveBeenCalledWith(
+      expect.objectContaining({
+        p_especie: 'sin_desglose',
+        p_planta_id: null,
+        p_pagina: 1,
+        p_version_detalle: version,
+      }),
+    );
+  });
+
+  it.each([
+    '&especie=3',
+    '&version_detalle=' + version,
+    '&especie=3&version_detalle=123',
+    '&especie=sin_desglose&planta_id=3&version_detalle=' + version,
+    '&especie=3&planta_id=4&version_detalle=' + version,
+    '&especie=3&pagina=0&version_detalle=' + version,
+  ])(
+    'rechaza sin leer el detalle con filtros incompatibles %s',
+    async (filtros) => {
+      await request(app.getHttpServer())
+        .get(registros + filtros)
+        .set('Authorization', bearer('admin'))
+        .expect(422);
+      expect(lectura).not.toHaveBeenCalled();
+    },
+  );
+
+  it('limita el detalle a ADMIN activo y comprueba su autorización en la lectura', async () => {
+    await request(app.getHttpServer()).get(detalle).expect(401);
+    for (const sub of ['general', 'inactive']) {
+      await request(app.getHttpServer())
+        .get(detalle)
+        .set('Authorization', bearer(sub))
+        .expect(403);
+    }
+    expect(lectura).not.toHaveBeenCalled();
+    lectura.mockResolvedValueOnce({ data: null, error: { code: 'PT403' } });
+    await request(app.getHttpServer())
+      .get(detalle)
+      .set('Authorization', bearer('admin'))
+      .expect(403);
   });
 
   it('consulta inventario por especie y vivero con IDs exactos y caché privada', async () => {

@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   ServiceUnavailableException,
@@ -10,10 +11,12 @@ import {
   parseFiltrosMovimientos,
   parseFiltrosPlantaciones,
   parseFiltrosVivero,
+  parseRegistrosPlantaciones,
 } from './reportes.dto';
 
 type LecturaReporte =
   | 'reportes_plantaciones_leer'
+  | 'reportes_plantaciones_leer_corte'
   | 'reportes_vivero_leer'
   | 'reportes_mermas_leer'
   | 'reportes_mermas_leer_corte'
@@ -39,6 +42,26 @@ export class ReportesService {
       p_campania_id: filtros.campania_id,
       p_planta_id: filtros.planta_id,
     });
+  }
+
+  registrosPlantaciones(actor: VerifiedActor, query: unknown) {
+    this.exigirAdmin(actor);
+    const filtros = parseRegistrosPlantaciones(query);
+    return this.leer(
+      actor,
+      'reportes_plantaciones_leer_corte',
+      'plantaciones',
+      {
+        p_desde: filtros.desde,
+        p_hasta: filtros.hasta,
+        p_organizacion_id: filtros.organizacion_id,
+        p_campania_id: filtros.campania_id,
+        p_planta_id: filtros.planta_id,
+        p_especie: filtros.especie,
+        p_version_detalle: filtros.version_detalle,
+        p_pagina: filtros.pagina,
+      },
+    );
   }
 
   vivero(actor: VerifiedActor, query: unknown) {
@@ -131,6 +154,13 @@ export class ReportesService {
     if (response.error?.code === 'PT403')
       throw new ForbiddenException(
         'El acceso al reporte ya no está disponible.',
+      );
+    if (
+      rpc === 'reportes_plantaciones_leer_corte' &&
+      response.error?.code === 'PT409'
+    )
+      throw new ConflictException(
+        'Los registros cambiaron. Actualiza el reporte.',
       );
     if (response.error || !response.data)
       throw new ServiceUnavailableException(mensaje);

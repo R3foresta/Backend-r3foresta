@@ -19,6 +19,24 @@ La respuesta es `{ success: true, data }`. `data.observado_en` identifica la con
 
 El consolidado cuenta cada registro vigente una vez. La consulta de una organización considera las campañas vinculadas a ella al consultar. Varias organizaciones pueden compartir una campaña. Para un filtro por especie, el total usa las cantidades de esa especie según el detalle verificable. Si el detalle suma menos que la cantidad registrada, la diferencia aparece en **Sin desglose de especie**. Si el detalle supera la cantidad registrada, toda la cantidad de ese registro aparece en esa fila. Su `planta_id` es `null`. Un período sin registros devuelve ceros confirmados y arrays de meses y especies vacíos.
 
+## Registros que explican una especie
+
+La [migración 119](../../../migrations/119_reportes_plantaciones_registros.sql) añade `version_detalle` a cada fila de `data.especies` del resumen, incluida **Sin desglose de especie**. La PWA recibe una huella SHA-256 del contenido completo de las fichas que aportan a esa fila en el corte original.
+
+`GET /api/v1/reportes/plantaciones/registros` toma los mismos filtros aplicados del resumen y estos parámetros adicionales.
+
+| Parámetro | Valor |
+| --- | --- |
+| `especie` | Obligatorio. ID decimal exacto de la fila elegida o `sin_desglose` si su `planta_id` es `null`. Si el resumen filtra por `planta_id`, ambos IDs deben coincidir. |
+| `version_detalle` | Obligatorio. Las 64 cifras hexadecimales minúsculas de la fila seleccionada. |
+| `pagina` | Opcional. Entero de 1 a 1.000.000. Por defecto 1. |
+
+La respuesta mantiene el envoltorio `{ success: true, data }`. En `data`, `filtros` devuelve los filtros originales, `especie` y `pagina`; `version_detalle` confirma la versión y `observado_en` indica cuándo se revalidó. `totales` contiene `registros`, `iniciales`, `reposiciones` y `total` para **toda la fila elegida**. `detalle` está ordenado por fecha e ID descendentes y se pagina de 25 en 25 (`tamano_pagina`). Una página posterior a la última conserva los totales y trae un array vacío.
+
+Cada elemento de `detalle` contiene `registro_id`, `codigo_trazabilidad`, `fecha`, `subcampania_id`, `subcampania`, `es_reposicion` y `cantidad` aportada por la especie elegida. La ficha de solo lectura incluye además `cantidad_total` efectiva de esa jornada y `especies` con `{ planta_id, nombre, cantidad }` para todo el registro, incluso si se filtró por especie. El reparto usa la misma regla de atribución que el resumen. Los IDs se transmiten como cadenas decimales exactas. En una jornada con 60 tajibos y 40 molles, la fila de tajibo aporta 60 y su ficha contiene las dos especies y 100 como total.
+
+Cada página revalida en una sola lectura tanto la composición como los valores de las fichas. Si una corrección cambia el detalle, incluso conservando el mismo total agregado, responde `409`. La PWA debe cerrar o invalidar el detalle y ofrecer actualizar el reporte. Identidad, rol ADMIN activo y caché privada se comprueban como en el resumen.
+
 ## Exportación
 
 `GET /api/v1/reportes/plantaciones/permiso-exportacion` confirma la sesión activa y el rol ADMIN antes de generar un PDF en la PWA. Devuelve `204` cuando se autoriza. El documento toma el resultado ya consultado para conservar las mismas cifras, filtros y fecha de corte.
