@@ -9,20 +9,24 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { ReportesController } from './reportes.controller';
 import { ReportesService } from './reportes.service';
 
-describe('Reportes de plantaciones administrativos HTTP', () => {
+type RespuestaRpc = { data: unknown; error: { code?: string } | null };
+
+describe('Reportes administrativos HTTP', () => {
   let app: INestApplication<Server>;
   const secret = 'reportes-plantaciones-fixture';
   const jwt = new JwtService({ secret });
   const base = '/api/v1/reportes/plantaciones';
   const consulta = base + '?desde=2026-01-01&hasta=2026-11-18';
+  const vivero = '/api/v1/reportes/vivero';
+  const mermas = '/api/v1/reportes/mermas';
   const bearer = (sub: string) =>
     'Bearer ' + jwt.sign({ sub, rol: 'ADMIN' }, { expiresIn: 600 });
   const resultado = {
     observado_en: '2026-11-18T18:30:00.000Z',
     totales: { registros: 1, iniciales: 40, reposiciones: 0, total: 40 },
   };
-  const lectura = jest.fn();
-  const rpc = jest.fn(async (name: string, params: Record<string, unknown>) => {
+  const lectura = jest.fn<Promise<RespuestaRpc>, [Record<string, unknown>]>();
+  const rpc = jest.fn((name: string, params: Record<string, unknown>) => {
     if (name === 'pa_actor_verificar') {
       const roles: Record<string, string> = {
         admin: 'ADMIN',
@@ -30,7 +34,7 @@ describe('Reportes de plantaciones administrativos HTTP', () => {
         inactive: 'ADMIN',
       };
       const auth = String(params.p_auth_id);
-      return {
+      return Promise.resolve({
         data: roles[auth]
           ? {
               usuario_id: '9007199254740993',
@@ -39,9 +43,17 @@ describe('Reportes de plantaciones administrativos HTTP', () => {
             }
           : null,
         error: null,
-      };
+      });
     }
-    if (name === 'reportes_plantaciones_leer') return lectura(params);
+    if (
+      [
+        'reportes_plantaciones_leer',
+        'reportes_vivero_leer',
+        'reportes_mermas_leer',
+      ].includes(name)
+    ) {
+      return lectura(params);
+    }
     throw new Error('RPC inesperada');
   });
 
@@ -105,7 +117,7 @@ describe('Reportes de plantaciones administrativos HTTP', () => {
       .get(base + query)
       .set('Authorization', bearer('admin'))
       .expect(422);
-    expect(result.body.error.campos).toEqual([campo]);
+    expect(result.body).toMatchObject({ error: { campos: [campo] } });
     expect(lectura).not.toHaveBeenCalled();
   });
 
@@ -152,4 +164,82 @@ describe('Reportes de plantaciones administrativos HTTP', () => {
       .expect(403);
     expect(lectura).not.toHaveBeenCalled();
   });
+
+  it('consulta inventario por especie y vivero con IDs exactos y caché privada', async () => {
+    const result = await request(app.getHttpServer())
+      .get(vivero + '?planta_id=9007199254740995&vivero_id=9007199254740997')
+      .set('Authorization', bearer('admin'))
+      .expect(200);
+    expect(result.body).toEqual({ success: true, data: resultado });
+    expect(result.headers['cache-control']).toBe('private, no-store');
+    expect(rpc).toHaveBeenLastCalledWith('reportes_vivero_leer', {
+      p_actor_id: '9007199254740993',
+      p_auth_id: 'admin',
+      p_planta_id: '9007199254740995',
+      p_vivero_id: '9007199254740997',
+    });
+  });
+
+  it('consulta mermas con fecha operativa y pagina el detalle', async () => {
+    const periodo = '?desde=2026-01-01&hasta=2026-11-18';
+    const result = await request(app.getHttpServer())
+      .get(mermas + periodo + '&pagina=2&vivero_id=1')
+      .set('Authorization', bearer('admin'))
+      .expect(200);
+    expect(result.body).toEqual({ success: true, data: resultado });
+    expect(result.headers['cache-control']).toBe('private, no-store');
+    const parametros = {
+      p_actor_id: '9007199254740993',
+      p_auth_id: 'admin',
+      p_desde: '2026-01-01',
+      p_hasta: '2026-11-18',
+      p_planta_id: null,
+      p_vivero_id: '1',
+      p_pagina: 2,
+    };
+    expect(rpc).toHaveBeenLastCalledWith('reportes_mermas_leer', parametros);
+    await request(app.getHttpServer())
+      .get(mermas + periodo)
+      .set('Authorization', bearer('admin'))
+      .expect(200);
+    expect(rpc).toHaveBeenLastCalledWith('reportes_mermas_leer', {
+      ...parametros,
+      p_vivero_id: null,
+      p_pagina: 1,
+    });
+  });
+
+  it.each([
+    [vivero + '?desde=2026-01-01', 'query'],
+    [vivero + '?vivero_id=0', 'vivero_id'],
+    [mermas + '?desde=2026-01-01&hasta=2026-11-18&pagina=1&pagina=2', 'pagina'],
+    [mermas + '?desde=2026-01-01&hasta=2026-11-18&pagina=1000001', 'pagina'],
+    [mermas + '?desde=2026-01-01', 'hasta'],
+  ])(
+    'rechaza filtros de vivero y mermas inválidos (%s)',
+    async (url, campo) => {
+      const result = await request(app.getHttpServer())
+        .get(url)
+        .set('Authorization', bearer('admin'))
+        .expect(422);
+      expect(result.body).toMatchObject({ error: { campos: [campo] } });
+      expect(lectura).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([vivero, mermas + '?desde=2026-01-01&hasta=2026-11-18'])(
+    'protege la lectura %s ante sesión ausente, general e inactiva',
+    async (url) => {
+      await request(app.getHttpServer()).get(url).expect(401);
+      await request(app.getHttpServer())
+        .get(url)
+        .set('Authorization', bearer('general'))
+        .expect(403);
+      await request(app.getHttpServer())
+        .get(url)
+        .set('Authorization', bearer('inactive'))
+        .expect(403);
+      expect(lectura).not.toHaveBeenCalled();
+    },
+  );
 });

@@ -6,39 +6,80 @@ import {
 } from '@nestjs/common';
 import type { VerifiedActor } from '../auth/verified-actor.guard';
 import { SupabaseService } from '../supabase/supabase.service';
-import { parseFiltrosPlantaciones } from './reportes.dto';
+import {
+  parseFiltrosMermas,
+  parseFiltrosPlantaciones,
+  parseFiltrosVivero,
+} from './reportes.dto';
+
+type LecturaReporte =
+  | 'reportes_plantaciones_leer'
+  | 'reportes_vivero_leer'
+  | 'reportes_mermas_leer';
 
 @Injectable()
 export class ReportesService {
   constructor(private readonly supabase: SupabaseService) {}
 
   permisoExportacion(actor: VerifiedActor): void {
+    this.exigirAdmin(actor);
+  }
+
+  async plantaciones(actor: VerifiedActor, query: unknown) {
+    this.exigirAdmin(actor);
+    const filtros = parseFiltrosPlantaciones(query);
+    return this.leer(actor, 'reportes_plantaciones_leer', 'plantaciones', {
+      p_desde: filtros.desde,
+      p_hasta: filtros.hasta,
+      p_organizacion_id: filtros.organizacion_id,
+      p_campania_id: filtros.campania_id,
+      p_planta_id: filtros.planta_id,
+    });
+  }
+
+  vivero(actor: VerifiedActor, query: unknown) {
+    this.exigirAdmin(actor);
+    const filtros = parseFiltrosVivero(query);
+    return this.leer(actor, 'reportes_vivero_leer', 'vivero', {
+      p_planta_id: filtros.planta_id,
+      p_vivero_id: filtros.vivero_id,
+    });
+  }
+
+  mermas(actor: VerifiedActor, query: unknown) {
+    this.exigirAdmin(actor);
+    const filtros = parseFiltrosMermas(query);
+    return this.leer(actor, 'reportes_mermas_leer', 'mermas', {
+      p_desde: filtros.desde,
+      p_hasta: filtros.hasta,
+      p_planta_id: filtros.planta_id,
+      p_vivero_id: filtros.vivero_id,
+      p_pagina: filtros.pagina,
+    });
+  }
+
+  private exigirAdmin(actor: VerifiedActor): void {
     if (actor.rol !== 'ADMIN') {
       throw new ForbiddenException('Se requiere una cuenta administradora.');
     }
   }
 
-  async plantaciones(actor: VerifiedActor, query: unknown) {
-    this.permisoExportacion(actor);
-    const filtros = parseFiltrosPlantaciones(query);
-
+  private async leer(
+    actor: VerifiedActor,
+    rpc: LecturaReporte,
+    reporte: 'plantaciones' | 'vivero' | 'mermas',
+    params: Record<string, string | number | null>,
+  ) {
+    const mensaje = `No se pudo consultar el reporte de ${reporte}.`;
     let response: { data: unknown; error: { code?: string } | null };
     try {
-      response = await this.supabase
-        .getAdminClient()
-        .rpc('reportes_plantaciones_leer', {
-          p_actor_id: actor.usuario_id,
-          p_auth_id: actor.auth_id,
-          p_desde: filtros.desde,
-          p_hasta: filtros.hasta,
-          p_organizacion_id: filtros.organizacion_id,
-          p_campania_id: filtros.campania_id,
-          p_planta_id: filtros.planta_id,
-        });
+      response = await this.supabase.getAdminClient().rpc(rpc, {
+        p_actor_id: actor.usuario_id,
+        p_auth_id: actor.auth_id,
+        ...params,
+      });
     } catch {
-      throw new ServiceUnavailableException(
-        'No se pudo consultar el reporte de plantaciones.',
-      );
+      throw new ServiceUnavailableException(mensaje);
     }
 
     if (response.error?.code === 'PT401')
@@ -47,11 +88,8 @@ export class ReportesService {
       throw new ForbiddenException(
         'El acceso al reporte ya no está disponible.',
       );
-    if (response.error || !response.data) {
-      throw new ServiceUnavailableException(
-        'No se pudo consultar el reporte de plantaciones.',
-      );
-    }
+    if (response.error || !response.data)
+      throw new ServiceUnavailableException(mensaje);
 
     return { success: true, data: response.data };
   }

@@ -24,3 +24,39 @@ El consolidado cuenta cada registro vigente una vez. La consulta de una organiza
 `GET /api/v1/reportes/plantaciones/permiso-exportacion` confirma la sesión activa y el rol ADMIN antes de generar un PDF en la PWA. Devuelve `204` cuando se autoriza. El documento toma el resultado ya consultado para conservar las mismas cifras, filtros y fecha de corte.
 
 Los estados HTTP de error incluyen `401` para sesión inválida, `403` para acceso insuficiente o cuenta inactiva, `422` para filtros inválidos y `503` cuando falla la lectura del reporte.
+
+## Inventario y mermas de Vivero
+
+La migración [115](../../../migrations/115_reportes_vivero_mermas.sql) añade dos consultas de solo lectura con la misma autorización ADMIN, verificación en PostgreSQL y caché privada de Plantaciones. Ambas aceptan `planta_id` y `vivero_id` opcionales y devuelven `{ success: true, data }`. Cada respuesta indica su corte en `observado_en` y devuelve los filtros aplicados en `filtros`. Los catálogos `opciones.viveros` y `opciones.especies` contienen pares `{ id, nombre }` de viveros y especies con lotes registrados, independientemente del filtro y del saldo actual. Los IDs de filtros, catálogos, lotes y eventos son cadenas decimales exactas.
+
+### Inventario actual
+
+`GET /api/v1/reportes/vivero?planta_id=42&vivero_id=2`
+
+| Campo de `data` | Contenido |
+| --- | --- |
+| `filtros` | `planta_id` y `vivero_id`, con `null` cuando se omiten. |
+| `totales` | `plantas`, `especies` y `viveros` con saldo elegible. |
+| `filas` | `planta_id`, `especie`, `vivero_id`, `vivero` y `plantas` por combinación de especie y vivero. |
+| `por_vivero` | `vivero_id`, `vivero` y `plantas`. |
+
+El inventario se calcula con `saldo_vivo_actual` positivo en lotes activos con base viva registrada por `EMBOLSADO` o `INCORPORACION`. Una entrega ya descuenta el saldo físico del lote. Todos los saldos del ámbito se agregan dentro de la misma lectura SQL. El período del tablero se usa para los hechos históricos. Para inventario siempre se consulta el saldo actual, con su propio corte. El ámbito sin saldo devuelve totales en cero y desgloses vacíos.
+
+### Mermas registradas
+
+`GET /api/v1/reportes/mermas?desde=2026-01-01&hasta=2026-11-18&vivero_id=2&pagina=1`
+
+`desde` y `hasta` son fechas operativas obligatorias `YYYY-MM-DD`, con extremos incluidos. `pagina` admite enteros de 1 a 1.000.000 y su valor por defecto es 1.
+
+| Campo de `data` | Contenido |
+| --- | --- |
+| `filtros` | `desde`, `hasta`, `planta_id`, `vivero_id` y `pagina` aplicados. |
+| `totales` | `plantas` acreditadas, `eventos` de merma registrados y `eventos_sin_cantidad` válida. |
+| `por_causa` | `causa`, `plantas` y `eventos`. `causa` es `null` cuando falta en el registro. |
+| `meses` | `mes` en formato `YYYY-MM` y `plantas` para los meses con eventos. |
+| `detalle` | `id`, `fecha`, `lote_id`, `codigo_lote`, `planta_id`, `especie`, `vivero_id`, `vivero`, `causa` y `cantidad` por evento. La etiqueta de especie conserva el nombre comercial registrado en el lote cuando está disponible. |
+| `tamano_pagina` | 25 eventos. Solo `detalle` se pagina, por fecha e ID descendentes. |
+
+Los agregados abarcan todo el conjunto filtrado, incluidos los eventos repetidos en un mismo lote y los de lotes hoy finalizados. Cada línea corresponde al evento `MERMA` en `fecha_evento`. La cantidad suma solo con `UNIDAD` entera positiva en rango de saldo `INTEGER`. Los eventos incompletos permanecen visibles con `cantidad: null` y se cuentan en `eventos_sin_cantidad`. El descarte previo al embolsado y la mortandad en campo pertenecen a sus registros operativos.
+
+Una página posterior a la última devuelve detalle vacío con agregados del período. Cada solicitud se calcula en su propio corte. El listado y los totales de esa respuesta comparten el mismo corte.

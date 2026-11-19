@@ -57,6 +57,53 @@ export class ReportesController {
     return this.reportes.plantaciones(req.actor, query);
   }
 
+  @Get('vivero')
+  @ApiOperation({ summary: 'Saldo físico actual de plantas vivas para ADMIN' })
+  @ApiQuery({ name: 'planta_id', required: false, type: String })
+  @ApiQuery({ name: 'vivero_id', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Inventario por especie y vivero.' })
+  @ApiResponse({ status: 401, description: 'Sesión inválida.' })
+  @ApiResponse({ status: 403, description: 'Se requiere ADMIN activo.' })
+  @ApiResponse({ status: 422, description: 'Filtros inválidos.' })
+  @ApiResponse({ status: 503, description: 'Lectura no disponible.' })
+  vivero(@Req() req: ActorRequest, @Query() query: unknown) {
+    return this.reportes.vivero(req.actor, query);
+  }
+
+  @Get('mermas')
+  @ApiOperation({
+    summary:
+      'Mermas de Vivero con agregados completos y detalle paginado para ADMIN',
+  })
+  @ApiQuery({
+    name: 'desde',
+    required: true,
+    schema: { type: 'string', format: 'date' },
+  })
+  @ApiQuery({
+    name: 'hasta',
+    required: true,
+    schema: { type: 'string', format: 'date' },
+  })
+  @ApiQuery({ name: 'planta_id', required: false, type: String })
+  @ApiQuery({ name: 'vivero_id', required: false, type: String })
+  @ApiQuery({
+    name: 'pagina',
+    required: false,
+    schema: { type: 'integer', minimum: 1, maximum: 1_000_000, default: 1 },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Totales, series y detalle de mermas registradas.',
+  })
+  @ApiResponse({ status: 401, description: 'Sesión inválida.' })
+  @ApiResponse({ status: 403, description: 'Se requiere ADMIN activo.' })
+  @ApiResponse({ status: 422, description: 'Filtros inválidos.' })
+  @ApiResponse({ status: 503, description: 'Lectura no disponible.' })
+  mermas(@Req() req: ActorRequest, @Query() query: unknown) {
+    return this.reportes.mermas(req.actor, query);
+  }
+
   @Get('plantaciones/permiso-exportacion')
   @HttpCode(204)
   @ApiOperation({
