@@ -7,8 +7,7 @@ import {
 import type { VerifiedActor } from '../auth/verified-actor.guard';
 import { SupabaseService } from '../supabase/supabase.service';
 import {
-  parseFiltrosMermas,
-  parseFiltrosMovimientosSemillas,
+  parseFiltrosMovimientos,
   parseFiltrosPlantaciones,
   parseFiltrosVivero,
 } from './reportes.dto';
@@ -19,7 +18,8 @@ type LecturaReporte =
   | 'reportes_mermas_leer'
   | 'reportes_mermas_leer_corte'
   | 'reportes_semillas_saldo_leer'
-  | 'reportes_semillas_movimientos_leer';
+  | 'reportes_semillas_movimientos_leer'
+  | 'reportes_semillas_movimientos_leer_corte';
 
 @Injectable()
 export class ReportesService {
@@ -52,7 +52,7 @@ export class ReportesService {
 
   mermas(actor: VerifiedActor, query: unknown) {
     this.exigirAdmin(actor);
-    const filtros = parseFiltrosMermas(query);
+    const filtros = parseFiltrosMovimientos(query);
     return this.leer(
       actor,
       filtros.exportar ? 'reportes_mermas_leer_corte' : 'reportes_mermas_leer',
@@ -79,10 +79,12 @@ export class ReportesService {
 
   movimientosSemillas(actor: VerifiedActor, query: unknown) {
     this.exigirAdmin(actor);
-    const filtros = parseFiltrosMovimientosSemillas(query);
+    const filtros = parseFiltrosMovimientos(query);
     return this.leer(
       actor,
-      'reportes_semillas_movimientos_leer',
+      filtros.exportar
+        ? 'reportes_semillas_movimientos_leer_corte'
+        : 'reportes_semillas_movimientos_leer',
       'movimientos de semillas',
       {
         p_desde: filtros.desde,
@@ -90,6 +92,7 @@ export class ReportesService {
         p_planta_id: filtros.planta_id,
         p_vivero_id: filtros.vivero_id,
         p_pagina: filtros.pagina,
+        ...(filtros.exportar ? { p_exportar: true } : {}),
       },
     );
   }

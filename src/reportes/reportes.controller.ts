@@ -148,9 +148,16 @@ export class ReportesController {
     required: false,
     schema: { type: 'integer', minimum: 1, maximum: 1_000_000, default: 1 },
   })
+  @ApiQuery({
+    name: 'exportar',
+    required: false,
+    schema: { type: 'string', enum: ['1'] },
+    description:
+      'Devuelve todo el detalle en el mismo corte. La página se omite o debe ser 1.',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Totales del período y detalle paginado.',
+    description: 'Totales del período y detalle paginado o completo.',
   })
   @ApiResponse({ status: 401, description: 'Sesión inválida.' })
   @ApiResponse({ status: 403, description: 'Se requiere ADMIN activo.' })

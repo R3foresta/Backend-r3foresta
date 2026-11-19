@@ -56,6 +56,7 @@ describe('Reportes administrativos HTTP', () => {
         'reportes_mermas_leer_corte',
         'reportes_semillas_saldo_leer',
         'reportes_semillas_movimientos_leer',
+        'reportes_semillas_movimientos_leer_corte',
       ].includes(name)
     ) {
       return lectura(params);
@@ -326,21 +327,68 @@ describe('Reportes administrativos HTTP', () => {
     },
   );
 
-  it.each([semillas, movimientos + periodoSemillas])(
-    'protege la lectura de semillas (%s)',
-    async (ruta) => {
-      await request(app.getHttpServer()).get(ruta).expect(401);
-      await request(app.getHttpServer())
-        .get(ruta)
-        .set('Authorization', bearer('general'))
-        .expect(403);
-      expect(lectura).not.toHaveBeenCalled();
+  it.each(['', '&pagina=1'])(
+    'consulta todos los movimientos de semillas en una lectura privada (%s)',
+    async (pagina) => {
+      const corte = {
+        observado_en: '2026-11-19T18:30:00.000Z',
+        filtros: { pagina: 1 },
+        tamano_pagina: 25,
+        totales: { eventos: 30 },
+        detalle: Array.from({ length: 30 }, (_, i) => ({ id: String(i + 1) })),
+      };
+      lectura.mockResolvedValueOnce({ data: corte, error: null });
+      const result = await request(app.getHttpServer())
+        .get(
+          movimientos +
+            periodoSemillas +
+            '&planta_id=9007199254740995&vivero_id=9007199254740997&exportar=1' +
+            pagina,
+        )
+        .set('Authorization', bearer('admin'))
+        .expect(200);
+      expect(result.body).toEqual({ success: true, data: corte });
+      expect(result.headers['cache-control']).toBe('private, no-store');
+      expect(lectura).toHaveBeenCalledTimes(1);
+      expect(rpc).toHaveBeenLastCalledWith(
+        'reportes_semillas_movimientos_leer_corte',
+        {
+          p_actor_id: '9007199254740993',
+          p_auth_id: 'admin',
+          p_desde: '2026-01-01',
+          p_hasta: '2026-11-19',
+          p_planta_id: '9007199254740995',
+          p_vivero_id: '9007199254740997',
+          p_pagina: 1,
+          p_exportar: true,
+        },
+      );
     },
   );
 
   it.each([
+    semillas,
+    movimientos + periodoSemillas,
+    movimientos + periodoSemillas + '&exportar=1',
+  ])('protege la lectura de semillas (%s)', async (ruta) => {
+    await request(app.getHttpServer()).get(ruta).expect(401);
+    await request(app.getHttpServer())
+      .get(ruta)
+      .set('Authorization', bearer('general'))
+      .expect(403);
+    await request(app.getHttpServer())
+      .get(ruta)
+      .set('Authorization', bearer('inactive'))
+      .expect(403);
+    expect(lectura).not.toHaveBeenCalled();
+  });
+
+  it.each([
     [semillas + periodoSemillas, 'query'],
-    [movimientos + periodoSemillas + '&exportar=1', 'query'],
+    [semillas + '?exportar=1', 'query'],
+    [movimientos + periodoSemillas + '&exportar=0', 'exportar'],
+    [movimientos + periodoSemillas + '&exportar=1&exportar=1', 'exportar'],
+    [movimientos + periodoSemillas + '&exportar=1&pagina=2', 'pagina'],
     [movimientos + periodoSemillas + '&pagina=0', 'pagina'],
     [movimientos + '?desde=2026-11-19&hasta=2026-01-01', 'hasta'],
   ])('rechaza filtros de semillas inválidos (%s)', async (ruta, campo) => {
@@ -350,6 +398,15 @@ describe('Reportes administrativos HTTP', () => {
       .expect(422);
     expect(result.body).toMatchObject({ error: { campos: [campo] } });
     expect(lectura).not.toHaveBeenCalled();
+  });
+
+  it('comunica un corte de exportación no disponible con 503', async () => {
+    lectura.mockResolvedValueOnce({ data: null, error: { code: 'PGRST202' } });
+    await request(app.getHttpServer())
+      .get(movimientos + periodoSemillas + '&exportar=1')
+      .set('Authorization', bearer('admin'))
+      .expect(503);
+    expect(lectura).toHaveBeenCalledTimes(1);
   });
 
   it('comunica saldo inválido como lectura no disponible', async () => {

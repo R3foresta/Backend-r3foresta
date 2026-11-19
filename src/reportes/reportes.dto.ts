@@ -18,8 +18,8 @@ const camposMovimientos = [
   'desde',
   'hasta',
   'pagina',
+  'exportar',
 ] as const;
-const camposMermas = [...camposMovimientos, 'exportar'] as const;
 
 function idOpcional(query: Record<string, unknown>, campo: string) {
   return query[campo] === undefined ? null : id(query[campo], campo);
@@ -64,17 +64,8 @@ export function parseFiltrosVivero(value: unknown) {
   return ambitoVivero(strictObject(value, camposVivero, 'query'));
 }
 
-export function parseFiltrosMovimientosSemillas(value: unknown) {
+export function parseFiltrosMovimientos(value: unknown) {
   const query = strictObject(value, camposMovimientos, 'query');
-  return {
-    ...periodo(query),
-    ...ambitoVivero(query),
-    pagina: pagina(query.pagina),
-  };
-}
-
-export function parseFiltrosMermas(value: unknown) {
-  const query = strictObject(value, camposMermas, 'query');
   if (query.exportar !== undefined && query.exportar !== '1')
     invalidInput('exportar');
   const exportar = query.exportar === '1';
