@@ -13,7 +13,13 @@ const camposPlantaciones = [
   'planta_id',
 ] as const;
 const camposVivero = ['planta_id', 'vivero_id'] as const;
-const camposMermas = [...camposVivero, 'desde', 'hasta', 'pagina'] as const;
+const camposMermas = [
+  ...camposVivero,
+  'desde',
+  'hasta',
+  'pagina',
+  'exportar',
+] as const;
 
 function idOpcional(query: Record<string, unknown>, campo: string) {
   return query[campo] === undefined ? null : id(query[campo], campo);
@@ -57,10 +63,17 @@ export function parseFiltrosVivero(value: unknown) {
 
 export function parseFiltrosMermas(value: unknown) {
   const query = strictObject(value, camposMermas, 'query');
+  if (query.exportar !== undefined && query.exportar !== '1')
+    invalidInput('exportar');
+  const exportar = query.exportar === '1';
+  const paginaSolicitada = pagina(query.pagina);
+  if (exportar && paginaSolicitada !== 1) invalidInput('pagina');
+
   return {
     ...periodo(query),
     planta_id: idOpcional(query, 'planta_id'),
     vivero_id: idOpcional(query, 'vivero_id'),
-    pagina: pagina(query.pagina),
+    pagina: paginaSolicitada,
+    exportar,
   };
 }

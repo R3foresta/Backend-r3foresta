@@ -15,7 +15,8 @@ import {
 type LecturaReporte =
   | 'reportes_plantaciones_leer'
   | 'reportes_vivero_leer'
-  | 'reportes_mermas_leer';
+  | 'reportes_mermas_leer'
+  | 'reportes_mermas_leer_corte';
 
 @Injectable()
 export class ReportesService {
@@ -49,13 +50,19 @@ export class ReportesService {
   mermas(actor: VerifiedActor, query: unknown) {
     this.exigirAdmin(actor);
     const filtros = parseFiltrosMermas(query);
-    return this.leer(actor, 'reportes_mermas_leer', 'mermas', {
-      p_desde: filtros.desde,
-      p_hasta: filtros.hasta,
-      p_planta_id: filtros.planta_id,
-      p_vivero_id: filtros.vivero_id,
-      p_pagina: filtros.pagina,
-    });
+    return this.leer(
+      actor,
+      filtros.exportar ? 'reportes_mermas_leer_corte' : 'reportes_mermas_leer',
+      'mermas',
+      {
+        p_desde: filtros.desde,
+        p_hasta: filtros.hasta,
+        p_planta_id: filtros.planta_id,
+        p_vivero_id: filtros.vivero_id,
+        p_pagina: filtros.pagina,
+        ...(filtros.exportar ? { p_exportar: true } : {}),
+      },
+    );
   }
 
   private exigirAdmin(actor: VerifiedActor): void {
@@ -68,7 +75,7 @@ export class ReportesService {
     actor: VerifiedActor,
     rpc: LecturaReporte,
     reporte: 'plantaciones' | 'vivero' | 'mermas',
-    params: Record<string, string | number | null>,
+    params: Record<string, string | number | boolean | null>,
   ) {
     const mensaje = `No se pudo consultar el reporte de ${reporte}.`;
     let response: { data: unknown; error: { code?: string } | null };

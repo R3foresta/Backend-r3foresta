@@ -50,6 +50,7 @@ describe('Reportes administrativos HTTP', () => {
         'reportes_plantaciones_leer',
         'reportes_vivero_leer',
         'reportes_mermas_leer',
+        'reportes_mermas_leer_corte',
       ].includes(name)
     ) {
       return lectura(params);
@@ -209,12 +210,48 @@ describe('Reportes administrativos HTTP', () => {
     });
   });
 
+  it.each(['', '&pagina=1'])(
+    'solicita el detalle completo de mermas en una lectura (%s)',
+    async (pagina) => {
+      const result = await request(app.getHttpServer())
+        .get(
+          mermas +
+            '?desde=2026-01-01&hasta=2026-11-18&planta_id=3&exportar=1' +
+            pagina,
+        )
+        .set('Authorization', bearer('admin'))
+        .expect(200);
+      expect(result.body).toEqual({ success: true, data: resultado });
+      expect(result.headers['cache-control']).toBe('private, no-store');
+      expect(lectura).toHaveBeenCalledTimes(1);
+      expect(rpc).toHaveBeenLastCalledWith('reportes_mermas_leer_corte', {
+        p_actor_id: '9007199254740993',
+        p_auth_id: 'admin',
+        p_desde: '2026-01-01',
+        p_hasta: '2026-11-18',
+        p_planta_id: '3',
+        p_vivero_id: null,
+        p_pagina: 1,
+        p_exportar: true,
+      });
+    },
+  );
+
   it.each([
     [vivero + '?desde=2026-01-01', 'query'],
     [vivero + '?vivero_id=0', 'vivero_id'],
     [mermas + '?desde=2026-01-01&hasta=2026-11-18&pagina=1&pagina=2', 'pagina'],
     [mermas + '?desde=2026-01-01&hasta=2026-11-18&pagina=1000001', 'pagina'],
     [mermas + '?desde=2026-01-01', 'hasta'],
+    [mermas + '?desde=2026-01-01&hasta=2026-11-18&exportar=0', 'exportar'],
+    [
+      mermas + '?desde=2026-01-01&hasta=2026-11-18&exportar=1&exportar=1',
+      'exportar',
+    ],
+    [
+      mermas + '?desde=2026-01-01&hasta=2026-11-18&exportar=1&pagina=2',
+      'pagina',
+    ],
   ])(
     'rechaza filtros de vivero y mermas inválidos (%s)',
     async (url, campo) => {
@@ -227,7 +264,11 @@ describe('Reportes administrativos HTTP', () => {
     },
   );
 
-  it.each([vivero, mermas + '?desde=2026-01-01&hasta=2026-11-18'])(
+  it.each([
+    vivero,
+    mermas + '?desde=2026-01-01&hasta=2026-11-18',
+    mermas + '?desde=2026-01-01&hasta=2026-11-18&exportar=1',
+  ])(
     'protege la lectura %s ante sesión ausente, general e inactiva',
     async (url) => {
       await request(app.getHttpServer()).get(url).expect(401);

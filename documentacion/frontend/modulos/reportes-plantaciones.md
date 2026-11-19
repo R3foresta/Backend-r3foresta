@@ -60,3 +60,9 @@ El inventario se calcula con `saldo_vivo_actual` positivo en lotes activos con b
 Los agregados abarcan todo el conjunto filtrado, incluidos los eventos repetidos en un mismo lote y los de lotes hoy finalizados. Cada línea corresponde al evento `MERMA` en `fecha_evento`. La cantidad suma solo con `UNIDAD` entera positiva en rango de saldo `INTEGER`. Los eventos incompletos permanecen visibles con `cantidad: null` y se cuentan en `eventos_sin_cantidad`. El descarte previo al embolsado y la mortandad en campo pertenecen a sus registros operativos.
 
 Una página posterior a la última devuelve detalle vacío con agregados del período. Cada solicitud se calcula en su propio corte. El listado y los totales de esa respuesta comparten el mismo corte.
+
+### Detalle completo para el PDF de mermas
+
+La migración [116](../../../migrations/116_reportes_mermas_exportacion.sql) mantiene la lectura paginada y agrega `GET /api/v1/reportes/mermas?desde=2026-01-01&hasta=2026-11-18&exportar=1`. Acepta los mismos filtros de especie y vivero. Se puede omitir `pagina` o enviar `1`. La respuesta conserva `filtros.pagina` en `1` y `tamano_pagina` en `25` como metadato del contrato de consulta. En esta modalidad, `detalle` contiene todos los eventos del alcance con los mismos totales y `observado_en` de la respuesta. La PWA usa ese corte para la vista previa y pone las cantidades de merma no acreditadas como dato faltante.
+
+La exportación requiere ADMIN activo y conserva `Cache-Control: private, no-store`. La PWA vuelve a confirmar el permiso antes de descargar mediante la ruta de autorización existente. El PDF de inventario usa el resultado completo que el tablero ya tiene al corte, con esa misma comprobación de permiso.
