@@ -17,7 +17,7 @@ export class OrganizacionesLogoService {
 
   async subir(orgId: number, file: Express.Multer.File): Promise<string> {
     const extension = this.resolveExtension(file);
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const filePath = `org-${orgId}-${Date.now()}.${extension}`;
 
     const { error: uploadError } = await supabase.storage
@@ -51,7 +51,7 @@ export class OrganizacionesLogoService {
       return;
     }
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getAdminClient();
     const { error } = await supabase.storage
       .from(BUCKET_ORGANIZACIONES)
       .remove([path]);

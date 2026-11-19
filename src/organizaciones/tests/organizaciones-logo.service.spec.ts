@@ -16,7 +16,7 @@ type StorageMock = {
 
 function createSupabase(storage: StorageMock): SupabaseService {
   return {
-    getClient: jest.fn().mockReturnValue({
+    getAdminClient: jest.fn().mockReturnValue({
       storage: {
         from: jest.fn().mockReturnValue(storage),
       },
