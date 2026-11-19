@@ -24,6 +24,7 @@ import { SubcampaniasModule } from './subcampanias/subcampanias.module';
 import { HealthModule } from './health/health.module';
 import { ImpactModule } from './impact/impact.module';
 import { ParticipacionModule } from './participacion/participacion.module';
+import { ReportesModule } from './reportes/reportes.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ParticipacionModule } from './participacion/participacion.module';
     HealthModule,
     ImpactModule,
     ParticipacionModule,
+    ReportesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

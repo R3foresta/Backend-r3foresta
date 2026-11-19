@@ -24,7 +24,10 @@ export type RegistroInicialPayload = {
   }[];
 };
 
-export function fechaExacta(value: unknown): string {
+export function fechaExacta(
+  value: unknown,
+  field = 'fecha_plantacion',
+): string {
   if (
     typeof value !== 'string' ||
     !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
@@ -32,7 +35,7 @@ export function fechaExacta(value: unknown): string {
     new Date(value).toISOString().slice(0, 10) !== value ||
     value < '0001-01-01'
   )
-    invalidInput('fecha_plantacion');
+    invalidInput(field);
   return value;
 }
 export function coordenada(value: unknown, max: number, field: string): number {
