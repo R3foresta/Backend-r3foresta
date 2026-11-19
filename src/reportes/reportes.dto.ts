@@ -13,13 +13,13 @@ const camposPlantaciones = [
   'planta_id',
 ] as const;
 const camposVivero = ['planta_id', 'vivero_id'] as const;
-const camposMermas = [
+const camposMovimientos = [
   ...camposVivero,
   'desde',
   'hasta',
   'pagina',
-  'exportar',
 ] as const;
+const camposMermas = [...camposMovimientos, 'exportar'] as const;
 
 function idOpcional(query: Record<string, unknown>, campo: string) {
   return query[campo] === undefined ? null : id(query[campo], campo);
@@ -53,11 +53,23 @@ export function parseFiltrosPlantaciones(value: unknown) {
   };
 }
 
-export function parseFiltrosVivero(value: unknown) {
-  const query = strictObject(value, camposVivero, 'query');
+function ambitoVivero(query: Record<string, unknown>) {
   return {
     planta_id: idOpcional(query, 'planta_id'),
     vivero_id: idOpcional(query, 'vivero_id'),
+  };
+}
+
+export function parseFiltrosVivero(value: unknown) {
+  return ambitoVivero(strictObject(value, camposVivero, 'query'));
+}
+
+export function parseFiltrosMovimientosSemillas(value: unknown) {
+  const query = strictObject(value, camposMovimientos, 'query');
+  return {
+    ...periodo(query),
+    ...ambitoVivero(query),
+    pagina: pagina(query.pagina),
   };
 }
 
@@ -71,8 +83,7 @@ export function parseFiltrosMermas(value: unknown) {
 
   return {
     ...periodo(query),
-    planta_id: idOpcional(query, 'planta_id'),
-    vivero_id: idOpcional(query, 'vivero_id'),
+    ...ambitoVivero(query),
     pagina: paginaSolicitada,
     exportar,
   };

@@ -8,6 +8,7 @@ import type { VerifiedActor } from '../auth/verified-actor.guard';
 import { SupabaseService } from '../supabase/supabase.service';
 import {
   parseFiltrosMermas,
+  parseFiltrosMovimientosSemillas,
   parseFiltrosPlantaciones,
   parseFiltrosVivero,
 } from './reportes.dto';
@@ -16,7 +17,9 @@ type LecturaReporte =
   | 'reportes_plantaciones_leer'
   | 'reportes_vivero_leer'
   | 'reportes_mermas_leer'
-  | 'reportes_mermas_leer_corte';
+  | 'reportes_mermas_leer_corte'
+  | 'reportes_semillas_saldo_leer'
+  | 'reportes_semillas_movimientos_leer';
 
 @Injectable()
 export class ReportesService {
@@ -65,6 +68,32 @@ export class ReportesService {
     );
   }
 
+  semillas(actor: VerifiedActor, query: unknown) {
+    this.exigirAdmin(actor);
+    const filtros = parseFiltrosVivero(query);
+    return this.leer(actor, 'reportes_semillas_saldo_leer', 'semillas', {
+      p_planta_id: filtros.planta_id,
+      p_vivero_id: filtros.vivero_id,
+    });
+  }
+
+  movimientosSemillas(actor: VerifiedActor, query: unknown) {
+    this.exigirAdmin(actor);
+    const filtros = parseFiltrosMovimientosSemillas(query);
+    return this.leer(
+      actor,
+      'reportes_semillas_movimientos_leer',
+      'movimientos de semillas',
+      {
+        p_desde: filtros.desde,
+        p_hasta: filtros.hasta,
+        p_planta_id: filtros.planta_id,
+        p_vivero_id: filtros.vivero_id,
+        p_pagina: filtros.pagina,
+      },
+    );
+  }
+
   private exigirAdmin(actor: VerifiedActor): void {
     if (actor.rol !== 'ADMIN') {
       throw new ForbiddenException('Se requiere una cuenta administradora.');
@@ -74,7 +103,12 @@ export class ReportesService {
   private async leer(
     actor: VerifiedActor,
     rpc: LecturaReporte,
-    reporte: 'plantaciones' | 'vivero' | 'mermas',
+    reporte:
+      | 'plantaciones'
+      | 'vivero'
+      | 'mermas'
+      | 'semillas'
+      | 'movimientos de semillas',
     params: Record<string, string | number | boolean | null>,
   ) {
     const mensaje = `No se pudo consultar el reporte de ${reporte}.`;

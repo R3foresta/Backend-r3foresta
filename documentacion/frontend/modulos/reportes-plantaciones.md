@@ -66,3 +66,18 @@ Una página posterior a la última devuelve detalle vacío con agregados del per
 La migración [116](../../../migrations/116_reportes_mermas_exportacion.sql) mantiene la lectura paginada y agrega `GET /api/v1/reportes/mermas?desde=2026-01-01&hasta=2026-11-18&exportar=1`. Acepta los mismos filtros de especie y vivero. Se puede omitir `pagina` o enviar `1`. La respuesta conserva `filtros.pagina` en `1` y `tamano_pagina` en `25` como metadato del contrato de consulta. En esta modalidad, `detalle` contiene todos los eventos del alcance con los mismos totales y `observado_en` de la respuesta. La PWA usa ese corte para la vista previa y pone las cantidades de merma no acreditadas como dato faltante.
 
 La exportación requiere ADMIN activo y conserva `Cache-Control: private, no-store`. La PWA vuelve a confirmar el permiso antes de descargar mediante la ruta de autorización existente. El PDF de inventario usa el resultado completo que el tablero ya tiene al corte, con esa misma comprobación de permiso.
+
+## Semillas
+
+La migración [117](../../../migrations/117_reportes_semillas.sql) incorpora dos consultas de solo lectura para ADMIN. Ambas aceptan `planta_id` y `vivero_id` opcionales y devuelven `{ success: true, data }`. El servidor devuelve la hora del corte ISO en `observado_en`, los filtros aplicados en `filtros` y los catálogos completos en `opciones.viveros` y `opciones.especies` como pares `{ id, nombre }`. Los IDs son cadenas decimales exactas. Ambas lecturas excluyen esquejes y fichas eliminadas.
+
+| GET bajo `/api/v1/reportes` | Respuesta |
+| --- | --- |
+| `/semillas` | `totales: { G, UNIDAD }` y `filas[]` con `planta_id`, `especie`, `vivero_id`, `vivero`, `unidad`, `saldo`. |
+| `/semillas/movimientos?desde=YYYY-MM-DD&hasta=YYYY-MM-DD&pagina=1` | `totales` contiene `G` y `UNIDAD` con `recibido`, `consumido`, `descartado`, además de `eventos` y `eventos_sin_cantidad` del período completo. `detalle` se pagina en grupos de 25. El intervalo es inclusivo y `pagina` es opcional, con valor inicial 1. |
+
+El **saldo actual** suma `recoleccion.saldo_actual` de semillas abiertas y validadas con recepción conforme en su vivero de custodia. Ante un saldo inválido dentro del ámbito consultado, la lectura devuelve 503. Una consulta completa sin saldo devuelve `"0"` en cada unidad. Los totales y el detalle de saldo corresponden a toda la consulta, sin paginación.
+
+El **histórico** registra la entrada con `recoleccion_recepcion.fecha_recepcion` y `cantidad_recibida`. El consumo hacia vivero y el descarte usan el día de asiento persistido `recoleccion_movimiento.created_at` y el valor positivo del débito. Las capturas de recolección no se vuelven a contar como entradas. Las fichas cerradas y los débitos legados persistidos con especie identificada conservan su historial. El filtro de vivero corresponde a recepción o custodia del origen. Cuando el consumo está vinculado a un lote, `vivero_destino` muestra el nombre del vivero que recibe ese consumo.
+
+Cada fila de `detalle` contiene `id`, `tipo` (`RECEPCION_CONFORME`, `CONSUMO_A_VIVERO` o `DESECHO`), `fecha`, `recoleccion_id`, `codigo_recoleccion` (nullable), `planta_id`, `especie`, `vivero_id`, `vivero` y `vivero_destino` (estos últimos tres pueden ser nulos), `unidad` y `cantidad`. Usar `tipo + id` como clave, pues recepción y movimientos tienen secuencias independientes. Las cantidades se devuelven en cadenas decimales no negativas con hasta seis decimales para `G` y enteros para `UNIDAD`. Los eventos históricos de cantidad inválida conservan `cantidad: null` (la unidad también puede ser nula) y se contabilizan en `eventos_sin_cantidad`. Los totales de montos suman únicamente valores verificables.

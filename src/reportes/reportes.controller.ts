@@ -111,6 +111,55 @@ export class ReportesController {
     return this.reportes.mermas(req.actor, query);
   }
 
+  @Get('semillas')
+  @ApiOperation({ summary: 'Saldo actual de semillas recibidas para ADMIN' })
+  @ApiQuery({ name: 'planta_id', required: false, type: String })
+  @ApiQuery({ name: 'vivero_id', required: false, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Saldo por especie, vivero y unidad.',
+  })
+  @ApiResponse({ status: 401, description: 'Sesión inválida.' })
+  @ApiResponse({ status: 403, description: 'Se requiere ADMIN activo.' })
+  @ApiResponse({ status: 422, description: 'Filtros inválidos.' })
+  @ApiResponse({ status: 503, description: 'Lectura no disponible.' })
+  semillas(@Req() req: ActorRequest, @Query() query: unknown) {
+    return this.reportes.semillas(req.actor, query);
+  }
+
+  @Get('semillas/movimientos')
+  @ApiOperation({
+    summary: 'Recepciones, consumos y descartes de semillas para ADMIN',
+  })
+  @ApiQuery({
+    name: 'desde',
+    required: true,
+    schema: { type: 'string', format: 'date' },
+  })
+  @ApiQuery({
+    name: 'hasta',
+    required: true,
+    schema: { type: 'string', format: 'date' },
+  })
+  @ApiQuery({ name: 'planta_id', required: false, type: String })
+  @ApiQuery({ name: 'vivero_id', required: false, type: String })
+  @ApiQuery({
+    name: 'pagina',
+    required: false,
+    schema: { type: 'integer', minimum: 1, maximum: 1_000_000, default: 1 },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Totales del período y detalle paginado.',
+  })
+  @ApiResponse({ status: 401, description: 'Sesión inválida.' })
+  @ApiResponse({ status: 403, description: 'Se requiere ADMIN activo.' })
+  @ApiResponse({ status: 422, description: 'Filtros inválidos.' })
+  @ApiResponse({ status: 503, description: 'Lectura no disponible.' })
+  movimientosSemillas(@Req() req: ActorRequest, @Query() query: unknown) {
+    return this.reportes.movimientosSemillas(req.actor, query);
+  }
+
   @Get('plantaciones/permiso-exportacion')
   @HttpCode(204)
   @ApiOperation({

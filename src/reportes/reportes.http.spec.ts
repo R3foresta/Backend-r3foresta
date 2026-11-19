@@ -19,6 +19,9 @@ describe('Reportes administrativos HTTP', () => {
   const consulta = base + '?desde=2026-01-01&hasta=2026-11-18';
   const vivero = '/api/v1/reportes/vivero';
   const mermas = '/api/v1/reportes/mermas';
+  const semillas = '/api/v1/reportes/semillas';
+  const movimientos = semillas + '/movimientos';
+  const periodoSemillas = '?desde=2026-01-01&hasta=2026-11-19';
   const bearer = (sub: string) =>
     'Bearer ' + jwt.sign({ sub, rol: 'ADMIN' }, { expiresIn: 600 });
   const resultado = {
@@ -51,6 +54,8 @@ describe('Reportes administrativos HTTP', () => {
         'reportes_vivero_leer',
         'reportes_mermas_leer',
         'reportes_mermas_leer_corte',
+        'reportes_semillas_saldo_leer',
+        'reportes_semillas_movimientos_leer',
       ].includes(name)
     ) {
       return lectura(params);
@@ -283,4 +288,75 @@ describe('Reportes administrativos HTTP', () => {
       expect(lectura).not.toHaveBeenCalled();
     },
   );
+  it('consulta el saldo de semillas con IDs exactos y sin período', async () => {
+    const result = await request(app.getHttpServer())
+      .get(semillas + '?planta_id=9007199254740995&vivero_id=9007199254740997')
+      .set('Authorization', bearer('admin'))
+      .expect(200);
+    expect(result.body).toEqual({ success: true, data: resultado });
+    expect(result.headers['cache-control']).toBe('private, no-store');
+    expect(rpc).toHaveBeenCalledWith('reportes_semillas_saldo_leer', {
+      p_actor_id: '9007199254740993',
+      p_auth_id: 'admin',
+      p_planta_id: '9007199254740995',
+      p_vivero_id: '9007199254740997',
+    });
+  });
+
+  it.each([
+    [periodoSemillas, 1],
+    [periodoSemillas + '&pagina=2', 2],
+  ])(
+    'consulta movimientos por período y pagina (%s)',
+    async (query, pagina) => {
+      const result = await request(app.getHttpServer())
+        .get(movimientos + query + '&vivero_id=9007199254740997')
+        .set('Authorization', bearer('admin'))
+        .expect(200);
+      expect(result.body).toEqual({ success: true, data: resultado });
+      expect(rpc).toHaveBeenCalledWith('reportes_semillas_movimientos_leer', {
+        p_actor_id: '9007199254740993',
+        p_auth_id: 'admin',
+        p_desde: '2026-01-01',
+        p_hasta: '2026-11-19',
+        p_planta_id: null,
+        p_vivero_id: '9007199254740997',
+        p_pagina: pagina,
+      });
+    },
+  );
+
+  it.each([semillas, movimientos + periodoSemillas])(
+    'protege la lectura de semillas (%s)',
+    async (ruta) => {
+      await request(app.getHttpServer()).get(ruta).expect(401);
+      await request(app.getHttpServer())
+        .get(ruta)
+        .set('Authorization', bearer('general'))
+        .expect(403);
+      expect(lectura).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    [semillas + periodoSemillas, 'query'],
+    [movimientos + periodoSemillas + '&exportar=1', 'query'],
+    [movimientos + periodoSemillas + '&pagina=0', 'pagina'],
+    [movimientos + '?desde=2026-11-19&hasta=2026-01-01', 'hasta'],
+  ])('rechaza filtros de semillas inválidos (%s)', async (ruta, campo) => {
+    const result = await request(app.getHttpServer())
+      .get(ruta)
+      .set('Authorization', bearer('admin'))
+      .expect(422);
+    expect(result.body).toMatchObject({ error: { campos: [campo] } });
+    expect(lectura).not.toHaveBeenCalled();
+  });
+
+  it('comunica saldo inválido como lectura no disponible', async () => {
+    lectura.mockResolvedValueOnce({ data: null, error: { code: 'PT503' } });
+    await request(app.getHttpServer())
+      .get(semillas)
+      .set('Authorization', bearer('admin'))
+      .expect(503);
+  });
 });
