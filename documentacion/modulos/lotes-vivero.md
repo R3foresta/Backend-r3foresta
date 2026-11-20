@@ -185,6 +185,8 @@ con asignación explícita; ese requisito no se aplica a INICIO ni a DESECHO.
 
 **Descripción**: Sube fotos como evidencias pendientes de asociar al evento de inicio de un lote. Se deben subir **antes** de crear el lote y los IDs retornados se pasan en el campo `evidencia_ids` del siguiente endpoint.
 
+El bucket privado es `vivero_evidencias`. Las fotos se agrupan por tipo de evento y cada ruta permanece estable al vincular. `public_url` en la respuesta conserva el campo de vista previa y contiene una firma de 300 segundos o `null` si falla la firma. [Mapa de Storage](storage-evidencias.md)
+
 **Autenticación**: Bearer JWT verificado, cuenta activa y ámbito operativo del vivero; ADMIN deriva alcance global.
 
 **Content-Type**: `multipart/form-data`
@@ -210,14 +212,15 @@ con asignación explícita; ese requisito no se aplica a INICIO ni a DESECHO.
       "id": 501,
       "tipo_entidad_id": 9,
       "entidad_id": 0,
-      "bucket": "recoleccion_fotos",
-      "ruta_archivo": "vivero/eventos/pendientes/77/1_inicio.jpg",
+      "bucket": "vivero_evidencias",
+      "ruta_archivo": "eventos/inicio/2/77/0a000000-0000-4000-8000-000000000001.jpg",
       "storage_object_id": "abc-123",
       "tipo_archivo": "FOTO",
       "mime_type": "image/jpeg",
       "tamano_bytes": 245678,
       "titulo": "Inicio germinación lote 1",
-      "es_principal": true,
+      "es_principal": false,
+      "public_url": "https://storage.example/foto-firmada",
       "creado_en": "2026-04-28T10:00:00Z",
       "creado_por_usuario_id": 77
     }
@@ -743,7 +746,7 @@ Authorization: Bearer {{token}}
   "data": [
     {
       "id": 501,
-      "ruta_archivo": "vivero/eventos/pendientes/77/1_inicio_lote_01.jpg",
+      "ruta_archivo": "eventos/inicio/2/77/0a000000-0000-4000-8000-000000000001.jpg",
       "mime_type": "image/jpeg",
       "tamano_bytes": 198240,
       "titulo": "Foto inicio lote primavera 2026",
@@ -751,7 +754,7 @@ Authorization: Bearer {{token}}
     },
     {
       "id": 502,
-      "ruta_archivo": "vivero/eventos/pendientes/77/2_inicio_lote_02.jpg",
+      "ruta_archivo": "eventos/inicio/2/77/0a000000-0000-4000-8000-000000000002.jpg",
       "mime_type": "image/jpeg",
       "tamano_bytes": 215000,
       "es_principal": false

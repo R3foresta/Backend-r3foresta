@@ -1,6 +1,10 @@
 # Módulo: Plantaciones (Registros de Plantación)
 
-Base URL: `/api/registros-plantacion`
+Plantación inicial usa las rutas v1 de [Participación](../../modulos/participacion.md). La reposición interna usa `/api/registros-plantacion`.
+
+Ambos recorridos guardan `original` y `derivada.jpg` en el bucket privado
+`participacion_evidencias`, bajo `inicial/` y `reposiciones/` respectivamente.
+La imagen pública elegible se consulta por la API de Impacto. [Mapa de Storage](../../modulos/storage-evidencias.md)
 
 > **Cambio de contrato (2026-07)**: registrar una plantación **ya no genera
 > despachos automáticos en Vivero** ni modifica `saldo_vivo_actual` del lote
@@ -13,30 +17,33 @@ Base URL: `/api/registros-plantacion`
 
 ## POST /registros-plantacion/evidencias-pendientes 📎
 
-**Rol mínimo**: GENERAL
-**Descripción**: Sube fotos y crea evidencias pendientes (entidad_id=0) del tipo REGISTRO_PLANTACION. Sus IDs se envían luego en `POST /registros-plantacion` para vinculación atómica.
+Sube fotos de reposición para una cuenta interna activa que pertenece al equipo
+como `COORDINADOR` u `OPERARIO`. Enviar los `evidencia_ids` devueltos a
+`POST /api/registros-plantacion` para vincularlas.
 
 **Headers**
 | Header | Requerido | Descripción |
 |--------|-----------|-------------|
-| x-auth-id | ✓ | Supabase auth_id del usuario |
+| Authorization | ✓ | `Bearer <JWT>` verificado |
 | Content-Type | ✓ | `multipart/form-data` |
 
 **Body** (`multipart/form-data`)
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|------------|
-| fotos | file[] | ✓ | max 10 archivos |
+| subcampania_id | string BIGINT | ✓ | Subcampaña autorizada |
+| es_reposicion | boolean | ✓ | `true` |
+| fotos | file[] | ✓ | De 1 a 10 archivos, cada uno hasta 10 MiB |
 | titulo | string | — | max 120 caracteres |
 | descripcion | string | — | max 1000 caracteres |
-| metadata | string | — | JSON serializado (opcional) |
 | tomado_en | string | — | ISO date |
-| es_principal | boolean | — | true si es la foto principal (default false) |
+| es_principal | boolean | — | La principalidad se establece al vincular |
 
 **Errores**
 | Status | Cuándo |
 |--------|--------|
 | 400 | Validación fallida, archivos inválidos |
-| 401 | Header x-auth-id ausente |
+| 401 | Bearer ausente o inválido |
+| 409 | Contrato incompatible si falta el contexto de reposición |
 
 ---
 
@@ -45,18 +52,22 @@ Base URL: `/api/registros-plantacion`
 **Rol mínimo**: GENERAL
 **Descripción**: Descarta evidencias pendientes de plantación que ya fueron pre-subidas pero no se usarán en `POST /registros-plantacion` porque el usuario canceló el flujo o el registro final no se completará. El backend marca las evidencias como eliminadas y borra sus archivos de Storage.
 
-Es idempotente: los IDs inexistentes, ya eliminados, ya vinculados a una plantación o no pertenecientes al usuario se devuelven en `evidencia_ids_ignoradas`.
+Los IDs inexistentes, ya vinculados o de otra cuenta se devuelven en
+`evidencia_ids_ignoradas`. Repetir un descarte propio permite completar la
+limpieza de sus archivos cuando falla Storage después del borrado lógico.
 
 **Headers**
 | Header | Requerido | Descripción |
 |--------|-----------|-------------|
-| x-auth-id | ✓ | Supabase auth_id del usuario |
+| Authorization | ✓ | `Bearer <JWT>` verificado |
 | Content-Type | ✓ | `application/json` |
 
 **Body** (`application/json`)
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|------------|
-| evidencia_ids | number[] | ✓ | IDs devueltos por `POST /registros-plantacion/evidencias-pendientes` |
+| subcampania_id | string BIGINT | ✓ | Mismo ámbito de la carga |
+| es_reposicion | boolean | ✓ | `true` |
+| evidencia_ids | (number \| string)[] | ✓ | IDs devueltos por `POST /registros-plantacion/evidencias-pendientes` |
 
 **Respuesta exitosa** `200`
 
@@ -74,7 +85,7 @@ Es idempotente: los IDs inexistentes, ya eliminados, ya vinculados a una plantac
 | Status | Cuándo |
 |--------|--------|
 | 400 | IDs inválidos |
-| 401 | Header x-auth-id ausente |
+| 401 | Bearer ausente o inválido |
 | 403 | Rol global insuficiente |
 | 404 | Usuario no encontrado o falta tipo_entidad_evidencia REGISTRO_PLANTACION |
 | 500 | Error al marcar evidencias o borrar archivos de Storage |
@@ -84,22 +95,22 @@ Es idempotente: los IDs inexistentes, ya eliminados, ya vinculados a una plantac
 ## POST /registros-plantacion
 
 **Rol mínimo**: GENERAL (el responsable debe pertenecer al equipo de la subcampaña como COORDINADOR u OPERARIO)
-**Descripción**: Registra una plantación inicial o una reposición **consumiendo stock ya asignado físicamente** a la subcampaña. En una sola transacción (RPC `fn_m3_registrar_plantacion`): valida estado de la subcampaña, GPS contra polígono, equipo, asignaciones ACTIVAS de propósito coherente y su `saldo_asignado_disponible`, las especies del plan (inicial) y el pendiente de reposición del grupo origen (reposición); inserta el registro + detalles + coresponsables, aumenta `cantidad_consumida` de las asignaciones, actualiza contadores de la subcampaña y vincula evidencias. **No crea eventos en Vivero ni cambia el saldo del lote.**
+Registra una reposición interna **consumiendo stock ya asignado físicamente** a la subcampaña. La RPC valida estado, GPS, equipo, asignaciones activas de reposición y pendiente del grupo origen. En la misma transacción inserta el registro, detalles y corresponsables, actualiza el consumo de las asignaciones y vincula las fotos propias. La plantación inicial y sus fotos se registran por [Participación v1](../../modulos/participacion.md).
 
 Desde la migración 061, `cantidad_objetivo` es una meta orientativa: una especie incluida en el plan puede superar su objetivo si existe stock asignado. Por ejemplo, meta 40 y asignación 50 permiten plantar 50 de una vez, o 40 y luego 10. Alcanzar o superar la meta no cierra la subcampaña; el cierre es manual. El contexto entrega `reglas.permite_exceder_meta_especie: true`, que el frontend usa para limitar la entrada al stock, sin limitarla al pendiente de la meta.
 
 **Headers**
 | Header | Requerido | Descripción |
 |--------|-----------|-------------|
-| x-auth-id | ✓ | Supabase auth_id del usuario |
+| Authorization | ✓ | `Bearer <JWT>` verificado |
 | Content-Type | ✓ | `application/json` |
 
 **Body** (`application/json`)
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|------------|
-| subcampania_id | number | ✓ | Inicial: subcampaña ACTIVA. Reposición: ACTIVA, COMPLETADA o FINALIZADA_PARCIAL |
-| es_reposicion | boolean | — | default false |
-| registro_plantacion_origen_id | number | — | Obligatorio si es_reposicion=true; el origen no puede ser otra reposición |
+| subcampania_id | string BIGINT | ✓ | Subcampaña `ACTIVA`, `COMPLETADA` o `FINALIZADA_PARCIAL` |
+| es_reposicion | boolean | ✓ | `true` |
+| registro_plantacion_origen_id | string BIGINT | ✓ | Registro inicial de la misma subcampaña |
 | fecha_plantacion | string | ✓ | YYYY-MM-DD; no anterior a la entrega del stock consumido |
 | latitud | number | ✓ | [-90, 90] |
 | longitud | number | ✓ | [-180, 180] |
@@ -223,11 +234,8 @@ curl -X POST http://localhost:3000/api/registros-plantacion \
 
 ---
 
-## Flujo Típico
+## Flujo de reposición interna
 
-1. **Vivero entrega stock**: `POST /lotes-vivero/:id/asignaciones` (asignación física; ver módulo lotes-vivero-m3).
-2. **POST /registros-plantacion/evidencias-pendientes** → Subir fotos de la plantación.
-3. Si el usuario cancela o el registro no se completará: **DELETE /registros-plantacion/evidencias-pendientes** con los IDs pre-subidos.
-4. **POST /registros-plantacion** → Registrar consumo de las asignaciones.
-5. **Stock restante**: mientras la subcampaña esté ACTIVA, puede consumirse en otra plantación inicial de esa especie aunque su meta ya esté cumplida. También puede devolverse físicamente con `POST /lotes-vivero/:id/asignaciones/:asignacionId/devolucion`.
-6. **Cierre manual**: `POST /subcampanias/:id/cerrar` → cerrar cuando termine la actividad. Después del cierre ya no se admite plantación inicial; la reposición conserva su flujo y su límite por mortandad pendiente.
+1. Vivero entrega stock de propósito `REPOSICION` mediante `POST /api/lotes-vivero/:id/asignaciones`.
+2. Subir las fotos con `POST /api/registros-plantacion/evidencias-pendientes` y conservar los `evidencia_ids`.
+3. Registrar la reposición con `POST /api/registros-plantacion` y sus IDs de evidencia. Si se cancela antes de confirmar, usar `DELETE /api/registros-plantacion/evidencias-pendientes` con el mismo ámbito y los IDs.

@@ -33,7 +33,7 @@ export function ApiCrearEvidenciaPendientePlantacion() {
     ApiOperation({
       summary: 'Crear evidencias privadas pendientes de reposición interna',
       description:
-        'Bearer JWT obligatorio. Requiere rol interno, equipo y subcampania_id + es_reposicion:true. Original privado y JPEG sanitizado, propiedad estricta también para ADMIN. Inicial usa cargas v1; contrato anterior responde 409 CLIENTE_INCOMPATIBLE antes de Storage.',
+        'Bearer JWT obligatorio. Requiere rol interno, equipo y subcampania_id + es_reposicion:true. Original y JPEG sanitizado en el prefijo privado reposiciones/ de participacion_evidencias. Propiedad estricta también para ADMIN. Inicial usa cargas v1; contrato anterior responde 409 CLIENTE_INCOMPATIBLE antes de Storage.',
     }),
     ApiHeader(AUTH_ID_HEADER),
     ApiConsumes('multipart/form-data'),

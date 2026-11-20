@@ -43,7 +43,7 @@ export class EvidenciasTrazabilidadController {
   @ApiOperation({
     summary: 'Agregar evidencias a una recolección',
     description:
-      'Sube 1 a 5 fotos y crea registros en evidencias_trazabilidad para una recolección existente.',
+      'Sube 1 a 5 fotos a recoleccion_fotos/captura/fichas/<recoleccion_id>/ y las vincula a una recolección existente.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiParam({
@@ -102,7 +102,7 @@ export class EvidenciasTrazabilidadController {
   @ApiOperation({
     summary: 'Listar evidencias de trazabilidad',
     description:
-      'Lista evidencias con filtros por entidad, tipo de entidad y código de trazabilidad. Excluye los buckets privados de participación, conciliación e incorporación de Vivero. Las fotos T5 se leen por el timeline M2 autorizado o su contexto pendiente propio, con URL firmada temporal.',
+      'Lista evidencias autorizadas con filtros por entidad, tipo y código de trazabilidad. Para fotos de vivero_evidencias, public_url contiene una URL firmada temporal, o null si falla la firma. Excluye participación, conciliación e incorporación T5, que tienen sus propias rutas de lectura.',
   })
   @ApiResponse({ status: 200, description: 'Lista de evidencias obtenida' })
   @ApiResponse({ status: 400, description: 'Parámetros inválidos' })
@@ -198,7 +198,11 @@ export class EvidenciasTrazabilidadController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener evidencia por ID', description: 'Los buckets privados, incluido vivero_incorporaciones, no se sirven por esta ruta (404). Las fotos T5 se acceden por el timeline M2 autorizado o su contexto pendiente propio; no se genera public_url.' })
+  @ApiOperation({
+    summary: 'Obtener evidencia por ID',
+    description:
+      'Autoriza la entidad antes de resolver su imagen. Para vivero_evidencias, public_url contiene una URL firmada temporal o null. Participación, conciliación e incorporación T5 usan rutas de lectura propias.',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'ID de evidencia' })
   @ApiResponse({ status: 200, description: 'Evidencia obtenida' })
   @ApiResponse({ status: 404, description: 'Evidencia no encontrada' })

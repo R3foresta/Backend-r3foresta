@@ -20,6 +20,7 @@ import {
   ViveroEvidenciasService,
 } from './vivero-evidencias.service';
 import { ViveroSaldosService } from './vivero-saldos.service';
+import { proyectarUrlEvidenciaVivero } from './vivero-evidencia-url';
 
 type RpcDespachoResult = {
   evento_despacho_id: number | string;
@@ -60,6 +61,7 @@ type EvidenciaPendienteRow = {
 };
 
 type EvidenciaRow = {
+  bucket: string;
   id: number | string;
   ruta_archivo: string;
   mime_type: string;
@@ -350,7 +352,7 @@ export class ViveroDespachoService {
   private async obtenerEvidenciasDelEvento(
     supabase: SupabaseClient,
     eventoId: number | string,
-  ): Promise<(EvidenciaRow & { public_url: string })[]> {
+  ): Promise<(Omit<EvidenciaRow, 'bucket'> & { public_url: string | null })[]> {
     const { data: tipoEntidadData } = await supabase
       .from('tipos_entidad_evidencia')
       .select('id::text')
@@ -367,7 +369,7 @@ export class ViveroDespachoService {
     const { data: evidenciasData, error: evError } = await supabase
       .from('evidencias_trazabilidad')
       .select(
-        'id::text, ruta_archivo, mime_type, tipo_archivo, es_principal, orden',
+        'id::text, bucket, ruta_archivo, mime_type, tipo_archivo, es_principal, orden',
       )
       .eq('tipo_entidad_id', compatibleDatabaseId(tipoEntidad.id))
       .eq('entidad_id', eventoId)
@@ -381,20 +383,19 @@ export class ViveroDespachoService {
       return [];
     }
 
-    return ((evidenciasData ?? []) as EvidenciaRow[]).map((ev) => {
-      const { data: publicUrlData } = supabase.storage
-        .from('recoleccion_fotos')
-        .getPublicUrl(ev.ruta_archivo);
-
-      return {
-        id: compatibleDatabaseId(ev.id),
-        ruta_archivo: ev.ruta_archivo,
-        mime_type: ev.mime_type,
-        tipo_archivo: ev.tipo_archivo,
-        es_principal: ev.es_principal,
-        orden: ev.orden,
-        public_url: publicUrlData.publicUrl,
-      };
-    });
+    return Promise.all(
+      ((evidenciasData ?? []) as EvidenciaRow[]).map(async (ev) => {
+        const url = await proyectarUrlEvidenciaVivero(supabase, ev);
+        return {
+          id: compatibleDatabaseId(ev.id),
+          ruta_archivo: ev.ruta_archivo,
+          mime_type: ev.mime_type,
+          tipo_archivo: ev.tipo_archivo,
+          es_principal: ev.es_principal,
+          orden: ev.orden,
+          public_url: url.signed_url ?? url.public_url ?? null,
+        };
+      }),
+    );
   }
 }

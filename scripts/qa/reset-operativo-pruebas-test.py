@@ -28,6 +28,7 @@ CREATE TABLE public.recoleccion(id bigint GENERATED ALWAYS AS IDENTITY PRIMARY K
 CREATE TABLE public.recoleccion_movimiento(id bigint PRIMARY KEY,recoleccion_id bigint REFERENCES public.recoleccion);
 CREATE TABLE public.lote_vivero(id bigint PRIMARY KEY,recoleccion_id bigint REFERENCES public.recoleccion);
 CREATE TABLE public.evento_lote_vivero(id bigint PRIMARY KEY,lote_id bigint REFERENCES public.lote_vivero);
+CREATE TABLE public.vivero_incorporacion(evento_id bigint PRIMARY KEY REFERENCES public.evento_lote_vivero ON DELETE RESTRICT);
 CREATE TABLE public.recoleccion_recepcion_evidencia_contexto(evidencia_id bigint PRIMARY KEY REFERENCES public.evidencias_trazabilidad,
  recoleccion_id bigint REFERENCES public.recoleccion);
 CREATE TABLE public.campania(id bigint PRIMARY KEY);
@@ -51,6 +52,7 @@ INSERT INTO public.recoleccion(cantidad) VALUES(100);
 INSERT INTO public.recoleccion_movimiento VALUES(1,1);
 INSERT INTO public.lote_vivero VALUES(1,1);
 INSERT INTO public.evento_lote_vivero VALUES(1,1);
+INSERT INTO public.vivero_incorporacion VALUES(1);
 INSERT INTO public.recoleccion_recepcion_evidencia_contexto VALUES(1,1);
 INSERT INTO public.campania VALUES(1);
 INSERT INTO public.subcampania VALUES(1,1);
@@ -63,6 +65,7 @@ INSERT INTO public.participacion_carga_generacion VALUES(1,1,'participacion_evid
 INSERT INTO public.plantacion_foto VALUES(1,'https://ejemplo.invalid/foto.jpg?token=secreto-sintetico');
 CREATE FUNCTION public.inmutable() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'INMUTABLE'; END $$;
 CREATE TRIGGER conservar BEFORE TRUNCATE ON public.recoleccion FOR EACH STATEMENT EXECUTE FUNCTION public.inmutable();
+CREATE TRIGGER conservar BEFORE TRUNCATE ON public.vivero_incorporacion FOR EACH STATEMENT EXECUTE FUNCTION public.inmutable();
 ALTER TABLE public.recoleccion ENABLE ALWAYS TRIGGER conservar;
 CREATE TRIGGER conservar BEFORE TRUNCATE ON public.participacion_comando FOR EACH STATEMENT EXECUTE FUNCTION public.inmutable();
 ALTER TABLE public.participacion_comando ENABLE REPLICA TRIGGER conservar;
@@ -88,6 +91,7 @@ class ResetTests(unittest.TestCase):
         counts = {row['tabla']: row['filas'] for row in plan['plan']['tablas']}
         self.assertEqual(counts['usuario_autoridad_historial'], 1)
         self.assertEqual(counts['subcampania_permiso'], 1)
+        self.assertEqual(counts['vivero_incorporacion'], 1)
         self.assertNotIn('usuario', counts)
         self.assertNotIn('usuario_vivero', counts)
         objects = plan['plan']['objetos_storage']
@@ -103,6 +107,7 @@ class ResetTests(unittest.TestCase):
         result = reset_module.reset(self.psql, self.plan()['huella'])
         self.assertEqual(result['estado'], 'REINICIO_CONFIRMADO')
         self.assertEqual(self.sql('SELECT count(*) FROM public.recoleccion'), '0')
+        self.assertEqual(self.sql('SELECT count(*) FROM public.vivero_incorporacion'), '0')
         self.assertEqual(self.sql('SELECT count(*) FROM public.registro_plantacion'), '0')
         self.assertEqual(self.sql('SELECT count(*) FROM public.participacion_comando'), '0')
         self.assertEqual(self.sql('SELECT count(*) FROM public.usuario_autoridad_historial'), '0')

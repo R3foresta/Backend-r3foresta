@@ -157,7 +157,7 @@ const TIMELINE_EVIDENCIA: SchemaObject = {
       format: 'uri',
       nullable: true,
       description:
-        'Sólo bucket privado vivero_incorporaciones; null ante ERROR_FIRMA. No construir URL pública.',
+        'URL firmada de vivero_evidencias o vivero_incorporaciones. Null ante ERROR_FIRMA.',
     },
     url_expira_en_segundos: {
       type: 'integer',
@@ -326,7 +326,7 @@ export function ApiCrearEvidenciaPendiente() {
     ApiOperation({
       summary: 'Crear evidencias pendientes para evento de vivero',
       description:
-        'Requiere ADMIN u operario del vivero indicado. Sube fotos y crea evidencias con entidad_id=0 para el tipo EVENTO_LOTE_VIVERO. Luego sus IDs se envian en POST /lotes-vivero para que la RPC de INICIO las vincule atomicamente al evento.',
+        'Requiere ADMIN u operario del vivero indicado. Sube fotos a vivero_evidencias/eventos/inicio/<vivero_id>/<usuario_id>/ y crea evidencias con entidad_id=0 para EVENTO_LOTE_VIVERO. Los IDs se envían a POST /lotes-vivero para vincular las fotos atómicamente al INICIO.',
     }),
     ApiConsumes('multipart/form-data'),
     ApiBody({
@@ -377,7 +377,7 @@ export function ApiCrearEvidenciaPendiente() {
     ApiResponse({
       status: 201,
       description:
-        'Evidencias pendientes creadas. Usar evidencia_ids en POST /lotes-vivero.',
+        'Evidencias pendientes creadas. Usar evidencia_ids en POST /lotes-vivero. Por compatibilidad, public_url contiene la vista previa firmada por 300 segundos o null si falla la firma.',
     }),
     ApiResponse({
       status: 400,
@@ -966,7 +966,7 @@ export function ApiObtenerDespachos() {
     ApiResponse({
       status: 200,
       description:
-        'Devuelve { success: true, data } con lote_id, estado_lote, motivo_cierre, saldo_vivo_actual, total_despachos y despachos con evidencias.',
+        'Devuelve { success: true, data } con lote_id, estado_lote, motivo_cierre, saldo_vivo_actual, total_despachos y despachos con evidencias. Para fotos privadas, public_url contiene la URL firmada por 300 segundos o null si falla la firma.',
     }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
@@ -1251,7 +1251,7 @@ export function ApiObtenerResultadoEmbolsado() {
     ApiResponse({
       status: 200,
       description:
-        'Devuelve { success: true, data }. data.registrado: true con evento, lote y evidencias si existe; registrado: false con evento: null si no.',
+        'Devuelve { success: true, data }. data.registrado: true con evento, lote y evidencias si existe; registrado: false con evento: null si no. Para fotos privadas, public_url contiene la URL firmada por 300 segundos o null si falla la firma.',
     }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
@@ -1383,7 +1383,7 @@ export function ApiObtenerMermas() {
     ApiResponse({
       status: 200,
       description:
-        'Devuelve { success: true, data } con lote_id, saldo_vivo_actual, total_mermas y mermas con evidencias.',
+        'Devuelve { success: true, data } con lote_id, saldo_vivo_actual, total_mermas y mermas con evidencias. Para fotos privadas, public_url contiene la URL firmada por 300 segundos o null si falla la firma.',
     }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),
@@ -1480,7 +1480,7 @@ export function ApiObtenerAdaptabilidades() {
     ApiResponse({
       status: 200,
       description:
-        'Devuelve { success: true, data } con lote_id, saldo_vivo_actual, subetapa_actual, total_adaptabilidades y adaptabilidades con evidencias.',
+        'Devuelve { success: true, data } con lote_id, saldo_vivo_actual, subetapa_actual, total_adaptabilidades y adaptabilidades con evidencias. Para fotos privadas, public_url contiene la URL firmada por 300 segundos o null si falla la firma.',
     }),
     ApiResponse({ status: 404, description: 'Lote de vivero no encontrado' }),
     ApiResponse({ status: 500, description: 'Error interno del servidor' }),

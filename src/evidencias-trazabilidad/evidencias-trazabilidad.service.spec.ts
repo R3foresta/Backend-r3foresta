@@ -214,7 +214,7 @@ describe('EvidenciasTrazabilidadService', () => {
     );
 
     expect(upload).toHaveBeenCalledWith(
-      expect.stringMatching(/IMG_001\.heic$/),
+      expect.stringMatching(/^captura\/fichas\/33\/[0-9a-f-]{36}\.heic$/),
       originalBuffer,
       {
         contentType: 'image/heic',

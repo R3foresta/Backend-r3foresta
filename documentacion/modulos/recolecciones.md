@@ -203,7 +203,7 @@ El hecho de recepción aporta `recibido_por`, `registrado_en` y el día físico 
 ## Integraciones laterales
 
 - **Pinata + Blockchain**: tras la primera confirmación conforme, con reclamo atómico; replay/recuperación no vuelven a ejecutar. Fuera de SQL, sin outbox ni promesa exactamente una vez.
-- **Storage de fotos**: bucket `recoleccion_fotos` (migración 003). El frontend recibe URLs públicas.
+- El bucket `recoleccion_fotos` entrega URLs públicas legadas. Las altas usan `captura/altas/`, los adjuntos a una ficha usan `captura/fichas/<recoleccion_id>/` y las fotos de recepción usan `recepcion/pendientes/`. [Mapa de Storage](storage-evidencias.md)
 - **Saldo y consumo hacia vivero**: la API de lotes llama `m2_inicio_lote_exacto`, que exige recepción conforme y descuenta `saldo_actual` una vez, junto al lote/evento/evidencias. INICIO no precede a la recepción.
 
 ## Tests relevantes

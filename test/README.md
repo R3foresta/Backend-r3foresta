@@ -114,11 +114,33 @@ permisos por subcampaña, comandos e historial de autoridad relacionados. Conser
 cuentas, roles actuales, accesos M1/M2 y catálogos. Revisar el detalle del plan para
 conocer las consecuencias completas antes de ejecutarlo.
 
-El SQL no elimina objetos Storage: devuelve `objetos_storage` y URLs legadas
-para una limpieza externa por la API oficial, con destino revisado. El script no
-se ejecuta como parte de100. Su regresión aislada es
+El SQL devuelve `objetos_storage` y URLs legadas. Para vaciar también los buckets
+operativos de dev, usa [el script de Storage](../scripts/qa/reset-operativo-storage.cjs).
+Lee la URL y la clave privada de `.env.local` y exige el proyecto de dev documentado.
+Genera ambos planes antes del corte, pausa las cargas y escrituras operativas y
+ejecuta primero el reinicio PostgreSQL. Luego usa la huella del plan de Storage.
+
+```sh
+node scripts/qa/reset-operativo-storage.cjs
+node scripts/qa/reset-operativo-storage.cjs --execute HUELLA_DEL_PLAN_STORAGE
+```
+
+Storage inventaría `RECOLECCION_FOTOS`, `recoleccion_fotos`,
+`participacion_evidencias`, `r3foresta-conciliacion`, `vivero_evidencias` y `vivero_incorporaciones`,
+incluidos archivos huérfanos. La API elimina objetos por lotes y verifica que
+los buckets queden vacíos. Se conservan las definiciones de todos los buckets
+y los archivos de catálogos, perfiles y organizaciones. Revisa por separado
+las referencias del plan SQL a otros buckets o servicios externos. Si el
+borrado de Storage queda a medias, genera otro plan con los archivos restantes.
+
+El reinicio SQL se ejecuta aparte de 100. Su regresión aislada es
 `python3 scripts/qa/reset-operativo-pruebas-test.py --pg-bin /ruta/postgresql/bin`;
 no acredita una limpieza remota ni un reinicio ya realizado.
+
+El [mapa de buckets](../documentacion/modulos/storage-evidencias.md) describe
+cómo instalar 120/121 y provisionar `vivero_evidencias`. El runner aislado
+`test:db:vivero:acceso` cubre RLS de 120, rutas y vínculo M2, además de la
+reserva y finalización M3 de 121 con rutas anteriores y nuevas.
 
 ## Integración de frontend
 

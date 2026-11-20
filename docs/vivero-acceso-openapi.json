@@ -4981,7 +4981,7 @@
     },
     "/api/lotes-vivero/evidencias-pendientes": {
       "post": {
-        "description": "Requiere ADMIN u operario del vivero indicado. Sube fotos y crea evidencias con entidad_id=0 para el tipo EVENTO_LOTE_VIVERO. Luego sus IDs se envian en POST /lotes-vivero para que la RPC de INICIO las vincule atomicamente al evento.",
+        "description": "Requiere ADMIN u operario del vivero indicado. Sube fotos a vivero_evidencias/eventos/inicio/<vivero_id>/<usuario_id>/ y crea evidencias con entidad_id=0 para EVENTO_LOTE_VIVERO. Los IDs se envían a POST /lotes-vivero para vincular las fotos atómicamente al INICIO.",
         "operationId": "LotesViveroController_crearEvidenciaPendiente",
         "parameters": [
           {
@@ -5060,7 +5060,7 @@
         },
         "responses": {
           "201": {
-            "description": "Evidencias pendientes creadas. Usar evidencia_ids en POST /lotes-vivero."
+            "description": "Evidencias pendientes creadas. Usar evidencia_ids en POST /lotes-vivero. Por compatibilidad, public_url contiene la vista previa firmada por 300 segundos o null si falla la firma."
           },
           "400": {
             "description": "Datos invalidos o formato de archivo no permitido"
@@ -5745,7 +5745,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Devuelve { success: true, data }. data.registrado: true con evento, lote y evidencias si existe; registrado: false con evento: null si no."
+            "description": "Devuelve { success: true, data }. data.registrado: true con evento, lote y evidencias si existe; registrado: false con evento: null si no. Para fotos privadas, public_url contiene la URL firmada por 300 segundos o null si falla la firma."
           },
           "403": {
             "description": "Sin ámbito operativo vigente para el vivero del recurso o evidencia no autorizada."
@@ -6212,7 +6212,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Devuelve { success: true, data } con lote_id, saldo_vivo_actual, subetapa_actual, total_adaptabilidades y adaptabilidades con evidencias."
+            "description": "Devuelve { success: true, data } con lote_id, saldo_vivo_actual, subetapa_actual, total_adaptabilidades y adaptabilidades con evidencias. Para fotos privadas, public_url contiene la URL firmada por 300 segundos o null si falla la firma."
           },
           "403": {
             "description": "Sin ámbito operativo vigente para el vivero del recurso o evidencia no autorizada."
@@ -6469,7 +6469,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Devuelve { success: true, data } con lote_id, saldo_vivo_actual, total_mermas y mermas con evidencias."
+            "description": "Devuelve { success: true, data } con lote_id, saldo_vivo_actual, total_mermas y mermas con evidencias. Para fotos privadas, public_url contiene la URL firmada por 300 segundos o null si falla la firma."
           },
           "403": {
             "description": "Sin ámbito operativo vigente para el vivero del recurso o evidencia no autorizada."
@@ -6739,7 +6739,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Devuelve { success: true, data } con lote_id, estado_lote, motivo_cierre, saldo_vivo_actual, total_despachos y despachos con evidencias."
+            "description": "Devuelve { success: true, data } con lote_id, estado_lote, motivo_cierre, saldo_vivo_actual, total_despachos y despachos con evidencias. Para fotos privadas, public_url contiene la URL firmada por 300 segundos o null si falla la firma."
           },
           "403": {
             "description": "Sin ámbito operativo vigente para el vivero del recurso o evidencia no autorizada."
@@ -7561,7 +7561,7 @@
                                       "type": "string",
                                       "format": "uri",
                                       "nullable": true,
-                                      "description": "Sólo bucket privado vivero_incorporaciones; null ante ERROR_FIRMA. No construir URL pública."
+                                      "description": "URL firmada de vivero_evidencias o vivero_incorporaciones. Null ante ERROR_FIRMA."
                                     },
                                     "url_expira_en_segundos": {
                                       "type": "integer",
@@ -9407,7 +9407,7 @@
     },
     "/api/evidencias-trazabilidad/recolecciones/{recoleccionId}": {
       "post": {
-        "description": "Sube 1 a 5 fotos y crea registros en evidencias_trazabilidad para una recolección existente.",
+        "description": "Sube 1 a 5 fotos a recoleccion_fotos/captura/fichas/<recoleccion_id>/ y las vincula a una recolección existente.",
         "operationId": "EvidenciasTrazabilidadController_createForRecoleccion",
         "parameters": [
           {
@@ -9530,7 +9530,7 @@
     },
     "/api/evidencias-trazabilidad": {
       "get": {
-        "description": "Lista evidencias con filtros por entidad, tipo de entidad y código de trazabilidad. Excluye los buckets privados de participación, conciliación e incorporación de Vivero. Las fotos T5 se leen por el timeline M2 autorizado o su contexto pendiente propio, con URL firmada temporal.",
+        "description": "Lista evidencias autorizadas con filtros por entidad, tipo y código de trazabilidad. Para fotos de vivero_evidencias, public_url contiene una URL firmada temporal, o null si falla la firma. Excluye participación, conciliación e incorporación T5, que tienen sus propias rutas de lectura.",
         "operationId": "EvidenciasTrazabilidadController_list",
         "parameters": [
           {
@@ -9711,7 +9711,7 @@
     },
     "/api/evidencias-trazabilidad/{id}": {
       "get": {
-        "description": "Los buckets privados, incluido vivero_incorporaciones, no se sirven por esta ruta (404). Las fotos T5 se acceden por el timeline M2 autorizado o su contexto pendiente propio; no se genera public_url.",
+        "description": "Autoriza la entidad antes de resolver su imagen. Para vivero_evidencias, public_url contiene una URL firmada temporal o null. Participación, conciliación e incorporación T5 usan rutas de lectura propias.",
         "operationId": "EvidenciasTrazabilidadController_findOne",
         "parameters": [
           {
@@ -9745,7 +9745,7 @@
     },
     "/api/registros-plantacion/evidencias-pendientes": {
       "post": {
-        "description": "Bearer JWT obligatorio. Requiere rol interno, equipo y subcampania_id + es_reposicion:true. Original privado y JPEG sanitizado, propiedad estricta también para ADMIN. Inicial usa cargas v1; contrato anterior responde 409 CLIENTE_INCOMPATIBLE antes de Storage.",
+        "description": "Bearer JWT obligatorio. Requiere rol interno, equipo y subcampania_id + es_reposicion:true. Original y JPEG sanitizado en el prefijo privado reposiciones/ de participacion_evidencias. Propiedad estricta también para ADMIN. Inicial usa cargas v1; contrato anterior responde 409 CLIENTE_INCOMPATIBLE antes de Storage.",
         "operationId": "PlantacionesController_crearEvidenciaPendiente",
         "parameters": [
           {
@@ -10224,7 +10224,7 @@
   },
   "info": {
     "title": "R3Foresta · Acceso y material por vivero",
-    "description": "Contrato local de recepción única, material por vivero y continuidad de reposición interna con IDs exactos. Nuevas incorporaciones T5 y fotos pendientes requieren ADMIN global actual; resultado y replay propios confirmados siguen disponibles para la cuenta activa tras perder el rol. No persiste preparación ni rechazo durable. Timeline por lote paginado con vínculos reales, fuentes de responsable y estado explícito de fotos; las privadas vivero_incorporaciones usan firma TTL300, sin URL pública. T4 y operación M2 conservan su autorización.",
+    "description": "Contrato local de recepción única, material por vivero y continuidad de reposición interna con IDs exactos. Nuevas incorporaciones T5 y fotos pendientes requieren ADMIN global actual; resultado y replay propios confirmados siguen disponibles para la cuenta activa tras perder el rol. No persiste preparación ni rechazo durable. Timeline por lote paginado con vínculos reales, fuentes de responsable y estado explícito de fotos. Los buckets privados vivero_evidencias y vivero_incorporaciones usan firma TTL300 para el historial autorizado.",
     "version": "3.2.0",
     "contact": {}
   },

@@ -115,6 +115,11 @@ multipart, bucket privado, lease/generación y derivados sanitizados; el GET
 común recupera PREPARADO/terminal tras retiro. Registrar no vuelve a descontar
 Vivero. [Conciliación del día de entregas](../../docs/pa-int03a-conciliacion-entregas.md).
 
+Las generaciones nuevas del registro inicial usan el prefijo `inicial/` de
+`participacion_evidencias` con la migración 121. La API conserva la ubicación de
+las generaciones anteriores para recuperar, previsualizar y limpiar por su
+identidad. [Mapa de Storage](storage-evidencias.md)
+
 Si el PUT devuelve `202 RESERVADA`, conservar `comando_id`, `carga_id` y los
 bytes originales para reintentar; `201` (nueva) o `200` (recuperada) con
 `DISPONIBLE` y `evidencia_id` confirma la carga. No reemplazar la clave para

@@ -1,4 +1,10 @@
 import { ViveroAuthService } from '../lotes-vivero/application/vivero-auth.service';
+import {
+  BUCKET_VIVERO_EVIDENCIAS,
+  BUCKET_VIVERO_INCORPORACIONES,
+  proyectarUrlEvidenciaVivero,
+} from '../lotes-vivero/application/vivero-evidencia-url';
+import { randomUUID } from 'node:crypto';
 import type { VerifiedActor } from '../auth/verified-actor.guard';
 import { RecoleccionAuthService } from '../recolecciones/application/recoleccion-auth.service';
 import { guardarRecoleccion } from '../recolecciones/application/recoleccion-rpc';
@@ -229,16 +235,8 @@ export class EvidenciasTrazabilidadService {
     let escrituraConfirmada = false;
 
     try {
-      for (const [index, prepared] of preparedFiles.entries()) {
-        const file = files[index];
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        const sanitizedOriginalName = String(file.originalname || 'evidencia')
-          .replace(/\s+/g, '_')
-          .replace(/[^\w.-]/g, '');
-        const nombreArchivo = `${Date.now()}_${Math.random()
-          .toString(36)
-          .slice(2, 8)}_${sanitizedOriginalName}`;
-        const rutaStorage = nombreArchivo;
+      for (const prepared of preparedFiles) {
+        const rutaStorage = `captura/fichas/${recoleccionId}/${randomUUID()}.${prepared.storageExtension}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from(bucketFotos)
@@ -332,8 +330,8 @@ export class EvidenciasTrazabilidadService {
 
       return {
         success: true,
-        data: (inserted || []).map((row) =>
-          this.mapEvidencia(row as EvidenciaRow),
+        data: await Promise.all(
+          (inserted || []).map((row) => this.mapEvidencia(row as EvidenciaRow)),
         ),
       };
     } catch (error) {
@@ -431,7 +429,7 @@ export class EvidenciasTrazabilidadService {
       // Las cargas privadas se consultan por su flujo y autorización de objeto.
       .neq('bucket', 'participacion_evidencias')
       .neq('bucket', 'r3foresta-conciliacion')
-      .neq('bucket', 'vivero_incorporaciones')
+      .neq('bucket', BUCKET_VIVERO_INCORPORACIONES)
       .not('ruta_archivo', 'like', 'plantaciones/registros/pendientes/%')
       .not('ruta_archivo', 'like', 'recepcion/pendientes/%')
       .gt('entidad_id', 0)
@@ -495,7 +493,7 @@ export class EvidenciasTrazabilidadService {
         return (
           evidence.bucket !== 'participacion_evidencias' &&
           evidence.bucket !== 'r3foresta-conciliacion' &&
-          evidence.bucket !== 'vivero_incorporaciones' &&
+          evidence.bucket !== BUCKET_VIVERO_INCORPORACIONES &&
           Boolean(evidence.entidad_id) &&
           !evidence.ruta_archivo?.startsWith(
             'plantaciones/registros/pendientes/',
@@ -508,7 +506,7 @@ export class EvidenciasTrazabilidadService {
 
     return {
       success: true,
-      data: evidencias,
+      data: await Promise.all(evidencias),
       pagination: {
         page,
         limit,
@@ -564,7 +562,7 @@ export class EvidenciasTrazabilidadService {
       !data ||
       (data as EvidenciaRow).bucket === 'participacion_evidencias' ||
       (data as EvidenciaRow).bucket === 'r3foresta-conciliacion' ||
-      (data as EvidenciaRow).bucket === 'vivero_incorporaciones' ||
+      (data as EvidenciaRow).bucket === BUCKET_VIVERO_INCORPORACIONES ||
       (data as EvidenciaRow).ruta_archivo?.startsWith(
         'plantaciones/registros/pendientes/',
       ) ||
@@ -594,7 +592,7 @@ export class EvidenciasTrazabilidadService {
 
     return {
       success: true,
-      data: this.mapEvidencia(data as EvidenciaRow),
+      data: await this.mapEvidencia(row),
     };
   }
 
@@ -692,18 +690,23 @@ export class EvidenciasTrazabilidadService {
     return resolvedByCode;
   }
 
-  private mapEvidencia(row: EvidenciaRow) {
+  private async mapEvidencia(row: EvidenciaRow) {
     // T5 se lee por timeline M2 autorizado o por su contexto pendiente propio.
     // Nunca construir una URL pública para el bucket privado, incluso si un
     // consumidor interno futuro omite el filtro de la consulta genérica.
-    if (row.bucket === 'vivero_incorporaciones')
+    if (row.bucket === BUCKET_VIVERO_INCORPORACIONES)
       throw new NotFoundException('Evidencia de trazabilidad no encontrada');
-    const supabase = this.supabaseService.getAdminClient();
-    const { data: publicUrlData } = supabase.storage
-      .from(row.bucket)
-      .getPublicUrl(row.ruta_archivo);
-
     const tipoEntidad = this.normalizeRelation(row.tipo_entidad);
+    if (
+      row.bucket === BUCKET_VIVERO_EVIDENCIAS &&
+      String(tipoEntidad?.codigo).toUpperCase() !== 'EVENTO_LOTE_VIVERO'
+    )
+      throw new NotFoundException('Evidencia de trazabilidad no encontrada');
+
+    const url = await proyectarUrlEvidenciaVivero(
+      this.supabaseService.getAdminClient(),
+      row,
+    );
     const creadoPor = this.normalizeRelation(row.creado_por);
     const actualizadoPor = this.normalizeRelation(row.actualizado_por);
     const eliminadoPor = this.normalizeRelation(row.eliminado_por);
@@ -732,7 +735,7 @@ export class EvidenciasTrazabilidadService {
       creado_por_usuario_id: row.creado_por_usuario_id,
       actualizado_por_usuario_id: row.actualizado_por_usuario_id,
       eliminado_por_usuario_id: row.eliminado_por_usuario_id,
-      public_url: publicUrlData.publicUrl,
+      public_url: url.signed_url ?? url.public_url ?? null,
       tipo_entidad: tipoEntidad,
       creado_por: creadoPor,
       actualizado_por: actualizadoPor,

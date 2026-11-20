@@ -70,7 +70,7 @@ const {
       .setTitle('R3Foresta · Acceso y material por vivero')
       .setVersion('3.2.0')
       .setDescription(
-        'Contrato local de recepción única, material por vivero y continuidad de reposición interna con IDs exactos. Nuevas incorporaciones T5 y fotos pendientes requieren ADMIN global actual; resultado y replay propios confirmados siguen disponibles para la cuenta activa tras perder el rol. No persiste preparación ni rechazo durable. Timeline por lote paginado con vínculos reales, fuentes de responsable y estado explícito de fotos; las privadas vivero_incorporaciones usan firma TTL300, sin URL pública. T4 y operación M2 conservan su autorización.',
+        'Contrato local de recepción única, material por vivero y continuidad de reposición interna con IDs exactos. Nuevas incorporaciones T5 y fotos pendientes requieren ADMIN global actual; resultado y replay propios confirmados siguen disponibles para la cuenta activa tras perder el rol. No persiste preparación ni rechazo durable. Timeline por lote paginado con vínculos reales, fuentes de responsable y estado explícito de fotos. Los buckets privados vivero_evidencias y vivero_incorporaciones usan firma TTL300 para el historial autorizado.',
       )
       .addBearerAuth()
       .build();

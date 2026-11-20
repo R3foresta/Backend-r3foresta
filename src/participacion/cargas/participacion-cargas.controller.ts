@@ -81,6 +81,8 @@ export class ParticipacionCargasController {
   @Put('participacion/comandos/:comando_id/cargas/:carga_id')
   @ApiOperation({
     summary: 'Subir o reconciliar una foto propia por UUID estable.',
+    description:
+      'El original y la derivada sanitizada de una generación nueva usan el prefijo inicial/ en participacion_evidencias. El servidor conserva las rutas de las generaciones anteriores.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({

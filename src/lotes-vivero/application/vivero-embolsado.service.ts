@@ -11,6 +11,7 @@ import { CrearEvidenciaPendienteViveroDto } from '../api/dto/crear-evidencia-pen
 import { RegistrarEmbolsadoDto } from '../api/dto/registrar-embolsado.dto';
 import { TipoEventoVivero } from '../domain/enums/tipo-evento-vivero.enum';
 import { ViveroAuthService } from './vivero-auth.service';
+import { proyectarUrlEvidenciaVivero } from './vivero-evidencia-url';
 import {
   ViveroEvidenceFileInput,
   ViveroEvidenciasService,
@@ -44,13 +45,14 @@ type RpcEmbolsadoResult = {
 };
 
 type EvidenciaPendienteRow = {
-  id: number;
-  entidad_id: number;
+  id: number | string;
+  entidad_id: number | string;
   ruta_archivo: string;
   mime_type: string;
 };
 
 type EvidenciaRow = {
+  bucket: string;
   id: number;
   ruta_archivo: string;
   mime_type: string;
@@ -445,7 +447,7 @@ export class ViveroEmbolsadoService {
   private async obtenerEvidenciasDelEvento(
     supabase: SupabaseClient,
     eventoId: number,
-  ): Promise<(EvidenciaRow & { public_url: string })[]> {
+  ): Promise<(Omit<EvidenciaRow, 'bucket'> & { public_url: string | null })[]> {
     const { data: tipoEntidadData } = await supabase
       .from('tipos_entidad_evidencia')
       .select('id')
@@ -461,7 +463,9 @@ export class ViveroEmbolsadoService {
 
     const { data: evidenciasData, error: evError } = await supabase
       .from('evidencias_trazabilidad')
-      .select('id, ruta_archivo, mime_type, tipo_archivo, es_principal, orden')
+      .select(
+        'id, bucket, ruta_archivo, mime_type, tipo_archivo, es_principal, orden',
+      )
       .eq('tipo_entidad_id', Number(tipoEntidad.id))
       .eq('entidad_id', eventoId)
       .is('eliminado_en', null);
@@ -474,23 +478,19 @@ export class ViveroEmbolsadoService {
       return [];
     }
 
-    return ((evidenciasData ?? []) as EvidenciaRow[]).map((ev) => {
-      // TODO(vivero-mvp): bucket hardcoded. Ver decisión pendiente en
-      //   vivero-evidencias.service.ts (la subida hoy va a `recoleccion_fotos`
-      //   namespaceada por path). Si el bucket cambia, sincronizar aquí.
-      const { data: publicUrlData } = supabase.storage
-        .from('recoleccion_fotos')
-        .getPublicUrl(ev.ruta_archivo);
-
-      return {
-        id: Number(ev.id),
-        ruta_archivo: ev.ruta_archivo,
-        mime_type: ev.mime_type,
-        tipo_archivo: ev.tipo_archivo,
-        es_principal: ev.es_principal,
-        orden: ev.orden,
-        public_url: publicUrlData.publicUrl,
-      };
-    });
+    return Promise.all(
+      ((evidenciasData ?? []) as EvidenciaRow[]).map(async (ev) => {
+        const url = await proyectarUrlEvidenciaVivero(supabase, ev);
+        return {
+          id: Number(ev.id),
+          ruta_archivo: ev.ruta_archivo,
+          mime_type: ev.mime_type,
+          tipo_archivo: ev.tipo_archivo,
+          es_principal: ev.es_principal,
+          orden: ev.orden,
+          public_url: url.signed_url ?? url.public_url ?? null,
+        };
+      }),
+    );
   }
 }

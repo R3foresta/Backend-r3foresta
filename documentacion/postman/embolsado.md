@@ -159,14 +159,14 @@ Content-Type: multipart/form-data
         "id": 137,
         "codigo_trazabilidad": "VIV-000006-REC-2026-066",
         "entidad_id": 0,
-        "ruta_archivo": "vivero/eventos/pendientes/77/1714000000000_0_foto1.jpg",
+        "ruta_archivo": "eventos/embolsado/2/77/0a000000-0000-4000-8000-000000000001.jpg",
         "tipo_archivo": "image/jpeg"
       },
       {
         "id": 138,
         "codigo_trazabilidad": "VIV-000006-REC-2026-066",
         "entidad_id": 0,
-        "ruta_archivo": "vivero/eventos/pendientes/77/1714000000001_1_foto2.jpg",
+        "ruta_archivo": "eventos/embolsado/2/77/0a000000-0000-4000-8000-000000000002.jpg",
         "tipo_archivo": "image/jpeg"
       }
     ]
@@ -358,12 +358,12 @@ x-auth-id: tu-auth-uuid-aqui
     "evidencias": [
       {
         "id": 137,
-        "ruta_archivo": "vivero/eventos/pendientes/77/1714000000000_0_foto1.jpg",
+        "ruta_archivo": "eventos/embolsado/2/77/0a000000-0000-4000-8000-000000000001.jpg",
         "mime_type": "image/jpeg",
         "tipo_archivo": "FOTO",
         "es_principal": true,
         "orden": 0,
-        "public_url": "https://tu-proyecto.supabase.co/storage/v1/object/public/recoleccion_fotos/vivero/eventos/pendientes/77/1714000000000_0_foto1.jpg"
+        "public_url": "https://tu-proyecto.supabase.co/storage/v1/object/sign/vivero_evidencias/eventos/embolsado/2/77/0a000000-0000-4000-8000-000000000001.jpg?token=FIRMA"
       }
     ]
   }

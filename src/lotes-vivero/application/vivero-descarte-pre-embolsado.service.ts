@@ -33,8 +33,8 @@ type RpcDescartePreEmbolsadoResult = {
 };
 
 type EvidenciaPendienteRow = {
-  id: number;
-  entidad_id: number;
+  id: number | string;
+  entidad_id: number | string;
   ruta_archivo: string;
   mime_type: string;
 };

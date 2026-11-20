@@ -29,6 +29,8 @@ describe('ViveroEvidenciasService', () => {
   let upload: jest.Mock;
   let rpc: jest.Mock;
   let remove: jest.Mock;
+  let getBucket: jest.Mock;
+  let createSignedUrl: jest.Mock;
   const tipoEntidadEventoViveroId = 9;
 
   const foto = {
@@ -45,16 +47,16 @@ describe('ViveroEvidenciasService', () => {
       error: null,
     });
     remove = jest.fn().mockResolvedValue({ data: [], error: null });
+    getBucket = jest.fn().mockResolvedValue({ data: { id: 'vivero_evidencias', public: false }, error: null });
+    createSignedUrl = jest.fn().mockResolvedValue({
+      data: { signedUrl: 'https://storage.example/signed/inicio.jpg' },
+      error: null,
+    });
 
     const storageBucket = {
       upload,
       remove,
-      getPublicUrl: jest.fn().mockReturnValue({
-        data: {
-          publicUrl:
-            'https://storage.example/recoleccion_fotos/vivero/eventos/pendientes/77/1_inicio.jpg',
-        },
-      }),
+      createSignedUrl,
     };
 
     from = jest.fn((table: string) => {
@@ -73,8 +75,8 @@ describe('ViveroEvidenciasService', () => {
               tipo_entidad_id: tipoEntidadEventoViveroId,
               entidad_id: 0,
               codigo_trazabilidad: null,
-              bucket: 'recoleccion_fotos',
-              ruta_archivo: 'vivero/eventos/pendientes/77/1_inicio.jpg',
+              bucket: 'vivero_evidencias',
+              ruta_archivo: rpc.mock.calls[0][1].p_fotos[0].ruta_archivo,
               storage_object_id: 'storage-object-1',
               tipo_archivo: 'FOTO',
               mime_type: 'image/jpeg',
@@ -102,6 +104,7 @@ describe('ViveroEvidenciasService', () => {
         from,
         rpc,
         storage: {
+          getBucket,
           from: jest.fn().mockReturnValue(storageBucket),
         },
       }),
@@ -158,7 +161,8 @@ describe('ViveroEvidenciasService', () => {
       tipo_entidad_id: tipoEntidadEventoViveroId,
       entidad_id: 0,
       codigo_trazabilidad: null,
-      bucket: 'recoleccion_fotos',
+      bucket: 'vivero_evidencias',
+      ruta_archivo: expect.stringMatching(/^eventos\/inicio\/1\/77\/[0-9a-f-]{36}\.jpg$/),
       tipo_archivo: 'FOTO',
       mime_type: 'image/jpeg',
       tamano_bytes: foto.buffer.length,
@@ -184,7 +188,10 @@ describe('ViveroEvidenciasService', () => {
     expect(result.success).toBe(true);
     expect(result.evidencia_ids).toEqual([501]);
     expect(result.data[0].id).toBe(501);
-    expect(result.data[0].public_url).toContain('https://storage.example/');
+    expect(getBucket).toHaveBeenCalledWith('vivero_evidencias');
+    expect(upload.mock.calls[0][0]).toBe(payload.ruta_archivo);
+    expect(createSignedUrl).toHaveBeenCalledWith(payload.ruta_archivo, 300);
+    expect(result.data[0].public_url).toBe('https://storage.example/signed/inicio.jpg');
   });
 
   it('acepta HEIC preservando buffer original y metadata auditable', async () => {
@@ -207,7 +214,7 @@ describe('ViveroEvidenciasService', () => {
     );
 
     expect(upload).toHaveBeenCalledWith(
-      expect.any(String),
+      expect.stringMatching(/^eventos\/despacho\/1\/77\/[0-9a-f-]{36}\.heic$/),
       heicBuffer,
       expect.objectContaining({
         contentType: 'image/heic',
@@ -238,6 +245,14 @@ describe('ViveroEvidenciasService', () => {
     await expect(
       service.crearPendienteParaEvento({ vivero_id: '1' }, 'auth-1', []),
     ).rejects.toThrow(BadRequestException);
+  });
+
+  it('conserva las fotos confirmadas cuando falla la firma de la vista previa', async () => {
+    createSignedUrl.mockResolvedValue({ data: null, error: new Error() });
+    const result = await service.crearPendienteParaEvento({ vivero_id: '1' }, 'auth-1', [foto]);
+    expect(result.evidencia_ids).toEqual([501]);
+    expect(result.data[0].public_url).toBeNull();
+    expect(remove).not.toHaveBeenCalled();
   });
 
   it('rechaza metadata invalida', async () => {

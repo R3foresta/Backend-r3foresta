@@ -96,6 +96,7 @@ escrituras externas. `npm run lint` y `npm run format` modifican archivos.
 | Entender límites, seguridad y datos | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Integrar permisos, roles y recuperación | [Participación](documentacion/modulos/participacion.md) |
 | Consultar módulos y recetas | [Índice técnico](documentacion/README.md) |
+| Configurar buckets de imágenes y coordinar el reinicio | [Storage de evidencias](documentacion/modulos/storage-evidencias.md) |
 | Revisar migraciones y pruebas de una entrega | [Informes y evidencias](docs/README.md) |
 | Reglas de producto y avance entre equipos | [r3foresta-docs](https://github.com/R3foresta/r3foresta-docs) |
 

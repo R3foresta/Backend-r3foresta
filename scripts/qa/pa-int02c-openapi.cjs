@@ -885,6 +885,8 @@ add(
 );
 const upload =
   paths['/api/v1/participacion/comandos/{comando_id}/cargas/{carga_id}'].put;
+upload.description =
+  'Storage privado. La reserva de una generación nueva guarda el original y la derivada sanitizada bajo inicial/ en participacion_evidencias. Recuperación, confirmación y preview usan las rutas registradas por el servidor.';
 upload.requestBody = {
   required: true,
   content: {

@@ -106,7 +106,7 @@ describe('RecoleccionEvidenciasService', () => {
     ]);
 
     expect(upload).toHaveBeenCalledWith(
-      expect.stringMatching(/camara\.jpg$/),
+      expect.stringMatching(/^captura\/altas\/[0-9a-f-]{36}\.jpg$/),
       buffer,
       {
         contentType: 'image/jpeg',
@@ -170,7 +170,7 @@ describe('RecoleccionEvidenciasService', () => {
     );
 
     expect(upload).toHaveBeenCalledWith(
-      expect.stringMatching(/^draft_99_\d+_0_IMG_001\.HEIC$/),
+      expect.stringMatching(/^captura\/fichas\/99\/[0-9a-f-]{36}\.heic$/),
       buffer,
       {
         contentType: 'image/heic',

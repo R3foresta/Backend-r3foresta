@@ -16,7 +16,12 @@ import { CrearEvidenciaPendienteViveroDto } from '../api/dto/crear-evidencia-pen
 import { TipoEventoVivero } from '../domain/enums/tipo-evento-vivero.enum';
 import { ViveroAuthService } from './vivero-auth.service';
 import { compatibleId, exactId } from '../../common/dto/bigint-id';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
+import {
+  BUCKET_VIVERO_EVIDENCIAS,
+  BUCKET_VIVERO_INCORPORACIONES,
+  proyectarUrlEvidenciaVivero,
+} from './vivero-evidencia-url';
 
 export type ViveroEvidenceFileInput = {
   mimetype?: string;
@@ -43,15 +48,6 @@ export type CrearPendienteViveroOptions = {
 @Injectable()
 export class ViveroEvidenciasService {
   private readonly logger = new Logger(ViveroEvidenciasService.name);
-  // TODO(vivero-mvp): revisar política de buckets de storage.
-  //   Las migraciones 003 y 004 crean buckets dedicados (`recoleccion_fotos`, `vivero`,
-  //   `fotos_plantas`). Hoy las fotos de eventos de vivero se suben al bucket
-  //   `recoleccion_fotos`, namespaceadas por path `vivero/eventos/pendientes/...`.
-  //   Esto mezcla almacenamiento entre módulos y dificulta políticas RLS por bucket.
-  //   Sensible: cambiar este valor también requiere migrar las rutas existentes y
-  //   actualizar `getPublicUrl` en TODOS los servicios que leen evidencias de vivero
-  //   (vivero-embolsado, vivero-adaptabilidad, vivero-merma, vivero-timeline).
-  private readonly bucketEvidencias = 'recoleccion_fotos';
 
   constructor(
     private readonly supabaseService: SupabaseService,
@@ -91,35 +87,32 @@ export class ViveroEvidenciasService {
       this.evidenceFileService.prepareOriginalEvidenceFiles(files);
 
     const supabase = this.supabaseService.getAdminClient();
-    const bucket = incorporacion ? 'vivero_incorporaciones' : this.bucketEvidencias;
-    if (incorporacion) {
-      const { data: config, error: bucketError } = await supabase.storage.getBucket(bucket);
-      if (bucketError || config?.id !== bucket || config.public !== false)
-        throw new InternalServerErrorException('El bucket privado de incorporaciones no está configurado.');
-    }
+    const bucket = incorporacion
+      ? BUCKET_VIVERO_INCORPORACIONES
+      : BUCKET_VIVERO_EVIDENCIAS;
+    const { data: config, error: bucketError } =
+      await supabase.storage.getBucket(bucket);
+    if (bucketError || config?.id !== bucket || config.public !== false)
+      throw new InternalServerErrorException(
+        `El bucket privado ${bucket} no está configurado.`,
+      );
+    const carpeta = incorporacion
+      ? `vivero/incorporaciones/${usuario.id}/${solicitudId}`
+      : `eventos/${evento.toLowerCase()}/${viveroId}/${usuario.id}`;
     const tipoEntidadId = await this.resolveTipoEntidadEventoViveroId();
     const metadataPayload = this.parseMetadata(dto.metadata);
     const fotosSubidas: FotoSubidaVivero[] = [];
     let resultadoIncierto = false;
-    const timestampBase = Date.now();
 
     try {
       for (const [index, prepared] of preparedFiles.entries()) {
-        const file = files[index];
-        const safeOriginalName = String(
-          file.originalname || `evidencia_${index + 1}`,
-        )
-          .trim()
-          .replace(/[^a-zA-Z0-9._-]/g, '_');
-        const rutaStorage = incorporacion
-          ? `vivero/incorporaciones/${usuario.id}/${solicitudId}/${randomUUID()}_${safeOriginalName}`
-          : [
-          'vivero',
-          'eventos',
-          'pendientes',
-          String(usuario.id),
-          `${timestampBase}_${index}_${safeOriginalName}`,
-        ].join('/');
+        const identificador = randomUUID();
+        const nombre = incorporacion
+          ? `${identificador}_${String(files[index].originalname || `evidencia_${index + 1}`)
+              .trim()
+              .replace(/[^a-zA-Z0-9._-]/g, '_')}`
+          : `${identificador}.${prepared.storageExtension}`;
+        const rutaStorage = `${carpeta}/${nombre}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from(bucket)
@@ -227,23 +220,26 @@ export class ViveroEvidenciasService {
         .in('id', ids);
       if (error || !data)
         throw new HttpException('RESULTADO_NO_DETERMINADO', 503);
-      const evidencias = await Promise.all((data || []).map(async (evidencia: any) => {
-        if (incorporacion) {
-          const { data: signed, error: signError } = await supabase.storage
-            .from(bucket).createSignedUrl(evidencia.ruta_archivo, 300);
-          if (signError || !signed?.signedUrl) throw new HttpException('RESULTADO_NO_DETERMINADO', 503);
-          return { ...evidencia, id: exactId(evidencia.id), signed_url: signed.signedUrl, url_expira_en_segundos: 300 };
-        }
-        const { data: publicUrlData } = supabase.storage
-          .from(evidencia.bucket)
-          .getPublicUrl(evidencia.ruta_archivo);
-
-        return {
-          ...evidencia,
-          id: compatibleId(evidencia.id),
-          public_url: publicUrlData.publicUrl,
-        };
-      }));
+      const evidencias = await Promise.all(
+        data.map(async (evidencia) => {
+          const url = await proyectarUrlEvidenciaVivero(supabase, evidencia);
+          if (incorporacion) {
+            if (!url.signed_url)
+              throw new HttpException('RESULTADO_NO_DETERMINADO', 503);
+            return {
+              ...evidencia,
+              id: exactId(evidencia.id),
+              signed_url: url.signed_url,
+              url_expira_en_segundos: url.url_expira_en_segundos,
+            };
+          }
+          return {
+            ...evidencia,
+            id: compatibleId(evidencia.id),
+            public_url: url.signed_url ?? url.public_url ?? null,
+          };
+        }),
+      );
 
       return {
         success: true,
@@ -299,12 +295,21 @@ export class ViveroEvidenciasService {
     } catch { throw new HttpException('RESULTADO_NO_DETERMINADO', 503); }
     if (['42501', 'PT403'].includes(resultado.error?.code ?? '')) throw new ForbiddenException('CAPACIDAD_INSUFICIENTE');
     if (resultado.error || !Array.isArray(resultado.data)) throw new HttpException('RESULTADO_NO_DETERMINADO', 503);
-    const evidencias = await Promise.all(resultado.data.map(async (ev: any) => {
-      if (ev.bucket !== 'vivero_incorporaciones') throw new HttpException('CONTEXTO_INCOMPATIBLE', 503);
-      const { data, error } = await supabase.storage.from(ev.bucket).createSignedUrl(ev.ruta_archivo, 300);
-      if (error || !data?.signedUrl) throw new HttpException('RESULTADO_NO_DETERMINADO', 503);
-      return { ...ev, id: exactId(ev.id), signed_url: data.signedUrl, url_expira_en_segundos: 300 };
-    }));
+    const evidencias = await Promise.all(
+      resultado.data.map(async (ev) => {
+        if (ev.bucket !== BUCKET_VIVERO_INCORPORACIONES)
+          throw new HttpException('CONTEXTO_INCOMPATIBLE', 503);
+        const url = await proyectarUrlEvidenciaVivero(supabase, ev);
+        if (!url.signed_url)
+          throw new HttpException('RESULTADO_NO_DETERMINADO', 503);
+        return {
+          ...ev,
+          id: exactId(ev.id),
+          signed_url: url.signed_url,
+          url_expira_en_segundos: url.url_expira_en_segundos,
+        };
+      }),
+    );
     return { success: true, data: evidencias, evidencia_ids: evidencias.map((e) => e.id) };
   }
 

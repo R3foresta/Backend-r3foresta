@@ -4,6 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import {
   EvidenceFileService,
   type PreparedEvidenceFile,
@@ -94,10 +95,8 @@ export class RecoleccionEvidenciasService {
     const fotosSubidas: FotoSubidaRecoleccion[] = [];
 
     try {
-      for (const [index, file] of files.entries()) {
-        const prepared = preparedFiles[index];
-        const nombreArchivo = `${Date.now()}_${file.originalname}`;
-        const rutaStorage = nombreArchivo;
+      for (const prepared of preparedFiles) {
+        const rutaStorage = `captura/altas/${randomUUID()}.${prepared.storageExtension}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from(this.bucketFotos)
@@ -205,7 +204,6 @@ export class RecoleccionEvidenciasService {
 
     const uploadedPaths: string[] = [];
     const evidenciasInsert: Array<Record<string, unknown>> = [];
-    const timestampBase = Date.now();
     const ordenInicial = Number(count || 0);
     const preparedFiles =
       this.evidenceFileService.prepareOriginalEvidenceFiles(files);
@@ -213,13 +211,7 @@ export class RecoleccionEvidenciasService {
 
     try {
       for (const [index, prepared] of preparedFiles.entries()) {
-        const file = files[index];
-        const safeOriginalName = String(
-          file.originalname || `foto_${index + 1}`,
-        )
-          .trim()
-          .replace(/[^a-zA-Z0-9._-]/g, '_');
-        const rutaStorage = `draft_${recoleccionId}_${timestampBase}_${index}_${safeOriginalName}`;
+        const rutaStorage = `captura/fichas/${recoleccionId}/${randomUUID()}.${prepared.storageExtension}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from(this.bucketFotos)

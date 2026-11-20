@@ -24,6 +24,7 @@ TABLES = (
     'recoleccion_recepcion_evidencia', 'recoleccion_conciliacion_comando',
     'recoleccion_conciliacion_evento', 'recoleccion_conciliacion_evidencia_contexto',
     'recoleccion_conciliacion_evidencia', 'lote_vivero', 'evento_lote_vivero',
+    'vivero_incorporacion',
     'm2_evidencia_contexto', 'asignacion_vivero_subcampania', 'campania',
     'campania_organizacion', 'subcampania', 'subcampania_equipo',
     'subcampania_historial', 'subcampania_meta_especie', 'subcampania_permiso',

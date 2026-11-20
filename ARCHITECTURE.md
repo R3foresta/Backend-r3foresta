@@ -127,7 +127,7 @@ SECURITY INVOKER. Los grants públicos están cerrados en las superficies verifi
 RLS no sustituye autorización. La continuidad probada entre RPC no cubre
 importaciones/SQL privilegiado que omitan la disciplina de cuentas → ámbitos.
 
-T2 mantiene cuenta SHARE en operación y destino UPDATE en retiro, compartido con rol/baja072; campañas → hijas → asignaciones → lote/origen → fotos conservan el orden de077. Vigencias/revisión/historial/terminal M2 se confirman juntos. Las evidencias pendientes guardan contexto inmutable y se revalidan al vincular; el bucket legado conserva URLs públicas.
+T2 mantiene cuenta SHARE en operación y destino UPDATE en retiro, compartido con rol/baja072; campañas → hijas → asignaciones → lote/origen → fotos conservan el orden de077. Vigencias/revisión/historial/terminal M2 se confirman juntos. Las evidencias pendientes guardan contexto inmutable y se revalidan al vincular. La migración120 local separa las nuevas fotos de eventos en `vivero_evidencias` privado. La121 añade `inicial/` a las generaciones nuevas M3. Los lectores usan la ubicación persistida. [Mapa y corte de Storage](documentacion/modulos/storage-evidencias.md).
 
 T5 reutiliza ese contexto y agrega la solicitud para fotos anteriores al lote.
 Cuenta → solicitud → lote nuevo → evidencias ordenadas serializa el alta.

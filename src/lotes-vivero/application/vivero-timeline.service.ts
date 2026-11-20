@@ -23,6 +23,7 @@ import {
   leerTimelineCursor,
   timelineContexto,
 } from '../domain/policies/timeline-cursor.policy';
+import { proyectarUrlEvidenciaVivero } from './vivero-evidencia-url';
 
 // ---------------------------------------------------------------------------
 // Row types — sin any
@@ -536,40 +537,7 @@ export class ViveroTimelineService {
             : String(ev.tamano_bytes),
       tomado_en: ev.tomado_en ?? null,
     };
-    if (ev.bucket === 'vivero_incorporaciones') {
-      try {
-        const { data, error } = await supabase.storage
-          .from(ev.bucket)
-          .createSignedUrl(ev.ruta_archivo, 300);
-        if (error || !data?.signedUrl) throw Error();
-        return {
-          ...evidencia,
-          estado_url: 'DISPONIBLE',
-          signed_url: data.signedUrl,
-          url_expira_en_segundos: 300,
-        };
-      } catch {
-        return {
-          ...evidencia,
-          estado_url: 'ERROR_FIRMA',
-          signed_url: null,
-          url_expira_en_segundos: null,
-        };
-      }
-    }
-    try {
-      const { data } = supabase.storage
-        .from(ev.bucket || 'recoleccion_fotos')
-        .getPublicUrl(ev.ruta_archivo);
-      if (!data?.publicUrl) throw Error();
-      return {
-        ...evidencia,
-        estado_url: 'DISPONIBLE',
-        public_url: data.publicUrl,
-      };
-    } catch {
-      return { ...evidencia, estado_url: 'ERROR_URL', public_url: null };
-    }
+    return { ...evidencia, ...(await proyectarUrlEvidenciaVivero(supabase, ev)) };
   }
 
   private buildNombreResponsable(usuario: UsuarioRow | null): string | null {

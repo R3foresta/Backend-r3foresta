@@ -165,17 +165,19 @@ Body FormData:
 
 | Campo          | Tipo           | Requerido | Reglas                                                   |
 | -------------- | -------------- | --------- | -------------------------------------------------------- |
+| `vivero_id`    | string BIGINT  | sí        | ID del vivero autorizado para el INICIO.                 |
 | `fotos`        | File[]         | si        | 1 a 5 imagenes. JPG/JPEG/PNG/WEBP/HEIC/HEIF.             |
 | `titulo`       | string         | no        | Maximo 120 caracteres.                                   |
 | `descripcion`  | string         | no        | Maximo 1000 caracteres.                                  |
 | `metadata`     | string         | no        | JSON serializado como texto. Debe representar un objeto. |
 | `tomado_en`    | string         | no        | Fecha ISO valida.                                        |
-| `es_principal` | boolean/string | no        | Acepta `true`, `false`, `1`, `0`, `si`, `no`.            |
+| `es_principal` | boolean/string | no        | Se ignora mientras la foto está pendiente.               |
 
 Ejemplo frontend:
 
 ```ts
 const formData = new FormData();
+formData.append('vivero_id', String(viveroId));
 for (const file of files) {
   formData.append('fotos', file);
 }
@@ -183,7 +185,6 @@ formData.append('titulo', 'Inicio de lote');
 formData.append('descripcion', 'Fotos del material al iniciar el lote');
 formData.append('metadata', JSON.stringify({ fuente: 'app-mobile' }));
 formData.append('tomado_en', new Date().toISOString());
-formData.append('es_principal', 'true');
 
 const res = await fetch(`${API_URL}/api/lotes-vivero/evidencias-pendientes`, {
   method: 'POST',
@@ -207,8 +208,8 @@ Respuesta esperada:
       "tipo_entidad_id": 9,
       "entidad_id": 0,
       "codigo_trazabilidad": null,
-      "bucket": "recoleccion_fotos",
-      "ruta_archivo": "vivero/eventos/pendientes/77/...",
+      "bucket": "vivero_evidencias",
+      "ruta_archivo": "eventos/inicio/2/77/0a000000-0000-4000-8000-000000000001.jpg",
       "storage_object_id": "abc-123",
       "tipo_archivo": "FOTO",
       "mime_type": "image/jpeg",
@@ -218,11 +219,11 @@ Respuesta esperada:
       "descripcion": "Fotos del material al iniciar el lote",
       "metadata": {
         "fuente": "app-mobile",
-        "origen": "VIVERO_EVENTO_PENDIENTE",
+        "origen": "VIVERO_EVIDENCIA_PENDIENTE",
         "estado": "PENDIENTE_VINCULACION",
-        "formato": "JPEG"
+        "formato_original": "JPEG"
       },
-      "es_principal": true,
+      "es_principal": false,
       "orden": 0,
       "tomado_en": "2026-04-28T10:00:00.000Z",
       "creado_en": "2026-04-28T10:00:01.000Z",
@@ -235,6 +236,12 @@ Respuesta esperada:
 ```
 
 Guardar `evidencia_ids`. Esos IDs se envian en la siguiente llamada.
+
+El backend arma la ruta por evento y la conserva al vincular. `public_url` en
+la carga y las lecturas de eventos contiene una URL firmada por 300 segundos
+para `vivero_evidencias`, o `null` si falla la firma. El timeline devuelve
+`signed_url` y `url_expira_en_segundos` para las fotos privadas. Para obtener
+otra firma, repetir la lectura autorizada. [Mapa de Storage](../modulos/storage-evidencias.md)
 
 ## 2. Crear lote desde recoleccion
 
@@ -567,7 +574,7 @@ type ResultadoEmbolsadoResponse = {
       tipo_archivo: string;
       es_principal: boolean;
       orden: number;
-      public_url: string;
+      public_url: string | null;
     }>;
   };
 };

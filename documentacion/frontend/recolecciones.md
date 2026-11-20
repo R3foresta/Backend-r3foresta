@@ -181,7 +181,7 @@ Ejemplo del campo `ubicacion` (serializado como string en el FormData):
 }
 ```
 
-> No enviar imágenes en base64 dentro del JSON. Las fotos deben ir como `File[]` en el FormData; el backend las sube a Supabase Storage (`bucket recoleccion_fotos`).
+Las fotos van como `File[]` en el FormData. El backend genera las rutas de `captura/` y `recepcion/` en `recoleccion_fotos`. La API entrega las URLs para usar en la interfaz. [Mapa de Storage](../modulos/storage-evidencias.md)
 
 ## PATCH /api/recolecciones/:id/draft
 

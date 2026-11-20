@@ -295,6 +295,10 @@ function from(table: string) {
       limit = ` LIMIT ${b - a + 1} OFFSET ${a}`;
       return q;
     },
+    limit: (amount: number) => {
+      limit = ` LIMIT ${amount}`;
+      return q;
+    },
     insert: (v: unknown) => {
       insert = v;
       return q;
@@ -330,15 +334,20 @@ const privateClient = {
   },
   from,
   storage: {
-    from: () => ({
+    getBucket: async (id: string) => ({ data: { id, public: false }, error: null }),
+    from: (bucket: string) => ({
       upload: async (path: string, bytes: Buffer) => {
-        files.set(path, bytes);
+        files.set(`${bucket}/${path}`, bytes);
         return { data: { id: randomUUID() }, error: null };
       },
       remove: async (paths: string[]) => {
-        paths.forEach((p) => files.delete(p));
+        paths.forEach((p) => files.delete(`${bucket}/${p}`));
         return { error: null };
       },
+      createSignedUrl: async (path: string, ttl: number) =>
+        files.has(`${bucket}/${path}`)
+          ? { data: { signedUrl: `https://signed.invalid/${bucket}/${path}?ttl=${ttl}` }, error: null }
+          : { data: null, error: { message: 'Objeto ausente' } },
       getPublicUrl: (path: string) => ({
         data: { publicUrl: 'https://synthetic.invalid/' + path },
       }),
@@ -675,6 +684,25 @@ describe('T2 HTTP → JWT real → alcance de vivero → RPC PostgreSQL reales',
         evidencia_ids: fotosB,
       })
       .expect(201);
+    const timeline = await get(`/api/lotes-vivero/${loteB}/timeline`, 'ab').expect(200);
+    expect(timeline.body.data.eventos).toEqual(expect.arrayContaining([
+      expect.objectContaining({ tipo_evento: 'INICIO', evidencias: [expect.objectContaining({
+        ruta_archivo: expect.stringMatching(/^eventos\/inicio\/2\/821\//),
+        signed_url: expect.stringContaining('/vivero_evidencias/eventos/inicio/2/821/'),
+        url_expira_en_segundos: 300,
+      })] }),
+    ]));
+    const embolsado = await get(`/api/lotes-vivero/${loteB}/embolsado`, 'ab').expect(200);
+    expect(embolsado.body.data.evidencias[0].public_url).toContain(
+      'https://signed.invalid/vivero_evidencias/eventos/embolsado/2/821/',
+    );
+    const loteLegado = await sql(`SELECT ev.lote_id FROM public.evento_lote_vivero ev
+      JOIN public.evidencias_trazabilidad e ON e.entidad_id=ev.id AND e.tipo_entidad_id=3
+      WHERE e.ruta_archivo LIKE 'vivero/eventos/pendientes/%' AND ev.tipo_evento='INICIO'`);
+    const legado = await get(`/api/lotes-vivero/${loteLegado}/timeline`).expect(200);
+    const fotoLegada = legado.body.data.eventos.find((evento: { tipo_evento: string }) => evento.tipo_evento === 'INICIO').evidencias[0];
+    expect(fotoLegada.public_url).toContain('/vivero/eventos/pendientes/');
+    expect(fotoLegada).not.toHaveProperty('signed_url');
     expect(
       await sql(
         'SELECT usuario_id::text FROM public.recoleccion WHERE id=1100',
@@ -759,9 +787,10 @@ describe('T2 HTTP → JWT real → alcance de vivero → RPC PostgreSQL reales',
         loteA +
         " AND tipo_evento='INICIO'",
     );
-    await get(
+    const ownPhotos = await get(
       '/api/evidencias-trazabilidad/entidad/EVENTO_LOTE_VIVERO/' + ownEvent,
     ).expect(200);
+    expect(ownPhotos.body.data[0].public_url).toContain('/vivero_evidencias/eventos/inicio/1/820/');
     const ids = await upload(
       `/api/lotes-vivero/${loteA}/embolsado/evidencias-pendientes`,
     );

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""T2/094/095: clúster PostgreSQL privado, sin TCP, .env ni servicios reales."""
+"""T2/094/095 y Storage 120/121 en PostgreSQL privado, sin TCP, .env ni servicios reales."""
 import argparse
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -17,6 +17,8 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[2]
 MIGRATIONS = ['092_usuario_acceso_recoleccion.sql','093_recoleccion_acceso_explicito.sql','094_usuario_vivero.sql','095_vivero_operacion_por_ambito.sql']
+STORAGE_MIGRATIONS = ['074_pa_int03a_cargas.sql','120_vivero_evidencias_storage.sql','121_plantacion_evidencias_prefijo_inicial.sql']
+STORAGE_FIXTURE = ROOT / 'test/db/vivero-incorporacion-storage-fixture.sql'
 
 
 def main():
@@ -100,8 +102,11 @@ def main():
         payload={'usuario_destino_id':str(user),'vivero_id':str(vivero),'revision_esperada':str(rev),'motivo':'Ensayo sintético T2'}
         auth='fixture-admin' if actor==1 else 'fixture-t2-operario' if actor==20 else 'fixture-validador'
         return f"SELECT public.m2_acceso_ejecutar({actor},'{auth}','{op}_ACCESO_VIVERO','{key or uuid.uuid4()}',{lit(payload)});"
-    def prepare(actor,viv=1,lote=None,event='INICIO'):
-        f=[{'ruta_archivo':f'vivero/eventos/pendientes/{actor}/{uuid.uuid4()}.jpg','mime_type':'image/jpeg','tamano_bytes':10}]
+    def prepare(actor,viv=1,lote=None,event='INICIO',legacy=False,folder=None,bucket=None):
+        if folder is None:
+            folder = f'vivero/eventos/pendientes/{actor}' if legacy else f'eventos/{event.lower()}/{viv}/{actor}'
+        f=[{'bucket':bucket or ('recoleccion_fotos' if legacy else 'vivero_evidencias'),
+            'ruta_archivo':f'{folder}/{uuid.uuid4()}.jpg','mime_type':'image/jpeg','tamano_bytes':10}]
         return f"SELECT public.m2_evidencias_preparar({actor},{viv},{lote or 'NULL'},'{event}',{lit(f)});"
     def evidence(actor,viv=1,lote=None,event='INICIO'): return call(prepare(actor,viv,lote,event))
     def inicio(actor,rec=100,viv=1,ids=None):
@@ -124,6 +129,34 @@ def main():
     def extract(file,name):
         s=(ROOT/'migrations'/file).read_text();match=re.search(r'CREATE(?: OR REPLACE)? FUNCTION public\.'+re.escape(name)+r'\(',s);start=match.start();end=s.index('$$;',s.index('AS $$',start))+3
         return s[start:end]
+    def install(migration):
+        run(command()+['-f',str(ROOT/'migrations'/migration)])
+    def verificar_prefijo_inicial():
+        sql("INSERT INTO public.tipos_entidad_evidencia VALUES(4,'REGISTRO_PLANTACION',true) ON CONFLICT DO NOTHING")
+        install(STORAGE_MIGRATIONS[0])
+        key = str(uuid.uuid4())
+        def cargas(action,payload):
+            return call(f"SELECT public.pa_cargas_operar(1,'fixture-admin','{action}','{key}',{lit(payload)})")
+        def intencion():
+            return {'carga_id':str(uuid.uuid4()),'hash_original':'12'*32,'hash_derivada':'34'*32,
+                    'tamano_original':20,'tamano_derivada':12,'mime_original':'image/jpeg','lease_token':str(uuid.uuid4())}
+        assert cargas('PREPARAR',{'subcampania_id':'11'})['http_status']==200
+        anterior, nueva = intencion(), intencion()
+        legado = cargas('RESERVAR',anterior)['body']['data']['trabajo']
+        for _ in range(2):
+            install(STORAGE_MIGRATIONS[2])
+        retry = cargas('RESERVAR',anterior)['body']['data']['trabajo']
+        trabajo_nuevo = cargas('RESERVAR',nueva)['body']['data']['trabajo']
+        check({**legado,'nueva':False}==retry and legado['ruta_original']==f"1/{key}/{anterior['carga_id']}/1/original"
+              and trabajo_nuevo['ruta_original']==f"inicial/1/{key}/{nueva['carga_id']}/1/original"
+              and trabajo_nuevo['bucket']=='participacion_evidencias',
+              '121 usa inicial/ y conserva rutas, token y generación de una reserva vigente anterior')
+        for payload, trabajo in ((anterior,legado),(nueva,trabajo_nuevo)):
+            reply=cargas('FINALIZAR',{**payload,'generacion':trabajo['generacion'],'objetos_verificados':True})
+            assert reply['http_status']==201
+            preview=cargas('PREVIEW',{'carga_id':payload['carga_id']})['body']['data']
+            assert preview=={'bucket':trabajo['bucket'],'ruta_derivada':trabajo['ruta_derivada']}
+        check(True,'121 finaliza ambos esquemas de ruta y preview devuelve la derivada registrada')
     failed=True
     try:
         run([binaries['initdb'],'-D',str(cluster),'-U','postgres','--auth-local=trust','--auth-host=reject','--locale=en_US.UTF-8','--encoding=UTF8'])
@@ -163,7 +196,29 @@ def main():
         call(assign(20,1,op='RETIRAR'));sql('SELECT public.m2_origenes_leer(20,1,NULL,1,20)',error='CAPACIDAD_INSUFICIENTE',service=True)
         check(call('SELECT public.m2_ambitos(20)')=={'global':False,'viveros':['2']},'Retiro A conserva B sin borrar historia')
         call(assign(20,1));check(sql('SELECT count(*) FROM public.usuario_vivero WHERE usuario_id=20 AND vivero_id=1')=='2','Reotorgar abre otra vigencia y conserva la retirada')
-        lote=call(inicio(20))['lote_vivero_id'];lote_b=call(inicio(20,101,2))['lote_vivero_id']
+        legado=call(prepare(20,legacy=True))
+        run(command()+['-f',str(STORAGE_FIXTURE)])
+        install(STORAGE_MIGRATIONS[1])
+        sql("""INSERT INTO storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
+             VALUES ('vivero_evidencias','vivero_evidencias',false,15728640,
+                     ARRAY['image/jpeg','image/png','image/webp','image/heic','image/heif']);
+             INSERT INTO storage.objects(id,bucket_id,name) VALUES
+               ('00000000-0000-4000-8000-000000000003','vivero_evidencias','foto.jpg')""",service=True)
+        install(STORAGE_MIGRATIONS[1])
+        for rol in ('anon','authenticated'):
+            assert sql(f'SET ROLE {rol}; SELECT count(*) FROM storage.objects')=='2'
+            assert sql(f"SET ROLE {rol}; SELECT count(*) FROM storage.buckets WHERE id='vivero_evidencias'")=='0'
+            sql(f"SET ROLE {rol}; UPDATE storage.objects SET bucket_id='vivero_evidencias' WHERE bucket_id='publico_fixture'",error='row-level security')
+        check(sql("SELECT count(*) FROM storage.objects WHERE bucket_id='vivero_evidencias'",service=True)=='1',
+              '120 restringe el bucket nuevo aun con políticas permisivas y conserva acceso del servicio y de otros buckets')
+        for foto_invalida in (prepare(20,bucket='recoleccion_fotos'),prepare(20,folder='eventos/merma/1/20'),
+                              prepare(20,folder='eventos/inicio/2/20'),prepare(20,folder='eventos/inicio/1/22')):
+            sql(foto_invalida,error='Foto inválida',service=True)
+        check(True,'120 rechaza bucket, etapa, vivero y actor ajenos a la preparación')
+        lote=call(inicio(20,ids=legado))['lote_vivero_id'];lote_b=call(inicio(20,101,2))['lote_vivero_id']
+        check(sql(f"SELECT bucket FROM public.evidencias_trazabilidad WHERE id={legado[0]}")=='recoleccion_fotos',
+              'Una foto pendiente de 095 puede vincularse después del corte con su ubicación anterior')
+        verificar_prefijo_inicial()
         check(sql('SELECT saldo_actual FROM public.recoleccion WHERE id=100')=='95','INICIO consume M1 una vez y conserva transacción de lote/evento/ledger')
         call(assign(20,2,op='RETIRAR'));sql(evento(20,lote_b,'EMBOLSADO',ids=[1]),error='CAPACIDAD_INSUFICIENTE',service=True)
         sql(inicio(20,101,1),error='camino ordinario',service=True)
@@ -271,6 +326,7 @@ def main():
         check(True,'095 detecta contexto previo incompatible y revierte la instalación')
         sql("CREATE FUNCTION public.fn_vivero_registrar_merma(bigint) RETURNS text LANGUAGE sql AS $$ SELECT 'LEGADO' $$; GRANT EXECUTE ON FUNCTION public.fn_vivero_registrar_merma(bigint) TO service_role;")
         run(command()+['-f',str(ROOT/'migrations/095_vivero_operacion_por_ambito.sql')])
+        install(STORAGE_MIGRATIONS[1])
         sql('SELECT public.fn_vivero_registrar_merma(1)',error='permission denied',service=True)
         sql('DROP FUNCTION public.fn_vivero_registrar_merma(bigint)')
         check(True,'Sobrecarga legada cerrada sin recuperar privilegios por nombre')
@@ -307,7 +363,7 @@ def main():
         stopped=not (cluster/'postmaster.pid').exists()
         if stopped: shutil.rmtree(directory)
         if args.evidence:
-            files=list((ROOT/'src/lotes-vivero').rglob('*.ts'))+list((ROOT/'src/recolecciones').rglob('*.ts'))+list((ROOT/'src/evidencias-trazabilidad').rglob('*.ts'))+[ROOT/'migrations'/m for m in MIGRATIONS]+[Path(__file__).resolve(),ROOT/'test/db/vivero-acceso-fixture.sql',ROOT/'test/db/vivero-acceso-postgis-fixture.sql',ROOT/'test/db/vivero-acceso-http.spec.ts',ROOT/'test/jest-vivero-acceso-db.json',ROOT/'migrations/100_recoleccion_recepcion_unica.sql',ROOT/'migrations/097_vivero_conciliacion_historica.sql',ROOT/'migrations/105_vivero_operaciones_ids_exactos.sql']
+            files=list((ROOT/'src/lotes-vivero').rglob('*.ts'))+list((ROOT/'src/recolecciones').rglob('*.ts'))+list((ROOT/'src/evidencias-trazabilidad').rglob('*.ts'))+[ROOT/'migrations'/m for m in MIGRATIONS+STORAGE_MIGRATIONS]+[STORAGE_FIXTURE,Path(__file__).resolve(),ROOT/'test/db/vivero-acceso-fixture.sql',ROOT/'test/db/vivero-acceso-postgis-fixture.sql',ROOT/'test/db/vivero-acceso-http.spec.ts',ROOT/'test/jest-vivero-acceso-db.json',ROOT/'migrations/100_recoleccion_recepcion_unica.sql',ROOT/'migrations/097_vivero_conciliacion_historica.sql',ROOT/'migrations/105_vivero_operaciones_ids_exactos.sql']
             args.evidence.write_text(json.dumps({'tarea':'T2_ACCESO_VIVEROS','estado':'FALLIDO' if failed else 'CORRECTO','fecha':datetime.now(ZoneInfo('America/La_Paz')).date().isoformat(),'zona_horaria':'America/La_Paz','entorno':{'tipo':'SINTETICO_LOCAL','postgres':version,'tcp':False,'sin_env':True,'postgis':postgis_version or False,'cluster_detenido':stopped,'directorio_eliminado':not directory.exists()},'base':run(['git','-C',str(ROOT),'rev-parse','HEAD']),'base_arbol':'docs/evidencia/t2-acceso-viveros-base-2026-11-05.json','migraciones':MIGRATIONS,'proyecciones_actuales_http':[] if args.sql_only else ['100:m2_acceso_leer','097:m2_inicio_lote_exacto','105:wrappersIDsTEXT'],'comprobaciones':checks,'carreras':races,'http':http,'sha256':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(files))}},ensure_ascii=False,indent=2)+'\n')
     print(f'T2: {len(checks)} grupos SQL y {len(races)} carreras aprobados.',flush=True)
 

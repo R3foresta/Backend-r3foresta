@@ -16,6 +16,7 @@ Entrada principal del repositorio: [README.md](../README.md). Arquitectura y lí
 ## Otros módulos y referencias
 
 - [Referencia general HTTP](frontend/api-reference.md).
+- [Buckets y rutas de imágenes](modulos/storage-evidencias.md).
 - M1: [Recolecciones](modulos/recolecciones.md) y [guía frontend](frontend/recolecciones.md).
 - Consulta pública M1: [Banco de semillas](frontend/banco-semillas.md), con resumen global, filtros, ficha y fotos sanitizadas sin sesión.
 - M2: [Lotes de Vivero](modulos/lotes-vivero.md), [frontend](frontend/lotes-vivero.md) y [asignación física M2→M3](frontend/guia-migracion-asignacion-fisica.md).
